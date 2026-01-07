@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
       return
     }
     setLoading(true)
-    try {
+      try {
       const res = await fetch('/api/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -26,7 +26,9 @@ export default function ForgotPasswordPage() {
       if (!res.ok || result.error) {
         setMsg(result.error || '重設密碼失敗')
       } else {
+        // 顯示成功 Banner，2 秒後導回登入頁面
         setMsg('已發送重設密碼通知，請檢查您的 email')
+        setTimeout(() => router.push('/login'), 2000)
       }
     } catch (e) {
       setMsg('重設密碼失敗，請稍後再試')
@@ -45,13 +47,24 @@ export default function ForgotPasswordPage() {
           placeholder="請輸入註冊的 email"
           value={email}
           onChange={e => setEmail(e.target.value)}
+          disabled={loading}
         />
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
         >
-          發送重設
+          {loading ? (
+            <>
+              <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              發送中...
+            </>
+          ) : (
+            '發送重設'
+          )}
         </button>
         <button
           onClick={() => router.push('/login')}
