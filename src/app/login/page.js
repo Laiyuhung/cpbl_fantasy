@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const [account, setAccount] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
@@ -33,13 +33,15 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // ✅ 必加這行才能接受 Set-Cookie
-        body: JSON.stringify({ account, password }),
+        body: JSON.stringify({ email, password }),
       })
       const result = await res.json()
       if (!res.ok || result.error) {
         setError(result.error || '登入失敗')
       } else {
         // 若伺服器要求強制更改密碼 -> 導到 change-password
+        // 通知全站 auth 狀態已改變，讓 Navbar 等元件立即更新
+        try { window.dispatchEvent(new Event('auth-changed')) } catch (e) {}
         if (result.must_change_password) {
           router.push('/change-password')
         } else {
@@ -51,28 +53,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleForgot = async () => {
-    setError('')
-    if (!account) {
-      setError('請輸入帳號或 email 以重設密碼')
-      return
-    }
-    try {
-      const res = await fetch('/api/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ account }),
-      })
-      const result = await res.json()
-      if (!res.ok || result.error) {
-        setError(result.error || '重設密碼失敗')
-      } else {
-        setError('已重設密碼，請檢查您的 email 或以新密碼登入')
-      }
-    } catch (e) {
-      setError('重設密碼失敗，請稍後再試')
-    }
-  }
+  // forgot handled on separate page
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -80,9 +61,9 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold mb-4 text-center">登入</h1>
         <input
           className="w-full border p-2 mb-2 rounded"
-          placeholder="帳號"
-          value={account}
-          onChange={e => setAccount(e.target.value)}
+          placeholder="註冊 Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
         />
         <input
           className="w-full border p-2 mb-4 rounded"

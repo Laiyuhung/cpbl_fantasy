@@ -63,6 +63,41 @@ export default function Navbar() {
       .catch(() => router.push('/login'))
   }, [])
 
+  // 監聽全局 auth 改變事件，讓 Navbar 可以在登入/登出時立即更新
+  useEffect(() => {
+    const handler = () => {
+      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='))
+      const uid = cookie?.split('=')[1]
+      if (!uid) {
+        setUserId('')
+        setUserName('')
+        return
+      }
+      fetch('/api/username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: uid }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data?.name) {
+            setUserId(uid)
+            setUserName(data.name)
+          } else {
+            setUserId('')
+            setUserName('')
+          }
+        })
+        .catch(() => {
+          setUserId('')
+          setUserName('')
+        })
+    }
+
+    window.addEventListener('auth-changed', handler)
+    return () => window.removeEventListener('auth-changed', handler)
+  }, [])
+
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' })

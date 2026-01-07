@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
 
 export async function POST(request) {
-  const { account, password } = await request.json()
+  const { email, password } = await request.json()
 
   const { data, error } = await supabase
     .from('managers')
     .select('id,must_change_password')
-    .eq('account', account)
+    .eq('email_address', email)
     .eq('password', password)
     .single()
 
