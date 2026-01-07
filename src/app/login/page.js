@@ -39,11 +39,38 @@ export default function LoginPage() {
       if (!res.ok || result.error) {
         setError(result.error || '登入失敗')
       } else {
-        // ❌ 不要用 localStorage
-        router.push('/home')
+        // 若伺服器要求強制更改密碼 -> 導到 change-password
+        if (result.must_change_password) {
+          router.push('/change-password')
+        } else {
+          router.push('/home')
+        }
       }
     } catch (err) {
       setError('登入錯誤，請稍後再試')
+    }
+  }
+
+  const handleForgot = async () => {
+    setError('')
+    if (!account) {
+      setError('請輸入帳號或 email 以重設密碼')
+      return
+    }
+    try {
+      const res = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account }),
+      })
+      const result = await res.json()
+      if (!res.ok || result.error) {
+        setError(result.error || '重設密碼失敗')
+      } else {
+        setError('已重設密碼，請檢查您的 email 或以新密碼登入')
+      }
+    } catch (e) {
+      setError('重設密碼失敗，請稍後再試')
     }
   }
 
@@ -69,6 +96,13 @@ export default function LoginPage() {
           className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
         >
           登入
+        </button>
+
+        <button
+          onClick={handleForgot}
+          className="w-full mt-3 border text-gray-700 py-2 rounded hover:bg-gray-50"
+        >
+          忘記密碼
         </button>
 
         {error && <div className="text-red-600 mt-4">⚠️ {error}</div>}

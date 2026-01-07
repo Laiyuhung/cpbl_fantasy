@@ -6,7 +6,7 @@ export async function POST(request) {
 
   const { data, error } = await supabase
     .from('managers')
-    .select('id')
+    .select('id,must_change_password')
     .eq('account', account)
     .eq('password', password)
     .single()
@@ -15,7 +15,7 @@ export async function POST(request) {
     return NextResponse.json({ error: '帳號或密碼錯誤' }, { status: 401 })
   }
 
-  const response = NextResponse.json({ id: data.id, duration: 123 })
+  const response = NextResponse.json({ id: data.id, duration: 123, must_change_password: !!data.must_change_password })
   response.cookies.set('user_id', String(data.id), {
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
