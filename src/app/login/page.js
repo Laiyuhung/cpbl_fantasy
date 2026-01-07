@@ -99,7 +99,7 @@ export default function LoginPage() {
         </button>
 
         <button
-          onClick={handleForgot}
+          onClick={() => router.push('/forgot-password')}
           className="w-full mt-3 border text-gray-700 py-2 rounded hover:bg-gray-50"
         >
           忘記密碼
