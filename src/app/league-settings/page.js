@@ -60,7 +60,8 @@ const LeagueSettingsPage = () => {
       ],
     },
     playoffs: {
-      'Playoffs': '6 teams - Weeks 23, 24 and 25 (ends Sunday, September 28th)',
+      'Playoffs': '4 teams - 2 weeks',
+      'Playoffs start': '2026.9.14',
       'Playoff Tie-Breaker': 'Higher seed wins',
       'Playoff Reseeding': 'Yes',
       'Lock Eliminated Teams': 'Yes',
@@ -160,6 +161,7 @@ const LeagueSettingsPage = () => {
       'Winning Percentage (WIN%)'
     ],
     'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks', 'No playoffs'],
+    'Playoffs start': ['2026.8.24', '2026.8.31', '2026.9.7','2026.9.14', '2026.9.21'],
     'Playoff Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
     'Playoff Reseeding': ['Yes', 'No'],
     'Lock Eliminated Teams': ['Yes', 'No'],

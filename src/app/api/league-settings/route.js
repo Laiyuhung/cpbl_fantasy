@@ -44,6 +44,7 @@ export async function POST(request) {
 
       // Playoffs
       playoffs: settings.playoffs['Playoffs'],
+      playoffs_start: settings.playoffs['Playoffs start'],
       playoff_tie_breaker: settings.playoffs['Playoff Tie-Breaker'],
       playoff_reseeding: settings.playoffs['Playoff Reseeding'],
       lock_eliminated_teams: settings.playoffs['Lock Eliminated Teams'],
