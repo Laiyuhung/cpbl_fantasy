@@ -57,6 +57,40 @@ const LeagueSettingsPage = () => {
     },
   });
 
+  // 下拉菜單選項
+  const settingOptions = {
+    'Auto-renew Enabled': ['Yes', 'No'],
+    'Draft Type': ['Live Standard Draft', 'Snake Draft', 'Auction Draft', 'Keeper Draft'],
+    'Live Draft Pick Time': ['30 Seconds', '1 Minute', '2 Minutes', '3 Minutes', '5 Minutes', '10 Minutes'],
+    'Max Teams': ['2', '4', '6', '8', '10', '12', '14'],
+    'Player Universe': ['All baseball', 'Home League', 'Own League'],
+    'New Players Become Available': ['As soon as Yahoo adds them', 'Immediately', 'Next week'],
+    'Max Acquisitions for Entire Season': ['No maximum', '10', '20', '30', '40', '50'],
+    'Max Trades for Entire Season': ['No maximum', '5', '10', '15', '20', '25'],
+    'Trade End Date': ['No trade deadline', 'June 15', 'July 1', 'July 15', 'August 1', 'August 7', 'August 15', 'August 30'],
+    'Allow Draft Pick Trades': ['Yes', 'No'],
+    'Waiver Time': ['0 days', '1 day', '2 days', '3 days', '5 days', '7 days'],
+    'Waiver Type': ['FAB (Fixed Acquisition Budget)', 'Continual rolling list', 'FAB Continual rolling list'],
+    'Waiver Mode': ['Continuous', 'One-time per period', 'Weekly'],
+    'Allow injured players from waivers or free agents to be added directly to the injury slot': ['Yes', 'No'],
+    "Can't Cut List Provider": ['Yahoo Sports', 'Roster Assistant', 'None'],
+    'Trade Review': ['League votes', 'Commissioner reviews', 'No review'],
+    'Trade Reject Time': ['0 days', '1 day', '2 days', '3 days', '7 days'],
+    'Post Draft Players': ['Follow Waiver Rules', 'First-come-first-served'],
+    'Max Acquisitions per Week': ['1', '2', '3', '4', '5', '6', '10', 'No maximum'],
+    'Min Innings pitched per team per week': ['0', '5', '10', '15', '20', '25', '30'],
+    'Roster Changes': ['Daily - Today', 'Daily - Any day', 'Weekly', 'Every other week'],
+    'Start Scoring On': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+    'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks', 'No playoffs'],
+    'Playoff Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
+    'Playoff Reseeding': ['Yes', 'No'],
+    'Lock Eliminated Teams': ['Yes', 'No'],
+    'Divisions': ['Yes', 'No'],
+    'Make League Publicly Viewable': ['Yes', 'No'],
+    'Invite Permissions': ['Commissioner Only', 'Managers can invite'],
+    'Send unjoined players email reminders': ['Yes', 'No'],
+  };
+
   const sections = [
     { key: 'general', label: '基本設定 (General Settings)', icon: '⚙️' },
     { key: 'acquisitions', label: '交易與獲取 (Acquisitions & Trading)', icon: '🔄' },
@@ -76,6 +110,11 @@ const LeagueSettingsPage = () => {
         [key]: value,
       },
     }));
+  };
+
+  // 判斷是否為多行文本（Roster Positions 和 Stat Categories）
+  const isMultilineField = (key) => {
+    return ['Roster Positions', 'Batter Stat Categories', 'Pitcher Stat Categories'].includes(key);
   };
 
   return (
@@ -114,14 +153,30 @@ const LeagueSettingsPage = () => {
                               {key}
                             </td>
                             <td className="px-6 py-4 text-gray-600 w-3/5">
-                              <input
-                                type="text"
-                                value={value}
-                                onChange={(e) =>
-                                  handleSettingChange(section.key, key, e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              />
+                              {isMultilineField(key) ? (
+                                <textarea
+                                  value={value}
+                                  onChange={(e) =>
+                                    handleSettingChange(section.key, key, e.target.value)
+                                  }
+                                  rows="3"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                                />
+                              ) : (
+                                <select
+                                  value={value}
+                                  onChange={(e) =>
+                                    handleSettingChange(section.key, key, e.target.value)
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                >
+                                  {settingOptions[key] && settingOptions[key].map((option) => (
+                                    <option key={option} value={option}>
+                                      {option}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
                             </td>
                           </tr>
                         ))}
