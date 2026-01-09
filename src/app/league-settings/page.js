@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Navbar } from '@/components/Navbar';
+import Navbar from '@/components/Navbar';
 
 const LeagueSettingsPage = () => {
   const [settings, setSettings] = useState({
