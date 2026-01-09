@@ -72,6 +72,10 @@ const LeagueSettingsPage = () => {
     },
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [leagueId, setLeagueId] = useState(null);
+
   // 下拉菜單選項
   const settingOptions = {
     'League Name': [],
@@ -230,6 +234,36 @@ const LeagueSettingsPage = () => {
         },
       },
     }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveMessage('');
+
+    try {
+      const response = await fetch('/api/league-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ settings }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setLeagueId(result.league_id);
+        setSaveMessage(`✅ ${result.message}\nLeague ID: ${result.league_id}`);
+        setTimeout(() => setSaveMessage(''), 5000);
+      } else {
+        setSaveMessage(`❌ 保存失敗: ${result.error || '未知錯誤'}`);
+      }
+    } catch (error) {
+      console.error('保存錯誤:', error);
+      setSaveMessage(`❌ 保存失敗: ${error.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -403,6 +437,17 @@ const LeagueSettingsPage = () => {
 
           {/* Save Button */}
           <div className="mt-8 flex justify-end gap-4">
+            {saveMessage && (
+              <div className={`px-4 py-2 rounded-md ${
+                saveMessage.includes('✅') 
+                  ? 'bg-green-100 text-green-800 border border-green-300' 
+                  : 'bg-red-100 text-red-800 border border-red-300'
+              }`}>
+                {saveMessage.split('\n').map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => {
                 // Reset to default (aligned with current shapes)
@@ -472,18 +517,23 @@ const LeagueSettingsPage = () => {
                     'Invite Permissions': 'Commissioner Only',
                   },
                 });
+                setSaveMessage('');
+                setLeagueId(null);
               }}
               className="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-400 transition-colors"
             >
               重置 (Reset)
             </button>
             <button
-              onClick={() => {
-                alert('聯盟設定已保存 (League settings saved!)');
-              }}
-              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`px-6 py-2 font-semibold rounded-md transition-colors ${
+                isSaving
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              保存設定 (Save Settings)
+              {isSaving ? '保存中...' : '保存設定 (Save Settings)'}
             </button>
           </div>
         </div>
