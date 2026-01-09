@@ -124,7 +124,6 @@ export default function Navbar() {
           <Link href="/roster" className="font-semibold hover:text-gray-300">ROSTER</Link>
           <Link href="/player" className="font-semibold hover:text-gray-300">PLAYERS</Link>
           <Link href="/matchup" className="font-semibold hover:text-gray-300">MATCHUP</Link>
-          <Link href="/postseason" className="font-semibold hover:text-gray-300">POSTSEASON</Link>
           <Link href="/manager" className="font-semibold hover:text-gray-300">MANAGER</Link>
           <Link href="/record_book" className="font-semibold hover:text-gray-300">RECORD BOOK</Link>
           {userId === '2' && (
@@ -178,7 +177,6 @@ export default function Navbar() {
             <Link href="/roster" className="block py-2" onClick={() => setMenuOpen(false)}>ROSTER</Link>
             <Link href="/player" className="block py-2" onClick={() => setMenuOpen(false)}>PLAYERS</Link>
             <Link href="/matchup" className="block py-2" onClick={() => setMenuOpen(false)}>MATCHUP</Link>
-            <Link href="/postseason" className="block py-2" onClick={() => setMenuOpen(false)}>POSTSEASON</Link>
             <Link href="/manager" className="block py-2" onClick={() => setMenuOpen(false)}>MANAGER</Link>
             <Link href="/record_book" className="block py-2" onClick={() => setMenuOpen(false)}>RECORD BOOK</Link>
             {userId === '2' && (
