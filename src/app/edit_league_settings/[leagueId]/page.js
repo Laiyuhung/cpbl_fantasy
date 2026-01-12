@@ -745,20 +745,15 @@ const EditLeagueSettingsPage = ({ params }) => {
         const playoffsStartDate = parseDate(settings.playoffs['Playoffs start']);
         
         if (playoffsStartDate && allScheduleData.length > 0) {
-          // Find which week the playoffs start
-          const playoffsStartWeek = allScheduleData.find((week) => {
+          // Find available weeks for playoffs (excluding week 23, only up to week 22)
+          const availablePlayoffWeeks = allScheduleData.filter((week) => {
             const weekStart = new Date(week.week_start);
-            return weekStart >= playoffsStartDate;
+            return weekStart >= playoffsStartDate && week.week_id !== 23 && week.week_id <= 22;
           });
 
-          if (playoffsStartWeek) {
-            // Calculate the final playoff week number
-            const finalPlayoffWeekId = playoffsStartWeek.week_id + (playoffWeeks - 1);
-            
-            // Check if final playoff week exceeds Week 22
-            if (finalPlayoffWeekId > 22) {
-              errors.push(`❌ Playoff schedule cannot complete by Week 22. Starting from week ${playoffsStartWeek.week_id}, ${playoffWeeks} weeks of playoffs would end at week ${finalPlayoffWeekId}. Week 23 is reserved for makeup games. Please start playoffs earlier or reduce the number of playoff teams.`);
-            }
+          // Check if we have enough weeks for playoffs
+          if (availablePlayoffWeeks.length < playoffWeeks) {
+            errors.push(`❌ Playoff schedule cannot complete by Week 22. Starting from ${settings.playoffs['Playoffs start']}, only ${availablePlayoffWeeks.length} week(s) available but ${playoffWeeks} required. Week 23 is reserved for makeup games. Please start playoffs earlier or reduce the number of playoff teams.`);
           }
         }
       }
