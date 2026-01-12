@@ -19,6 +19,9 @@ const toTaiwanIso = (dt) => {
 // 計算聯盟周次
 const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => {
   const schedule = [];
+  const maxWeeks = 23; // 总共可用周次（week_id 1-23）
+  const reservedWeek = 23; // 保留周（补赛周）
+  const maxRegularAndPlayoff = 21; // 例行赛+季后赛不能超过21周（留1周给补赛）
   
   // 解析日期 (格式: YYYY.M.D)
   const parseDate = (dateStr) => {
@@ -29,28 +32,28 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
   };
 
   const startDate = parseDate(startScoringOn);
-  if (!startDate) return schedule;
+  if (!startDate) return { schedule: [], error: null };
 
   let weekNumber = 1;
   let currentDate = new Date(startDate);
 
   // 計算例行賽周次
   const playoffDate = parseDate(playoffsStart);
-  const endDate = playoffDate || new Date(startDate.getFullYear(), 8, 30); // 默认到9月30日
+  const endDate = playoffDate || new Date(startDate.getFullYear(), 8, 30);
 
-  while (currentDate < endDate) {
+  while (currentDate < endDate && weekNumber < reservedWeek) {
     const weekStart = new Date(currentDate);
     const weekEnd = new Date(currentDate);
-    weekEnd.setDate(weekEnd.getDate() + 6); // 一周7天
+    weekEnd.setDate(weekEnd.getDate() + 6);
 
-    // 如果周结束日期超过季后赛开始日期，调整结束日期
     if (playoffDate && weekEnd >= playoffDate) {
-      weekEnd.setTime(playoffDate.getTime() - 86400000); // 前一天
+      weekEnd.setTime(playoffDate.getTime() - 86400000);
     }
 
     schedule.push({
       week_number: weekNumber,
       week_type: 'regular_season',
+      week_label: `Week ${weekNumber}`,
       week_start: weekStart.toISOString().split('T')[0],
       week_end: weekEnd.toISOString().split('T')[0],
     });
@@ -58,20 +61,56 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
     weekNumber++;
     currentDate.setDate(currentDate.getDate() + 7);
 
-    // 如果到达季后赛开始日期，停止
     if (playoffDate && currentDate >= playoffDate) {
       break;
     }
   }
 
+  const regularSeasonWeeks = schedule.length;
+
   // 計算季後賽周次
   if (playoffsStart && playoffsType && playoffsType !== 'No playoffs') {
-    // 从 "4 teams - 2 weeks" 格式中提取周数
-    const match = playoffsType.match(/(\d+) weeks?$/);
-    const playoffWeeks = match ? parseInt(match[1]) : 0;
+    const teamsMatch = playoffsType.match(/^(\d+) teams/);
+    const weeksMatch = playoffsType.match(/(\d+) weeks?$/);
+    const playoffTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
+    const playoffWeeks = weeksMatch ? parseInt(weeksMatch[1]) : 0;
+
+    let playoffLabels = [];
+    if (playoffTeams === 2) {
+      playoffLabels = ['Final'];
+    } else if (playoffTeams === 4) {
+      playoffLabels = ['Semifinal', 'Final'];
+    } else if (playoffTeams >= 5 && playoffTeams <= 8) {
+      playoffLabels = ['Quarterfinal', 'Semifinal', 'Final'];
+      if (playoffWeeks === 4) {
+        playoffLabels.unshift('First Round');
+      }
+    }
+
+    // 在季后赛前插入补赛周
+    if (weekNumber < reservedWeek) {
+      schedule.push({
+        week_number: weekNumber,
+        week_type: 'makeup',
+        week_label: 'Makeup Week',
+        week_start: playoffDate.toISOString().split('T')[0],
+        week_end: new Date(playoffDate.getTime() + 6 * 86400000).toISOString().split('T')[0],
+      });
+      weekNumber++;
+    }
 
     let playoffCurrentDate = new Date(playoffDate);
+    playoffCurrentDate.setDate(playoffCurrentDate.getDate() + 7); // 跳过补赛周
+
     for (let i = 0; i < playoffWeeks; i++) {
+      // 检查是否会超过保留周
+      if (weekNumber >= reservedWeek) {
+        return {
+          schedule: [],
+          error: `❌ Playoff configuration has too many weeks! Playoffs would exceed week ${reservedWeek - 1}. Please reduce playoff weeks or shorten regular season weeks. Current configuration: Regular Season ${regularSeasonWeeks} weeks + Makeup Week 1 week + Playoffs ${playoffWeeks} weeks = ${regularSeasonWeeks + 1 + playoffWeeks} weeks (maximum ${maxRegularAndPlayoff} weeks)`
+        };
+      }
+
       const weekStart = new Date(playoffCurrentDate);
       const weekEnd = new Date(playoffCurrentDate);
       weekEnd.setDate(weekEnd.getDate() + 6);
@@ -79,6 +118,7 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
       schedule.push({
         week_number: weekNumber,
         week_type: 'playoffs',
+        week_label: playoffLabels[i] || `Playoff Week ${i + 1}`,
         week_start: weekStart.toISOString().split('T')[0],
         week_end: weekEnd.toISOString().split('T')[0],
       });
@@ -88,7 +128,16 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
     }
   }
 
-  return schedule;
+  // 檢查總周次是否超過限制
+  const totalWeeks = schedule.length;
+  if (totalWeeks > maxRegularAndPlayoff) {
+    return {
+      schedule: [],
+      error: `❌ Schedule configuration exceeds limit! Total weeks is ${totalWeeks}, maximum allowed is ${maxRegularAndPlayoff} weeks (week ${reservedWeek} must be reserved as makeup week). Please adjust regular season or playoff settings.`
+    };
+  }
+
+  return { schedule, error: null };
 };
 
 export async function POST(request) {
@@ -171,11 +220,19 @@ export async function POST(request) {
     }
 
     // 生成並插入周次數據
-    const scheduleData = generateLeagueSchedule(
+    const { schedule: scheduleData, error: scheduleError } = generateLeagueSchedule(
       settings.scoring['Start Scoring On'],
       settings.playoffs['Playoffs start'],
       settings.playoffs['Playoffs']
     );
+
+    // 如果周次計算有錯誤，回傳錯誤訊息
+    if (scheduleError) {
+      return NextResponse.json(
+        { error: scheduleError },
+        { status: 400 }
+      );
+    }
 
     if (scheduleData.length > 0) {
       const scheduleRecords = scheduleData.map(week => ({
@@ -183,14 +240,13 @@ export async function POST(request) {
         ...week
       }));
 
-      const { error: scheduleError } = await supabase
+      const { error: scheduleInsertError } = await supabase
         .from('league_schedule')
         .insert(scheduleRecords);
 
-      if (scheduleError) {
-        console.error('Supabase schedule error:', scheduleError);
-        // 不阻止联盟创建，只记录错误
-        console.warn('Failed to create league schedule:', scheduleError.message);
+      if (scheduleInsertError) {
+        console.error('Supabase schedule error:', scheduleInsertError);
+        console.warn('Failed to create league schedule:', scheduleInsertError.message);
       }
     }
 
@@ -280,11 +336,19 @@ export async function PUT(request) {
       .eq('league_id', league_id);
 
     // 重新生成並插入周次數據
-    const scheduleData = generateLeagueSchedule(
+    const { schedule: scheduleData, error: scheduleError } = generateLeagueSchedule(
       settings.scoring['Start Scoring On'],
       settings.playoffs['Playoffs start'],
       settings.playoffs['Playoffs']
     );
+
+    // 如果周次計算有錯誤，回傳錯誤訊息
+    if (scheduleError) {
+      return NextResponse.json(
+        { error: scheduleError },
+        { status: 400 }
+      );
+    }
 
     if (scheduleData.length > 0) {
       const scheduleRecords = scheduleData.map(week => ({
@@ -292,14 +356,13 @@ export async function PUT(request) {
         ...week
       }));
 
-      const { error: scheduleError } = await supabase
+      const { error: scheduleInsertError } = await supabase
         .from('league_schedule')
         .insert(scheduleRecords);
 
-      if (scheduleError) {
-        console.error('Supabase schedule error:', scheduleError);
-        // 不阻止联盟更新，只记录错误
-        console.warn('Failed to update league schedule:', scheduleError.message);
+      if (scheduleInsertError) {
+        console.error('Supabase schedule error:', scheduleInsertError);
+        console.warn('Failed to update league schedule:', scheduleInsertError.message);
       }
     }
 

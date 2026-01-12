@@ -144,7 +144,7 @@ const settingOptions = {
     'Winning Percentage (WIN%)'
   ],
   'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks', 'No playoffs'],
-  'Playoffs start': ['2026.8.24', '2026.8.31', '2026.9.7','2026.9.14', '2026.9.21'],
+  'Playoffs start': ['2026.8.10', '2026.8.17', '2026.8.24', '2026.8.31', '2026.9.7','2026.9.14'],
   'Playoff/ranking Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
   'Playoff Reseeding': ['Yes', 'No'],
   'Lock Eliminated Teams': ['Yes', 'No'],
