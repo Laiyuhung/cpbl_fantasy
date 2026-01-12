@@ -175,12 +175,25 @@ const sections = [
   { key: 'league', label: 'League Settings', icon: '🏟️' },
 ];
 
+const isoToLocalInput = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => `${n}`.padStart(2, '0');
+  const y = d.getFullYear();
+  const m = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mm = pad(d.getMinutes());
+  return `${y}-${m}-${day}T${hh}:${mm}`;
+};
+
 const mapDbToSettings = (data) => ({
   general: {
     'League Name': data.league_name ?? baseSettings.general['League Name'],
     'Draft Type': data.draft_type ?? baseSettings.general['Draft Type'],
     'Live Draft Pick Time': data.live_draft_pick_time ?? baseSettings.general['Live Draft Pick Time'],
-    'Live Draft Time': data.live_draft_time ?? baseSettings.general['Live Draft Time'],
+    'Live Draft Time': isoToLocalInput(data.live_draft_time) ?? baseSettings.general['Live Draft Time'],
     'Max Teams': data.max_teams?.toString() ?? baseSettings.general['Max Teams'],
     'Scoring Type': data.scoring_type ?? baseSettings.general['Scoring Type'],
   },
@@ -398,7 +411,13 @@ const EditLeagueSettingsPage = ({ params }) => {
                     <table className="w-full">
                       <tbody>
                         {Object.entries(settings[section.key]).map(([key, value], index) => {
-                          // playoffs 不再因 No playoffs 而收起
+                          if (
+                            section.key === 'playoffs' &&
+                            settings.playoffs['Playoffs'] === 'No playoffs' &&
+                            ['Playoffs start', 'Playoff Reseeding', 'Lock Eliminated Teams'].includes(key)
+                          ) {
+                            return null;
+                          }
                           if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
                             return null;
                           }

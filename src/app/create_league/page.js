@@ -307,7 +307,13 @@ const CreateLeaguePage = () => {
                     <table className="w-full">
                       <tbody>
                         {Object.entries(settings[section.key]).map(([key, value], index) => {
-                          // playoffs 不再因 No playoffs 而收起
+                          if (
+                            section.key === 'playoffs' &&
+                            settings.playoffs['Playoffs'] === 'No playoffs' &&
+                            ['Playoffs start', 'Playoff Reseeding', 'Lock Eliminated Teams'].includes(key)
+                          ) {
+                            return null;
+                          }
                           if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
                             return null;
                           }
