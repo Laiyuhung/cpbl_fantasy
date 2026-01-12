@@ -274,7 +274,7 @@ function SchedulePreview({ settings }) {
     return (
       <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-        <p className="text-gray-600">Please set "Start Scoring On" to see the schedule preview</p>
+        <p className="text-gray-600">Please set &quot;Start Scoring On&quot; to see the schedule preview</p>
       </div>
     );
   }
