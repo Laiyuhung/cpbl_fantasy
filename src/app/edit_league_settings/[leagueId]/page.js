@@ -179,7 +179,7 @@ function SchedulePreview({ leagueId, settings }) {
         const { data, error: queryError } = await supabase
           .from('schedule_date')
           .select('*')
-          .order('week', { ascending: true });
+          .order('week_id', { ascending: true });
 
         if (queryError) {
           setError('Failed to load schedule data');
