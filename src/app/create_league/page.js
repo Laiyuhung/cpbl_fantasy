@@ -492,6 +492,89 @@ const CreateLeaguePage = () => {
 
   const isDateTimeField = (key) => key === 'Live Draft Time';
 
+  // Validate Live Draft Time and Start Scoring On
+  const validateDraftAndScoringDates = () => {
+    const liveDraftTime = settings.general['Live Draft Time'];
+    const startScoringOn = settings.scoring['Start Scoring On'];
+    
+    console.log('=== Date Validation Check ===');
+    console.log('Live Draft Time (input):', liveDraftTime);
+    console.log('Start Scoring On (input):', startScoringOn);
+    
+    const errors = {
+      draftTimeError: '',
+      scoringDateError: ''
+    };
+
+    // Check if Start Scoring On is not in the past (Taiwan time)
+    if (startScoringOn) {
+      console.log('\n--- Checking Start Scoring On (must be future date) ---');
+      const [year, month, day] = startScoringOn.split('.');
+      console.log('Parsed Start Scoring On:', { year, month, day });
+      
+      const scoringDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      console.log('Scoring Date object:', scoringDate);
+      console.log('Scoring Date (Taiwan time):', scoringDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      console.log('Today (00:00:00):', today.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+      console.log('Today timestamp:', today.getTime());
+      console.log('Scoring Date timestamp:', scoringDate.getTime());
+      
+      if (scoringDate <= today) {
+        errors.scoringDateError = 'Start Scoring On must be a future date';
+        console.log('❌ FAIL: Start Scoring On is NOT a future date');
+      } else {
+        console.log('✅ PASS: Start Scoring On is a future date');
+      }
+    }
+
+    // Check if Live Draft Time is at least 2 days before Start Scoring On (Taiwan time)
+    if (liveDraftTime && startScoringOn && settings.general['Draft Type'] === 'Live Draft') {
+      console.log('\n--- Checking Live Draft Time (must be at least 2 days before Start Scoring On) ---');
+      
+      // Parse Live Draft Time (local datetime-local input, treat as Taiwan time)
+      const draftDateTime = new Date(liveDraftTime);
+      console.log('Draft DateTime object:', draftDateTime);
+      console.log('Draft DateTime (Taiwan time):', draftDateTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+      console.log('Draft DateTime timestamp:', draftDateTime.getTime());
+      
+      // Parse Start Scoring On (format: YYYY.M.D, treat as Taiwan time 00:00:00)
+      const [year, month, day] = startScoringOn.split('.');
+      const scoringDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      scoringDate.setHours(0, 0, 0, 0);
+      console.log('Scoring Date (00:00:00):', scoringDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+      
+      // Calculate the latest allowed draft time (2 days before scoring date, end of day)
+      const latestDraftDate = new Date(scoringDate);
+      latestDraftDate.setDate(latestDraftDate.getDate() - 2);
+      latestDraftDate.setHours(23, 59, 59, 999);
+      console.log('Latest Allowed Draft Date (2 days before, 23:59:59):', latestDraftDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+      console.log('Latest Allowed Draft Date timestamp:', latestDraftDate.getTime());
+      
+      console.log('Comparison: draftDateTime > latestDraftDate?', draftDateTime > latestDraftDate);
+      console.log('Difference in milliseconds:', draftDateTime.getTime() - latestDraftDate.getTime());
+      console.log('Difference in hours:', (draftDateTime.getTime() - latestDraftDate.getTime()) / (1000 * 60 * 60));
+      
+      if (draftDateTime > latestDraftDate) {
+        errors.draftTimeError = 'Live Draft Time must be at least 2 days before Start Scoring On';
+        console.log('❌ FAIL: Live Draft Time is TOO LATE');
+      } else {
+        console.log('✅ PASS: Live Draft Time is at least 2 days before Start Scoring On');
+      }
+    }
+
+    console.log('\n=== Validation Errors ===');
+    console.log('scoringDateError:', errors.scoringDateError || 'none');
+    console.log('draftTimeError:', errors.draftTimeError || 'none');
+    console.log('=========================\n');
+
+    return errors;
+  };
+
+  const dateValidationErrors = validateDraftAndScoringDates();
+
   const minDraftDateTime = () => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -629,6 +712,15 @@ const CreateLeaguePage = () => {
     // Validate Start Scoring On
     if (!settings.scoring['Start Scoring On']) {
       errors.push('❌ Start Scoring On is required');
+    }
+
+    // Validate date constraints
+    const dateErrors = validateDraftAndScoringDates();
+    if (dateErrors.scoringDateError) {
+      errors.push(`❌ ${dateErrors.scoringDateError}`);
+    }
+    if (dateErrors.draftTimeError) {
+      errors.push(`❌ ${dateErrors.draftTimeError}`);
     }
 
     // Validate Batter Stat Categories
@@ -790,13 +882,16 @@ const CreateLeaguePage = () => {
                                     onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
                                     disabled={settings.general['Draft Type'] !== 'Live Draft'}
                                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 ${
-                                      settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '')
+                                      (settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError
                                         ? 'border-red-500 bg-red-50'
                                         : 'border-gray-300'
                                     }`}
                                   />
                                   {settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '') && (
                                     <p className="text-red-600 text-sm mt-1">required</p>
+                                  )}
+                                  {settings.general['Draft Type'] === 'Live Draft' && value && dateValidationErrors.draftTimeError && (
+                                    <p className="text-red-600 text-sm mt-1">{dateValidationErrors.draftTimeError}</p>
                                   )}
                                 </div>
                               ) : isRosterPositions(key) ? (
@@ -924,7 +1019,7 @@ const CreateLeaguePage = () => {
                                       handleSettingChange(section.key, key, e.target.value)
                                     }
                                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white ${
-                                      !value || value.trim() === ''
+                                      (!value || value.trim() === '') || (key === 'Start Scoring On' && dateValidationErrors.scoringDateError)
                                         ? 'border-red-500 bg-red-50'
                                         : 'border-gray-300'
                                     }`}
@@ -940,6 +1035,9 @@ const CreateLeaguePage = () => {
                                   </select>
                                   {(!value || value.trim() === '') && (
                                     <p className="text-red-600 text-sm mt-1">required</p>
+                                  )}
+                                  {key === 'Start Scoring On' && value && dateValidationErrors.scoringDateError && (
+                                    <p className="text-red-600 text-sm mt-1">{dateValidationErrors.scoringDateError}</p>
                                   )}
                                 </div>
                               )}
