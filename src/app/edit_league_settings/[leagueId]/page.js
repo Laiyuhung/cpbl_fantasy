@@ -221,6 +221,7 @@ const mapDbToSettings = (data) => ({
 const EditLeagueSettingsPage = ({ params }) => {
   const { leagueId } = params;
   const [settings, setSettings] = useState(() => cloneSettings(baseSettings));
+  const [status, setStatus] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -294,6 +295,7 @@ const EditLeagueSettingsPage = ({ params }) => {
           return;
         }
         setSettings(mapDbToSettings(json.data));
+        setStatus(json.status || '');
       } catch (err) {
         setError(err.message || 'Failed to load league settings');
       } finally {
@@ -357,6 +359,10 @@ const EditLeagueSettingsPage = ({ params }) => {
           <div className="mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">編輯聯盟設定</h1>
             <p className="text-gray-600 text-lg">Edit league settings (ID: {leagueId})</p>
+            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-sm font-semibold border border-blue-200">
+              <span>Status:</span>
+              <span>{status || 'unknown'}</span>
+            </div>
           </div>
 
           <div className="space-y-8">

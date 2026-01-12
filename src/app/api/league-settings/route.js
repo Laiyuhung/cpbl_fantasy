@@ -69,10 +69,24 @@ export async function POST(request) {
       );
     }
 
+    // 建立預設狀態為 pre-draft
+    const leagueId = data[0].league_id;
+    const { error: statusError } = await supabase
+      .from('league_statuses')
+      .insert([{ league_id: leagueId, status: 'pre-draft' }]);
+
+    if (statusError) {
+      console.error('Supabase status error:', statusError);
+      return NextResponse.json(
+        { error: '建立聯盟狀態失敗', details: statusError.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       message: 'League created successfully!',
-      league_id: data[0].league_id,
+      league_id: leagueId,
       data: data[0],
     });
   } catch (error) {
@@ -181,7 +195,16 @@ export async function GET(request) {
         );
       }
 
-      return NextResponse.json({ success: true, data });
+      // 取得狀態（若沒有就回傳 null）
+      const { data: statusData, error: statusError } = await supabase
+        .from('league_statuses')
+        .select('status')
+        .eq('league_id', leagueId)
+        .single();
+
+      const status = statusError ? null : statusData?.status ?? null;
+
+      return NextResponse.json({ success: true, data, status });
     } else {
       // 取得所有聯盟
       const { data, error } = await supabase
