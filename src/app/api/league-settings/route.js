@@ -71,14 +71,14 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      message: '聯盟設定已成功保存！',
+      message: 'League created successfully!',
       league_id: data[0].league_id,
       data: data[0],
     });
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
-      { error: '伺服器錯誤', details: error.message },
+      { error: 'Server error', details: error.message },
       { status: 500 }
     );
   }
@@ -124,7 +124,7 @@ export async function GET(request) {
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
-      { error: '伺服器錯誤', details: error.message },
+      { error: 'Server error', details: error.message },
       { status: 500 }
     );
   }

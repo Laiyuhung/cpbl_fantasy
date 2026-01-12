@@ -536,7 +536,7 @@ const LeagueSettingsPage = () => {
               }}
               className="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-400 transition-colors"
             >
-              重置 (Reset)
+              Reset to Default
             </button>
             <button
               onClick={handleSave}
@@ -547,7 +547,7 @@ const LeagueSettingsPage = () => {
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              {isSaving ? '保存中...' : '保存設定 (Save Settings)'}
+              {isSaving ? 'Creating...' : 'Create a new league'}
             </button>
           </div>
         </div>
