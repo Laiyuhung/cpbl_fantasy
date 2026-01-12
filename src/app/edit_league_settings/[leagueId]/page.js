@@ -164,14 +164,16 @@ const sections = [
   { key: 'league', label: 'League Settings', icon: '🏟️' },
 ];
 
-// SchedulePreview 元件：從schedule_date表查詢週次資料
-function SchedulePreview({ leagueId }) {
-  const [schedule, setSchedule] = useState([]);
+// SchedulePreview 元件：根據設定值實時推算schedule_date表中的週次
+function SchedulePreview({ leagueId, settings }) {
+  const [allScheduleData, setAllScheduleData] = useState([]);
+  const [filteredSchedule, setFilteredSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 首次載入所有 schedule_date 資料
   useEffect(() => {
-    const fetchSchedule = async () => {
+    const fetchAllSchedule = async () => {
       try {
         setLoading(true);
         const { data, error: queryError } = await supabase
@@ -181,25 +183,76 @@ function SchedulePreview({ leagueId }) {
 
         if (queryError) {
           setError('Failed to load schedule data');
+          setAllScheduleData([]);
           return;
         }
 
-        if (data && data.length > 0) {
-          setSchedule(data);
-        } else {
-          setSchedule([]);
-        }
+        setAllScheduleData(data || []);
+        setError(null);
       } catch (err) {
         setError('Error fetching schedule');
+        setAllScheduleData([]);
       } finally {
         setLoading(false);
       }
     };
 
     if (leagueId) {
-      fetchSchedule();
+      fetchAllSchedule();
     }
   }, [leagueId]);
+
+  // 當設定改變時，即時篩選週次
+  useEffect(() => {
+    if (!allScheduleData || allScheduleData.length === 0) {
+      setFilteredSchedule([]);
+      return;
+    }
+
+    const startScoringOn = settings?.scoring?.['Start Scoring On'];
+    const playoffsStart = settings?.playoffs?.['Playoffs start'];
+
+    if (!startScoringOn) {
+      setFilteredSchedule([]);
+      return;
+    }
+
+    // 解析日期 (格式: YYYY.M.D)
+    const parseDate = (dateStr) => {
+      if (!dateStr) return null;
+      const parts = dateStr.split('.');
+      if (parts.length !== 3) return null;
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    };
+
+    const startDate = parseDate(startScoringOn);
+    const endDate = playoffsStart ? parseDate(playoffsStart) : null;
+
+    if (!startDate) {
+      setFilteredSchedule([]);
+      return;
+    }
+
+    // 篩選從 startDate 開始、到 endDate（或最後）的週次
+    const filtered = allScheduleData.filter((week) => {
+      const weekStart = new Date(week.start);
+      const weekEnd = new Date(week.end);
+
+      // 週次開始日期必須 >= startScoringOn
+      if (weekStart < startDate) {
+        return false;
+      }
+
+      // 如果有 playoffsStart，週次必須在季後賽前結束
+      if (endDate && weekStart >= endDate) {
+        return false;
+      }
+
+      return true;
+    });
+
+    setFilteredSchedule(filtered);
+  }, [allScheduleData, settings]);
 
   if (loading) {
     return (
@@ -210,11 +263,29 @@ function SchedulePreview({ leagueId }) {
     );
   }
 
-  if (error || schedule.length === 0) {
+  if (error) {
     return (
       <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-        <p className="text-gray-600">{error || 'No schedule data available'}</p>
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (!settings?.scoring?.['Start Scoring On']) {
+    return (
+      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+        <p className="text-gray-600">Please set "Start Scoring On" to see the schedule preview</p>
+      </div>
+    );
+  }
+
+  if (filteredSchedule.length === 0) {
+    return (
+      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+        <p className="text-gray-600">No schedule data available for the selected dates</p>
       </div>
     );
   }
@@ -232,7 +303,7 @@ function SchedulePreview({ leagueId }) {
             </tr>
           </thead>
           <tbody>
-            {schedule.map((week, index) => (
+            {filteredSchedule.map((week, index) => (
               <tr
                 key={index}
                 className="border-b bg-white hover:bg-blue-50"
@@ -245,7 +316,7 @@ function SchedulePreview({ leagueId }) {
           </tbody>
         </table>
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-gray-700">
-          <p className="font-semibold">Total: {schedule.length} weeks</p>
+          <p className="font-semibold">Total: {filteredSchedule.length} weeks</p>
         </div>
       </div>
     </div>
@@ -856,8 +927,8 @@ const EditLeagueSettingsPage = ({ params }) => {
           </div>
 
           <div className="mt-8">
-            {/* 週次預覽表 - 從schedule_date表顯示 */}
-            <SchedulePreview leagueId={leagueId} />
+            {/* 週次預覽表 - 從schedule_date表顯示，根據設定即時篩選 */}
+            <SchedulePreview leagueId={leagueId} settings={settings} />
           </div>
 
           <div className="mt-8 flex justify-end gap-4">

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import supabase from '@/lib/supabase';
 
 const cloneSettings = (settings) => JSON.parse(JSON.stringify(settings));
 
@@ -162,6 +163,163 @@ const sections = [
   { key: 'playoffs', label: 'Playoff Settings', icon: '🏆' },
   { key: 'league', label: 'League Settings', icon: '🏟️' },
 ];
+
+// SchedulePreview 元件：根據設定值實時推算schedule_date表中的週次
+function SchedulePreview({ settings }) {
+  const [allScheduleData, setAllScheduleData] = useState([]);
+  const [filteredSchedule, setFilteredSchedule] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 首次載入所有 schedule_date 資料
+  useEffect(() => {
+    const fetchAllSchedule = async () => {
+      try {
+        setLoading(true);
+        const { data, error: queryError } = await supabase
+          .from('schedule_date')
+          .select('*')
+          .order('week', { ascending: true });
+
+        if (queryError) {
+          setError('Failed to load schedule data');
+          setAllScheduleData([]);
+          return;
+        }
+
+        setAllScheduleData(data || []);
+        setError(null);
+      } catch (err) {
+        setError('Error fetching schedule');
+        setAllScheduleData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllSchedule();
+  }, []);
+
+  // 當設定改變時，即時篩選週次
+  useEffect(() => {
+    if (!allScheduleData || allScheduleData.length === 0) {
+      setFilteredSchedule([]);
+      return;
+    }
+
+    const startScoringOn = settings?.scoring?.['Start Scoring On'];
+    const playoffsStart = settings?.playoffs?.['Playoffs start'];
+
+    if (!startScoringOn) {
+      setFilteredSchedule([]);
+      return;
+    }
+
+    // 解析日期 (格式: YYYY.M.D)
+    const parseDate = (dateStr) => {
+      if (!dateStr) return null;
+      const parts = dateStr.split('.');
+      if (parts.length !== 3) return null;
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    };
+
+    const startDate = parseDate(startScoringOn);
+    const endDate = playoffsStart ? parseDate(playoffsStart) : null;
+
+    if (!startDate) {
+      setFilteredSchedule([]);
+      return;
+    }
+
+    // 篩選從 startDate 開始、到 endDate（或最後）的週次
+    const filtered = allScheduleData.filter((week) => {
+      const weekStart = new Date(week.start);
+      const weekEnd = new Date(week.end);
+
+      // 週次開始日期必須 >= startScoringOn
+      if (weekStart < startDate) {
+        return false;
+      }
+
+      // 如果有 playoffsStart，週次必須在季後賽前結束
+      if (endDate && weekStart >= endDate) {
+        return false;
+      }
+
+      return true;
+    });
+
+    setFilteredSchedule(filtered);
+  }, [allScheduleData, settings]);
+
+  if (loading) {
+    return (
+      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+        <p className="text-gray-600">Loading schedule data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (!settings?.scoring?.['Start Scoring On']) {
+    return (
+      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+        <p className="text-gray-600">Please set "Start Scoring On" to see the schedule preview</p>
+      </div>
+    );
+  }
+
+  if (filteredSchedule.length === 0) {
+    return (
+      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+        <p className="text-gray-600">No schedule data available for the selected dates</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-blue-100 border-b-2 border-blue-300">
+              <th className="px-4 py-2 text-left font-semibold text-gray-800">Week</th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-800">Start Date</th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-800">End Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredSchedule.map((week, index) => (
+              <tr
+                key={index}
+                className="border-b bg-white hover:bg-blue-50"
+              >
+                <td className="px-4 py-2 font-semibold text-gray-800">{week.week}</td>
+                <td className="px-4 py-2 text-gray-600">{week.start}</td>
+                <td className="px-4 py-2 text-gray-600">{week.end}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-gray-700">
+          <p className="font-semibold">Total: {filteredSchedule.length} weeks</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const CreateLeaguePage = () => {
   const [settings, setSettings] = useState(() => cloneSettings(initialSettings));
@@ -618,11 +776,8 @@ const CreateLeaguePage = () => {
           </div>
 
           <div className="mt-8">
-            {/* 週次預覽表 - 在編輯時從schedule_date表顯示 */}
-            <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-              <p className="text-gray-600">Schedule preview will be displayed after league creation based on schedule_date table</p>
-            </div>
+            {/* 週次預覽表 - 根據設定即時推算 */}
+            <SchedulePreview settings={settings} />
           </div>
 
           <div className="mt-8 flex justify-end gap-4">
