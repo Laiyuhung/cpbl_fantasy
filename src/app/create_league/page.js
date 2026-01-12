@@ -10,6 +10,7 @@ const initialSettings = {
     'League Name': 'My League',
     'Draft Type': 'Live Draft',
     'Live Draft Pick Time': '1 Minute',
+    'Live Draft Time': '',
     'Max Teams': '6',
     'Scoring Type': 'Head-to-Head',
   },
@@ -64,7 +65,7 @@ const initialSettings = {
   playoffs: {
     'Playoffs': '4 teams - 2 weeks',
     'Playoffs start': '2026.9.14',
-    'Playoff Tie-Breaker': 'Higher seed wins',
+    'Playoff/ranking Tie-Breaker': 'Higher seed wins',
     'Playoff Reseeding': 'Yes',
     'Lock Eliminated Teams': 'Yes',
   },
@@ -156,7 +157,7 @@ const settingOptions = {
   ],
   'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks', 'No playoffs'],
   'Playoffs start': ['2026.8.24', '2026.8.31', '2026.9.7','2026.9.14', '2026.9.21'],
-  'Playoff Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
+  'Playoff/ranking Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
   'Playoff Reseeding': ['Yes', 'No'],
   'Lock Eliminated Teams': ['Yes', 'No'],
   'Make League Publicly Viewable': ['Yes', 'No'],
@@ -181,13 +182,17 @@ const CreateLeaguePage = () => {
   const [leagueId, setLeagueId] = useState(null);
 
   const handleSettingChange = (section, key, value) => {
-    setSettings((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [key]: value,
-      },
-    }));
+    setSettings((prev) => {
+      const next = { ...prev };
+      next[section] = { ...prev[section], [key]: value };
+
+      if (section === 'general' && key === 'Draft Type' && value !== 'Live Draft') {
+        next.general['Live Draft Pick Time'] = '';
+        next.general['Live Draft Time'] = '';
+      }
+
+      return next;
+    });
   };
 
   const isMultilineField = (key) => {
@@ -200,6 +205,19 @@ const CreateLeaguePage = () => {
 
   const isTextField = (key) => {
     return ['League Name'].includes(key);
+  };
+
+  const isDateTimeField = (key) => key === 'Live Draft Time';
+
+  const minDraftDateTime = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 1); // tomorrow 00:00
+    const pad = (n) => `${n}`.padStart(2, '0');
+    const y = d.getFullYear();
+    const m = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    return `${y}-${m}-${day}T00:00`;
   };
 
   const isRosterPositions = (key) => {
@@ -289,9 +307,7 @@ const CreateLeaguePage = () => {
                     <table className="w-full">
                       <tbody>
                         {Object.entries(settings[section.key]).map(([key, value], index) => {
-                          if (section.key === 'playoffs' && key !== 'Playoffs' && settings.playoffs['Playoffs'] === 'No playoffs') {
-                            return null;
-                          }
+                          // playoffs 不再因 No playoffs 而收起
                           if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
                             return null;
                           }
@@ -314,6 +330,15 @@ const CreateLeaguePage = () => {
                                   }
                                   rows="3"
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                                />
+                              ) : isDateTimeField(key) ? (
+                                <input
+                                  type="datetime-local"
+                                  min={minDraftDateTime()}
+                                  value={value}
+                                  onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
+                                  disabled={settings.general['Draft Type'] !== 'Live Draft'}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                                 />
                               ) : isRosterPositions(key) ? (
                                 <div className="space-y-4">

@@ -6,17 +6,29 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// 將 datetime-local 字串視為台灣時間 (+08:00) 存成 ISO（UTC）
+const toTaiwanIso = (dt) => {
+  if (!dt) return null;
+  const [datePart, timePart] = dt.split('T');
+  if (!datePart || !timePart) return null;
+  const iso = `${datePart}T${timePart}:00+08:00`;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
 export async function POST(request) {
   try {
     const body = await request.json();
     const { settings } = body;
 
     // 準備數據
+    const draftType = settings.general['Draft Type'];
     const leagueData = {
       // General
       league_name: settings.general['League Name'],
-      draft_type: settings.general['Draft Type'],
-      live_draft_pick_time: settings.general['Live Draft Pick Time'],
+      draft_type: draftType,
+      live_draft_pick_time: draftType === 'Live Draft' ? settings.general['Live Draft Pick Time'] : null,
+      live_draft_time: draftType === 'Live Draft' ? toTaiwanIso(settings.general['Live Draft Time']) : null,
       max_teams: parseInt(settings.general['Max Teams']),
       scoring_type: settings.general['Scoring Type'],
 
@@ -31,8 +43,8 @@ export async function POST(request) {
 
       // Trading
       trade_review: settings.trading['Trade Review'],
-      trade_reject_time: settings.trading['Trade Review'] === 'No review' ? 'No review' : settings.trading['Trade Reject Time'],
-      trade_reject_percentage: settings.trading['Trade Review'] === 'No review' ? 'No review' : settings.trading['Trade Reject percentage needed'],
+      trade_reject_time: settings.trading['Trade Review'] === 'No review' ? null : settings.trading['Trade Reject Time'],
+      trade_reject_percentage: settings.trading['Trade Review'] === 'No review' ? null : settings.trading['Trade Reject percentage needed'],
 
       // Roster
       min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
@@ -45,10 +57,10 @@ export async function POST(request) {
 
       // Playoffs
       playoffs: settings.playoffs['Playoffs'],
-      playoffs_start: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoffs start'],
-      playoff_tie_breaker: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoff Tie-Breaker'],
-      playoff_reseeding: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoff Reseeding'],
-      lock_eliminated_teams: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Lock Eliminated Teams'],
+      playoffs_start: settings.playoffs['Playoffs'] === 'No playoffs' ? null : settings.playoffs['Playoffs start'],
+      playoff_tie_breaker: settings.playoffs['Playoff/ranking Tie-Breaker'],
+      playoff_reseeding: settings.playoffs['Playoffs'] === 'No playoffs' ? null : settings.playoffs['Playoff Reseeding'],
+      lock_eliminated_teams: settings.playoffs['Playoffs'] === 'No playoffs' ? null : settings.playoffs['Lock Eliminated Teams'],
 
       // League
       make_league_publicly_viewable: settings.league['Make League Publicly Viewable'],
@@ -110,10 +122,12 @@ export async function PUT(request) {
       );
     }
 
+    const draftType = settings.general['Draft Type'];
     const leagueData = {
       league_name: settings.general['League Name'],
-      draft_type: settings.general['Draft Type'],
-      live_draft_pick_time: settings.general['Live Draft Pick Time'],
+      draft_type: draftType,
+      live_draft_pick_time: draftType === 'Live Draft' ? settings.general['Live Draft Pick Time'] : null,
+      live_draft_time: draftType === 'Live Draft' ? toTaiwanIso(settings.general['Live Draft Time']) : null,
       max_teams: parseInt(settings.general['Max Teams']),
       scoring_type: settings.general['Scoring Type'],
 
@@ -125,8 +139,8 @@ export async function PUT(request) {
       post_draft_players_unfreeze_time: settings.waivers['Post Draft Players Unfreeze Time'],
 
       trade_review: settings.trading['Trade Review'],
-      trade_reject_time: settings.trading['Trade Review'] === 'No review' ? 'No review' : settings.trading['Trade Reject Time'],
-      trade_reject_percentage: settings.trading['Trade Review'] === 'No review' ? 'No review' : settings.trading['Trade Reject percentage needed'],
+      trade_reject_time: settings.trading['Trade Review'] === 'No review' ? null : settings.trading['Trade Reject Time'],
+      trade_reject_percentage: settings.trading['Trade Review'] === 'No review' ? null : settings.trading['Trade Reject percentage needed'],
 
       min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
       roster_positions: settings.roster['Roster Positions'],
@@ -136,10 +150,10 @@ export async function PUT(request) {
       pitcher_stat_categories: settings.scoring['Pitcher Stat Categories'],
 
       playoffs: settings.playoffs['Playoffs'],
-      playoffs_start: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoffs start'],
-      playoff_tie_breaker: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoff Tie-Breaker'],
-      playoff_reseeding: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoff Reseeding'],
-      lock_eliminated_teams: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Lock Eliminated Teams'],
+      playoffs_start: settings.playoffs['Playoffs'] === 'No playoffs' ? null : settings.playoffs['Playoffs start'],
+      playoff_tie_breaker: settings.playoffs['Playoff/ranking Tie-Breaker'],
+      playoff_reseeding: settings.playoffs['Playoffs'] === 'No playoffs' ? null : settings.playoffs['Playoff Reseeding'],
+      lock_eliminated_teams: settings.playoffs['Playoffs'] === 'No playoffs' ? null : settings.playoffs['Lock Eliminated Teams'],
 
       make_league_publicly_viewable: settings.league['Make League Publicly Viewable'],
       invite_permissions: settings.league['Invite Permissions'],

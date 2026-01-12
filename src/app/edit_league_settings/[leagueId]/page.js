@@ -10,6 +10,7 @@ const baseSettings = {
     'League Name': 'My League',
     'Draft Type': 'Live Draft',
     'Live Draft Pick Time': '1 Minute',
+    'Live Draft Time': '',
     'Max Teams': '6',
     'Scoring Type': 'Head-to-Head',
   },
@@ -64,7 +65,7 @@ const baseSettings = {
   playoffs: {
     'Playoffs': '4 teams - 2 weeks',
     'Playoffs start': '2026.9.14',
-    'Playoff Tie-Breaker': 'Higher seed wins',
+    'Playoff/ranking Tie-Breaker': 'Higher seed wins',
     'Playoff Reseeding': 'Yes',
     'Lock Eliminated Teams': 'Yes',
   },
@@ -156,7 +157,7 @@ const settingOptions = {
   ],
   'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks', 'No playoffs'],
   'Playoffs start': ['2026.8.24', '2026.8.31', '2026.9.7', '2026.9.14', '2026.9.21'],
-  'Playoff Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
+  'Playoff/ranking Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
   'Playoff Reseeding': ['Yes', 'No'],
   'Lock Eliminated Teams': ['Yes', 'No'],
   'Make League Publicly Viewable': ['Yes', 'No'],
@@ -179,6 +180,7 @@ const mapDbToSettings = (data) => ({
     'League Name': data.league_name ?? baseSettings.general['League Name'],
     'Draft Type': data.draft_type ?? baseSettings.general['Draft Type'],
     'Live Draft Pick Time': data.live_draft_pick_time ?? baseSettings.general['Live Draft Pick Time'],
+    'Live Draft Time': data.live_draft_time ?? baseSettings.general['Live Draft Time'],
     'Max Teams': data.max_teams?.toString() ?? baseSettings.general['Max Teams'],
     'Scoring Type': data.scoring_type ?? baseSettings.general['Scoring Type'],
   },
@@ -208,7 +210,7 @@ const mapDbToSettings = (data) => ({
   playoffs: {
     'Playoffs': data.playoffs ?? baseSettings.playoffs['Playoffs'],
     'Playoffs start': data.playoffs_start ?? baseSettings.playoffs['Playoffs start'],
-    'Playoff Tie-Breaker': data.playoff_tie_breaker ?? baseSettings.playoffs['Playoff Tie-Breaker'],
+    'Playoff/ranking Tie-Breaker': data.playoff_tie_breaker ?? baseSettings.playoffs['Playoff/ranking Tie-Breaker'],
     'Playoff Reseeding': data.playoff_reseeding ?? baseSettings.playoffs['Playoff Reseeding'],
     'Lock Eliminated Teams': data.lock_eliminated_teams ?? baseSettings.playoffs['Lock Eliminated Teams'],
   },
@@ -228,13 +230,17 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [error, setError] = useState('');
 
   const handleSettingChange = (section, key, value) => {
-    setSettings((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [key]: value,
-      },
-    }));
+    setSettings((prev) => {
+      const next = { ...prev };
+      next[section] = { ...prev[section], [key]: value };
+
+      if (section === 'general' && key === 'Draft Type' && value !== 'Live Draft') {
+        next.general['Live Draft Pick Time'] = '';
+        next.general['Live Draft Time'] = '';
+      }
+
+      return next;
+    });
   };
 
   const isMultilineField = (key) => {
@@ -247,6 +253,19 @@ const EditLeagueSettingsPage = ({ params }) => {
 
   const isTextField = (key) => {
     return ['League Name'].includes(key);
+  };
+
+  const isDateTimeField = (key) => key === 'Live Draft Time';
+
+  const minDraftDateTime = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 1);
+    const pad = (n) => `${n}`.padStart(2, '0');
+    const y = d.getFullYear();
+    const m = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    return `${y}-${m}-${day}T00:00`;
   };
 
   const isRosterPositions = (key) => {
@@ -379,9 +398,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                     <table className="w-full">
                       <tbody>
                         {Object.entries(settings[section.key]).map(([key, value], index) => {
-                          if (section.key === 'playoffs' && key !== 'Playoffs' && settings.playoffs['Playoffs'] === 'No playoffs') {
-                            return null;
-                          }
+                          // playoffs 不再因 No playoffs 而收起
                           if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
                             return null;
                           }
@@ -404,6 +421,15 @@ const EditLeagueSettingsPage = ({ params }) => {
                                   }
                                   rows="3"
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                                />
+                              ) : isDateTimeField(key) ? (
+                                <input
+                                  type="datetime-local"
+                                  min={minDraftDateTime()}
+                                  value={value}
+                                  onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
+                                  disabled={settings.general['Draft Type'] !== 'Live Draft'}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                                 />
                               ) : isRosterPositions(key) ? (
                                 <div className="space-y-4">
