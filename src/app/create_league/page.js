@@ -453,11 +453,16 @@ const CreateLeaguePage = () => {
                                   }
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                                 >
-                                  {settingOptions[key] && settingOptions[key].map((option) => (
-                                    <option key={option} value={option}>
-                                      {option}
-                                    </option>
-                                  ))}
+                                  {(() => {
+                                    const options = key === 'Playoff/ranking Tie-Breaker' && settings.playoffs['Playoffs'] === 'No playoffs'
+                                      ? (settingOptions[key] || []).filter((o) => o !== 'Better record wins')
+                                      : settingOptions[key];
+                                    return options?.map((option) => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ));
+                                  })()}
                                 </select>
                               )}
                             </td>
