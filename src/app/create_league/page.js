@@ -278,10 +278,10 @@ function SchedulePreview({ settings }) {
 
     // 如果有季後賽，加入補賽預備週和季後賽週次
     if (playoffStartDate && playoffLabels.length > 0) {
-      // 加入補賽預備週
+      // 補賽預備週應該是季後賽開始前一週
       const makeupWeek = allScheduleData.find((week) => {
-        const weekStart = new Date(week.week_start);
-        return weekStart >= playoffStartDate;
+        const weekEnd = new Date(week.week_end);
+        return weekEnd >= new Date(playoffStartDate.getTime() - 24 * 60 * 60 * 1000);
       });
 
       if (makeupWeek) {
@@ -291,17 +291,35 @@ function SchedulePreview({ settings }) {
           week_label: 'Makeup Preparation Week',
         });
 
-        // 加入季後賽週次
-        const playoffWeeks = allScheduleData.filter((week) => {
-          const weekStart = new Date(week.week_start);
-          return weekStart > new Date(makeupWeek.week_start);
-        }).slice(0, playoffLabels.length);
+        // 加入季後賽週次，跳過week_id=23
+        const allPlayoffWeeks = allScheduleData
+          .filter((week) => {
+            const weekStart = new Date(week.week_start);
+            return weekStart >= playoffStartDate && week.week_id !== 23;
+          })
+          .slice(0, playoffLabels.length);
 
-        playoffWeeks.forEach((week, index) => {
+        allPlayoffWeeks.forEach((week, index) => {
           scheduleWithTypes.push({
             ...week,
             week_type: 'playoffs',
             week_label: playoffLabels[index] || `Playoff ${index + 1}`,
+          });
+        });
+
+        // 加入Preparation Week (在季後賽後)
+        const afterPlayoffWeeks = allScheduleData
+          .filter((week) => {
+            const weekStart = new Date(week.week_start);
+            return weekStart > new Date(allPlayoffWeeks[allPlayoffWeeks.length - 1]?.week_end || playoffStartDate);
+          })
+          .slice(0, 1);
+
+        afterPlayoffWeeks.forEach((week) => {
+          scheduleWithTypes.push({
+            ...week,
+            week_type: 'preparation',
+            week_label: 'Preparation Week',
           });
         });
       }
@@ -369,6 +387,8 @@ function SchedulePreview({ settings }) {
                     ? 'bg-purple-50 hover:bg-purple-100'
                     : week.week_type === 'makeup'
                     ? 'bg-yellow-50 hover:bg-yellow-100'
+                    : week.week_type === 'preparation'
+                    ? 'bg-green-50 hover:bg-green-100'
                     : 'bg-white hover:bg-blue-50'
                 }`}
               >
@@ -379,9 +399,11 @@ function SchedulePreview({ settings }) {
                       ? 'bg-purple-100 text-purple-800'
                       : week.week_type === 'makeup'
                       ? 'bg-yellow-100 text-yellow-800'
+                      : week.week_type === 'preparation'
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-blue-100 text-blue-800'
                   }`}>
-                    {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : 'Regular'}
+                    {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : week.week_type === 'preparation' ? 'Preparation' : 'Regular'}
                   </span>
                 </td>
                 <td className="px-4 py-2 text-gray-700 font-medium">{week.week_label}</td>
