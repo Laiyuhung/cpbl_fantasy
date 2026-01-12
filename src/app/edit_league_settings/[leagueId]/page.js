@@ -925,7 +925,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                     }`}
                                   />
                                   {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
                               ) : isDateTimeField(key) ? (
@@ -943,7 +943,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                     }`}
                                   />
                                   {(settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
                               ) : isRosterPositions(key) ? (
@@ -1045,7 +1045,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                     </div>
                                   </div>
                                   {!isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0) && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫 - 至少選一項</p>
+                                    <p className="text-red-600 text-sm mt-1">required - select at least one</p>
                                   )}
                                 </div>
                               ) : isTextField(key) ? (
@@ -1064,7 +1064,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                     }`}
                                   />
                                   {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
                               ) : (
@@ -1093,7 +1093,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                     })()}
                                   </select>
                                   {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
                               )}

@@ -778,7 +778,7 @@ const CreateLeaguePage = () => {
                                     }`}
                                   />
                                   {(!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
                               ) : isDateTimeField(key) ? (
@@ -796,7 +796,7 @@ const CreateLeaguePage = () => {
                                     }`}
                                   />
                                   {settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
                               ) : isRosterPositions(key) ? (
@@ -895,7 +895,7 @@ const CreateLeaguePage = () => {
                                     </div>
                                   </div>
                                   {(!Array.isArray(value) || value.length === 0) && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫 - 至少選一項</p>
+                                    <p className="text-red-600 text-sm mt-1">required - select at least one</p>
                                   )}
                                 </div>
                               ) : isTextField(key) ? (
@@ -913,7 +913,7 @@ const CreateLeaguePage = () => {
                                     }`}
                                   />
                                   {(!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
                               ) : (
@@ -939,7 +939,7 @@ const CreateLeaguePage = () => {
                                     })()}
                                   </select>
                                   {(!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
                               )}

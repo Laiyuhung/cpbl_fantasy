@@ -103,14 +103,6 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
     playoffCurrentDate.setDate(playoffCurrentDate.getDate() + 7); // 跳过补赛周
 
     for (let i = 0; i < playoffWeeks; i++) {
-      // 检查是否会超过保留周
-      if (weekNumber >= reservedWeek) {
-        return {
-          schedule: [],
-          error: `❌ Playoff configuration has too many weeks! Playoffs would exceed week ${reservedWeek - 1}. Please reduce playoff weeks or shorten regular season weeks. Current configuration: Regular Season ${regularSeasonWeeks} weeks + Makeup Week 1 week + Playoffs ${playoffWeeks} weeks = ${regularSeasonWeeks + 1 + playoffWeeks} weeks (maximum ${maxRegularAndPlayoff} weeks)`
-        };
-      }
-
       const weekStart = new Date(playoffCurrentDate);
       const weekEnd = new Date(playoffCurrentDate);
       weekEnd.setDate(weekEnd.getDate() + 6);
@@ -128,16 +120,7 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
     }
   }
 
-  // 檢查總周次是否超過限制
-  const totalWeeks = schedule.length;
-  if (totalWeeks > maxRegularAndPlayoff) {
-    return {
-      schedule: [],
-      error: `❌ Schedule configuration exceeds limit! Total weeks is ${totalWeeks}, maximum allowed is ${maxRegularAndPlayoff} weeks (week ${reservedWeek} must be reserved as makeup week). Please adjust regular season or playoff settings.`
-    };
-  }
-
-  return { schedule, error: null };
+  return { schedule };
 };
 
 export async function POST(request) {
@@ -220,19 +203,11 @@ export async function POST(request) {
     }
 
     // 生成並插入周次數據
-    const { schedule: scheduleData, error: scheduleError } = generateLeagueSchedule(
+    const { schedule: scheduleData } = generateLeagueSchedule(
       settings.scoring['Start Scoring On'],
       settings.playoffs['Playoffs start'],
       settings.playoffs['Playoffs']
     );
-
-    // 如果周次計算有錯誤，回傳錯誤訊息
-    if (scheduleError) {
-      return NextResponse.json(
-        { error: scheduleError },
-        { status: 400 }
-      );
-    }
 
     if (scheduleData.length > 0) {
       const scheduleRecords = scheduleData.map(week => ({
@@ -336,19 +311,11 @@ export async function PUT(request) {
       .eq('league_id', league_id);
 
     // 重新生成並插入周次數據
-    const { schedule: scheduleData, error: scheduleError } = generateLeagueSchedule(
+    const { schedule: scheduleData } = generateLeagueSchedule(
       settings.scoring['Start Scoring On'],
       settings.playoffs['Playoffs start'],
       settings.playoffs['Playoffs']
     );
-
-    // 如果周次計算有錯誤，回傳錯誤訊息
-    if (scheduleError) {
-      return NextResponse.json(
-        { error: scheduleError },
-        { status: 400 }
-      );
-    }
 
     if (scheduleData.length > 0) {
       const scheduleRecords = scheduleData.map(week => ({
