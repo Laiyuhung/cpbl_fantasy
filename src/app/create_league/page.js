@@ -167,6 +167,7 @@ const sections = [
 // SchedulePreview 元件：根據設定值實時推算schedule_date表中的週次
 function SchedulePreview({ settings }) {
   const [allScheduleData, setAllScheduleData] = useState([]);
+  const [scheduleValidationError, setScheduleValidationError] = useState('');
   const [filteredSchedule, setFilteredSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -283,12 +284,17 @@ function SchedulePreview({ settings }) {
       return true;
     });
 
-    // 組織最終的週次列表
-    const scheduleWithTypes = regularSeasonWeeks.map((week) => ({
-      ...week,
-      week_type: 'regular_season',
-      week_label: `Week ${week.week_id}`,
-    }));
+    // 組織最終的週次列表，計算相對週號
+    let weekCounter = 1;
+    const scheduleWithTypes = regularSeasonWeeks.map((week) => {
+      const label = `Week ${weekCounter}`;
+      weekCounter++;
+      return {
+        ...week,
+        week_type: 'regular_season',
+        week_label: label,
+      };
+    });
 
     // 如果有季後賽，加入補賽預備週和季後賽週次
     if (playoffStartDate && playoffLabels.length > 0 && makeupWeek) {
@@ -379,7 +385,6 @@ function SchedulePreview({ settings }) {
             <tr className="bg-blue-100 border-b-2 border-blue-300">
               <th className="px-4 py-2 text-left font-semibold text-gray-800">Week</th>
               <th className="px-4 py-2 text-left font-semibold text-gray-800">Type</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">Label</th>
               <th className="px-4 py-2 text-left font-semibold text-gray-800">Start Date</th>
               <th className="px-4 py-2 text-left font-semibold text-gray-800">End Date</th>
             </tr>
@@ -398,7 +403,7 @@ function SchedulePreview({ settings }) {
                     : 'bg-white hover:bg-blue-50'
                 }`}
               >
-                <td className="px-4 py-2 font-semibold text-gray-800">{week.week_id}</td>
+                <td className="px-4 py-2 text-gray-700 font-medium">{week.week_label}</td>
                 <td className="px-4 py-2 text-gray-600">
                   <span className={`px-2 py-1 rounded text-xs font-semibold ${
                     week.week_type === 'playoffs'
@@ -412,7 +417,6 @@ function SchedulePreview({ settings }) {
                     {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : week.week_type === 'preparation' ? 'Preparation' : 'Regular'}
                   </span>
                 </td>
-                <td className="px-4 py-2 text-gray-700 font-medium">{week.week_label}</td>
                 <td className="px-4 py-2 text-gray-600">{week.week_start}</td>
                 <td className="px-4 py-2 text-gray-600">{week.week_end}</td>
               </tr>
@@ -639,22 +643,21 @@ const CreateLeaguePage = () => {
         };
         const playoffsStartDate = parseDate(settings.playoffs['Playoffs start']);
         
-        // Calculate which week the playoffs start based on schedule_date table
-        // Week 23 cannot be used for playoffs (reserved)
-        // So maximum usable weeks: W19 (start), W20, W21, W22 = 4 weeks max for playoffs
-        // If playoffs need more than 4 weeks, show error
-        if (playoffsStartDate) {
-          // Check if playoff schedule will exceed Week 22
-          // Assuming each playoff week is roughly 7 days apart
-          const estimatedFinalWeekStart = new Date(playoffsStartDate.getTime() + (playoffWeeks - 1) * 7 * 24 * 60 * 60 * 1000);
-          
-          // Check if the estimated week end is around week 23 or later
-          // W22 should end around 2026.9.28 based on the schedule pattern
-          // W23 (reserved) starts around 2026.9.21
-          const week22End = new Date(2026, 8, 28); // approximately end of W22
-          
-          if (estimatedFinalWeekStart > week22End) {
-            errors.push(`❌ Playoff schedule cannot complete by Week 22. The playoffs require ${playoffWeeks} weeks starting ${settings.playoffs['Playoffs start']}, but must end by Week 22 (cannot use Week 23). Please start playoffs earlier or reduce the number of playoff teams.`);
+        if (playoffsStartDate && allScheduleData.length > 0) {
+          // Find which week the playoffs start
+          const playoffsStartWeek = allScheduleData.find((week) => {
+            const weekStart = new Date(week.week_start);
+            return weekStart >= playoffsStartDate;
+          });
+
+          if (playoffsStartWeek) {
+            // Calculate the final playoff week number
+            const finalPlayoffWeekId = playoffsStartWeek.week_id + (playoffWeeks - 1);
+            
+            // Check if final playoff week exceeds Week 22
+            if (finalPlayoffWeekId > 22) {
+              errors.push(`❌ Playoff schedule cannot complete by Week 22. Starting from week ${playoffsStartWeek.week_id}, ${playoffWeeks} weeks of playoffs would end at week ${finalPlayoffWeekId}. Week 23 is reserved for makeup games. Please start playoffs earlier or reduce the number of playoff teams.`);
+            }
           }
         }
       }
