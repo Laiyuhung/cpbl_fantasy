@@ -991,6 +991,11 @@ const CreateLeaguePage = () => {
                 ))}
               </div>
             )}
+            {scheduleError && (
+              <div className="px-4 py-2 rounded-md bg-yellow-100 text-yellow-800 border border-yellow-300 text-sm">
+                按鈕已禁用: Schedule 驗證錯誤
+              </div>
+            )}
             <button
               onClick={() => {
                 setSettings(cloneSettings(initialSettings));
@@ -1004,6 +1009,7 @@ const CreateLeaguePage = () => {
             <button
               onClick={handleSave}
               disabled={isSaving || scheduleError}
+              title={scheduleError ? 'Schedule 驗證失敗 - 請檢查下方 Schedule 預覽' : ''}
               className={`px-6 py-2 font-semibold rounded-md transition-colors ${
                 isSaving || scheduleError
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
