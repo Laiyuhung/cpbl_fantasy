@@ -299,7 +299,7 @@ const EditLeagueSettingsPage = ({ params }) => {
       'Invite Permissions',
     ];
 
-    if (status === 'post-draft' || status === 'pre-season') {
+    if (status === 'post-draft & pre-season') {
       return postDraftRestrictedFields.includes(key);
     }
 
