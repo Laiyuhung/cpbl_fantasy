@@ -935,24 +935,42 @@ const EditLeagueSettingsPage = ({ params }) => {
                             </td>
                             <td className="px-6 py-4 text-gray-600 w-3/5">
                               {isMultilineField(key) ? (
-                                <textarea
-                                  value={value}
-                                  onChange={(e) =>
-                                    handleSettingChange(section.key, key, e.target.value)
-                                  }
-                                  disabled={isFieldDisabled(section.key, key)}
-                                  rows="3"
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-                                />
+                                <div>
+                                  <textarea
+                                    value={value}
+                                    onChange={(e) =>
+                                      handleSettingChange(section.key, key, e.target.value)
+                                    }
+                                    disabled={isFieldDisabled(section.key, key)}
+                                    rows="3"
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                      !isFieldDisabled(section.key, key) && (!value || value.trim() === '')
+                                        ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-300'
+                                    }`}
+                                  />
+                                  {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
+                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                  )}
+                                </div>
                               ) : isDateTimeField(key) ? (
-                                <input
-                                  type="datetime-local"
-                                  min={minDraftDateTime()}
-                                  value={value}
-                                  onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
-                                  disabled={settings.general['Draft Type'] !== 'Live Draft' || isFieldDisabled(section.key, key)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-                                />
+                                <div>
+                                  <input
+                                    type="datetime-local"
+                                    min={minDraftDateTime()}
+                                    value={value}
+                                    onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
+                                    disabled={settings.general['Draft Type'] !== 'Live Draft' || isFieldDisabled(section.key, key)}
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                      (settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '')
+                                        ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-300'
+                                    }`}
+                                  />
+                                  {(settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '') && (
+                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                  )}
+                                </div>
                               ) : isRosterPositions(key) ? (
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -1015,67 +1033,94 @@ const EditLeagueSettingsPage = ({ params }) => {
                                   </div>
                                 </div>
                               ) : isMultiSelectField(key) ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  {settingOptions[key]?.map((option) => (
-                                    <label key={option} className="flex items-center gap-2">
-                                      <input
-                                        type="checkbox"
-                                        checked={Array.isArray(value) && value.includes(option)}
-                                        disabled={
-                                          (isFieldDisabled(section.key, key)) ||
-                                          ((!Array.isArray(value) || !value.includes(option)) &&
-                                          ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                            (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30)
-                                        }
-                                        onChange={(e) =>
-                                          handleMultiSelectChange(
-                                            section.key,
-                                            key,
-                                            option,
-                                            e.target.checked
-                                          )
-                                        }
-                                      />
-                                      <span className={isFieldDisabled(section.key, key) ? 'text-gray-400' : ''}>{option}</span>
-                                    </label>
-                                  ))}
-                                  <div className="text-xs text-gray-500 mt-2">
-                                    selected: {(
-                                      (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                      (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
-                                    )} / 30
+                                <div>
+                                  <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 border rounded-md ${
+                                    !isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0)
+                                      ? 'border-red-500 bg-red-50'
+                                      : 'border-gray-300 bg-white'
+                                  }`}>
+                                    {settingOptions[key]?.map((option) => (
+                                      <label key={option} className="flex items-center gap-2">
+                                        <input
+                                          type="checkbox"
+                                          checked={Array.isArray(value) && value.includes(option)}
+                                          disabled={
+                                            (isFieldDisabled(section.key, key)) ||
+                                            ((!Array.isArray(value) || !value.includes(option)) &&
+                                            ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
+                                              (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30)
+                                          }
+                                          onChange={(e) =>
+                                            handleMultiSelectChange(
+                                              section.key,
+                                              key,
+                                              option,
+                                              e.target.checked
+                                            )
+                                          }
+                                        />
+                                        <span className={isFieldDisabled(section.key, key) ? 'text-gray-400' : ''}>{option}</span>
+                                      </label>
+                                    ))}
+                                    <div className="text-xs text-gray-500 mt-2 col-span-full">
+                                      selected: {(
+                                        (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
+                                        (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
+                                      )} / 30
+                                    </div>
                                   </div>
+                                  {!isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0) && (
+                                    <p className="text-red-600 text-sm mt-1">未填寫 - 至少選一項</p>
+                                  )}
                                 </div>
                               ) : isTextField(key) ? (
-                                <input
-                                  type="text"
-                                  value={value}
-                                  onChange={(e) =>
-                                    handleSettingChange(section.key, key, e.target.value)
-                                  }
-                                  disabled={isFieldDisabled(section.key, key)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-                                />
+                                <div>
+                                  <input
+                                    type="text"
+                                    value={value}
+                                    onChange={(e) =>
+                                      handleSettingChange(section.key, key, e.target.value)
+                                    }
+                                    disabled={isFieldDisabled(section.key, key)}
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                      !isFieldDisabled(section.key, key) && (!value || value.trim() === '')
+                                        ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-300'
+                                    }`}
+                                  />
+                                  {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
+                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                  )}
+                                </div>
                               ) : (
-                                <select
-                                  value={value}
-                                  onChange={(e) =>
-                                    handleSettingChange(section.key, key, e.target.value)
-                                  }
-                                  disabled={isFieldDisabled(section.key, key)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-                                >
-                                  {(() => {
-                                    const options = key === 'Playoff/ranking Tie-Breaker' && settings.playoffs['Playoffs'] === 'No playoffs'
-                                      ? (settingOptions[key] || []).filter((o) => o !== 'Better record wins')
-                                      : settingOptions[key];
-                                    return options?.map((option) => (
-                                      <option key={option} value={option}>
-                                        {option}
-                                      </option>
-                                    ));
-                                  })()}
-                                </select>
+                                <div>
+                                  <select
+                                    value={value}
+                                    onChange={(e) =>
+                                      handleSettingChange(section.key, key, e.target.value)
+                                    }
+                                    disabled={isFieldDisabled(section.key, key)}
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                      !isFieldDisabled(section.key, key) && (!value || value.trim() === '')
+                                        ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-300'
+                                    }`}
+                                  >
+                                    {(() => {
+                                      const options = key === 'Playoff/ranking Tie-Breaker' && settings.playoffs['Playoffs'] === 'No playoffs'
+                                        ? (settingOptions[key] || []).filter((o) => o !== 'Better record wins')
+                                        : settingOptions[key];
+                                      return options?.map((option) => (
+                                        <option key={option} value={option}>
+                                          {option}
+                                        </option>
+                                      ));
+                                    })()}
+                                  </select>
+                                  {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
+                                    <p className="text-red-600 text-sm mt-1">未填寫</p>
+                                  )}
+                                </div>
                               )}
                             </td>
                           </tr>
