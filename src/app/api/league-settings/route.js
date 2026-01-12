@@ -16,6 +16,81 @@ const toTaiwanIso = (dt) => {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 };
 
+// 計算聯盟周次
+const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => {
+  const schedule = [];
+  
+  // 解析日期 (格式: YYYY.M.D)
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    const parts = dateStr.split('.');
+    if (parts.length !== 3) return null;
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  };
+
+  const startDate = parseDate(startScoringOn);
+  if (!startDate) return schedule;
+
+  let weekNumber = 1;
+  let currentDate = new Date(startDate);
+
+  // 計算例行賽周次
+  const playoffDate = parseDate(playoffsStart);
+  const endDate = playoffDate || new Date(startDate.getFullYear(), 8, 30); // 默认到9月30日
+
+  while (currentDate < endDate) {
+    const weekStart = new Date(currentDate);
+    const weekEnd = new Date(currentDate);
+    weekEnd.setDate(weekEnd.getDate() + 6); // 一周7天
+
+    // 如果周结束日期超过季后赛开始日期，调整结束日期
+    if (playoffDate && weekEnd >= playoffDate) {
+      weekEnd.setTime(playoffDate.getTime() - 86400000); // 前一天
+    }
+
+    schedule.push({
+      week_number: weekNumber,
+      week_type: 'regular_season',
+      week_start: weekStart.toISOString().split('T')[0],
+      week_end: weekEnd.toISOString().split('T')[0],
+    });
+
+    weekNumber++;
+    currentDate.setDate(currentDate.getDate() + 7);
+
+    // 如果到达季后赛开始日期，停止
+    if (playoffDate && currentDate >= playoffDate) {
+      break;
+    }
+  }
+
+  // 計算季後賽周次
+  if (playoffsStart && playoffsType && playoffsType !== 'No playoffs') {
+    // 从 "4 teams - 2 weeks" 格式中提取周数
+    const match = playoffsType.match(/(\d+) weeks?$/);
+    const playoffWeeks = match ? parseInt(match[1]) : 0;
+
+    let playoffCurrentDate = new Date(playoffDate);
+    for (let i = 0; i < playoffWeeks; i++) {
+      const weekStart = new Date(playoffCurrentDate);
+      const weekEnd = new Date(playoffCurrentDate);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      schedule.push({
+        week_number: weekNumber,
+        week_type: 'playoffs',
+        week_start: weekStart.toISOString().split('T')[0],
+        week_end: weekEnd.toISOString().split('T')[0],
+      });
+
+      weekNumber++;
+      playoffCurrentDate.setDate(playoffCurrentDate.getDate() + 7);
+    }
+  }
+
+  return schedule;
+};
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -95,6 +170,30 @@ export async function POST(request) {
       );
     }
 
+    // 生成並插入周次數據
+    const scheduleData = generateLeagueSchedule(
+      settings.scoring['Start Scoring On'],
+      settings.playoffs['Playoffs start'],
+      settings.playoffs['Playoffs']
+    );
+
+    if (scheduleData.length > 0) {
+      const scheduleRecords = scheduleData.map(week => ({
+        league_id: leagueId,
+        ...week
+      }));
+
+      const { error: scheduleError } = await supabase
+        .from('league_schedule')
+        .insert(scheduleRecords);
+
+      if (scheduleError) {
+        console.error('Supabase schedule error:', scheduleError);
+        // 不阻止联盟创建，只记录错误
+        console.warn('Failed to create league schedule:', scheduleError.message);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'League created successfully!',
@@ -172,6 +271,36 @@ export async function PUT(request) {
         { error: '更新失敗', details: error.message },
         { status: 500 }
       );
+    }
+
+    // 刪除舊的周次數據
+    await supabase
+      .from('league_schedule')
+      .delete()
+      .eq('league_id', league_id);
+
+    // 重新生成並插入周次數據
+    const scheduleData = generateLeagueSchedule(
+      settings.scoring['Start Scoring On'],
+      settings.playoffs['Playoffs start'],
+      settings.playoffs['Playoffs']
+    );
+
+    if (scheduleData.length > 0) {
+      const scheduleRecords = scheduleData.map(week => ({
+        league_id: league_id,
+        ...week
+      }));
+
+      const { error: scheduleError } = await supabase
+        .from('league_schedule')
+        .insert(scheduleRecords);
+
+      if (scheduleError) {
+        console.error('Supabase schedule error:', scheduleError);
+        // 不阻止联盟更新，只记录错误
+        console.warn('Failed to update league schedule:', scheduleError.message);
+      }
     }
 
     return NextResponse.json({

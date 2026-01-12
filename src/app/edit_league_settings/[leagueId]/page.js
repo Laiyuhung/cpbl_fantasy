@@ -287,6 +287,7 @@ const EditLeagueSettingsPage = ({ params }) => {
     // post-draft & pre-season: restrict specific fields
     const postDraftRestrictedFields = [
       'Draft Type',
+      'Start Scoring On',
       'Live Draft Pick Time',
       'Live Draft Time',
       'Max Teams',
@@ -452,6 +453,16 @@ const EditLeagueSettingsPage = ({ params }) => {
 
     // Validate Playoff fields when Playoffs is not No playoffs
     if (settings.playoffs['Playoffs'] !== 'No playoffs') {
+      // Extract playoff teams count from format like "4 teams - 2 weeks"
+      const playoffMatch = settings.playoffs['Playoffs'].match(/^(\d+) teams/);
+      if (playoffMatch) {
+        const playoffTeams = parseInt(playoffMatch[1]);
+        const maxTeams = parseInt(settings.general['Max Teams']);
+        if (playoffTeams > maxTeams) {
+          errors.push(`❌ Playoff teams (${playoffTeams}) cannot exceed Max Teams (${maxTeams})`);
+        }
+      }
+
       if (!settings.playoffs['Playoffs start']) {
         errors.push('❌ Playoffs start date is required');
       }
