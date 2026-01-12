@@ -144,7 +144,7 @@ const settingOptions = {
     'Total Batters Faced (TBF)',
     'Winning Percentage (WIN%)'
   ],
-  'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks', 'No playoffs'],
+  'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks'],
   'Playoffs start': ['2026.8.10', '2026.8.17', '2026.8.24', '2026.8.31', '2026.9.7','2026.9.14'],
   'Playoff/ranking Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
   'Playoff Reseeding': ['Yes', 'No'],
@@ -234,7 +234,7 @@ function SchedulePreview({ settings }) {
 
     // 計算季後賽週次標籤
     let playoffLabels = [];
-    if (playoffsStart && playoffsType && playoffsType !== 'No playoffs') {
+    if (playoffsStart && playoffsType) {
       const teamsMatch = playoffsType.match(/^(\d+) teams/);
       const weeksMatch = playoffsType.match(/(\d+) weeks?$/);
       const playoffTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
@@ -615,15 +615,47 @@ const CreateLeaguePage = () => {
       errors.push('❌ Playoffs setting is required');
     }
 
-    // Validate Playoff fields when Playoffs is not No playoffs
-    if (settings.playoffs['Playoffs'] !== 'No playoffs') {
+    // Validate Playoff fields
+    if (settings.playoffs['Playoffs']) {
       // Extract playoff teams count from format like "4 teams - 2 weeks"
       const playoffMatch = settings.playoffs['Playoffs'].match(/^(\d+) teams/);
+      const weeksMatch = settings.playoffs['Playoffs'].match(/(\d+) weeks?$/);
       if (playoffMatch) {
         const playoffTeams = parseInt(playoffMatch[1]);
         const maxTeams = parseInt(settings.general['Max Teams']);
         if (playoffTeams > maxTeams) {
           errors.push(`❌ Playoff teams (${playoffTeams}) cannot exceed Max Teams (${maxTeams})`);
+        }
+      }
+
+      // Validate that playoff schedule can complete by Week 22
+      if (weeksMatch && settings.playoffs['Playoffs start']) {
+        const playoffWeeks = parseInt(weeksMatch[1]);
+        const parseDate = (dateStr) => {
+          if (!dateStr) return null;
+          const parts = dateStr.split('.');
+          if (parts.length !== 3) return null;
+          return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        };
+        const playoffsStartDate = parseDate(settings.playoffs['Playoffs start']);
+        
+        // Calculate which week the playoffs start based on schedule_date table
+        // Week 23 cannot be used for playoffs (reserved)
+        // So maximum usable weeks: W19 (start), W20, W21, W22 = 4 weeks max for playoffs
+        // If playoffs need more than 4 weeks, show error
+        if (playoffsStartDate) {
+          // Check if playoff schedule will exceed Week 22
+          // Assuming each playoff week is roughly 7 days apart
+          const estimatedFinalWeekStart = new Date(playoffsStartDate.getTime() + (playoffWeeks - 1) * 7 * 24 * 60 * 60 * 1000);
+          
+          // Check if the estimated week end is around week 23 or later
+          // W22 should end around 2026.9.28 based on the schedule pattern
+          // W23 (reserved) starts around 2026.9.21
+          const week22End = new Date(2026, 8, 28); // approximately end of W22
+          
+          if (estimatedFinalWeekStart > week22End) {
+            errors.push(`❌ Playoff schedule cannot complete by Week 22. The playoffs require ${playoffWeeks} weeks starting ${settings.playoffs['Playoffs start']}, but must end by Week 22 (cannot use Week 23). Please start playoffs earlier or reduce the number of playoff teams.`);
+          }
         }
       }
 
@@ -711,13 +743,6 @@ const CreateLeaguePage = () => {
                     <table className="w-full">
                       <tbody>
                         {Object.entries(settings[section.key]).map(([key, value], index) => {
-                          if (
-                            section.key === 'playoffs' &&
-                            settings.playoffs['Playoffs'] === 'No playoffs' &&
-                            ['Playoffs start', 'Playoff Reseeding', 'Lock Eliminated Teams'].includes(key)
-                          ) {
-                            return null;
-                          }
                           if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
                             return null;
                           }
@@ -858,9 +883,7 @@ const CreateLeaguePage = () => {
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                                 >
                                   {(() => {
-                                    const options = key === 'Playoff/ranking Tie-Breaker' && settings.playoffs['Playoffs'] === 'No playoffs'
-                                      ? (settingOptions[key] || []).filter((o) => o !== 'Better record wins')
-                                      : settingOptions[key];
+                                    const options = settingOptions[key];
                                     return options?.map((option) => (
                                       <option key={option} value={option}>
                                         {option}
