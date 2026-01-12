@@ -47,20 +47,8 @@ const baseSettings = {
   },
   scoring: {
     'Start Scoring On': '2026.3.28',
-    'Batter Stat Categories': [
-      'Runs (R)',
-      'Home Runs (HR)',
-      'Runs Batted In (RBI)',
-      'Stolen Bases (SB)',
-      'Batting Average (AVG)',
-    ],
-    'Pitcher Stat Categories': [
-      'Wins (W)',
-      'Saves (SV)',
-      'Strikeouts (K)',
-      'Earned Run Average (ERA)',
-      '(Walks + Hits)/ Innings Pitched (WHIP)',
-    ],
+    'Batter Stat Categories': [],
+    'Pitcher Stat Categories': [],
   },
   playoffs: {
     'Playoffs': '4 teams - 2 weeks',
@@ -285,6 +273,44 @@ const EditLeagueSettingsPage = ({ params }) => {
     return key === 'Roster Positions';
   };
 
+  const isFieldDisabled = (section, key) => {
+    // League Name can always be edited
+    if (key === 'League Name') {
+      return false;
+    }
+
+    // pre-draft: no restrictions
+    if (status === 'pre-draft') {
+      return false;
+    }
+
+    // post-draft & pre-season: restrict specific fields
+    const postDraftRestrictedFields = [
+      'Draft Type',
+      'Live Draft Pick Time',
+      'Live Draft Time',
+      'Max Teams',
+      'Scoring Type',
+      'Post Draft Players Unfreeze Time',
+      'Roster Positions',
+      'Batter Stat Categories',
+      'Pitcher Stat Categories',
+      'Make League Publicly Viewable',
+      'Invite Permissions',
+    ];
+
+    if (status === 'post-draft' || status === 'pre-season') {
+      return postDraftRestrictedFields.includes(key);
+    }
+
+    // in-season: restrict all fields except League Name
+    if (status === 'in-season') {
+      return true;
+    }
+
+    return false;
+  };
+
   const handleMultiSelectChange = (section, key, option, checked) => {
     setSettings((prev) => {
       const current = Array.isArray(prev[section][key]) ? prev[section][key] : [];
@@ -315,6 +341,142 @@ const EditLeagueSettingsPage = ({ params }) => {
     }));
   };
 
+  const validateSettings = () => {
+    const errors = [];
+
+    // Validate League Name
+    if (!settings.general['League Name'] || settings.general['League Name'].trim() === '') {
+      errors.push('❌ League Name is required');
+    }
+
+    // Validate Max Teams
+    if (!settings.general['Max Teams']) {
+      errors.push('❌ Max Teams is required');
+    }
+
+    // Validate Scoring Type
+    if (!settings.general['Scoring Type']) {
+      errors.push('❌ Scoring Type is required');
+    }
+
+    // Validate Draft Type
+    if (!settings.general['Draft Type']) {
+      errors.push('❌ Draft Type is required');
+    }
+
+    // Validate Live Draft fields when Draft Type is Live Draft
+    if (settings.general['Draft Type'] === 'Live Draft') {
+      if (!settings.general['Live Draft Pick Time']) {
+        errors.push('❌ Live Draft Pick Time is required');
+      }
+      if (!settings.general['Live Draft Time']) {
+        errors.push('❌ Live Draft Time is required');
+      }
+    }
+
+    // Validate Trade End Date
+    if (!settings.acquisitions['Trade End Date']) {
+      errors.push('❌ Trade End Date is required');
+    }
+
+    // Validate Max Acquisitions per Week
+    if (!settings.acquisitions['Max Acquisitions per Week']) {
+      errors.push('❌ Max Acquisitions per Week is required');
+    }
+
+    // Validate Waiver Players Unfreeze Time
+    if (!settings.waivers['Waiver Players Unfreeze Time']) {
+      errors.push('❌ Waiver Players Unfreeze Time is required');
+    }
+
+    // Validate Post Draft Players Unfreeze Time
+    if (!settings.waivers['Post Draft Players Unfreeze Time']) {
+      errors.push('❌ Post Draft Players Unfreeze Time is required');
+    }
+
+    // Validate Trade Review
+    if (!settings.trading['Trade Review']) {
+      errors.push('❌ Trade Review is required');
+    }
+
+    // Validate Trade Reject fields when Trade Review is not No review
+    if (settings.trading['Trade Review'] !== 'No review') {
+      if (!settings.trading['Trade Reject Time']) {
+        errors.push('❌ Trade Reject Time is required');
+      }
+      if (!settings.trading['Trade Reject percentage needed']) {
+        errors.push('❌ Trade Reject percentage needed is required');
+      }
+    }
+
+    // Validate Min Innings pitched per team per week
+    if (!settings.roster['Min Innings pitched per team per week']) {
+      errors.push('❌ Min Innings pitched per team per week is required');
+    }
+
+    // Validate Roster Positions
+    const nonMinorTotal = Object.entries(settings.roster['Roster Positions'])
+      .filter(([pos]) => pos !== 'Minor')
+      .reduce((sum, [, cnt]) => sum + cnt, 0);
+    const minorCount = settings.roster['Roster Positions']['Minor'] || 0;
+
+    if (nonMinorTotal > 25) {
+      errors.push('❌ Non-Minor total positions cannot exceed 25');
+    }
+    if (minorCount > 5) {
+      errors.push('❌ Minor positions cannot exceed 5');
+    }
+    if (nonMinorTotal === 0) {
+      errors.push('❌ At least one non-Minor roster position is required');
+    }
+
+    // Validate Start Scoring On
+    if (!settings.scoring['Start Scoring On']) {
+      errors.push('❌ Start Scoring On is required');
+    }
+
+    // Validate Batter Stat Categories
+    if (!Array.isArray(settings.scoring['Batter Stat Categories']) || settings.scoring['Batter Stat Categories'].length === 0) {
+      errors.push('❌ At least one Batter Stat Category is required');
+    }
+
+    // Validate Pitcher Stat Categories
+    if (!Array.isArray(settings.scoring['Pitcher Stat Categories']) || settings.scoring['Pitcher Stat Categories'].length === 0) {
+      errors.push('❌ At least one Pitcher Stat Category is required');
+    }
+
+    // Validate Playoffs
+    if (!settings.playoffs['Playoffs']) {
+      errors.push('❌ Playoffs setting is required');
+    }
+
+    // Validate Playoff fields when Playoffs is not No playoffs
+    if (settings.playoffs['Playoffs'] !== 'No playoffs') {
+      if (!settings.playoffs['Playoffs start']) {
+        errors.push('❌ Playoffs start date is required');
+      }
+      if (!settings.playoffs['Playoff/ranking Tie-Breaker']) {
+        errors.push('❌ Playoff/ranking Tie-Breaker is required');
+      }
+      if (!settings.playoffs['Playoff Reseeding']) {
+        errors.push('❌ Playoff Reseeding is required');
+      }
+      if (!settings.playoffs['Lock Eliminated Teams']) {
+        errors.push('❌ Lock Eliminated Teams is required');
+      }
+    }
+
+    // Validate League settings
+    if (!settings.league['Make League Publicly Viewable']) {
+      errors.push('❌ Make League Publicly Viewable setting is required');
+    }
+    if (!settings.league['Invite Permissions']) {
+      errors.push('❌ Invite Permissions setting is required');
+    }
+
+    return errors;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -339,6 +501,12 @@ const EditLeagueSettingsPage = ({ params }) => {
   }, [leagueId]);
 
   const handleSave = async () => {
+    const validationErrors = validateSettings();
+    if (validationErrors.length > 0) {
+      setSaveMessage(validationErrors.join('\n'));
+      return;
+    }
+
     setIsSaving(true);
     setSaveMessage('');
 
@@ -438,8 +606,9 @@ const EditLeagueSettingsPage = ({ params }) => {
                                   onChange={(e) =>
                                     handleSettingChange(section.key, key, e.target.value)
                                   }
+                                  disabled={isFieldDisabled(section.key, key)}
                                   rows="3"
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                                 />
                               ) : isDateTimeField(key) ? (
                                 <input
@@ -447,8 +616,8 @@ const EditLeagueSettingsPage = ({ params }) => {
                                   min={minDraftDateTime()}
                                   value={value}
                                   onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
-                                  disabled={settings.general['Draft Type'] !== 'Live Draft'}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                                  disabled={settings.general['Draft Type'] !== 'Live Draft' || isFieldDisabled(section.key, key)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                                 />
                               ) : isRosterPositions(key) ? (
                                 <div className="space-y-4">
@@ -462,6 +631,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                         ? false
                                         : nonMinorTotal > 25;
                                       const isMinorOverLimit = position === 'Minor' && minorCount > 5;
+                                      const isDisabled = isFieldDisabled(section.key, key);
 
                                       return (
                                         <div key={position} className="flex flex-col gap-1">
@@ -476,7 +646,8 @@ const EditLeagueSettingsPage = ({ params }) => {
                                             onChange={(e) =>
                                               handleRosterPositionChange(position, e.target.value)
                                             }
-                                            className={`px-2 py-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                            disabled={isDisabled}
+                                            className={`px-2 py-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
                                               isOverLimit || isMinorOverLimit
                                                 ? 'border-red-500 bg-red-50'
                                                 : 'border-gray-300'
@@ -517,9 +688,10 @@ const EditLeagueSettingsPage = ({ params }) => {
                                         type="checkbox"
                                         checked={Array.isArray(value) && value.includes(option)}
                                         disabled={
-                                          (!Array.isArray(value) || !value.includes(option)) &&
+                                          (isFieldDisabled(section.key, key)) ||
+                                          ((!Array.isArray(value) || !value.includes(option)) &&
                                           ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                            (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30
+                                            (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30)
                                         }
                                         onChange={(e) =>
                                           handleMultiSelectChange(
@@ -530,7 +702,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                           )
                                         }
                                       />
-                                      <span>{option}</span>
+                                      <span className={isFieldDisabled(section.key, key) ? 'text-gray-400' : ''}>{option}</span>
                                     </label>
                                   ))}
                                   <div className="text-xs text-gray-500 mt-2">
@@ -547,7 +719,8 @@ const EditLeagueSettingsPage = ({ params }) => {
                                   onChange={(e) =>
                                     handleSettingChange(section.key, key, e.target.value)
                                   }
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  disabled={isFieldDisabled(section.key, key)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                                 />
                               ) : (
                                 <select
@@ -555,7 +728,8 @@ const EditLeagueSettingsPage = ({ params }) => {
                                   onChange={(e) =>
                                     handleSettingChange(section.key, key, e.target.value)
                                   }
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                  disabled={isFieldDisabled(section.key, key)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                                 >
                                   {(() => {
                                     const options = key === 'Playoff/ranking Tie-Breaker' && settings.playoffs['Playoffs'] === 'No playoffs'
