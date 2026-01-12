@@ -200,7 +200,7 @@ function SchedulePreview({ settings }) {
     fetchAllSchedule();
   }, []);
 
-  // 當設定改變時，即時篩選週次
+  // 當設定改變時，即時篩選週次並加入季後賽推算
   useEffect(() => {
     if (!allScheduleData || allScheduleData.length === 0) {
       setFilteredSchedule([]);
@@ -209,6 +209,7 @@ function SchedulePreview({ settings }) {
 
     const startScoringOn = settings?.scoring?.['Start Scoring On'];
     const playoffsStart = settings?.playoffs?.['Playoffs start'];
+    const playoffsType = settings?.playoffs?.['Playoffs'];
 
     if (!startScoringOn) {
       setFilteredSchedule([]);
@@ -231,10 +232,9 @@ function SchedulePreview({ settings }) {
       return;
     }
 
-    // 篩選從 startDate 開始、到 endDate（或最後）的週次
-    const filtered = allScheduleData.filter((week) => {
+    // 篩選從 startDate 開始的週次
+    const regularSeasonWeeks = allScheduleData.filter((week) => {
       const weekStart = new Date(week.week_start);
-      const weekEnd = new Date(week.week_end);
 
       // 週次開始日期必須 >= startScoringOn
       if (weekStart < startDate) {
@@ -249,7 +249,65 @@ function SchedulePreview({ settings }) {
       return true;
     });
 
-    setFilteredSchedule(filtered);
+    // 計算季後賽週次標籤
+    let playoffLabels = [];
+    if (playoffsStart && playoffsType && playoffsType !== 'No playoffs') {
+      const teamsMatch = playoffsType.match(/^(\d+) teams/);
+      const weeksMatch = playoffsType.match(/(\d+) weeks?$/);
+      const playoffTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
+      const playoffWeeks = weeksMatch ? parseInt(weeksMatch[1]) : 0;
+
+      if (playoffTeams === 2) {
+        playoffLabels = ['Final'];
+      } else if (playoffTeams === 4) {
+        playoffLabels = ['Semifinal', 'Final'];
+      } else if (playoffTeams === 6) {
+        playoffLabels = ['Quarterfinal', 'Semifinal', 'Final'];
+      } else if (playoffTeams >= 8) {
+        playoffLabels = ['First Round', 'Quarterfinal', 'Semifinal', 'Final'];
+      }
+    }
+
+    // 找出季後賽週次並標記
+    const playoffStartDate = endDate;
+    const scheduleWithTypes = regularSeasonWeeks.map((week) => ({
+      ...week,
+      week_type: 'regular_season',
+      week_label: `Week ${week.week_id}`,
+    }));
+
+    // 如果有季後賽，加入補賽預備週和季後賽週次
+    if (playoffStartDate && playoffLabels.length > 0) {
+      // 加入補賽預備週
+      const makeupWeek = allScheduleData.find((week) => {
+        const weekStart = new Date(week.week_start);
+        return weekStart >= playoffStartDate;
+      });
+
+      if (makeupWeek) {
+        scheduleWithTypes.push({
+          ...makeupWeek,
+          week_type: 'makeup',
+          week_label: 'Makeup Preparation Week',
+        });
+
+        // 加入季後賽週次
+        const playoffWeeks = allScheduleData.filter((week) => {
+          const weekStart = new Date(week.week_start);
+          return weekStart > new Date(makeupWeek.week_start);
+        }).slice(0, playoffLabels.length);
+
+        playoffWeeks.forEach((week, index) => {
+          scheduleWithTypes.push({
+            ...week,
+            week_type: 'playoffs',
+            week_label: playoffLabels[index] || `Playoff ${index + 1}`,
+          });
+        });
+      }
+    }
+
+    setFilteredSchedule(scheduleWithTypes);
   }, [allScheduleData, settings]);
 
   if (loading) {
@@ -296,6 +354,8 @@ function SchedulePreview({ settings }) {
           <thead>
             <tr className="bg-blue-100 border-b-2 border-blue-300">
               <th className="px-4 py-2 text-left font-semibold text-gray-800">Week</th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-800">Type</th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-800">Label</th>
               <th className="px-4 py-2 text-left font-semibold text-gray-800">Start Date</th>
               <th className="px-4 py-2 text-left font-semibold text-gray-800">End Date</th>
             </tr>
@@ -304,9 +364,27 @@ function SchedulePreview({ settings }) {
             {filteredSchedule.map((week, index) => (
               <tr
                 key={index}
-                className="border-b bg-white hover:bg-blue-50"
+                className={`border-b ${
+                  week.week_type === 'playoffs'
+                    ? 'bg-purple-50 hover:bg-purple-100'
+                    : week.week_type === 'makeup'
+                    ? 'bg-yellow-50 hover:bg-yellow-100'
+                    : 'bg-white hover:bg-blue-50'
+                }`}
               >
                 <td className="px-4 py-2 font-semibold text-gray-800">{week.week_id}</td>
+                <td className="px-4 py-2 text-gray-600">
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                    week.week_type === 'playoffs'
+                      ? 'bg-purple-100 text-purple-800'
+                      : week.week_type === 'makeup'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : 'Regular'}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-gray-700 font-medium">{week.week_label}</td>
                 <td className="px-4 py-2 text-gray-600">{week.week_start}</td>
                 <td className="px-4 py-2 text-gray-600">{week.week_end}</td>
               </tr>
