@@ -260,11 +260,11 @@ const LeagueSettingsPage = () => {
         setSaveMessage(`✅ ${result.message}\nLeague ID: ${result.league_id}`);
         setTimeout(() => setSaveMessage(''), 5000);
       } else {
-        setSaveMessage(`❌ 保存失敗: ${result.error || '未知錯誤'}`);
+        setSaveMessage(`❌ Failed: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('保存錯誤:', error);
-      setSaveMessage(`❌ 保存失敗: ${error.message}`);
+      console.error('Save error:', error);
+      setSaveMessage(`❌ Save failed: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
