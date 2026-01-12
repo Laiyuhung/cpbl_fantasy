@@ -10,6 +10,7 @@ export default function LeaguePage() {
 
   const [leagueSettings, setLeagueSettings] = useState(null);
   const [scheduleData, setScheduleData] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -32,6 +33,7 @@ export default function LeaguePage() {
         if (result.success) {
           setLeagueSettings(result.league);
           setScheduleData(result.schedule || []);
+          setMembers(result.members || []);
         } else {
           setError('Failed to load league data');
         }
@@ -104,6 +106,36 @@ export default function LeaguePage() {
             {leagueSettings.league_name}
           </h1>
         </div>
+
+        {/* League Members Section */}
+        <Card className="shadow-lg mb-8">
+          <CardHeader className="bg-gradient-to-r from-green-600 to-green-700">
+            <CardTitle className="text-white text-2xl">League Members</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {members.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No members in this league yet
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {members.map((member) => (
+                  <div
+                    key={member.manager_id}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="text-xl font-bold text-gray-900">
+                      {member.nickname}
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      {member.managers?.name || 'Unknown'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="shadow-lg">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700">

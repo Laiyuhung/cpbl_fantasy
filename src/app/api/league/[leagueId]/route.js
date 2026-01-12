@@ -47,10 +47,33 @@ export async function GET(request, { params }) {
       );
     }
 
+    // Fetch league members with manager details
+    const { data: members, error: membersError } = await supabase
+      .from('league_members')
+      .select(`
+        nickname,
+        joined_at,
+        manager_id,
+        managers (
+          name
+        )
+      `)
+      .eq('league_id', leagueId)
+      .order('joined_at', { ascending: true });
+
+    if (membersError) {
+      console.error('Supabase members error:', membersError);
+      return NextResponse.json(
+        { error: 'Failed to fetch members', details: membersError.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       league: leagueSettings,
       schedule: schedule || [],
+      members: members || [],
     });
   } catch (error) {
     console.error('Server error:', error);
