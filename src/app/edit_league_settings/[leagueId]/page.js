@@ -772,7 +772,9 @@ const EditLeagueSettingsPage = ({ params }) => {
         };
         const playoffsStartDate = parseDate(settings.playoffs['Playoffs start']);
         
-        if (playoffsStartDate && allScheduleData.length > 0) {
+        if (!playoffsStartDate) {
+          errors.push('❌ Invalid Playoffs start date format');
+        } else if (allScheduleData && allScheduleData.length > 0) {
           // Find available weeks for playoffs (excluding week 23, only up to week 22)
           const availablePlayoffWeeks = allScheduleData.filter((week) => {
             const weekStart = new Date(week.week_start);

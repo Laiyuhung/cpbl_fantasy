@@ -660,6 +660,8 @@ const CreateLeaguePage = () => {
       }
 
       // Validate that playoff schedule can complete by Week 22
+      // Note: This validation is already done in SchedulePreview component
+      // and prevents submission via scheduleError state
       if (weeksMatch && settings.playoffs['Playoffs start']) {
         const playoffWeeks = parseInt(weeksMatch[1]);
         const parseDate = (dateStr) => {
@@ -670,17 +672,8 @@ const CreateLeaguePage = () => {
         };
         const playoffsStartDate = parseDate(settings.playoffs['Playoffs start']);
         
-        if (playoffsStartDate && allScheduleData.length > 0) {
-          // Find available weeks for playoffs (excluding week 23, only up to week 22)
-          const availablePlayoffWeeks = allScheduleData.filter((week) => {
-            const weekStart = new Date(week.week_start);
-            return weekStart >= playoffsStartDate && week.week_id !== 23 && week.week_id <= 22;
-          });
-
-          // Check if we have enough weeks for playoffs
-          if (availablePlayoffWeeks.length < playoffWeeks) {
-            errors.push(`❌ Playoff schedule cannot complete by Week 22. Starting from ${settings.playoffs['Playoffs start']}, only ${availablePlayoffWeeks.length} week(s) available but ${playoffWeeks} week(s) required. Week 23 is reserved for makeup games. Please start playoffs earlier or reduce the number of playoff teams.`);
-          }
+        if (!playoffsStartDate) {
+          errors.push('❌ Invalid Playoffs start date format');
         }
       }
 
@@ -711,7 +704,10 @@ const CreateLeaguePage = () => {
 
   const handleSave = async () => {
     const validationErrors = validateSettings();
+    console.log('Validation errors:', validationErrors);
+    
     if (validationErrors.length > 0) {
+      console.warn('Form has validation errors:', validationErrors);
       setSaveMessage(validationErrors.join('\n'));
       return;
     }
@@ -720,6 +716,7 @@ const CreateLeaguePage = () => {
     setSaveMessage('');
 
     try {
+      console.log('Sending request to /api/league-settings');
       const response = await fetch('/api/league-settings', {
         method: 'POST',
         headers: {
@@ -728,7 +725,9 @@ const CreateLeaguePage = () => {
         body: JSON.stringify({ settings }),
       });
 
+      console.log('Response status:', response.status);
       const result = await response.json();
+      console.log('Response result:', result);
 
       if (response.ok && result.success) {
         setLeagueId(result.league_id);
@@ -738,7 +737,7 @@ const CreateLeaguePage = () => {
         setSaveMessage(`❌ 保存失敗: ${result.error || '未知錯誤'}`);
       }
     } catch (error) {
-      console.error('保存錯誤:', error);
+      console.error('Save error:', error);
       setSaveMessage(`❌ 保存失敗: ${error.message}`);
     } finally {
       setIsSaving(false);
