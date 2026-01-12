@@ -10,6 +10,7 @@ const LeagueSettingsPage = () => {
       'Draft Type': 'Live Draft',
       'Live Draft Pick Time': '1 Minute',
       'Max Teams': '6',
+      'Scoring Type': 'Head-to-Head',
     },
     acquisitions: {
       'Trade End Date': 'August 7, 2025',
@@ -18,12 +19,12 @@ const LeagueSettingsPage = () => {
     waivers: {
       'Waiver Players Unfreeze Time': '2 days',
       'Allow injured players from waivers or free agents to be added directly to the injury slot': 'No',
+      'Post Draft Players Unfreeze Time': '1 day',
     },
     trading: {
       'Trade Review': 'League votes',
       'Trade Reject Time': '2 days',
-      'Trade Reject percentage': '50%',
-      'Post Draft Players  Unfreeze Time': '1 day',
+      'Trade Reject percentage needed': '50%',
     },
     roster: {
       'Min Innings pitched per team per week': '20',
@@ -83,14 +84,15 @@ const LeagueSettingsPage = () => {
     'Draft Type': ['Live Draft', 'Offline Draft'],
     'Live Draft Pick Time': ['30 Seconds', '1 Minute', '2 Minutes', '3 Minutes'],
     'Max Teams': ['4', '6', '8', '10'],
+    'Scoring Type': ['Head-to-Head', 'Head-to-Head One Win', 'Head-to-Head Fantasy Points'],
     'Trade End Date': ['No trade deadline', 'June 15', 'July 1', 'July 15', 'August 1', 'August 7', 'August 15', 'August 30'],
     'Waiver Players Unfreeze Time': ['0 days', '1 day', '2 days', '3 days', '5 days', '7 days'],
     'Allow injured players from waivers or free agents to be added directly to the injury slot': ['Yes', 'No'],
 
     'Trade Review': ['League votes', 'Commissioner reviews', 'No review'],
     'Trade Reject Time': ['0 days', '1 day', '2 days', '3 days', '7 days'],
-    'Trade Reject percentage': [ '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
-    'Post Draft Players  Unfreeze Time': [ '1 day', '2 days', '3 days'],
+    'Trade Reject percentage needed': [ '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
+    'Post Draft Players Unfreeze Time': [ '1 day', '2 days', '3 days'],
 
     'Max Acquisitions per Week': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'No maximum'],
     'Min Innings pitched per team per week': ['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50'],
@@ -171,14 +173,14 @@ const LeagueSettingsPage = () => {
   };
 
   const sections = [
-    { key: 'general', label: '基本設定 (General Settings)', icon: '⚙️' },
-    { key: 'acquisitions', label: '交易與獲取 (Acquisitions & Trading)', icon: '🔄' },
-    { key: 'waivers', label: '自由球員 (Waiver Settings)', icon: '📋' },
-    { key: 'trading', label: '交易審核 (Trade Settings)', icon: '🤝' },
-    { key: 'roster', label: '名單 (Roster Settings)', icon: '👥' },
-    { key: 'scoring', label: '計分 (Scoring Settings)', icon: '📊' },
-    { key: 'playoffs', label: '季後賽 (Playoff Settings)', icon: '🏆' },
-    { key: 'league', label: '聯盟 (League Settings)', icon: '🏟️' },
+    { key: 'general', label: 'General Settings', icon: '⚙️' },
+    { key: 'acquisitions', label: 'Acquisitions & Trading', icon: '🔄' },
+    { key: 'waivers', label: 'Waiver Settings', icon: '📋' },
+    { key: 'trading', label: 'Trade Settings', icon: '🤝' },
+    { key: 'roster', label: 'Roster Settings', icon: '👥' },
+    { key: 'scoring', label: 'Scoring Settings', icon: '📊' },
+    { key: 'playoffs', label: 'Playoff Settings', icon: '🏆' },
+    { key: 'league', label: 'League Settings', icon: '🏟️' },
   ];
 
   const handleSettingChange = (section, key, value) => {
@@ -292,7 +294,16 @@ const LeagueSettingsPage = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <tbody>
-                        {Object.entries(settings[section.key]).map(([key, value], index) => (
+                        {Object.entries(settings[section.key]).map(([key, value], index) => {
+                          // 如果是 playoffs section 且 Playoffs 選項是 No playoffs，則隱藏其他選項
+                          if (section.key === 'playoffs' && key !== 'Playoffs' && settings.playoffs['Playoffs'] === 'No playoffs') {
+                            return null;
+                          }
+                          // 如果是 trading section 且 Trade Review 選項是 No review，則隱藏 Trade Reject Time 和 Trade Reject percentage needed
+                          if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
+                            return null;
+                          }
+                          return (
                           <tr
                             key={key}
                             className={`${
@@ -356,18 +367,18 @@ const LeagueSettingsPage = () => {
                                         ? 'text-red-600 font-semibold'
                                         : 'text-gray-600'
                                     }`}>
-                                      非 Minor 總計: {
+                                      Non-Minor total: {
                                         Object.entries(value)
                                           .filter(([pos]) => pos !== 'Minor')
                                           .reduce((sum, [, cnt]) => sum + cnt, 0)
-                                      } / 25
+                                      } / 25 (max)
                                     </div>
                                     <div className={`${
                                       (value['Minor'] || 0) > 5
                                         ? 'text-red-600 font-semibold'
                                         : 'text-gray-600'
                                     }`}>
-                                      Minor: {value['Minor'] || 0} / 5
+                                      Minor: {value['Minor'] || 0} / 5 (max)
                                     </div>
                                   </div>
                                 </div>
@@ -396,7 +407,7 @@ const LeagueSettingsPage = () => {
                                     </label>
                                   ))}
                                   <div className="text-xs text-gray-500 mt-2">
-                                    已選擇: {(
+                                    selected: {(
                                       (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
                                       (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
                                     )} / 30
@@ -428,7 +439,8 @@ const LeagueSettingsPage = () => {
                               )}
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -467,12 +479,12 @@ const LeagueSettingsPage = () => {
                   waivers: {
                     'Waiver Players Unfreeze Time': '2 days',
                     'Allow injured players from waivers or free agents to be added directly to the injury slot': 'No',
+                    'Post Draft Players Unfreeze Time': '1 day',
                   },
                   trading: {
                     'Trade Review': 'League votes',
                     'Trade Reject Time': '2 days',
-                    'Trade Reject percentage': '50%',
-                    'Post Draft Players  Unfreeze Time': '1 day',
+                    'Trade Reject percentage needed': '50%',
                   },
                   roster: {
                     'Min Innings pitched per team per week': '20',

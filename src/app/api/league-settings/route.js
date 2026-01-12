@@ -18,6 +18,7 @@ export async function POST(request) {
       draft_type: settings.general['Draft Type'],
       live_draft_pick_time: settings.general['Live Draft Pick Time'],
       max_teams: parseInt(settings.general['Max Teams']),
+      scoring_type: settings.general['Scoring Type'],
 
       // Acquisitions
       trade_end_date: settings.acquisitions['Trade End Date'],
@@ -26,12 +27,12 @@ export async function POST(request) {
       // Waivers
       waiver_players_unfreeze_time: settings.waivers['Waiver Players Unfreeze Time'],
       allow_injured_to_injury_slot: settings.waivers['Allow injured players from waivers or free agents to be added directly to the injury slot'],
+      post_draft_players_unfreeze_time: settings.waivers['Post Draft Players Unfreeze Time'],
 
       // Trading
       trade_review: settings.trading['Trade Review'],
-      trade_reject_time: settings.trading['Trade Reject Time'],
-      trade_reject_percentage: settings.trading['Trade Reject percentage'],
-      post_draft_players_unfreeze_time: settings.trading['Post Draft Players  Unfreeze Time'],
+      trade_reject_time: settings.trading['Trade Review'] === 'No review' ? 'No review' : settings.trading['Trade Reject Time'],
+      trade_reject_percentage: settings.trading['Trade Review'] === 'No review' ? 'No review' : settings.trading['Trade Reject percentage needed'],
 
       // Roster
       min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
@@ -44,10 +45,10 @@ export async function POST(request) {
 
       // Playoffs
       playoffs: settings.playoffs['Playoffs'],
-      playoffs_start: settings.playoffs['Playoffs start'],
-      playoff_tie_breaker: settings.playoffs['Playoff Tie-Breaker'],
-      playoff_reseeding: settings.playoffs['Playoff Reseeding'],
-      lock_eliminated_teams: settings.playoffs['Lock Eliminated Teams'],
+      playoffs_start: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoffs start'],
+      playoff_tie_breaker: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoff Tie-Breaker'],
+      playoff_reseeding: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoff Reseeding'],
+      lock_eliminated_teams: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Lock Eliminated Teams'],
 
       // League
       make_league_publicly_viewable: settings.league['Make League Publicly Viewable'],
