@@ -232,23 +232,6 @@ function SchedulePreview({ settings }) {
       return;
     }
 
-    // 篩選從 startDate 開始的週次
-    const regularSeasonWeeks = allScheduleData.filter((week) => {
-      const weekStart = new Date(week.week_start);
-
-      // 週次開始日期必須 >= startScoringOn
-      if (weekStart < startDate) {
-        return false;
-      }
-
-      // 如果有 playoffsStart，週次必須在季後賽前結束
-      if (endDate && weekStart >= endDate) {
-        return false;
-      }
-
-      return true;
-    });
-
     // 計算季後賽週次標籤
     let playoffLabels = [];
     if (playoffsStart && playoffsType && playoffsType !== 'No playoffs') {
@@ -268,8 +251,39 @@ function SchedulePreview({ settings }) {
       }
     }
 
-    // 找出季後賽週次並標記
+    // 找出補賽預備週 (季後賽開始前一週)
     const playoffStartDate = endDate;
+    let makeupWeek = null;
+    if (playoffStartDate && playoffLabels.length > 0) {
+      makeupWeek = allScheduleData.find((week) => {
+        const weekEnd = new Date(week.week_end);
+        return weekEnd >= new Date(playoffStartDate.getTime() - 24 * 60 * 60 * 1000);
+      });
+    }
+
+    // 篩選從 startDate 開始，但不包含補賽預備週的週次
+    const regularSeasonWeeks = allScheduleData.filter((week) => {
+      const weekStart = new Date(week.week_start);
+
+      // 週次開始日期必須 >= startScoringOn
+      if (weekStart < startDate) {
+        return false;
+      }
+
+      // 不包含補賽預備週
+      if (makeupWeek && week.week_id === makeupWeek.week_id) {
+        return false;
+      }
+
+      // 如果有 playoffsStart，週次必須在季後賽前結束
+      if (endDate && weekStart >= endDate) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // 組織最終的週次列表
     const scheduleWithTypes = regularSeasonWeeks.map((week) => ({
       ...week,
       week_type: 'regular_season',
@@ -277,52 +291,44 @@ function SchedulePreview({ settings }) {
     }));
 
     // 如果有季後賽，加入補賽預備週和季後賽週次
-    if (playoffStartDate && playoffLabels.length > 0) {
-      // 補賽預備週應該是季後賽開始前一週
-      const makeupWeek = allScheduleData.find((week) => {
-        const weekEnd = new Date(week.week_end);
-        return weekEnd >= new Date(playoffStartDate.getTime() - 24 * 60 * 60 * 1000);
+    if (playoffStartDate && playoffLabels.length > 0 && makeupWeek) {
+      scheduleWithTypes.push({
+        ...makeupWeek,
+        week_type: 'makeup',
+        week_label: 'Makeup Preparation Week',
       });
 
-      if (makeupWeek) {
+      // 加入季後賽週次，跳過week_id=23
+      const allPlayoffWeeks = allScheduleData
+        .filter((week) => {
+          const weekStart = new Date(week.week_start);
+          return weekStart >= playoffStartDate && week.week_id !== 23;
+        })
+        .slice(0, playoffLabels.length);
+
+      allPlayoffWeeks.forEach((week, index) => {
         scheduleWithTypes.push({
-          ...makeupWeek,
-          week_type: 'makeup',
-          week_label: 'Makeup Preparation Week',
+          ...week,
+          week_type: 'playoffs',
+          week_label: playoffLabels[index] || `Playoff ${index + 1}`,
         });
+      });
 
-        // 加入季後賽週次，跳過week_id=23
-        const allPlayoffWeeks = allScheduleData
-          .filter((week) => {
-            const weekStart = new Date(week.week_start);
-            return weekStart >= playoffStartDate && week.week_id !== 23;
-          })
-          .slice(0, playoffLabels.length);
+      // 加入Preparation Week (在季後賽後)
+      const afterPlayoffWeeks = allScheduleData
+        .filter((week) => {
+          const weekStart = new Date(week.week_start);
+          return weekStart > new Date(allPlayoffWeeks[allPlayoffWeeks.length - 1]?.week_end || playoffStartDate);
+        })
+        .slice(0, 1);
 
-        allPlayoffWeeks.forEach((week, index) => {
-          scheduleWithTypes.push({
-            ...week,
-            week_type: 'playoffs',
-            week_label: playoffLabels[index] || `Playoff ${index + 1}`,
-          });
+      afterPlayoffWeeks.forEach((week) => {
+        scheduleWithTypes.push({
+          ...week,
+          week_type: 'preparation',
+          week_label: 'Preparation Week',
         });
-
-        // 加入Preparation Week (在季後賽後)
-        const afterPlayoffWeeks = allScheduleData
-          .filter((week) => {
-            const weekStart = new Date(week.week_start);
-            return weekStart > new Date(allPlayoffWeeks[allPlayoffWeeks.length - 1]?.week_end || playoffStartDate);
-          })
-          .slice(0, 1);
-
-        afterPlayoffWeeks.forEach((week) => {
-          scheduleWithTypes.push({
-            ...week,
-            week_type: 'preparation',
-            week_label: 'Preparation Week',
-          });
-        });
-      }
+      });
     }
 
     setFilteredSchedule(scheduleWithTypes);
