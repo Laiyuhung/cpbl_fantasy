@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { generateLeagueSchedule } from '@/lib/scheduleUtils';
 
 const cloneSettings = (settings) => JSON.parse(JSON.stringify(settings));
 
@@ -619,82 +618,11 @@ const CreateLeaguePage = () => {
           </div>
 
           <div className="mt-8">
-            {/* 週次預覽表 */}
-            {settings.scoring['Start Scoring On'] && (
-              <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-                {(() => {
-                  const { schedule, error } = generateLeagueSchedule(
-                    settings.scoring['Start Scoring On'],
-                    settings.playoffs['Playoffs start'],
-                    settings.playoffs['Playoffs']
-                  );
-
-                  if (error) {
-                    return (
-                      <div className="p-4 bg-red-50 border border-red-300 rounded-md">
-                        <p className="text-red-800">{error}</p>
-                      </div>
-                    );
-                  }
-
-                  if (schedule.length === 0) {
-                    return (
-                      <p className="text-gray-600">No schedule data available</p>
-                    );
-                  }
-
-                  return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm border-collapse">
-                        <thead>
-                          <tr className="bg-blue-100 border-b-2 border-blue-300">
-                            <th className="px-4 py-2 text-left font-semibold text-gray-800">Week</th>
-                            <th className="px-4 py-2 text-left font-semibold text-gray-800">Type</th>
-                            <th className="px-4 py-2 text-left font-semibold text-gray-800">Label</th>
-                            <th className="px-4 py-2 text-left font-semibold text-gray-800">Start Date</th>
-                            <th className="px-4 py-2 text-left font-semibold text-gray-800">End Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {schedule.map((week, index) => (
-                            <tr
-                              key={index}
-                              className={`border-b ${
-                                week.week_type === 'regular_season'
-                                  ? 'bg-white hover:bg-blue-50'
-                                  : week.week_type === 'makeup'
-                                  ? 'bg-yellow-50 hover:bg-yellow-100'
-                                  : 'bg-purple-50 hover:bg-purple-100'
-                              }`}
-                            >
-                              <td className="px-4 py-2 font-semibold text-gray-800">{week.week_number}</td>
-                              <td className="px-4 py-2 text-gray-600">
-                                <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                  week.week_type === 'regular_season'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : week.week_type === 'makeup'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-purple-100 text-purple-800'
-                                }`}>
-                                  {week.week_type === 'regular_season' ? 'Regular' : week.week_type === 'makeup' ? 'Makeup' : 'Playoffs'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2 text-gray-700 font-medium">{week.week_label}</td>
-                              <td className="px-4 py-2 text-gray-600">{week.week_start}</td>
-                              <td className="px-4 py-2 text-gray-600">{week.week_end}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-gray-700">
-                        <p className="font-semibold">Total: {schedule.length} weeks</p>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
+            {/* 週次預覽表 - 在編輯時從schedule_date表顯示 */}
+            <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+              <p className="text-gray-600">Schedule preview will be displayed after league creation based on schedule_date table</p>
+            </div>
           </div>
 
           <div className="mt-8 flex justify-end gap-4">
