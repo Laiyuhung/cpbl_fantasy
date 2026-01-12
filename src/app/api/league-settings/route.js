@@ -84,6 +84,83 @@ export async function POST(request) {
   }
 }
 
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { league_id, settings } = body;
+
+    if (!league_id) {
+      return NextResponse.json(
+        { error: 'league_id is required' },
+        { status: 400 }
+      );
+    }
+
+    const leagueData = {
+      league_name: settings.general['League Name'],
+      draft_type: settings.general['Draft Type'],
+      live_draft_pick_time: settings.general['Live Draft Pick Time'],
+      max_teams: parseInt(settings.general['Max Teams']),
+      scoring_type: settings.general['Scoring Type'],
+
+      trade_end_date: settings.acquisitions['Trade End Date'],
+      max_acquisitions_per_week: settings.acquisitions['Max Acquisitions per Week'],
+
+      waiver_players_unfreeze_time: settings.waivers['Waiver Players Unfreeze Time'],
+      allow_injured_to_injury_slot: settings.waivers['Allow injured players from waivers or free agents to be added directly to the injury slot'],
+      post_draft_players_unfreeze_time: settings.waivers['Post Draft Players Unfreeze Time'],
+
+      trade_review: settings.trading['Trade Review'],
+      trade_reject_time: settings.trading['Trade Review'] === 'No review' ? 'No review' : settings.trading['Trade Reject Time'],
+      trade_reject_percentage: settings.trading['Trade Review'] === 'No review' ? 'No review' : settings.trading['Trade Reject percentage needed'],
+
+      min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
+      roster_positions: settings.roster['Roster Positions'],
+
+      start_scoring_on: settings.scoring['Start Scoring On'],
+      batter_stat_categories: settings.scoring['Batter Stat Categories'],
+      pitcher_stat_categories: settings.scoring['Pitcher Stat Categories'],
+
+      playoffs: settings.playoffs['Playoffs'],
+      playoffs_start: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoffs start'],
+      playoff_tie_breaker: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoff Tie-Breaker'],
+      playoff_reseeding: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Playoff Reseeding'],
+      lock_eliminated_teams: settings.playoffs['Playoffs'] === 'No playoffs' ? 'No playoffs' : settings.playoffs['Lock Eliminated Teams'],
+
+      make_league_publicly_viewable: settings.league['Make League Publicly Viewable'],
+      invite_permissions: settings.league['Invite Permissions'],
+    };
+
+    const { data, error } = await supabase
+      .from('league_settings')
+      .update(leagueData)
+      .eq('league_id', league_id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { error: '更新失敗', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'League updated successfully!',
+      league_id,
+      data,
+    });
+  } catch (error) {
+    console.error('Server error:', error);
+    return NextResponse.json(
+      { error: 'Server error', details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
