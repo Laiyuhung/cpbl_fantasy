@@ -659,24 +659,6 @@ const CreateLeaguePage = () => {
         }
       }
 
-      // Validate that playoff schedule can complete by Week 22
-      // Note: This validation is already done in SchedulePreview component
-      // and prevents submission via scheduleError state
-      if (weeksMatch && settings.playoffs['Playoffs start']) {
-        const playoffWeeks = parseInt(weeksMatch[1]);
-        const parseDate = (dateStr) => {
-          if (!dateStr) return null;
-          const parts = dateStr.split('.');
-          if (parts.length !== 3) return null;
-          return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        };
-        const playoffsStartDate = parseDate(settings.playoffs['Playoffs start']);
-        
-        if (!playoffsStartDate) {
-          errors.push('❌ Invalid Playoffs start date format');
-        }
-      }
-
       if (!settings.playoffs['Playoffs start']) {
         errors.push('❌ Playoffs start date is required');
       }
