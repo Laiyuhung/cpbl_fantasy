@@ -558,10 +558,10 @@ const CreateLeaguePage = () => {
       console.log('Difference in hours:', (draftDateTime.getTime() - latestDraftDate.getTime()) / (1000 * 60 * 60));
       
       if (draftDateTime > latestDraftDate) {
-        errors.draftTimeError = 'Live Draft Time must be at least 2 days before Start Scoring On';
+        errors.draftTimeError = 'Live Draft Time must be at least 2 days before season start';
         console.log('❌ FAIL: Live Draft Time is TOO LATE');
       } else {
-        console.log('✅ PASS: Live Draft Time is at least 2 days before Start Scoring On');
+        console.log('✅ PASS: Live Draft Time is at least 2 days before season start');
       }
     }
 
