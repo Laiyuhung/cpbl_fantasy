@@ -233,8 +233,8 @@ function SchedulePreview({ settings }) {
 
     // 篩選從 startDate 開始、到 endDate（或最後）的週次
     const filtered = allScheduleData.filter((week) => {
-      const weekStart = new Date(week.start);
-      const weekEnd = new Date(week.end);
+      const weekStart = new Date(week.week_start);
+      const weekEnd = new Date(week.week_end);
 
       // 週次開始日期必須 >= startScoringOn
       if (weekStart < startDate) {
@@ -306,9 +306,9 @@ function SchedulePreview({ settings }) {
                 key={index}
                 className="border-b bg-white hover:bg-blue-50"
               >
-                <td className="px-4 py-2 font-semibold text-gray-800">{week.week}</td>
-                <td className="px-4 py-2 text-gray-600">{week.start}</td>
-                <td className="px-4 py-2 text-gray-600">{week.end}</td>
+                <td className="px-4 py-2 font-semibold text-gray-800">{week.week_id}</td>
+                <td className="px-4 py-2 text-gray-600">{week.week_start}</td>
+                <td className="px-4 py-2 text-gray-600">{week.week_end}</td>
               </tr>
             ))}
           </tbody>
