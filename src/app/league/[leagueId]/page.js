@@ -103,7 +103,6 @@ export default function LeaguePage() {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
             {leagueSettings.league_name}
           </h1>
-          <p className="text-gray-600">League ID: {leagueId}</p>
         </div>
 
         <Card className="shadow-lg">
