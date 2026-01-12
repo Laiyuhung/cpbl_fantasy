@@ -86,6 +86,13 @@ export default function LoginPage() {
           忘記密碼
         </button>
 
+        <button
+          onClick={() => router.push('/register')}
+          className="w-full mt-3 bg-green-500 text-white py-2 rounded hover:bg-green-600"
+        >
+          註冊新帳號
+        </button>
+
         {error && <div className="text-red-600 mt-4">⚠️ {error}</div>}
       </div>
     </div>
