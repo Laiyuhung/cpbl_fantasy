@@ -990,6 +990,13 @@ const EditLeagueSettingsPage = ({ params }) => {
                           if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
                             return null;
                           }
+                          if (
+                            section.key === 'general' &&
+                            settings.general['Draft Type'] !== 'Live Draft' &&
+                            ['Live Draft Pick Time', 'Live Draft Time'].includes(key)
+                          ) {
+                            return null;
+                          }
                           return (
                           <tr
                             key={key}
