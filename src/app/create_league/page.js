@@ -165,7 +165,7 @@ const sections = [
 ];
 
 // SchedulePreview 元件：根據設定值實時推算schedule_date表中的週次
-function SchedulePreview({ settings }) {
+function SchedulePreview({ settings, onValidationChange }) {
   const [allScheduleData, setAllScheduleData] = useState([]);
   const [scheduleValidationError, setScheduleValidationError] = useState('');
   const [filteredSchedule, setFilteredSchedule] = useState([]);
@@ -335,10 +335,27 @@ function SchedulePreview({ settings }) {
           week_label: 'Preparation Week',
         });
       });
+
+      // 驗證季後賽週次是否足夠
+      const weeksMatch = playoffsType.match(/(\d+) weeks?$/);
+      if (weeksMatch) {
+        const requiredPlayoffWeeks = parseInt(weeksMatch[1]);
+        if (allPlayoffWeeks.length < requiredPlayoffWeeks) {
+          const errorMsg = `Playoff schedule cannot complete by Week 22. Starting from ${playoffsStart}, only ${allPlayoffWeeks.length} week(s) available but ${requiredPlayoffWeeks} week(s) required. Week 23 is reserved for makeup games.`;
+          setScheduleValidationError(errorMsg);
+          if (onValidationChange) onValidationChange(errorMsg);
+        } else {
+          setScheduleValidationError('');
+          if (onValidationChange) onValidationChange('');
+        }
+      }
+    } else {
+      setScheduleValidationError('');
+      if (onValidationChange) onValidationChange('');
     }
 
     setFilteredSchedule(scheduleWithTypes);
-  }, [allScheduleData, settings]);
+  }, [allScheduleData, settings, onValidationChange]);
 
   if (loading) {
     return (
@@ -423,6 +440,11 @@ function SchedulePreview({ settings }) {
             ))}
           </tbody>
         </table>
+        {scheduleValidationError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded text-sm text-red-800">
+            <p className="font-semibold">❌ {scheduleValidationError}</p>
+          </div>
+        )}
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-gray-700">
           <p className="font-semibold">Total: {filteredSchedule.length} weeks</p>
         </div>
@@ -436,6 +458,11 @@ const CreateLeaguePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [leagueId, setLeagueId] = useState(null);
+  const [scheduleError, setScheduleError] = useState('');
+
+  const handleScheduleValidation = (error) => {
+    setScheduleError(error);
+  };
 
   const handleSettingChange = (section, key, value) => {
     setSettings((prev) => {
@@ -904,7 +931,7 @@ const CreateLeaguePage = () => {
 
           <div className="mt-8">
             {/* 週次預覽表 - 根據設定即時推算 */}
-            <SchedulePreview settings={settings} />
+            <SchedulePreview settings={settings} onValidationChange={handleScheduleValidation} />
           </div>
 
           <div className="mt-8 flex justify-end gap-4">
@@ -931,9 +958,9 @@ const CreateLeaguePage = () => {
             </button>
             <button
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || scheduleError}
               className={`px-6 py-2 font-semibold rounded-md transition-colors ${
-                isSaving
+                isSaving || scheduleError
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
