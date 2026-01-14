@@ -139,7 +139,6 @@ export default function JoinLeaguePage() {
   }
 
   return (
-  return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
