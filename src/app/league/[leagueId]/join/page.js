@@ -188,33 +188,177 @@ export default function JoinLeaguePage() {
           <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-6 border-b border-purple-400/30">
             <h2 className="text-2xl font-black text-white">League Settings</h2>
           </div>
-          <div className="p-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                <span className="text-purple-400 text-sm font-medium">League Type</span>
-                <p className="text-white text-lg font-bold mt-1">{leagueSettings.league_type || 'N/A'}</p>
-              </div>
-              <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                <span className="text-purple-400 text-sm font-medium">Max Teams</span>
-                <p className="text-white text-lg font-bold mt-1">{leagueSettings.max_teams || 'N/A'}</p>
-              </div>
-              <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                <span className="text-purple-400 text-sm font-medium">Scoring Type</span>
-                <p className="text-white text-lg font-bold mt-1">{leagueSettings.scoring_type || 'N/A'}</p>
-              </div>
-              <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                <span className="text-purple-400 text-sm font-medium">Draft Type</span>
-                <p className="text-white text-lg font-bold mt-1">{leagueSettings.draft_type || 'N/A'}</p>
-              </div>
-              <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                <span className="text-purple-400 text-sm font-medium">Trade Review Period</span>
-                <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_review_period_days || 0} days</p>
-              </div>
-              <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                <span className="text-purple-400 text-sm font-medium">Waiver Period</span>
-                <p className="text-white text-lg font-bold mt-1">{leagueSettings.waiver_period_days || 0} days</p>
+          <div className="p-6 space-y-6">
+            {/* Basic Settings */}
+            <div>
+              <h3 className="text-lg font-bold text-purple-300 mb-3">⚙️ Basic Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Max Teams</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.max_teams || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Scoring Type</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.scoring_type || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Start Scoring On</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.start_scoring_on || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Publicly Viewable</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.make_league_publicly_viewable || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Invite Permissions</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.invite_permissions || 'N/A'}</p>
+                </div>
               </div>
             </div>
+
+            {/* Draft Settings */}
+            <div>
+              <h3 className="text-lg font-bold text-purple-300 mb-3">🎯 Draft Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Draft Type</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.draft_type || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Live Draft Time</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.live_draft_time ? new Date(leagueSettings.live_draft_time).toLocaleString() : 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Live Draft Pick Time</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.live_draft_pick_time || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Post-Draft Unfreeze</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.post_draft_players_unfreeze_time || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Trade Settings */}
+            <div>
+              <h3 className="text-lg font-bold text-purple-300 mb-3">🔄 Trade Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Trade Review</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_review || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Trade Reject Time</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_reject_time || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Trade Reject Percentage</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_reject_percentage || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Trade End Date</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_end_date || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Waiver & Acquisition Settings */}
+            <div>
+              <h3 className="text-lg font-bold text-purple-300 mb-3">📋 Waiver & Acquisition</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Max Acquisitions/Week</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.max_acquisitions_per_week || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Waiver Unfreeze Time</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.waiver_players_unfreeze_time || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Roster Settings */}
+            <div>
+              <h3 className="text-lg font-bold text-purple-300 mb-3">👥 Roster Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Allow Injured to IL Slot</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.allow_injured_to_injury_slot || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Min IP Per Week</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.min_innings_pitched_per_week || 'N/A'}</p>
+                </div>
+                {leagueSettings.roster_positions && (
+                  <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4 md:col-span-2">
+                    <span className="text-purple-400 text-sm font-medium">Roster Positions</span>
+                    <div className="text-white text-sm mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {Object.entries(leagueSettings.roster_positions).map(([pos, count]) => (
+                        <div key={pos} className="bg-slate-700/40 rounded px-2 py-1">
+                          <span className="font-bold text-purple-300">{pos}:</span> {count}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Playoff Settings */}
+            <div>
+              <h3 className="text-lg font-bold text-purple-300 mb-3">🏆 Playoff Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Playoffs</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.playoffs || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Playoffs Start</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.playoffs_start || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Tie Breaker</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.playoff_tie_breaker || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Reseeding</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.playoff_reseeding || 'N/A'}</p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Lock Eliminated Teams</span>
+                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.lock_eliminated_teams || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stat Categories */}
+            {(leagueSettings.batter_stat_categories?.length > 0 || leagueSettings.pitcher_stat_categories?.length > 0) && (
+              <div>
+                <h3 className="text-lg font-bold text-purple-300 mb-3">📊 Stat Categories</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {leagueSettings.batter_stat_categories?.length > 0 && (
+                    <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                      <span className="text-purple-400 text-sm font-medium">Batter Stats</span>
+                      <div className="text-white text-sm mt-2 flex flex-wrap gap-2">
+                        {leagueSettings.batter_stat_categories.map((stat, idx) => (
+                          <span key={idx} className="bg-slate-700/40 rounded px-2 py-1 text-purple-200">{stat}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {leagueSettings.pitcher_stat_categories?.length > 0 && (
+                    <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                      <span className="text-purple-400 text-sm font-medium">Pitcher Stats</span>
+                      <div className="text-white text-sm mt-2 flex flex-wrap gap-2">
+                        {leagueSettings.pitcher_stat_categories.map((stat, idx) => (
+                          <span key={idx} className="bg-slate-700/40 rounded px-2 py-1 text-purple-200">{stat}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
