@@ -938,17 +938,22 @@ const EditLeagueSettingsPage = ({ params }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-700">
-        Loading league settings...
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto mb-6 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-xl text-purple-300">Loading league settings...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-red-700">
-        <div className="text-xl font-semibold">Failed to load league settings</div>
-        <div className="text-sm">{error}</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8 flex items-center justify-center">
+        <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-8 shadow-2xl text-center">
+          <div className="text-xl font-semibold text-red-300 mb-2">Failed to load league settings</div>
+          <div className="text-sm text-red-400">{error}</div>
+        </div>
       </div>
     );
   }
