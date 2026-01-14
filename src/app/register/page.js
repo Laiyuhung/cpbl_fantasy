@@ -58,11 +58,11 @@ export default function RegisterPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-8 w-96">
-        <h1 className="text-3xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-6 text-center">註冊新帳號</h1>
+        <h1 className="text-3xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-6 text-center">Create Account</h1>
         
         <input
           className="w-full bg-slate-800/60 border border-purple-500/30 text-white placeholder-purple-400 p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          placeholder="姓名"
+          placeholder="Name"
           value={name}
           onChange={e => setName(e.target.value)}
           disabled={loading}
@@ -80,7 +80,7 @@ export default function RegisterPage() {
         <input
           className="w-full bg-slate-800/60 border border-purple-500/30 text-white placeholder-purple-400 p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           type="password"
-          placeholder="密碼 (至少6個字元)"
+          placeholder="Password (at least 6 characters)"
           value={password}
           onChange={e => setPassword(e.target.value)}
           disabled={loading}
@@ -89,7 +89,7 @@ export default function RegisterPage() {
         <input
           className="w-full bg-slate-800/60 border border-purple-500/30 text-white placeholder-purple-400 p-3 mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           type="password"
-          placeholder="確認密碼"
+          placeholder="Confirm Password"
           value={confirmPassword}
           onChange={e => setConfirmPassword(e.target.value)}
           disabled={loading}
@@ -106,10 +106,10 @@ export default function RegisterPage() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
               </svg>
-              註冊中...
+              Registering...
             </>
           ) : (
-            '註冊'
+            'Register'
           )}
         </button>
 
@@ -118,7 +118,7 @@ export default function RegisterPage() {
           disabled={loading}
           className="w-full mt-3 bg-slate-800/40 border border-purple-500/30 text-purple-300 hover:bg-slate-700/40 font-semibold py-3 rounded-lg transition-all disabled:opacity-60"
         >
-          已有帳號？返回登入
+          Already have an account? Sign In
         </button>
 
         {error && (

@@ -58,17 +58,17 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-8 w-96">
-        <h1 className="text-3xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-6 text-center">登入</h1>
+        <h1 className="text-3xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-6 text-center">Sign In</h1>
         <input
           className="w-full bg-slate-800/60 border border-purple-500/30 text-white placeholder-purple-400 p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          placeholder="註冊 Email"
+          placeholder="Email"
           value={email}
           onChange={e => setEmail(e.target.value)}
         />
         <input
           className="w-full bg-slate-800/60 border border-purple-500/30 text-white placeholder-purple-400 p-3 mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           type="password"
-          placeholder="密碼"
+          placeholder="Password"
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
@@ -76,21 +76,21 @@ export default function LoginPage() {
           onClick={handleLogin}
           className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-purple-500/50"
         >
-          登入
+          Sign In
         </button>
 
         <button
           onClick={() => router.push('/forgot-password')}
           className="w-full mt-3 bg-slate-800/40 border border-purple-500/30 text-purple-300 hover:bg-slate-700/40 font-semibold py-3 rounded-lg transition-all"
         >
-          忘記密碼
+          Forgot Password?
         </button>
 
         <button
           onClick={() => router.push('/register')}
           className="w-full mt-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-green-500/50"
         >
-          註冊新帳號
+          Create New Account
         </button>
 
         {error && <div className="text-red-400 bg-red-900/30 border border-red-500/50 rounded-lg p-3 mt-4">⚠️ {error}</div>}
