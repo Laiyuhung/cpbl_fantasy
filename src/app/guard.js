@@ -15,7 +15,18 @@ export default function GuardLayout({ children }) {
     setIsLoggedIn(loggedIn)
     setIsReady(true)
 
-    if (!loggedIn && pathname !== '/login') {
+    // Pages that don't require login (whitelist)
+    const publicPages = [
+      '/login',
+      '/register',
+      '/forgot-password',
+      '/verify-email',
+    ]
+    
+    // Check if current page is public or is a join league page
+    const isPublicPage = publicPages.includes(pathname) || pathname.match(/^\/league\/[^\/]+\/join$/)
+
+    if (!loggedIn && !isPublicPage) {
       router.push('/login')
     } else if (loggedIn && pathname === '/login') {
       router.push('/home')
