@@ -102,7 +102,7 @@ export default function LeaguePage() {
     }
     
     // commissioner only: 只有 Commissioner 或 Co-Commissioner 可以看到
-    if (invitePermissions === 'commissioner only') {
+    if (invitePermissions?.toLowerCase() === 'commissioner only') {
       return currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner';
     }
     
