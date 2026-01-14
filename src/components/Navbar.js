@@ -149,15 +149,16 @@ export default function Navbar() {
                 </svg>
               </button>
               {leagueDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white text-gray-800 rounded shadow-lg min-w-[200px] z-50">
+                <div className="absolute top-full left-0 mt-1 bg-white text-gray-800 rounded shadow-lg min-w-[220px] z-50">
                   {leagues.map(league => (
                     <Link
                       key={league.league_id}
                       href={`/league/${league.league_id}`}
-                      className="block px-4 py-2 hover:bg-gray-100 text-sm"
+                      className="block px-4 py-2 hover:bg-gray-100"
                       onClick={() => setLeagueDropdownOpen(false)}
                     >
-                      {league.league_name}
+                      <div className="font-bold text-sm text-black">{league.league_name}</div>
+                      <div className="text-xs text-gray-500">{league.nickname}</div>
                     </Link>
                   ))}
                 </div>
@@ -216,10 +217,11 @@ export default function Navbar() {
                   <Link
                     key={league.league_id}
                     href={`/league/${league.league_id}`}
-                    className="block py-2 pl-4 text-sm"
+                    className="block py-2 pl-4"
                     onClick={() => setMenuOpen(false)}
                   >
-                    {league.league_name}
+                    <div className="font-bold text-sm">{league.league_name}</div>
+                    <div className="text-xs text-gray-400">{league.nickname}</div>
                   </Link>
                 ))}
               </div>
