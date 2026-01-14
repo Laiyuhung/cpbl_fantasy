@@ -13,6 +13,8 @@ export default function LeaguePage() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [leagueStatus, setLeagueStatus] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState('');
 
   useEffect(() => {
     if (!leagueId) return;
@@ -34,6 +36,15 @@ export default function LeaguePage() {
           setLeagueSettings(result.league);
           setScheduleData(result.schedule || []);
           setMembers(result.members || []);
+          setLeagueStatus(result.status || 'unknown');
+          
+          // 获取当前用户的权限
+          const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+          const currentUserId = cookie?.split('=')[1];
+          if (currentUserId) {
+            const currentMember = result.members?.find(m => m.manager_id === currentUserId);
+            setCurrentUserRole(currentMember?.role || 'member');
+          }
         } else {
           setError('Failed to load league data');
         }
@@ -105,6 +116,40 @@ export default function LeaguePage() {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
             {leagueSettings.league_name}
           </h1>
+          <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Status:</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                leagueStatus === 'pre-draft' ? 'bg-yellow-100 text-yellow-800' :
+                leagueStatus === 'post-draft & pre-season' ? 'bg-orange-100 text-orange-800' :
+                leagueStatus === 'drafting now' ? 'bg-blue-100 text-blue-800' :
+                leagueStatus === 'in season' ? 'bg-green-100 text-green-800' :
+                leagueStatus === 'playoffs' ? 'bg-purple-100 text-purple-800' :
+                leagueStatus === 'finished' ? 'bg-gray-100 text-gray-800' :
+                'bg-gray-100 text-gray-600'
+              }`}>
+                {leagueStatus === 'pre-draft' ? 'Pre-Draft' :
+                 leagueStatus === 'post-draft & pre-season' ? 'Post-Draft & Pre-Season' :
+                 leagueStatus === 'drafting now' ? 'Drafting Now' :
+                 leagueStatus === 'in season' ? 'In Season' :
+                 leagueStatus === 'playoffs' ? 'Playoffs' :
+                 leagueStatus === 'finished' ? 'Finished' :
+                 leagueStatus}
+              </span>
+            </div>
+            {currentUserRole && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Your Role:</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  currentUserRole === 'Commissioner' ? 'bg-red-100 text-red-800' :
+                  currentUserRole === 'Co-Commissioner' ? 'bg-orange-100 text-orange-800' :
+                  'bg-blue-100 text-blue-800'
+                }`}>
+                  {currentUserRole}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* League Members Section */}

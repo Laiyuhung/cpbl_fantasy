@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
 
@@ -454,11 +455,13 @@ function SchedulePreview({ settings, onValidationChange }) {
 }
 
 const CreateLeaguePage = () => {
+  const router = useRouter();
   const [settings, setSettings] = useState(() => cloneSettings(initialSettings));
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [leagueId, setLeagueId] = useState(null);
   const [scheduleError, setScheduleError] = useState('');
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
@@ -815,8 +818,12 @@ const CreateLeaguePage = () => {
 
       if (response.ok && result.success) {
         setLeagueId(result.league_id);
-        setSaveMessage(`✅ ${result.message}\nLeague ID: ${result.league_id}`);
-        setTimeout(() => setSaveMessage(''), 5000);
+        setShowSuccessAnimation(true);
+        
+        // 等待 2 秒后跳转到 league 页面
+        setTimeout(() => {
+          router.push(`/league/${result.league_id}`);
+        }, 2000);
       } else {
         setSaveMessage(`❌ 保存失敗: ${result.error || '未知錯誤'}`);
       }
@@ -830,6 +837,38 @@ const CreateLeaguePage = () => {
 
   return (
     <>
+      {/* 成功动画遮罩 */}
+      {showSuccessAnimation && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl p-12 shadow-2xl text-center animate-scaleIn">
+            <div className="mb-6 animate-bounce">
+              <svg className="w-24 h-24 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">League Created!</h2>
+            <p className="text-gray-600 text-lg">Redirecting to your league page...</p>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { transform: scale(0.8); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .animate-scaleIn {
+          animation: scaleIn 0.4s ease-out;
+        }
+      `}</style>
+
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12">

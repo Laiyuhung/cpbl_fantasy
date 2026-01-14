@@ -47,13 +47,25 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Fetch league members with manager details
+    // Fetch league status
+    const { data: statusData, error: statusError } = await supabase
+      .from('league_statuses')
+      .select('status')
+      .eq('league_id', leagueId)
+      .single();
+
+    if (statusError) {
+      console.error('Supabase status error:', statusError);
+    }
+
+    // Fetch league members with manager details and role
     const { data: members, error: membersError } = await supabase
       .from('league_members')
       .select(`
         nickname,
         joined_at,
         manager_id,
+        role,
         managers (
           name
         )
@@ -74,6 +86,7 @@ export async function GET(request, { params }) {
       league: leagueSettings,
       schedule: schedule || [],
       members: members || [],
+      status: statusData?.status || 'unknown',
     });
   } catch (error) {
     console.error('Server error:', error);
