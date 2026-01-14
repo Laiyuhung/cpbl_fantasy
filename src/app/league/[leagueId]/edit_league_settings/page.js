@@ -970,13 +970,16 @@ const EditLeagueSettingsPage = ({ params }) => {
 
       if (response.ok && result.success) {
         setSaveMessage(`✅ ${result.message}`);
-        setTimeout(() => setSaveMessage(''), 5000);
+        // Redirect to league page after successful save
+        setTimeout(() => {
+          window.location.href = `/league/${leagueId}`;
+        }, 1500);
       } else {
-        setSaveMessage(`❌ 更新失敗: ${result.error || '未知錯誤'}`);
+        setSaveMessage(`❌ Update failed: ${result.error || 'Unknown error'}`);
       }
     } catch (err) {
-      console.error('更新錯誤:', err);
-      setSaveMessage(`❌ 更新失敗: ${err.message}`);
+      console.error('Update error:', err);
+      setSaveMessage(`❌ Update failed: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -1280,8 +1283,8 @@ const EditLeagueSettingsPage = ({ params }) => {
             {saveMessage && (
               <div className={`px-4 py-2 rounded-md ${
                 saveMessage.includes('✅')
-                  ? 'bg-green-100 text-green-800 border border-green-300'
-                  : 'bg-red-100 text-red-800 border border-red-300'
+                  ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+                  : 'bg-red-500/20 text-red-300 border border-red-500/50'
               }`}>
                 {saveMessage.split('\n').map((line, i) => (
                   <div key={i}>{line}</div>
@@ -1289,30 +1292,21 @@ const EditLeagueSettingsPage = ({ params }) => {
               </div>
             )}
             {scheduleError && (
-              <div className="px-4 py-2 rounded-md bg-yellow-100 text-yellow-800 border border-yellow-300 text-sm">
-                按鈕已禁用: Schedule 驗證錯誤
+              <div className="px-4 py-2 rounded-md bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 text-sm">
+                Button disabled: Schedule validation error
               </div>
             )}
             <button
-              onClick={() => {
-                setSettings(cloneSettings(baseSettings));
-                setSaveMessage('');
-              }}
-              className="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-400 transition-colors"
-            >
-              Reset to Default
-            </button>
-            <button
               onClick={handleSave}
               disabled={isSaving || scheduleError}
-              title={scheduleError ? 'Schedule 驗證失敗 - 請檢查下方 Schedule 預覽' : ''}
+              title={scheduleError ? 'Schedule validation failed - please check the Schedule preview below' : ''}
               className={`px-6 py-2 font-semibold rounded-md transition-colors ${
                 isSaving || scheduleError
-                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg'
               }`}
             >
-              {isSaving ? 'Saving...' : 'Update league settings'}
+              {isSaving ? 'Saving...' : 'Update League Settings'}
             </button>
           </div>
         </div>

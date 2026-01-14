@@ -58,7 +58,7 @@ export default function LeagueLayout({ children }) {
               <a
                 href={`/league/${leagueId}`}
                 className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${
-                  isActive(`/league/${leagueId}`)
+                  isActive(`/league/${leagueId}`) && !pathname.includes('/edit_league_settings')
                     ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
                     : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
                 }`}
@@ -66,9 +66,9 @@ export default function LeagueLayout({ children }) {
                 Overview
               </a>
               <a
-                href={`/edit_league_settings/${leagueId}`}
+                href={`/league/${leagueId}/edit_league_settings`}
                 className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${
-                  isActive(`/edit_league_settings/${leagueId}`)
+                  pathname.includes('/edit_league_settings')
                     ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
                     : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
                 }`}
