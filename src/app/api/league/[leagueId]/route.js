@@ -87,6 +87,7 @@ export async function GET(request, { params }) {
       schedule: schedule || [],
       members: members || [],
       status: statusData?.status || 'unknown',
+      maxTeams: leagueSettings?.max_teams || 0,
     });
   } catch (error) {
     console.error('Server error:', error);
