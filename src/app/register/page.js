@@ -75,7 +75,7 @@ export default function RegisterPage() {
             <h1 className="text-3xl font-bold text-white mb-4">Registration Successful! 🎉</h1>
             <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mb-4">
               <p className="text-blue-200 text-lg font-semibold mb-2">📧 Check Your Email</p>
-              <p className="text-blue-300 text-sm">We've sent a verification link to <strong>{email}</strong></p>
+              <p className="text-blue-300 text-sm">We&apos;ve sent a verification link to <strong>{email}</strong></p>
             </div>
             <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 mb-4">
               <p className="text-yellow-200 text-sm">⚠️ Please verify your email before signing in</p>
