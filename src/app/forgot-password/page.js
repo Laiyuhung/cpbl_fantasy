@@ -38,11 +38,11 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-80">
-        <h1 className="text-2xl font-bold mb-4 text-center">忘記密碼</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-8 w-96">
+        <h1 className="text-3xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-6 text-center">忘記密碼</h1>
         <input
-          className="w-full border p-2 mb-2 rounded"
+          className="w-full bg-slate-800/60 border border-purple-500/30 text-white placeholder-purple-400 p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
           type="email"
           placeholder="請輸入註冊的 email"
           value={email}
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-purple-500/50 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {loading ? (
             <>
@@ -68,11 +68,11 @@ export default function ForgotPasswordPage() {
         </button>
         <button
           onClick={() => router.push('/login')}
-          className="w-full mt-3 border text-gray-700 py-2 rounded hover:bg-gray-50"
+          className="w-full mt-3 bg-slate-800/40 border border-purple-500/30 text-purple-300 hover:bg-slate-700/40 font-semibold py-3 rounded-lg transition-all"
         >
           返回登入
         </button>
-        {msg && <div className="text-gray-700 mt-4">{msg}</div>}
+        {msg && <div className="text-purple-300 bg-purple-900/30 border border-purple-500/50 rounded-lg p-3 mt-4">{msg}</div>}
       </div>
     </div>
   )
