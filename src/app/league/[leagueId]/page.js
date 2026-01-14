@@ -213,33 +213,6 @@ export default function LeaguePage() {
             )}
           </CardContent>
         </Card>
-
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-600">Total Weeks</div>
-              <div className="text-2xl font-bold text-gray-800">
-                {scheduleData.length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-600">Regular Season</div>
-              <div className="text-2xl font-bold text-blue-600">
-                {scheduleData.filter((w) => w.week_type === 'regular_season').length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-600">Playoff Weeks</div>
-              <div className="text-2xl font-bold text-purple-600">
-                {scheduleData.filter((w) => w.week_type === 'playoffs').length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );

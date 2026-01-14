@@ -122,142 +122,203 @@ export default function Navbar() {
   if (!userId) return null
 
   return (
-    <nav className="bg-[#003366] text-white px-6 py-3 flex items-center justify-between shadow-md">
-      {/* Logo Section */}
-      <div className="flex items-center space-x-8">
-        <div className="text-sm font-bold tracking-wide whitespace-nowrap">2025 CPBL FANTASY</div>
+    <nav className="relative bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-2xl border-b border-blue-500/30">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f46e510_1px,transparent_1px),linear-gradient(to_bottom,#4f46e510_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none"></div>
+      
+      <div className="relative px-6 py-4 flex items-center justify-between">
+        <Link href="/home" className="flex items-center space-x-3 group">
+          <div className="relative">
+            <div className="absolute inset-0 bg-blue-500 blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+            <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg shadow-lg">
+              <span className="text-xl font-bold">⚾</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+              CPBL FANTASY
+            </div>
+            <div className="text-[10px] text-blue-300/70 tracking-widest">2025 SEASON</div>
+          </div>
+        </Link>
+
+        <div className="hidden lg:flex items-center space-x-1">
+          <Link href="/home" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+            HOME
+          </Link>
+          <Link href="/roster" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+            ROSTER
+          </Link>
+          <Link href="/player" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+            PLAYERS
+          </Link>
+          <Link href="/matchup" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+            MATCHUP
+          </Link>
+          <Link href="/manager" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+            MANAGER
+          </Link>
+          <Link href="/record_book" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+            RECORDS
+          </Link>
+          
+          <div className="relative league-dropdown">
+            <button
+              onClick={() => setLeagueDropdownOpen(!leagueDropdownOpen)}
+              className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200 flex items-center gap-1.5"
+            >
+              LEAGUES
+              <svg className={`w-4 h-4 transition-transform duration-200 ${leagueDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {leagueDropdownOpen && (
+              <div className="absolute top-full right-0 mt-2 bg-slate-800/95 backdrop-blur-xl text-white rounded-xl shadow-2xl min-w-[260px] z-50 border border-blue-500/30 overflow-hidden">
+                <Link
+                  href="/create_league"
+                  className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 border-b border-blue-400/30"
+                  onClick={() => setLeagueDropdownOpen(false)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span className="font-bold text-sm">CREATE NEW LEAGUE</span>
+                </Link>
+                
+                {leagues.length > 0 ? (
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {leagues.map((league, index) => (
+                      <Link
+                        key={league.league_id}
+                        href={`/league/${league.league_id}`}
+                        className={`block px-4 py-3 hover:bg-blue-500/20 transition-all duration-200 ${index !== leagues.length - 1 ? 'border-b border-slate-700/50' : ''}`}
+                        onClick={() => setLeagueDropdownOpen(false)}
+                      >
+                        <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 text-sm text-slate-400 text-center">
+                    No leagues yet
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {userId === '2' && (
+            <>
+              <Link href="/bulk-insert" className="px-4 py-2 rounded-lg font-medium text-sm bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-all duration-200">
+                資料登錄
+              </Link>
+              <Link href="/matchup_debug" className="px-4 py-2 rounded-lg font-medium text-sm bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-all duration-200">
+                Debug
+              </Link>
+            </>
+          )}
+        </div>
+
+        <div className="hidden lg:flex items-center space-x-3">
+          {userName && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-sm font-bold">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm font-medium">{userName}</span>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all duration-200 border border-red-500/30"
+          >
+            Logout
+          </button>
+        </div>
+
+        <div className="lg:hidden flex items-center">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Menu for larger screens */}
-        <div className="hidden md:flex items-center space-x-4 text-sm">
-          <Link href="/home" className="font-semibold hover:text-gray-300">HOME</Link>
-          <Link href="/roster" className="font-semibold hover:text-gray-300">ROSTER</Link>
-          <Link href="/player" className="font-semibold hover:text-gray-300">PLAYERS</Link>
-          <Link href="/matchup" className="font-semibold hover:text-gray-300">MATCHUP</Link>
-          <Link href="/manager" className="font-semibold hover:text-gray-300">MANAGER</Link>
-          <Link href="/record_book" className="font-semibold hover:text-gray-300">RECORD BOOK</Link>
-          {/* Leagues Dropdown */}
-          {leagues.length > 0 && (
-            <div className="relative league-dropdown">
-              <button
-                onClick={() => setLeagueDropdownOpen(!leagueDropdownOpen)}
-                className="font-semibold hover:text-gray-300 flex items-center gap-1"
-              >
-                LEAGUES
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      {menuOpen && (
+        <div className="fixed inset-0 z-[999] lg:hidden" onClick={() => setMenuOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+          <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-blue-500/30">
+              <div className="flex items-center gap-3">
+                {userName && (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">{userName}</div>
+                      <div className="text-xs text-blue-300/70">Manager</div>
+                    </div>
+                  </>
+                )}
+              </div>
+              <button onClick={() => setMenuOpen(false)} className="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-              {leagueDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white text-gray-800 rounded shadow-lg min-w-[220px] z-50">
-                  {leagues.map(league => (
-                    <Link
-                      key={league.league_id}
-                      href={`/league/${league.league_id}`}
-                      className="block px-4 py-2 hover:bg-gray-100"
-                      onClick={() => setLeagueDropdownOpen(false)}
-                    >
-                      <div className="font-bold text-sm text-black">{league.league_name}</div>
-                      <div className="text-xs text-gray-500">{league.nickname}</div>
+            </div>
+
+            <div className="overflow-y-auto h-[calc(100%-180px)] p-4 space-y-1">
+              <Link href="/home" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>HOME</Link>
+              <Link href="/roster" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>ROSTER</Link>
+              <Link href="/player" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>PLAYERS</Link>
+              <Link href="/matchup" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>MATCHUP</Link>
+              <Link href="/manager" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>MANAGER</Link>
+              <Link href="/record_book" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>RECORDS</Link>
+
+              <div className="border-t border-blue-500/30 mt-4 pt-4">
+                <div className="text-xs text-blue-300/70 mb-3 px-4 font-semibold tracking-wider">MY LEAGUES</div>
+                
+                <Link href="/create_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium" onClick={() => setMenuOpen(false)}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span className="text-sm font-bold">CREATE NEW LEAGUE</span>
+                </Link>
+
+                {leagues.length > 0 ? (
+                  leagues.map(league => (
+                    <Link key={league.league_id} href={`/league/${league.league_id}`} className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors" onClick={() => setMenuOpen(false)}>
+                      <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
                     </Link>
-                  ))}
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-sm text-slate-400 text-center">No leagues yet</div>
+                )}
+              </div>
+
+              {userId === '2' && (
+                <div className="border-t border-blue-500/30 mt-4 pt-4 space-y-1">
+                  <Link href="/bulk-insert" className="block px-4 py-3 rounded-lg bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors font-medium" onClick={() => setMenuOpen(false)}>資料登錄系統</Link>
+                  <Link href="/matchup_debug" className="block px-4 py-3 rounded-lg bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors font-medium" onClick={() => setMenuOpen(false)}>Debug</Link>
                 </div>
               )}
             </div>
-          )}
-          {userId === '2' && (
-            <>
-          <Link href="/bulk-insert" className="font-semibold hover:text-yellow-300">資料登錄系統</Link>
-          <Link href="/matchup_debug" className="font-semibold hover:text-yellow-300">Debug</Link>
-            </>
-          )}
-      </div>
 
-      {/* Hamburger Menu for smaller screens */}
-      <div className="md:hidden flex items-center">
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="text-white focus:outline-none"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Dropdown Menu for small screens */}
-      {menuOpen && (
-        <div
-          className="fixed inset-0 z-[999] flex justify-end"
-          onClick={() => setMenuOpen(false)} // 點擊背景就關閉
-        >
-          <div
-            className="w-1/2 bg-[#003366] text-white p-4"
-            onClick={(e) => e.stopPropagation()} // 防止點選內容時關閉
-          >
-            <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={() => setMenuOpen(false)}
-                className="text-white text-xl"
-              >
-                &times;
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-500/30 bg-slate-900/50">
+              <button onClick={handleLogout} className="w-full px-4 py-3 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all duration-200 font-medium border border-red-500/30">
+                Logout
               </button>
             </div>
-            <Link href="/home" className="block py-2" onClick={() => setMenuOpen(false)}>HOME</Link>
-            <Link href="/roster" className="block py-2" onClick={() => setMenuOpen(false)}>ROSTER</Link>
-            <Link href="/player" className="block py-2" onClick={() => setMenuOpen(false)}>PLAYERS</Link>
-            <Link href="/matchup" className="block py-2" onClick={() => setMenuOpen(false)}>MATCHUP</Link>
-            <Link href="/manager" className="block py-2" onClick={() => setMenuOpen(false)}>MANAGER</Link>
-            <Link href="/record_book" className="block py-2" onClick={() => setMenuOpen(false)}>RECORD BOOK</Link>
-            {/* Leagues in mobile menu */}
-            {leagues.length > 0 && (
-              <div className="border-t border-white/20 mt-2 pt-2">
-                <div className="text-xs text-gray-300 mb-2 px-1">MY LEAGUES</div>
-                {leagues.map(league => (
-                  <Link
-                    key={league.league_id}
-                    href={`/league/${league.league_id}`}
-                    className="block py-2 pl-4"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div className="font-bold text-sm">{league.league_name}</div>
-                    <div className="text-xs text-gray-400">{league.nickname}</div>
-                  </Link>
-                ))}
-              </div>
-            )}
-            {userId === '2' && (
-              <>
-              <Link href="/bulk-insert" className="block py-2" onClick={() => setMenuOpen(false)}>資料登錄系統</Link>
-              <Link href="/matchup_debug" className="block py-2" onClick={() => setMenuOpen(false)}>Debug</Link>
-              </>
-            )}
           </div>
         </div>
       )}
-
-
-      {/* User and Logout Section (For larger screens, will only show if user is logged in) */}
-      <div className="flex items-center space-x-4">
-        {userName && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-lg">👤</span> 歡迎 {userName}
-            {/* <button
-              onClick={() => setEditDialogOpen(true)}
-              className="text-sm text-white hover:text-yellow-300"
-            >
-              修改帳號資訊
-            </button> */}
-          </div>
-        )}
-        <button
-          onClick={handleLogout}
-          className="text-sm text-white hover:text-red-300"
-        >
-          Logout
-        </button>
-      </div>
-
     </nav>
   )
 }
