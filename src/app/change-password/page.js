@@ -8,15 +8,56 @@ export default function ChangePasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isAuthorized, setIsAuthorized] = useState(false)
   const router = useRouter()
   const [userId, setUserId] = useState(null)
 
   useEffect(() => {
-    const cookieUserId = document.cookie.split('; ').find(row => row.startsWith('user_id='))
-    if (!cookieUserId) return
-    const id = cookieUserId.split('=')[1]
-    setUserId(id)
-  }, [])
+    const checkAuth = async () => {
+      // Check if user is logged in
+      const cookieUserId = document.cookie.split('; ').find(row => row.startsWith('user_id='))
+      if (!cookieUserId) {
+        console.log('❌ No user_id cookie found, redirecting to login')
+        router.push('/login')
+        return
+      }
+      
+      const id = cookieUserId.split('=')[1]
+      setUserId(id)
+
+      // Check if user needs to change password
+      try {
+        const res = await fetch('/api/managers/detail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: id })
+        })
+        
+        const data = await res.json()
+        
+        if (!res.ok || !data) {
+          console.log('❌ Failed to fetch user data, redirecting to login')
+          router.push('/login')
+          return
+        }
+
+        console.log('✅ User data:', { must_change_password: data.must_change_password })
+        
+        if (!data.must_change_password) {
+          console.log('⚠️ User does not need to change password, redirecting to home')
+          router.push('/home')
+          return
+        }
+
+        setIsAuthorized(true)
+      } catch (err) {
+        console.error('❌ Auth check error:', err)
+        router.push('/login')
+      }
+    }
+
+    checkAuth()
+  }, [router])
 
   const handleSubmit = async () => {
     setError('')
@@ -39,6 +80,7 @@ export default function ChangePasswordPage() {
       if (!res.ok || result.error) {
         setError(result.error || 'Failed to update password')
       } else {
+        console.log('✅ Password changed successfully, redirecting to home')
         router.push('/home')
       }
     } catch (e) {
@@ -46,6 +88,18 @@ export default function ChangePasswordPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading while checking authorization
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-8">
+          <div className="w-20 h-20 mx-auto border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-white mt-4 text-center">Verifying...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
