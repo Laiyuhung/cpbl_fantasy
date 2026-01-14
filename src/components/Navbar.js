@@ -9,6 +9,35 @@ export default function Navbar() {
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [leagues, setLeagues] = useState([])
+  const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false)
+
+  // Fetch user's leagues
+  const fetchLeagues = (uid) => {
+    fetch('/api/managers/leagues', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: uid }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.leagues) {
+          setLeagues(data.leagues)
+        }
+      })
+      .catch(err => console.error('Failed to fetch leagues:', err))
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (leagueDropdownOpen && !e.target.closest('.league-dropdown')) {
+        setLeagueDropdownOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [leagueDropdownOpen])
 
   // 當使用者登入或登出時，更新 navbar 顯示
   useEffect(() => {
@@ -27,6 +56,7 @@ export default function Navbar() {
         if (data?.name) {
           setUserId(uid)
           setUserName(data.name)
+          fetchLeagues(uid)
         } else {
           router.push('/login')
         }
@@ -54,14 +84,17 @@ export default function Navbar() {
           if (data?.name) {
             setUserId(uid)
             setUserName(data.name)
+            fetchLeagues(uid)
           } else {
             setUserId('')
             setUserName('')
+            setLeagues([])
           }
         })
         .catch(() => {
           setUserId('')
           setUserName('')
+          setLeagues([])
         })
     }
 
@@ -75,6 +108,7 @@ export default function Navbar() {
     // 在登出時清除 userId 並跳轉到登錄頁面
     setUserId('')  // 更新 userId
     setUserName('')  // 清空用戶名稱
+    setLeagues([])  // 清空 leagues
     localStorage.removeItem('user_id')  // 清除 localStorage 中的 user_id
     router.push('/login')
   }
@@ -97,6 +131,34 @@ export default function Navbar() {
           <Link href="/matchup" className="font-semibold hover:text-gray-300">MATCHUP</Link>
           <Link href="/manager" className="font-semibold hover:text-gray-300">MANAGER</Link>
           <Link href="/record_book" className="font-semibold hover:text-gray-300">RECORD BOOK</Link>
+          {/* Leagues Dropdown */}
+          {leagues.length > 0 && (
+            <div className="relative league-dropdown">
+              <button
+                onClick={() => setLeagueDropdownOpen(!leagueDropdownOpen)}
+                className="font-semibold hover:text-gray-300 flex items-center gap-1"
+              >
+                LEAGUES
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {leagueDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-white text-gray-800 rounded shadow-lg min-w-[200px] z-50">
+                  {leagues.map(league => (
+                    <Link
+                      key={league.league_id}
+                      href={`/league/${league.league_id}`}
+                      className="block px-4 py-2 hover:bg-gray-100 text-sm"
+                      onClick={() => setLeagueDropdownOpen(false)}
+                    >
+                      {league.league_name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {userId === '2' && (
             <>
           <Link href="/bulk-insert" className="font-semibold hover:text-yellow-300">資料登錄系統</Link>
@@ -141,6 +203,22 @@ export default function Navbar() {
             <Link href="/matchup" className="block py-2" onClick={() => setMenuOpen(false)}>MATCHUP</Link>
             <Link href="/manager" className="block py-2" onClick={() => setMenuOpen(false)}>MANAGER</Link>
             <Link href="/record_book" className="block py-2" onClick={() => setMenuOpen(false)}>RECORD BOOK</Link>
+            {/* Leagues in mobile menu */}
+            {leagues.length > 0 && (
+              <div className="border-t border-white/20 mt-2 pt-2">
+                <div className="text-xs text-gray-300 mb-2 px-1">MY LEAGUES</div>
+                {leagues.map(league => (
+                  <Link
+                    key={league.league_id}
+                    href={`/league/${league.league_id}`}
+                    className="block py-2 pl-4 text-sm"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {league.league_name}
+                  </Link>
+                ))}
+              </div>
+            )}
             {userId === '2' && (
               <>
               <Link href="/bulk-insert" className="block py-2" onClick={() => setMenuOpen(false)}>資料登錄系統</Link>
