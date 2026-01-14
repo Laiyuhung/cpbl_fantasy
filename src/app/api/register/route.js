@@ -4,10 +4,18 @@ import supabase from '@/lib/supabase';
 export async function POST(request) {
   try {
     const body = await request.json();
+    console.log('📥 Received registration data:', body);
     const { name, email_address, password } = body;
+
+    console.log('Parsed fields:', {
+      name,
+      email_address,
+      password: password ? '***' : undefined
+    });
 
     // Validate required fields
     if (!name || !email_address || !password) {
+      console.log('❌ Validation failed - missing fields');
       return NextResponse.json(
         { error: 'Name, email, and password are required' },
         { status: 400 }
