@@ -149,23 +149,6 @@ export default function JoinLeaguePage() {
           <p className="text-purple-300 text-lg">{leagueSettings.league_name}</p>
         </div>
 
-        {/* Join Error Message */}
-        {joinStatus === 'error' && (
-          <div className="bg-gradient-to-r from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/50 rounded-2xl p-6 shadow-2xl mb-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-red-300 mb-2">Error</h3>
-                <p className="text-red-200 text-sm">{joinMessage}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* League Information */}
         <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden mb-6">
           <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-6 border-b border-purple-400/30">
@@ -344,6 +327,23 @@ export default function JoinLeaguePage() {
             )}
           </div>
         </div>
+
+        {/* Join Error Message - Above Buttons */}
+        {joinStatus === 'error' && (
+          <div className="bg-gradient-to-r from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/50 rounded-2xl p-6 shadow-2xl mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-red-300 mb-2">Error</h3>
+                <p className="text-red-200 text-sm">{joinMessage}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4">
