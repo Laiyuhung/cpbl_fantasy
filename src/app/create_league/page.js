@@ -387,24 +387,24 @@ function SchedulePreview({ settings, onValidationChange }) {
 
   if (filteredSchedule.length === 0) {
     return (
-      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-        <p className="text-gray-600">No schedule data available for the selected dates</p>
+      <div className="mb-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+        <h2 className="text-2xl font-bold text-purple-300 mb-4">📅 Schedule Preview</h2>
+        <p className="text-purple-300/70">No schedule data available for the selected dates</p>
       </div>
     );
   }
 
   return (
-    <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+    <div className="mb-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+      <h2 className="text-2xl font-bold text-purple-300 mb-4">📅 Schedule Preview</h2>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-blue-100 border-b-2 border-blue-300">
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">Week</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">Type</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">Start Date</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">End Date</th>
+            <tr className="bg-gradient-to-r from-slate-800/80 to-slate-700/80 border-b-2 border-purple-500/50">
+              <th className="px-4 py-2 text-left font-bold text-purple-200">Week</th>
+              <th className="px-4 py-2 text-left font-bold text-purple-200">Type</th>
+              <th className="px-4 py-2 text-left font-bold text-purple-200">Start Date</th>
+              <th className="px-4 py-2 text-left font-bold text-purple-200">End Date</th>
             </tr>
           </thead>
           <tbody>
@@ -413,40 +413,40 @@ function SchedulePreview({ settings, onValidationChange }) {
                 key={index}
                 className={`border-b ${
                   week.week_type === 'playoffs'
-                    ? 'bg-purple-50 hover:bg-purple-100'
+                    ? 'bg-purple-900/40 hover:bg-purple-800/40'
                     : week.week_type === 'makeup'
-                    ? 'bg-yellow-50 hover:bg-yellow-100'
+                    ? 'bg-yellow-900/40 hover:bg-yellow-800/40'
                     : week.week_type === 'preparation'
-                    ? 'bg-green-50 hover:bg-green-100'
-                    : 'bg-white hover:bg-blue-50'
-                }`}
+                    ? 'bg-green-900/40 hover:bg-green-800/40'
+                    : 'bg-slate-900/40 hover:bg-purple-500/20'
+                } border-purple-500/20 transition-colors`}
               >
-                <td className="px-4 py-2 text-gray-700 font-medium">{week.week_label}</td>
-                <td className="px-4 py-2 text-gray-600">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                <td className="px-4 py-2 text-white font-medium">{week.week_label}</td>
+                <td className="px-4 py-2 text-purple-300">
+                  <span className={`px-2 py-1 rounded text-xs font-semibold shadow-lg ${
                     week.week_type === 'playoffs'
-                      ? 'bg-purple-100 text-purple-800'
+                      ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50'
                       : week.week_type === 'makeup'
-                      ? 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50'
                       : week.week_type === 'preparation'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-100 text-blue-800'
+                      ? 'bg-green-500/80 text-green-100 shadow-green-500/50'
+                      : 'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
                   }`}>
                     {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : week.week_type === 'preparation' ? 'Preparation' : 'Regular'}
                   </span>
                 </td>
-                <td className="px-4 py-2 text-gray-600">{week.week_start}</td>
-                <td className="px-4 py-2 text-gray-600">{week.week_end}</td>
+                <td className="px-4 py-2 text-purple-300">{week.week_start}</td>
+                <td className="px-4 py-2 text-purple-300">{week.week_end}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {scheduleValidationError && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded text-sm text-red-800">
+          <div className="mt-4 p-3 bg-red-900/30 border border-red-500/50 rounded text-sm text-red-300">
             <p className="font-semibold">❌ {scheduleValidationError}</p>
           </div>
         )}
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-gray-700">
+        <div className="mt-4 p-3 bg-purple-900/30 border border-purple-500/50 rounded text-sm text-purple-300">
           <p className="font-semibold">Total: {filteredSchedule.length} weeks</p>
         </div>
       </div>
@@ -869,22 +869,22 @@ const CreateLeaguePage = () => {
         }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold text-gray-900 mb-4">CREATE NEW LEAGUE</h1>
+          <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
+            <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">CREATE NEW LEAGUE</h1>
           </div>
 
           <div className="space-y-8">
             {sections.map((section) => (
-              <Card key={section.key} className="shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                  <CardTitle className="flex items-center gap-3 text-2xl">
+              <div key={section.key} className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
+                  <h2 className="flex items-center gap-3 text-3xl font-black text-white">
                     <span className="text-2xl">{section.icon}</span>
                     {section.label}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
+                  </h2>
+                </div>
+                <div className="p-0">
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <tbody>
@@ -903,13 +903,13 @@ const CreateLeaguePage = () => {
                           <tr
                             key={key}
                             className={`${
-                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                            } hover:bg-blue-50 transition-colors border-b border-gray-200`}
+                              index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
+                            } hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}
                           >
-                            <td className="px-6 py-4 font-semibold text-gray-700 w-2/5">
+                            <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
                               {key}
                             </td>
-                            <td className="px-6 py-4 text-gray-600 w-3/5">
+                            <td className="px-6 py-4 text-purple-300 w-3/5">
                               {isMultilineField(key) ? (
                                 <div>
                                   <textarea
@@ -918,10 +918,10 @@ const CreateLeaguePage = () => {
                                       handleSettingChange(section.key, key, e.target.value)
                                     }
                                     rows="3"
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm ${
                                       !value || value.trim() === ''
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                     }`}
                                   />
                                   {(!value || value.trim() === '') && (
@@ -936,10 +936,10 @@ const CreateLeaguePage = () => {
                                     value={value}
                                     onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
                                     disabled={settings.general['Draft Type'] !== 'Live Draft'}
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 ${
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 ${
                                       (settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                     }`}
                                   />
                                   {settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '') && (
@@ -964,7 +964,7 @@ const CreateLeaguePage = () => {
                                       
                                       return (
                                         <div key={position} className="flex flex-col gap-1">
-                                          <label className="text-sm font-medium text-gray-700">
+                                          <label className="text-sm font-medium text-purple-300">
                                             {position}
                                           </label>
                                           <input
@@ -975,10 +975,10 @@ const CreateLeaguePage = () => {
                                             onChange={(e) =>
                                               handleRosterPositionChange(position, e.target.value)
                                             }
-                                            className={`px-2 py-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                            className={`px-2 py-1 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                                               isOverLimit || isMinorOverLimit
-                                                ? 'border-red-500 bg-red-50'
-                                                : 'border-gray-300'
+                                                ? 'border-red-500 bg-red-900/30'
+                                                : 'border-purple-500/30'
                                             }`}
                                           />
                                         </div>
@@ -990,8 +990,8 @@ const CreateLeaguePage = () => {
                                       Object.entries(value)
                                         .filter(([pos]) => pos !== 'Minor')
                                         .reduce((sum, [, cnt]) => sum + cnt, 0) > 25
-                                        ? 'text-red-600 font-semibold'
-                                        : 'text-gray-600'
+                                        ? 'text-red-400 font-semibold'
+                                        : 'text-purple-300'
                                     }`}>
                                       Non-Minor total: {
                                         Object.entries(value)
@@ -1001,8 +1001,8 @@ const CreateLeaguePage = () => {
                                     </div>
                                     <div className={`${
                                       (value['Minor'] || 0) > 5
-                                        ? 'text-red-600 font-semibold'
-                                        : 'text-gray-600'
+                                        ? 'text-red-400 font-semibold'
+                                        : 'text-purple-300'
                                     }`}>
                                       Minor: {value['Minor'] || 0} / 5 (max)
                                     </div>
@@ -1012,11 +1012,11 @@ const CreateLeaguePage = () => {
                                 <div>
                                   <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 border rounded-md ${
                                     (!Array.isArray(value) || value.length === 0)
-                                      ? 'border-red-500 bg-red-50'
-                                      : 'border-gray-300 bg-white'
+                                      ? 'border-red-500 bg-red-900/30'
+                                      : 'border-purple-500/30 bg-slate-800/40'
                                   }`}>
                                     {settingOptions[key]?.map((option) => (
-                                      <label key={option} className="flex items-center gap-2">
+                                      <label key={option} className="flex items-center gap-2 text-purple-300">
                                         <input
                                           type="checkbox"
                                           checked={Array.isArray(value) && value.includes(option)}
@@ -1037,7 +1037,7 @@ const CreateLeaguePage = () => {
                                         <span>{option}</span>
                                       </label>
                                     ))}
-                                    <div className="text-xs text-gray-500 mt-2 col-span-full">
+                                    <div className="text-xs text-purple-400 mt-2 col-span-full">
                                       selected: {(
                                         (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
                                         (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
@@ -1056,10 +1056,10 @@ const CreateLeaguePage = () => {
                                     onChange={(e) =>
                                       handleSettingChange(section.key, key, e.target.value)
                                     }
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
                                       !value || value.trim() === ''
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                     }`}
                                   />
                                   {(!value || value.trim() === '') && (
@@ -1073,10 +1073,10 @@ const CreateLeaguePage = () => {
                                     onChange={(e) =>
                                       handleSettingChange(section.key, key, e.target.value)
                                     }
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white ${
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
                                       (!value || value.trim() === '') || (key === 'Start Scoring On' && dateValidationErrors.scoringDateError)
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                     }`}
                                   >
                                     {(() => {
@@ -1103,8 +1103,8 @@ const CreateLeaguePage = () => {
                       </tbody>
                     </table>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
 

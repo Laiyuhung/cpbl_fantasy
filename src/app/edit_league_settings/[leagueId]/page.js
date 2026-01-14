@@ -955,12 +955,12 @@ const EditLeagueSettingsPage = ({ params }) => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">編輯聯盟設定</h1>
-            <p className="text-gray-600 text-lg">Edit league settings (ID: {leagueId})</p>
-            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-sm font-semibold border border-blue-200">
+          <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
+            <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">編輯聯盟設定</h1>
+            <p className="text-purple-300 text-lg">Edit league settings (ID: {leagueId})</p>
+            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
               <span>Status:</span>
               <span>{status || 'unknown'}</span>
             </div>
@@ -968,14 +968,14 @@ const EditLeagueSettingsPage = ({ params }) => {
 
           <div className="space-y-8">
             {sections.map((section) => (
-              <Card key={section.key} className="shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                  <CardTitle className="flex items-center gap-3 text-2xl">
+              <div key={section.key} className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
+                  <h2 className="flex items-center gap-3 text-3xl font-black text-white">
                     <span className="text-2xl">{section.icon}</span>
                     {section.label}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
+                  </h2>
+                </div>
+                <div className="p-0">
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <tbody>
@@ -1001,13 +1001,13 @@ const EditLeagueSettingsPage = ({ params }) => {
                           <tr
                             key={key}
                             className={`${
-                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                            } hover:bg-blue-50 transition-colors border-b border-gray-200`}
+                              index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
+                            } hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}
                           >
-                            <td className="px-6 py-4 font-semibold text-gray-700 w-2/5">
+                            <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
                               {key}
                             </td>
-                            <td className="px-6 py-4 text-gray-600 w-3/5">
+                            <td className="px-6 py-4 text-purple-300 w-3/5">
                               {isMultilineField(key) ? (
                                 <div>
                                   <textarea
@@ -1017,10 +1017,10 @@ const EditLeagueSettingsPage = ({ params }) => {
                                     }
                                     disabled={isFieldDisabled(section.key, key)}
                                     rows="3"
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${
                                       !isFieldDisabled(section.key, key) && (!value || value.trim() === '')
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                     }`}
                                   />
                                   {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
@@ -1035,10 +1035,10 @@ const EditLeagueSettingsPage = ({ params }) => {
                                     value={value}
                                     onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
                                     disabled={settings.general['Draft Type'] !== 'Live Draft' || isFieldDisabled(section.key, key)}
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${
                                       ((settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                     }`}
                                   />
                                   {(settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '') && (
@@ -1064,7 +1064,7 @@ const EditLeagueSettingsPage = ({ params }) => {
 
                                       return (
                                         <div key={position} className="flex flex-col gap-1">
-                                          <label className="text-sm font-medium text-gray-700">
+                                          <label className="text-sm font-medium text-purple-300">
                                             {position}
                                           </label>
                                           <input
@@ -1076,10 +1076,10 @@ const EditLeagueSettingsPage = ({ params }) => {
                                               handleRosterPositionChange(position, e.target.value)
                                             }
                                             disabled={isDisabled}
-                                            className={`px-2 py-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                            className={`px-2 py-1 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${
                                               isOverLimit || isMinorOverLimit
-                                                ? 'border-red-500 bg-red-50'
-                                                : 'border-gray-300'
+                                                ? 'border-red-500 bg-red-900/30'
+                                                : 'border-purple-500/30'
                                             }`}
                                           />
                                         </div>
@@ -1091,8 +1091,8 @@ const EditLeagueSettingsPage = ({ params }) => {
                                       Object.entries(value)
                                         .filter(([pos]) => pos !== 'Minor')
                                         .reduce((sum, [, cnt]) => sum + cnt, 0) > 25
-                                        ? 'text-red-600 font-semibold'
-                                        : 'text-gray-600'
+                                        ? 'text-red-400 font-semibold'
+                                        : 'text-purple-300'
                                     }`}>
                                       Non-Minor total: {
                                         Object.entries(value)
@@ -1102,8 +1102,8 @@ const EditLeagueSettingsPage = ({ params }) => {
                                     </div>
                                     <div className={`${
                                       (value['Minor'] || 0) > 5
-                                        ? 'text-red-600 font-semibold'
-                                        : 'text-gray-600'
+                                        ? 'text-red-400 font-semibold'
+                                        : 'text-purple-300'
                                     }`}>
                                       Minor: {value['Minor'] || 0} / 5 (max)
                                     </div>
@@ -1113,11 +1113,11 @@ const EditLeagueSettingsPage = ({ params }) => {
                                 <div>
                                   <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 border rounded-md ${
                                     !isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0)
-                                      ? 'border-red-500 bg-red-50'
-                                      : 'border-gray-300 bg-white'
+                                      ? 'border-red-500 bg-red-900/30'
+                                      : 'border-purple-500/30 bg-slate-800/40'
                                   }`}>
                                     {settingOptions[key]?.map((option) => (
-                                      <label key={option} className="flex items-center gap-2">
+                                      <label key={option} className="flex items-center gap-2 text-purple-300">
                                         <input
                                           type="checkbox"
                                           checked={Array.isArray(value) && value.includes(option)}
@@ -1136,10 +1136,10 @@ const EditLeagueSettingsPage = ({ params }) => {
                                             )
                                           }
                                         />
-                                        <span className={isFieldDisabled(section.key, key) ? 'text-gray-400' : ''}>{option}</span>
+                                        <span className={isFieldDisabled(section.key, key) ? 'text-gray-500' : 'text-purple-300'}>{option}</span>
                                       </label>
                                     ))}
-                                    <div className="text-xs text-gray-500 mt-2 col-span-full">
+                                    <div className="text-xs text-purple-400 mt-2 col-span-full">
                                       selected: {(
                                         (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
                                         (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
@@ -1159,10 +1159,10 @@ const EditLeagueSettingsPage = ({ params }) => {
                                       handleSettingChange(section.key, key, e.target.value)
                                     }
                                     disabled={isFieldDisabled(section.key, key)}
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${
                                       !isFieldDisabled(section.key, key) && (!value || value.trim() === '')
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                     }`}
                                   />
                                   {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
@@ -1177,10 +1177,10 @@ const EditLeagueSettingsPage = ({ params }) => {
                                       handleSettingChange(section.key, key, e.target.value)
                                     }
                                     disabled={isFieldDisabled(section.key, key)}
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${
                                       (!isFieldDisabled(section.key, key) && (!value || value.trim() === '')) || (key === 'Start Scoring On' && dateValidationErrors.scoringDateError)
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                     }`}
                                   >
                                     {(() => {
@@ -1209,8 +1209,8 @@ const EditLeagueSettingsPage = ({ params }) => {
                       </tbody>
                     </table>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
 
