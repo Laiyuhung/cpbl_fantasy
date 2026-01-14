@@ -66,7 +66,7 @@ export default function LeaguePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8 flex items-center justify-center">
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="w-20 h-20 mx-auto mb-6 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           <div className="text-xl text-purple-300">Loading league data...</div>
@@ -77,7 +77,7 @@ export default function LeaguePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8 flex items-center justify-center">
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
         <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-8 shadow-2xl">
           <div className="text-xl text-red-300">{error}</div>
         </div>
@@ -87,7 +87,7 @@ export default function LeaguePage() {
 
   if (!leagueSettings) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8 flex items-center justify-center">
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
         <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
           <div className="text-xl text-purple-300">League not found</div>
         </div>
@@ -145,7 +145,7 @@ export default function LeaguePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+    <div className="p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
