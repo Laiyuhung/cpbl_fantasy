@@ -19,5 +19,5 @@ export default function RootLayout({ children }) {
         </GuardLayout>
       </body>
     </html>
-  )
+  ) 
 }
