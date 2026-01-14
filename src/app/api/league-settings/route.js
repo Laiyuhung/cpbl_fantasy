@@ -126,7 +126,14 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { settings } = body;
+    const { settings, manager_id } = body;
+
+    if (!manager_id) {
+      return NextResponse.json(
+        { error: 'Manager ID is required' },
+        { status: 400 }
+      );
+    }
 
     // 準備數據
     const draftType = settings.general['Draft Type'];
@@ -198,6 +205,38 @@ export async function POST(request) {
       console.error('Supabase status error:', statusError);
       return NextResponse.json(
         { error: '建立聯盟狀態失敗', details: statusError.message },
+        { status: 500 }
+      );
+    }
+
+    // 將創建者加入 league_members 並設為 Commissioner
+    const { data: managerData, error: managerError } = await supabase
+      .from('managers')
+      .select('name')
+      .eq('manager_id', manager_id)
+      .single();
+
+    if (managerError || !managerData) {
+      console.error('Manager not found:', managerError);
+      return NextResponse.json(
+        { error: '找不到管理員資料', details: managerError?.message },
+        { status: 404 }
+      );
+    }
+
+    const { error: memberError } = await supabase
+      .from('league_members')
+      .insert([{
+        league_id: leagueId,
+        manager_id: manager_id,
+        nickname: managerData.name,
+        role: 'Commissioner'
+      }]);
+
+    if (memberError) {
+      console.error('Failed to add creator as Commissioner:', memberError);
+      return NextResponse.json(
+        { error: '加入聯盟成員失敗', details: memberError.message },
         { status: 500 }
       );
     }

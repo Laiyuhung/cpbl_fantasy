@@ -790,13 +790,23 @@ const CreateLeaguePage = () => {
     setSaveMessage('');
 
     try {
+      // 获取当前用户的 manager_id
+      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+      const manager_id = cookie?.split('=')[1];
+      
+      if (!manager_id) {
+        setSaveMessage('❌ 請先登入');
+        setIsSaving(false);
+        return;
+      }
+
       console.log('Sending request to /api/league-settings');
       const response = await fetch('/api/league-settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ settings }),
+        body: JSON.stringify({ settings, manager_id }),
       });
 
       console.log('Response status:', response.status);
@@ -823,8 +833,7 @@ const CreateLeaguePage = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">建立聯盟</h1>
-            <p className="text-gray-600 text-lg">Create a new league</p>
+            <h1 className="text-5xl font-bold text-gray-900 mb-4">CREATE NEW LEAGUE</h1>
           </div>
 
           <div className="space-y-8">

@@ -133,11 +133,8 @@ export default function Navbar() {
               <span className="text-xl font-bold">⚾</span>
             </div>
           </div>
-          <div>
-            <div className="text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-              CPBL FANTASY
-            </div>
-            <div className="text-[10px] text-blue-300/70 tracking-widest">2025 SEASON</div>
+          <div className="text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+            CPBL FANTASY
           </div>
         </Link>
 
