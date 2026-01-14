@@ -361,93 +361,93 @@ function SchedulePreview({ leagueId, settings, onValidationChange }) {
 
   if (loading) {
     return (
-      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-        <p className="text-gray-600">Loading schedule data...</p>
+      <div className="mb-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+        <h2 className="text-2xl font-bold text-white mb-4">📅 Schedule Preview</h2>
+        <p className="text-purple-300">Loading schedule data...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-        <p className="text-red-600">{error}</p>
+      <div className="mb-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+        <h2 className="text-2xl font-bold text-white mb-4">📅 Schedule Preview</h2>
+        <p className="text-red-400">{error}</p>
       </div>
     );
   }
 
   if (!settings?.scoring?.['Start Scoring On']) {
     return (
-      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-        <p className="text-gray-600">Please set &quot;Start Scoring On&quot; to see the schedule preview</p>
+      <div className="mb-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+        <h2 className="text-2xl font-bold text-white mb-4">📅 Schedule Preview</h2>
+        <p className="text-purple-300">Please set &quot;Start Scoring On&quot; to see the schedule preview</p>
       </div>
     );
   }
 
   if (filteredSchedule.length === 0) {
     return (
-      <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
-        <p className="text-gray-600">No schedule data available for the selected dates</p>
+      <div className="mb-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+        <h2 className="text-2xl font-bold text-white mb-4">📅 Schedule Preview</h2>
+        <p className="text-purple-300">No schedule data available for the selected dates</p>
       </div>
     );
   }
 
   return (
-    <div className="mb-8 p-6 bg-white border border-blue-200 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">📅 Schedule Preview</h2>
+    <div className="mb-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+      <h2 className="text-2xl font-bold text-white mb-4">📅 Schedule Preview</h2>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-blue-100 border-b-2 border-blue-300">
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">Week</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">Type</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">Start Date</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-800">End Date</th>
+            <tr className="bg-slate-800/60 border-b-2 border-purple-500/30">
+              <th className="px-4 py-2 text-left font-semibold text-purple-300">Week</th>
+              <th className="px-4 py-2 text-left font-semibold text-purple-300">Type</th>
+              <th className="px-4 py-2 text-left font-semibold text-purple-300">Start Date</th>
+              <th className="px-4 py-2 text-left font-semibold text-purple-300">End Date</th>
             </tr>
           </thead>
           <tbody>
             {filteredSchedule.map((week, index) => (
               <tr
                 key={index}
-                className={`border-b ${
+                className={`border-b border-purple-500/20 ${
                   week.week_type === 'playoffs'
-                    ? 'bg-purple-50 hover:bg-purple-100'
+                    ? 'bg-purple-500/20 hover:bg-purple-500/30'
                     : week.week_type === 'makeup'
-                    ? 'bg-yellow-50 hover:bg-yellow-100'
+                    ? 'bg-yellow-500/20 hover:bg-yellow-500/30'
                     : week.week_type === 'preparation'
-                    ? 'bg-green-50 hover:bg-green-100'
-                    : 'bg-white hover:bg-blue-50'
+                    ? 'bg-green-500/20 hover:bg-green-500/30'
+                    : 'bg-slate-800/20 hover:bg-slate-800/40'
                 }`}
               >
-                <td className="px-4 py-2 text-gray-700 font-medium">{week.week_label}</td>
-                <td className="px-4 py-2 text-gray-600">
+                <td className="px-4 py-2 text-white font-medium">{week.week_label}</td>
+                <td className="px-4 py-2 text-purple-200">
                   <span className={`px-2 py-1 rounded text-xs font-semibold ${
                     week.week_type === 'playoffs'
-                      ? 'bg-purple-100 text-purple-800'
+                      ? 'bg-purple-500/80 text-purple-100'
                       : week.week_type === 'makeup'
-                      ? 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-yellow-500/80 text-yellow-100'
                       : week.week_type === 'preparation'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-100 text-blue-800'
+                      ? 'bg-green-500/80 text-green-100'
+                      : 'bg-blue-500/80 text-blue-100'
                   }`}>
                     {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : week.week_type === 'preparation' ? 'Preparation' : 'Regular'}
                   </span>
                 </td>
-                <td className="px-4 py-2 text-gray-600">{week.week_start}</td>
-                <td className="px-4 py-2 text-gray-600">{week.week_end}</td>
+                <td className="px-4 py-2 text-purple-200">{week.week_start}</td>
+                <td className="px-4 py-2 text-purple-200">{week.week_end}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {scheduleValidationError && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded text-sm text-red-800">
+          <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded text-sm text-red-300">
             <p className="font-semibold">❌ {scheduleValidationError}</p>
           </div>
         )}
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-gray-700">
+        <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded text-sm text-purple-200">
           <p className="font-semibold">Total: {filteredSchedule.length} weeks</p>
         </div>
       </div>
@@ -522,6 +522,8 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [scheduleError, setScheduleError] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState('');
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
@@ -882,6 +884,50 @@ const EditLeagueSettingsPage = ({ params }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        
+        // Get current user ID from cookie
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+        const currentUserId = cookie?.split('=')[1];
+        
+        if (!currentUserId) {
+          setError('Not authenticated. Please login.');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch league data to check user role
+        const leagueResponse = await fetch(`/api/league/${leagueId}`);
+        const leagueResult = await leagueResponse.json();
+        
+        if (!leagueResponse.ok || !leagueResult.success) {
+          setError(leagueResult.error || 'Failed to load league data');
+          setLoading(false);
+          return;
+        }
+
+        // Check if user is a member and has proper role
+        const currentMember = leagueResult.members?.find(m => m.manager_id === currentUserId);
+        
+        if (!currentMember) {
+          setError('You are not a member of this league');
+          setIsAuthorized(false);
+          setLoading(false);
+          return;
+        }
+
+        const userRole = currentMember.role;
+        setCurrentUserRole(userRole);
+
+        if (userRole !== 'Commissioner' && userRole !== 'Co-Commissioner') {
+          setError('Access denied. Only Commissioner or Co-Commissioner can edit league settings.');
+          setIsAuthorized(false);
+          setLoading(false);
+          return;
+        }
+
+        setIsAuthorized(true);
+
+        // Fetch league settings
         const res = await fetch(`/api/league-settings?league_id=${leagueId}`);
         const json = await res.json();
         if (!res.ok || !json.success) {
@@ -950,9 +996,16 @@ const EditLeagueSettingsPage = ({ params }) => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8 flex items-center justify-center">
-        <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-8 shadow-2xl text-center">
-          <div className="text-xl font-semibold text-red-300 mb-2">Failed to load league settings</div>
-          <div className="text-sm text-red-400">{error}</div>
+        <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-8 shadow-2xl text-center max-w-md">
+          <div className="text-6xl mb-4">🚫</div>
+          <div className="text-2xl font-bold text-red-300 mb-4">Access Denied</div>
+          <div className="text-red-400 mb-6">{error}</div>
+          <a
+            href="/home"
+            className="inline-block bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg"
+          >
+            Return to Home
+          </a>
         </div>
       </div>
     );
@@ -963,8 +1016,7 @@ const EditLeagueSettingsPage = ({ params }) => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
-            <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">編輯聯盟設定</h1>
-            <p className="text-purple-300 text-lg">Edit league settings (ID: {leagueId})</p>
+            <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
             <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
               <span>Status:</span>
               <span>{status || 'unknown'}</span>
