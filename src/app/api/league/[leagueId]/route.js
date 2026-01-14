@@ -88,6 +88,7 @@ export async function GET(request, { params }) {
       members: members || [],
       status: statusData?.status || 'unknown',
       maxTeams: leagueSettings?.max_teams || 0,
+      invitePermissions: leagueSettings?.invite_permissions || 'commissioner only',
     });
   } catch (error) {
     console.error('Server error:', error);
