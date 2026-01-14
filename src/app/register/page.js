@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const router = useRouter()
 
   const handleRegister = async () => {
@@ -45,14 +46,48 @@ export default function RegisterPage() {
       if (!res.ok || result.error) {
         setError(result.error || 'Registration failed')
       } else {
-        // Registration successful, redirect to login
-        router.push('/login?registered=true')
+        // Registration successful, show success message
+        setSuccess(true)
+        setLoading(false)
+        // Redirect to login after 5 seconds
+        setTimeout(() => {
+          router.push('/login?registered=true')
+        }, 5000)
+        return
       }
     } catch (err) {
       setError('Registration error, please try again later')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-8 w-96">
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-4">Registration Successful! 🎉</h1>
+            <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mb-4">
+              <p className="text-blue-200 text-lg font-semibold mb-2">📧 Check Your Email</p>
+              <p className="text-blue-300 text-sm">We've sent a verification link to <strong>{email}</strong></p>
+            </div>
+            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 mb-4">
+              <p className="text-yellow-200 text-sm">⚠️ Please verify your email before signing in</p>
+              <p className="text-yellow-300 text-xs mt-1">The verification link will expire in 24 hours</p>
+            </div>
+            <div className="bg-purple-500/20 border border-purple-500/50 rounded-lg p-4">
+              <p className="text-purple-300 text-sm">Redirecting to login page in 5 seconds...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

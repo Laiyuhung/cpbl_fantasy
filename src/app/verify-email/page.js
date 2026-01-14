@@ -29,10 +29,10 @@ function VerifyEmailContent() {
           setMessage(data.message);
           setUserName(data.userName || '');
           
-          // Redirect to login after 3 seconds
+          // Redirect to login after 5 seconds
           setTimeout(() => {
             router.push('/login');
-          }, 3000);
+          }, 5000);
         } else {
           setStatus('error');
           setMessage(data.error || 'Verification failed');
