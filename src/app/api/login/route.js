@@ -1,17 +1,29 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
+import bcrypt from 'bcrypt'
 
 export async function POST(request) {
   const { email, password } = await request.json()
 
+  // First get the user by email
   const { data, error } = await supabase
     .from('managers')
-    .select('manager_id, must_change_password')
+    .select('manager_id, password, must_change_password, email_verified')
     .eq('email_address', email)
-    .eq('password', password)
     .single()
 
   if (error || !data) {
+    return NextResponse.json({ error: '帳號或密碼錯誤' }, { status: 401 })
+  }
+
+  // Check if email is verified
+  if (!data.email_verified) {
+    return NextResponse.json({ error: '請先驗證您的電子郵件' }, { status: 403 })
+  }
+
+  // Compare password with hash
+  const passwordMatch = await bcrypt.compare(password, data.password)
+  if (!passwordMatch) {
     return NextResponse.json({ error: '帳號或密碼錯誤' }, { status: 401 })
   }
 

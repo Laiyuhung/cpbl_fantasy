@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import { sendVerificationEmail } from '@/lib/email';
 
 export async function POST(request) {
   try {
     const body = await request.json();
     console.log('📥 Received registration data:', body);
-    const { name, email_address, password } = body;
+    const { name, email, password } = body;
+    const email_address = email; // Map email to email_address
 
     console.log('Parsed fields:', {
       name,
@@ -18,6 +22,14 @@ export async function POST(request) {
       console.log('❌ Validation failed - missing fields');
       return NextResponse.json(
         { error: 'Name, email, and password are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters' },
         { status: 400 }
       );
     }
@@ -43,6 +55,15 @@ export async function POST(request) {
       );
     }
 
+    // Generate verification token
+    const verification_token = crypto.randomBytes(32).toString('hex');
+    const verification_token_expires = new Date();
+    verification_token_expires.setHours(verification_token_expires.getHours() + 24); // 24 hours expiry
+
+    // Hash password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     // Insert new manager
     const { data, error } = await supabase
       .from('managers')
@@ -50,8 +71,11 @@ export async function POST(request) {
         {
           name,
           email_address,
-          password,
-          must_change_password: false
+          password: hashedPassword,
+          must_change_password: false,
+          email_verified: false,
+          verification_token,
+          verification_token_expires: verification_token_expires.toISOString()
         }
       ])
       .select();
@@ -64,14 +88,27 @@ export async function POST(request) {
       );
     }
 
+    // Send verification email
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const verificationLink = `${baseUrl}/verify-email?token=${verification_token}`;
+    
+    try {
+      await sendVerificationEmail(email_address, verificationLink, name);
+      console.log('✅ Verification email sent to:', email_address);
+    } catch (emailError) {
+      console.error('❌ Failed to send verification email:', emailError);
+      // Don't fail registration if email fails, but log it
+    }
+
     return NextResponse.json(
       {
         success: true,
-        message: 'User registered successfully',
+        message: 'Registration successful! Please check your email to verify your account.',
         user: {
           manager_id: data[0].manager_id,
           name: data[0].name,
-          email_address: data[0].email_address
+          email_address: data[0].email_address,
+          email_verified: false
         }
       },
       { status: 201 }
