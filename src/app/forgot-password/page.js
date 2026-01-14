@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async () => {
     setMsg('')
     if (!email) {
-      setMsg('請輸入 email')
+      setMsg('Please enter your email')
       return
     }
     setLoading(true)
@@ -24,14 +24,14 @@ export default function ForgotPasswordPage() {
       })
       const result = await res.json()
       if (!res.ok || result.error) {
-        setMsg(result.error || '重設密碼失敗')
+        setMsg(result.error || 'Failed to reset password')
       } else {
-        // 顯示成功 Banner，2 秒後導回登入頁面
-        setMsg('已發送重設密碼通知，請檢查您的 email')
+        // Show success message and redirect to login after 2 seconds
+        setMsg('Password reset email sent! Please check your inbox.')
         setTimeout(() => router.push('/login'), 2000)
       }
     } catch (e) {
-      setMsg('重設密碼失敗，請稍後再試')
+      setMsg('Failed to reset password. Please try again later.')
     } finally {
       setLoading(false)
     }

@@ -9,35 +9,30 @@ function makeSixDigit() {
 
 export async function POST(request) {
   try {
-    const { account, email } = await request.json()
-    console.log('📥 Forgot password request:', { account, email })
+    const { email } = await request.json()
+    console.log('📥 Forgot password request for email:', email)
     
-    if (!account && !email) {
-      console.log('❌ Missing both account and email')
-      return NextResponse.json({ error: '請提供帳號或 email' }, { status: 400 })
+    if (!email) {
+      console.log('❌ Missing email')
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    const qb = supabase.from('managers').select('manager_id,email_address,account,name').limit(1)
-    if (account) {
-      console.log('🔍 Searching by account:', account)
-      qb.eq('account', account)
-    }
-    if (email) {
-      console.log('🔍 Searching by email:', email)
-      qb.eq('email_address', email)
-    }
-
-    const { data, error } = await qb.single()
+    console.log('🔍 Searching by email:', email)
+    const { data, error } = await supabase
+      .from('managers')
+      .select('manager_id,email_address,name')
+      .eq('email_address', email)
+      .single()
     
     console.log('📊 Query result:', { 
       found: !!data, 
       error: error?.message,
-      data: data ? { manager_id: data.manager_id, email: data.email_address } : null 
+      data: data ? { manager_id: data.manager_id, email: data.email_address, name: data.name } : null 
     })
     
     if (error || !data) {
       console.log('❌ User not found - Error:', error)
-      return NextResponse.json({ error: '找不到對應的帳號' }, { status: 404 })
+      return NextResponse.json({ error: 'Email not found' }, { status: 404 })
     }
 
     const newPass = makeSixDigit()
@@ -55,7 +50,7 @@ export async function POST(request) {
 
     if (updErr) {
       console.error('❌ Password update error:', updErr)
-      return NextResponse.json({ error: '更新密碼失敗' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to update password' }, { status: 500 })
     }
     
     console.log('✅ Password updated for manager_id:', data.manager_id)
@@ -63,8 +58,8 @@ export async function POST(request) {
     // send email if available
     if (data.email_address) {
       console.log('📧 Preparing to send email to:', data.email_address)
-      const subject = 'CPBL Fantasy - 密碼已重設'
-      const message = `<p>您的密碼已被重設為 <strong>${newPass}</strong></p><p>請於下次登入後立即變更密碼。</p>`
+      const subject = 'CPBL Fantasy - Password Reset'
+      const message = `<p>Your password has been reset to <strong>${newPass}</strong></p><p>Please change your password immediately after logging in.</p>`
       try {
         await sendTradeNotificationEmail(data.email_address, subject, message)
         console.log('✅ Password reset email sent successfully to:', data.email_address)
@@ -80,6 +75,6 @@ export async function POST(request) {
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('❌ Forgot password error:', e)
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 })
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
