@@ -14,6 +14,9 @@ export default function Navbar() {
 
   // Fetch user's leagues
   const fetchLeagues = (uid) => {
+    console.log('=== Navbar: Fetching leagues ===')
+    console.log('Manager ID (user_id):', uid)
+    
     fetch('/api/managers/leagues', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -21,8 +24,10 @@ export default function Navbar() {
     })
       .then(res => res.json())
       .then(data => {
+        console.log('Leagues API response:', data)
         if (data?.leagues) {
           setLeagues(data.leagues)
+          console.log('Leagues set:', data.leagues)
         }
       })
       .catch(err => console.error('Failed to fetch leagues:', err))

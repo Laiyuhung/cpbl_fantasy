@@ -10,6 +10,9 @@ export async function POST(request) {
   try {
     const { user_id } = await request.json();
 
+    console.log('=== Fetching leagues for manager ===');
+    console.log('Received user_id (manager_id):', user_id);
+
     if (!user_id) {
       return NextResponse.json(
         { error: 'User ID is required' },
@@ -17,17 +20,7 @@ export async function POST(request) {
       );
     }
 
-    // Get manager_id from user_id
-    const { data: manager, error: managerError } = await supabase
-      .from('managers')
-      .select('id')
-      .eq('user_id', user_id)
-      .single();
-
-    if (managerError || !manager) {
-      return NextResponse.json({ leagues: [] });
-    }
-
+    // user_id in cookie is actually the manager_id (UUID)
     // Get all leagues where this manager is a member
     const { data: leagueMembers, error: membersError } = await supabase
       .from('league_members')
@@ -39,7 +32,10 @@ export async function POST(request) {
           league_name
         )
       `)
-      .eq('manager_id', manager.id);
+      .eq('manager_id', user_id);
+
+    console.log('League members query result:', leagueMembers);
+    console.log('League members query error:', membersError);
 
     if (membersError) {
       console.error('Error fetching leagues:', membersError);
@@ -55,6 +51,9 @@ export async function POST(request) {
       league_name: member.league_settings?.league_name || 'Unnamed League',
       nickname: member.nickname
     })) || [];
+
+    console.log('Formatted leagues:', leagues);
+    console.log('=== End fetching leagues ===');
 
     return NextResponse.json({ leagues });
   } catch (error) {
