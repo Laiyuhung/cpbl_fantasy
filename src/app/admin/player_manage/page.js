@@ -251,12 +251,12 @@ export default function PlayerManagePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All</option>
-                <option value="统一7-ELEVEn狮">统一7-ELEVEn狮</option>
+                <option value="統一獅">統一獅</option>
                 <option value="中信兄弟">中信兄弟</option>
-                <option value="乐天桃猿">乐天桃猿</option>
-                <option value="富邦悍将">富邦悍将</option>
-                <option value="味全龙">味全龙</option>
-                <option value="台钢雄鹰">台钢雄鹰</option>
+                <option value="樂天桃猿">樂天桃猿</option>
+                <option value="富邦悍將">富邦悍將</option>
+                <option value="味全龍">味全龍</option>
+                <option value="台鋼雄鷹">台鋼雄鷹</option>
               </select>
             </div>
             <div>
@@ -385,12 +385,12 @@ export default function PlayerManagePage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select a team</option>
-                    <option value="统一7-ELEVEn狮">统一7-ELEVEn狮</option>
+                    <option value="統一獅">統一獅</option>
                     <option value="中信兄弟">中信兄弟</option>
-                    <option value="乐天桃猿">乐天桃猿</option>
-                    <option value="富邦悍将">富邦悍将</option>
-                    <option value="味全龙">味全龙</option>
-                    <option value="台钢雄鹰">台钢雄鹰</option>
+                    <option value="樂天桃猿">樂天桃猿</option>
+                    <option value="富邦悍將">富邦悍將</option>
+                    <option value="味全龍">味全龍</option>
+                    <option value="台鋼雄鷹">台鋼雄鷹</option>
                   </select>
                 </div>
 
