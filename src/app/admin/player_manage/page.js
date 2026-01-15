@@ -17,7 +17,8 @@ export default function PlayerManagePage() {
     name: '',
     team: '',
     original_name: '',
-    batter_or_pitcher: 'batter'
+    batter_or_pitcher: 'batter',
+    identity: 'local'
   })
 
   useEffect(() => {
@@ -76,7 +77,8 @@ export default function PlayerManagePage() {
         name: player.name || '',
         team: player.team || '',
         original_name: player.original_name || '',
-        batter_or_pitcher: player.batter_or_pitcher || 'batter'
+        batter_or_pitcher: player.batter_or_pitcher || 'batter',
+        identity: player.identity || 'local'
       })
     } else {
       setEditingPlayer(null)
@@ -84,7 +86,8 @@ export default function PlayerManagePage() {
         name: '',
         team: '',
         original_name: '',
-        batter_or_pitcher: 'batter'
+        batter_or_pitcher: 'batter',
+        identity: 'local'
       })
     }
     setShowModal(true)
@@ -97,7 +100,8 @@ export default function PlayerManagePage() {
       name: '',
       team: '',
       original_name: '',
-      batter_or_pitcher: 'batter'
+      batter_or_pitcher: 'batter',
+      identity: 'local'
     })
   }
 
@@ -284,6 +288,7 @@ export default function PlayerManagePage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alias</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identity</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Added</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -292,7 +297,7 @@ export default function PlayerManagePage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {players.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                       No players found
                     </td>
                   </tr>
@@ -315,6 +320,15 @@ export default function PlayerManagePage() {
                             : 'bg-blue-100 text-blue-800'
                         }`}>
                           {player.batter_or_pitcher === 'batter' ? 'Batter' : 'Pitcher'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          player.identity === 'local' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {player.identity === 'local' ? 'Local' : 'Foreigner'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -422,6 +436,21 @@ export default function PlayerManagePage() {
                   >
                     <option value="batter">Batter</option>
                     <option value="pitcher">Pitcher</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Identity <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.identity}
+                    onChange={(e) => setFormData({ ...formData, identity: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="local">Local</option>
+                    <option value="foreigner">Foreigner</option>
                   </select>
                 </div>
               </div>

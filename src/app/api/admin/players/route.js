@@ -66,7 +66,7 @@ export async function POST(req) {
     }
 
     const body = await req.json()
-    const { name, team, original_name, batter_or_pitcher } = body
+    const { name, team, original_name, batter_or_pitcher, identity } = body
 
     if (!name || !batter_or_pitcher) {
       return NextResponse.json({ error: '球员名称和类型为必填' }, { status: 400 })
@@ -80,6 +80,7 @@ export async function POST(req) {
           team: team || null,
           original_name: original_name || null,
           batter_or_pitcher,
+          identity: identity || 'local',
           add_date: new Date().toISOString().split('T')[0],
           available: true
         }
@@ -107,7 +108,7 @@ export async function PUT(req) {
     }
 
     const body = await req.json()
-    const { player_id, name, team, original_name, batter_or_pitcher, available } = body
+    const { player_id, name, team, original_name, batter_or_pitcher, identity, available } = body
 
     if (!player_id) {
       return NextResponse.json({ error: '球员 ID 为必填' }, { status: 400 })
@@ -118,6 +119,7 @@ export async function PUT(req) {
     if (team !== undefined) updateData.team = team
     if (original_name !== undefined) updateData.original_name = original_name
     if (batter_or_pitcher !== undefined) updateData.batter_or_pitcher = batter_or_pitcher
+    if (identity !== undefined) updateData.identity = identity
     if (available !== undefined) updateData.available = available
 
     const { data, error } = await supabase
