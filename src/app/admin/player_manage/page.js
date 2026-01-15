@@ -18,7 +18,8 @@ export default function PlayerManagePage() {
     team: '',
     original_name: '',
     batter_or_pitcher: 'batter',
-    identity: 'local'
+    identity: 'local',
+    available: true
   })
 
   useEffect(() => {
@@ -78,7 +79,8 @@ export default function PlayerManagePage() {
         team: player.team || '',
         original_name: player.original_name || '',
         batter_or_pitcher: player.batter_or_pitcher || 'batter',
-        identity: player.identity || 'local'
+        identity: player.identity || 'local',
+        available: player.available !== undefined ? player.available : true
       })
     } else {
       setEditingPlayer(null)
@@ -87,7 +89,8 @@ export default function PlayerManagePage() {
         team: '',
         original_name: '',
         batter_or_pitcher: 'batter',
-        identity: 'local'
+        identity: 'local',
+        available: true
       })
     }
     setShowModal(true)
@@ -101,7 +104,8 @@ export default function PlayerManagePage() {
       team: '',
       original_name: '',
       batter_or_pitcher: 'batter',
-      identity: 'local'
+      identity: 'local',
+      available: true
     })
   }
 
@@ -451,6 +455,21 @@ export default function PlayerManagePage() {
                   >
                     <option value="local">Local</option>
                     <option value="foreigner">Foreigner</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.available}
+                    onChange={(e) => setFormData({ ...formData, available: e.target.value === 'true' })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="true">Available</option>
+                    <option value="false">Unavailable</option>
                   </select>
                 </div>
               </div>
