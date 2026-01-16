@@ -8,23 +8,35 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   useEffect(() => {
+    // 避免重複重定向檢查
+    if (isRedirecting) return
+
     const cookieUserId = document.cookie.split('; ').find(row => row.startsWith('user_id='))
     if (!cookieUserId) return
     const user_id = cookieUserId.split('=')[1]
 
-    fetch('/api/username', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data?.name) router.push('/home')
+    // 使用 timeout 避免與 guard.js 的重定向衝突
+    const timeoutId = setTimeout(() => {
+      fetch('/api/username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id }),
       })
-      .catch(() => {})
-  }, [router])
+        .then(res => res.json())
+        .then(data => {
+          if (data?.name && !isRedirecting) {
+            setIsRedirecting(true)
+            router.push('/home')
+          }
+        })
+        .catch(() => {})
+    }, 100)
+
+    return () => clearTimeout(timeoutId)
+  }, [router, isRedirecting])
 
   const handleLogin = async () => {
     setError('')
