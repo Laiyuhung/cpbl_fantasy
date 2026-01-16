@@ -51,10 +51,10 @@ export default function LoginPage() {
       })
       const result = await res.json()
       if (!res.ok || result.error) {
-        setError(result.error || '登入失敗')
+        setError(result.error || 'Login failed')
       } else {
         // 顯示登入成功提示
-        setToastMessage('✅ 登入成功！')
+        setToastMessage('✅ Login Successful!')
         setShowToast(true)
         setTimeout(() => setShowToast(false), 3000)
 
@@ -72,7 +72,7 @@ export default function LoginPage() {
         }, 1000)
       }
     } catch (err) {
-      setError('登入錯誤，請稍後再試')
+      setError('Login error, please try again later')
     }
   }
 
