@@ -9,6 +9,8 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const router = useRouter()
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => {
     // 避免重複重定向檢查
@@ -51,14 +53,23 @@ export default function LoginPage() {
       if (!res.ok || result.error) {
         setError(result.error || '登入失敗')
       } else {
+        // 顯示登入成功提示
+        setToastMessage('✅ 登入成功！')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 3000)
+
         // 若伺服器要求強制更改密碼 -> 導到 change-password
         // 通知全站 auth 狀態已改變，讓 Navbar 等元件立即更新
         try { window.dispatchEvent(new Event('auth-changed')) } catch (e) {}
-        if (result.must_change_password) {
-          router.push('/change-password')
-        } else {
-          router.push('/home')
-        }
+        
+        // 延遲導向，讓用戶看到提示
+        setTimeout(() => {
+          if (result.must_change_password) {
+            router.push('/change-password')
+          } else {
+            router.push('/home')
+          }
+        }, 1000)
       }
     } catch (err) {
       setError('登入錯誤，請稍後再試')
@@ -69,6 +80,18 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Toast 提示框 */}
+      {showToast && (
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-lg shadow-2xl border border-green-400/50 flex items-center gap-3">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-bold text-lg">{toastMessage}</span>
+          </div>
+        </div>
+      )}
+
       <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-8 w-96">
         <h1 className="text-3xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-6 text-center">Sign In</h1>
         <input
