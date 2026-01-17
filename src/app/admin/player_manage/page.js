@@ -28,14 +28,17 @@ export default function PlayerManagePage() {
     checkAdminStatus()
   }, [])
 
-  // Debounce search input (500ms delay)
+  // Debounce search input (500ms delay), but only when not composing (typing in Chinese)
   useEffect(() => {
+    // 如果正在輸入注音，不要更新 debounced search
+    if (isComposing) return
+
     const timer = setTimeout(() => {
       setDebouncedSearch(search)
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [search])
+  }, [search, isComposing])
 
   useEffect(() => {
     if (isAdmin) {
@@ -259,7 +262,11 @@ export default function PlayerManagePage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={() => setIsComposing(false)}
+                onCompositionEnd={(e) => {
+                  setIsComposing(false)
+                  // 注音輸入完成後，立即更新 search 並觸發搜尋
+                  setSearch(e.target.value)
+                }}
                 placeholder="Search player name or alias"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
