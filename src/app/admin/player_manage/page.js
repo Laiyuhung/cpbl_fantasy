@@ -321,7 +321,7 @@ export default function PlayerManagePage() {
               >
                 <option value="">All</option>
                 <option value="local">Local</option>
-                <option value="foreign">Foreigner</option>
+                <option value="foreigner">Foreigner</option>
               </select>
             </div>
             <div>
