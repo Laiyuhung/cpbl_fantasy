@@ -541,6 +541,7 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [scheduleError, setScheduleError] = useState('');
   const [currentUserRole, setCurrentUserRole] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
@@ -1046,11 +1047,12 @@ const EditLeagueSettingsPage = ({ params }) => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setSaveMessage(`✅ ${result.message}`);
-        // Redirect to league page after successful save
+        setShowSuccessAnimation(true);
+        
+        // 等待 2 秒后跳转到 league 页面
         setTimeout(() => {
           window.location.href = `/league/${leagueId}`;
-        }, 1500);
+        }, 2000);
       } else {
         setSaveMessage(`❌ Update failed: ${result.error || 'Unknown error'}`);
       }
@@ -1093,6 +1095,38 @@ const EditLeagueSettingsPage = ({ params }) => {
 
   return (
     <>
+      {/* 成功動畫遮罩 */}
+      {showSuccessAnimation && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl p-12 shadow-2xl text-center animate-scaleIn">
+            <div className="mb-6 animate-bounce">
+              <svg className="w-24 h-24 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">League Settings Updated!</h2>
+            <p className="text-gray-600 text-lg">Redirecting to your league page...</p>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { transform: scale(0.8); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .animate-scaleIn {
+          animation: scaleIn 0.4s ease-out;
+        }
+      `}</style>
+
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
