@@ -123,7 +123,6 @@ const settingOptions = {
     'Walks (BB)',
     'Complete Games (CG)',
     'Earned Runs (ER)',
-    'Batters Grounded Into Double Plays (GIDP)',
     'Games Started (GS)',
     'Hits Per Nine Innings (H/9)',
     'Hits (H)',
@@ -146,7 +145,6 @@ const settingOptions = {
     'Relief Losses (RL)',
     'Relief Wins (RW)',
     'Shutouts (SHO)',
-    'Total Bases Allowed (TB)',
     'Total Batters Faced (TBF)',
     'Winning Percentage (WIN%)',
   ],
@@ -1281,7 +1279,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                       selected: {(
                                         (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
                                         (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
-                                      )} / 30
+                                      )} / 30 (max)
                                     </div>
                                   </div>
                                   {!isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0) && (
