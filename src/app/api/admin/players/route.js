@@ -20,7 +20,7 @@ export async function GET(req) {
     const userId = cookieStore.get('user_id')?.value
 
     if (!userId || !(await checkAdmin(userId))) {
-      return NextResponse.json({ error: '无权限' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)
@@ -93,14 +93,14 @@ export async function POST(req) {
     const userId = cookieStore.get('user_id')?.value
 
     if (!userId || !(await checkAdmin(userId))) {
-      return NextResponse.json({ error: '无权限' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const body = await req.json()
     const { name, team, original_name, batter_or_pitcher, identity } = body
 
     if (!name || !batter_or_pitcher) {
-      return NextResponse.json({ error: '球员名称和类型为必填' }, { status: 400 })
+      return NextResponse.json({ error: 'Player name and type are required' }, { status: 400 })
     }
 
     const { data, error } = await supabase
@@ -135,14 +135,14 @@ export async function PUT(req) {
     const userId = cookieStore.get('user_id')?.value
 
     if (!userId || !(await checkAdmin(userId))) {
-      return NextResponse.json({ error: '无权限' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const body = await req.json()
     const { player_id, name, team, original_name, batter_or_pitcher, identity, available } = body
 
     if (!player_id) {
-      return NextResponse.json({ error: '球员 ID 为必填' }, { status: 400 })
+      return NextResponse.json({ error: 'Player ID is required' }, { status: 400 })
     }
 
     const updateData = {}
@@ -176,14 +176,14 @@ export async function DELETE(req) {
     const userId = cookieStore.get('user_id')?.value
 
     if (!userId || !(await checkAdmin(userId))) {
-      return NextResponse.json({ error: '无权限' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)
     const playerId = searchParams.get('player_id')
 
     if (!playerId) {
-      return NextResponse.json({ error: '球员 ID 为必填' }, { status: 400 })
+      return NextResponse.json({ error: 'Player ID is required' }, { status: 400 })
     }
 
     const { error } = await supabase
