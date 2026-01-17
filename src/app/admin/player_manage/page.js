@@ -12,9 +12,13 @@ export default function PlayerManagePage() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [teamFilter, setTeamFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [identityFilter, setIdentityFilter] = useState('')
+  const [availableFilter, setAvailableFilter] = useState('')
+  const [sortBy, setSortBy] = useState('add_date')
   const [showModal, setShowModal] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
   const [isComposing, setIsComposing] = useState(false)
+  const [isFetching, setIsFetching] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     team: '',
@@ -44,7 +48,7 @@ export default function PlayerManagePage() {
     if (isAdmin) {
       fetchPlayers()
     }
-  }, [isAdmin, debouncedSearch, teamFilter, typeFilter])
+  }, [isAdmin, debouncedSearch, teamFilter, typeFilter, identityFilter, availableFilter, sortBy])
 
   const checkAdminStatus = async () => {
     try {
@@ -69,10 +73,14 @@ export default function PlayerManagePage() {
 
   const fetchPlayers = async () => {
     try {
+      setIsFetching(true)
       const params = new URLSearchParams()
       if (debouncedSearch) params.append('search', debouncedSearch)
       if (teamFilter) params.append('team', teamFilter)
       if (typeFilter) params.append('type', typeFilter)
+      if (identityFilter) params.append('identity', identityFilter)
+      if (availableFilter) params.append('available', availableFilter)
+      if (sortBy) params.append('sortBy', sortBy)
 
       const res = await fetch(`/api/admin/players?${params}`)
       const data = await res.json()
@@ -82,6 +90,8 @@ export default function PlayerManagePage() {
       }
     } catch (err) {
       console.error('Failed to fetch players:', err)
+    } finally {
+      setIsFetching(false)
     }
   }
 
@@ -254,7 +264,7 @@ export default function PlayerManagePage() {
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
               <input
@@ -270,8 +280,8 @@ export default function PlayerManagePage() {
                 placeholder="Search player name or alias"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              {search !== debouncedSearch && (
-                <p className="text-xs text-gray-500 mt-1">Searching...</p>
+              {(search !== debouncedSearch || isFetching) && (
+                <p className="text-xs text-gray-500 mt-1">Loading...</p>
               )}
             </div>
             <div>
@@ -300,6 +310,44 @@ export default function PlayerManagePage() {
                 <option value="">All</option>
                 <option value="batter">Batter</option>
                 <option value="pitcher">Pitcher</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Identity</label>
+              <select
+                value={identityFilter}
+                onChange={(e) => setIdentityFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All</option>
+                <option value="local">Local</option>
+                <option value="foreign">Foreign</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={availableFilter}
+                onChange={(e) => setAvailableFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All</option>
+                <option value="true">Available</option>
+                <option value="false">Unavailable</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="add_date">Date Added (Newest)</option>
+                <option value="add_date_asc">Date Added (Oldest)</option>
+                <option value="name">Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+                <option value="team">Team</option>
               </select>
             </div>
           </div>

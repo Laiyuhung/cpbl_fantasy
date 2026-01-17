@@ -27,11 +27,13 @@ export async function GET(req) {
     const search = searchParams.get('search')?.trim()
     const team = searchParams.get('team')
     const type = searchParams.get('type') // batter_or_pitcher
+    const identity = searchParams.get('identity')
+    const available = searchParams.get('available')
+    const sortBy = searchParams.get('sortBy') || 'add_date'
 
     let query = supabase
       .from('player_list')
       .select('*')
-      .order('add_date', { ascending: false })
       .limit(500) // 限制最大返回 500 條結果
 
     // 只在搜尋字串至少 1 個字元時才進行搜尋
@@ -43,6 +45,33 @@ export async function GET(req) {
     }
     if (type) {
       query = query.eq('batter_or_pitcher', type)
+    }
+    if (identity) {
+      query = query.eq('identity', identity)
+    }
+    if (available) {
+      query = query.eq('available', available === 'true')
+    }
+
+    // 排序邏輯
+    switch (sortBy) {
+      case 'add_date':
+        query = query.order('add_date', { ascending: false })
+        break
+      case 'add_date_asc':
+        query = query.order('add_date', { ascending: true })
+        break
+      case 'name':
+        query = query.order('name', { ascending: true })
+        break
+      case 'name_desc':
+        query = query.order('name', { ascending: false })
+        break
+      case 'team':
+        query = query.order('team', { ascending: true }).order('name', { ascending: true })
+        break
+      default:
+        query = query.order('add_date', { ascending: false })
     }
 
     const { data, error } = await query
