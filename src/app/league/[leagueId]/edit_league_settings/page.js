@@ -90,6 +90,8 @@ const settingOptions = {
     'Home Runs (HR)',
     'Runs Batted In (RBI)',
     'Stolen Bases (SB)',
+    'Caught Stealing (CS)',
+    'Strikeouts (K)',
     'Batting Average (AVG)',
     'Singles (1B)',
     'Doubles (2B)',
