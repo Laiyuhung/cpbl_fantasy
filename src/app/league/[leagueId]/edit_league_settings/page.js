@@ -123,6 +123,7 @@ const settingOptions = {
     'Walks (BB)',
     'Complete Games (CG)',
     'Earned Runs (ER)',
+    'Runs Allowed (RA)',
     'Games Started (GS)',
     'Hits Per Nine Innings (H/9)',
     'Hits (H)',
