@@ -119,7 +119,6 @@ const LeagueSettingsPage = () => {
       'Plate Appearances (PA)',
       'Sacrifice Flies (SF)',
       'Sacrifice Hits (SH)',
-      'Grand Slam Home Runs (SLAM)',
       'Slugging Percentage (SLG)',
       'Total Bases (TB)',
       'Extra Base Hits (XBH)'
