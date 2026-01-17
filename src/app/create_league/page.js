@@ -512,9 +512,9 @@ const CreateLeaguePage = () => {
     const liveDraftTime = settings.general['Live Draft Time'];
     const startScoringOn = settings.scoring['Start Scoring On'];
     
-    console.log('=== Date Validation Check ===');
-    console.log('Live Draft Time (input):', liveDraftTime);
-    console.log('Start Scoring On (input):', startScoringOn);
+    // console.log('=== Date Validation Check ===');
+    // console.log('Live Draft Time (input):', liveDraftTime);
+    // console.log('Start Scoring On (input):', startScoringOn);
     
     const errors = {
       draftTimeError: '',
@@ -523,14 +523,14 @@ const CreateLeaguePage = () => {
 
     // Check if Start Scoring On is not in the past (Taiwan time)
     if (startScoringOn) {
-      console.log('\n--- Checking Start Scoring On (must be future date) ---');
+      // console.log('\n--- Checking Start Scoring On (must be future date) ---');
       const parts = startScoringOn.split('.');
       
       if (parts.length === 3) {
         const year = parseInt(parts[0]);
         const month = parseInt(parts[1]) - 1;
         const day = parseInt(parts[2]);
-        console.log('Parsed Start Scoring On:', { year, month, day });
+        // console.log('Parsed Start Scoring On:', { year, month, day });
         
         // 檢查是否為有效數字
         if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
@@ -538,60 +538,60 @@ const CreateLeaguePage = () => {
           
           // 檢查日期是否有效
           if (!isNaN(scoringDate.getTime())) {
-            console.log('Scoring Date object:', scoringDate);
-            console.log('Scoring Date (Taiwan time):', scoringDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+            // console.log('Scoring Date object:', scoringDate);
+            // console.log('Scoring Date (Taiwan time):', scoringDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
             
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            console.log('Today (00:00:00):', today.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
-            console.log('Today timestamp:', today.getTime());
-            console.log('Scoring Date timestamp:', scoringDate.getTime());
+            // console.log('Today (00:00:00):', today.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+            // console.log('Today timestamp:', today.getTime());
+            // console.log('Scoring Date timestamp:', scoringDate.getTime());
             
             if (scoringDate <= today) {
               errors.scoringDateError = 'Start Scoring On must be a future date';
-              console.log('❌ FAIL: Start Scoring On is NOT a future date');
+              // console.log('❌ FAIL: Start Scoring On is NOT a future date');
             } else {
-              console.log('✅ PASS: Start Scoring On is a future date');
+              // console.log('✅ PASS: Start Scoring On is a future date');
             }
           } else {
             errors.scoringDateError = 'Start Scoring On has an invalid date';
-            console.log('❌ FAIL: Start Scoring On date is invalid');
+            // console.log('❌ FAIL: Start Scoring On date is invalid');
           }
         } else {
           errors.scoringDateError = 'Start Scoring On has invalid format';
-          console.log('❌ FAIL: Start Scoring On has invalid numbers');
+          // console.log('❌ FAIL: Start Scoring On has invalid numbers');
         }
       } else {
         errors.scoringDateError = 'Start Scoring On must be in YYYY.M.D format';
-        console.log('❌ FAIL: Start Scoring On format is incorrect');
+        // console.log('❌ FAIL: Start Scoring On format is incorrect');
       }
     }
 
     // Check if Live Draft Time is at least 2 days before Start Scoring On (Taiwan time)
     if (liveDraftTime && startScoringOn && settings.general['Draft Type'] === 'Live Draft') {
-      console.log('\n--- Checking Live Draft Time (must be at least 2 days before Start Scoring On) ---');
+      // console.log('\n--- Checking Live Draft Time (must be at least 2 days before Start Scoring On) ---');
       
       // Parse Live Draft Time (local datetime-local input, treat as Taiwan time)
       const draftDateTime = new Date(liveDraftTime);
       
       // 檢查 draftDateTime 是否有效
       if (!isNaN(draftDateTime.getTime())) {
-        console.log('Draft DateTime object:', draftDateTime);
-        console.log('Draft DateTime (Taiwan time):', draftDateTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
-        console.log('Draft DateTime timestamp:', draftDateTime.getTime());
+        // console.log('Draft DateTime object:', draftDateTime);
+        // console.log('Draft DateTime (Taiwan time):', draftDateTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+        // console.log('Draft DateTime timestamp:', draftDateTime.getTime());
         
         // 檢查 1: Live Draft Time 必須至少是明天 0:00
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0);
-        console.log('Tomorrow (00:00:00):', tomorrow.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
-        console.log('Tomorrow timestamp:', tomorrow.getTime());
+        // console.log('Tomorrow (00:00:00):', tomorrow.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+        // console.log('Tomorrow timestamp:', tomorrow.getTime());
         
         if (draftDateTime < tomorrow) {
           errors.draftTimeError = 'Live Draft Time must be at least tomorrow (00:00)';
-          console.log('❌ FAIL: Live Draft Time is before tomorrow');
+          // console.log('❌ FAIL: Live Draft Time is before tomorrow');
         } else {
-          console.log('✅ PASS: Live Draft Time is at least tomorrow');
+          // console.log('✅ PASS: Live Draft Time is at least tomorrow');
         }
         
         // 檢查 2: Live Draft Time 必須至少在 Start Scoring On 的 2 天前
@@ -608,42 +608,42 @@ const CreateLeaguePage = () => {
               
               if (!isNaN(scoringDate.getTime())) {
                 scoringDate.setHours(0, 0, 0, 0);
-                console.log('Scoring Date (00:00:00):', scoringDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+                // console.log('Scoring Date (00:00:00):', scoringDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
                 
                 // Calculate the latest allowed draft time (2 days before scoring date, end of day)
                 const latestDraftDate = new Date(scoringDate);
                 latestDraftDate.setDate(latestDraftDate.getDate() - 2);
                 latestDraftDate.setHours(23, 59, 59, 999);
-                console.log('Latest Allowed Draft Date (2 days before, 23:59:59):', latestDraftDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
-                console.log('Latest Allowed Draft Date timestamp:', latestDraftDate.getTime());
+                // console.log('Latest Allowed Draft Date (2 days before, 23:59:59):', latestDraftDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+                // console.log('Latest Allowed Draft Date timestamp:', latestDraftDate.getTime());
                 
-                console.log('Comparison: draftDateTime > latestDraftDate?', draftDateTime > latestDraftDate);
-                console.log('Difference in milliseconds:', draftDateTime.getTime() - latestDraftDate.getTime());
-                console.log('Difference in hours:', (draftDateTime.getTime() - latestDraftDate.getTime()) / (1000 * 60 * 60));
+                // console.log('Comparison: draftDateTime > latestDraftDate?', draftDateTime > latestDraftDate);
+                // console.log('Difference in milliseconds:', draftDateTime.getTime() - latestDraftDate.getTime());
+                // console.log('Difference in hours:', (draftDateTime.getTime() - latestDraftDate.getTime()) / (1000 * 60 * 60));
                 
                 if (draftDateTime > latestDraftDate) {
                   errors.draftTimeError = 'Live Draft Time must be at least 2 days before season start';
-                  console.log('❌ FAIL: Live Draft Time is TOO LATE');
+                  // console.log('❌ FAIL: Live Draft Time is TOO LATE');
                 } else {
-                  console.log('✅ PASS: Live Draft Time is at least 2 days before season start');
+                  // console.log('✅ PASS: Live Draft Time is at least 2 days before season start');
                 }
               } else {
                 errors.draftTimeError = 'Start Scoring On date is invalid';
-                console.log('❌ FAIL: Start Scoring On date is invalid');
+                // console.log('❌ FAIL: Start Scoring On date is invalid');
               }
             }
           }
         }
       } else {
         errors.draftTimeError = 'Live Draft Time is invalid';
-        console.log('❌ FAIL: Live Draft Time is invalid');
+        // console.log('❌ FAIL: Live Draft Time is invalid');
       }
     }
 
-    console.log('\n=== Validation Errors ===');
-    console.log('scoringDateError:', errors.scoringDateError || 'none');
-    console.log('draftTimeError:', errors.draftTimeError || 'none');
-    console.log('=========================\n');
+    // console.log('\n=== Validation Errors ===');
+    // console.log('scoringDateError:', errors.scoringDateError || 'none');
+    // console.log('draftTimeError:', errors.draftTimeError || 'none');
+    // console.log('=========================\n');
 
     return errors;
   };
