@@ -9,10 +9,12 @@ export default function PlayerManagePage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [players, setPlayers] = useState([])
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [teamFilter, setTeamFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
+  const [isComposing, setIsComposing] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     team: '',
@@ -26,11 +28,20 @@ export default function PlayerManagePage() {
     checkAdminStatus()
   }, [])
 
+  // Debounce search input (500ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [search])
+
   useEffect(() => {
     if (isAdmin) {
       fetchPlayers()
     }
-  }, [isAdmin, search, teamFilter, typeFilter])
+  }, [isAdmin, debouncedSearch, teamFilter, typeFilter])
 
   const checkAdminStatus = async () => {
     try {
@@ -56,7 +67,7 @@ export default function PlayerManagePage() {
   const fetchPlayers = async () => {
     try {
       const params = new URLSearchParams()
-      if (search) params.append('search', search)
+      if (debouncedSearch) params.append('search', debouncedSearch)
       if (teamFilter) params.append('team', teamFilter)
       if (typeFilter) params.append('type', typeFilter)
 
@@ -247,9 +258,14 @@ export default function PlayerManagePage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={() => setIsComposing(false)}
                 placeholder="Search player name or alias"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              {search !== debouncedSearch && (
+                <p className="text-xs text-gray-500 mt-1">Searching...</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Team</label>

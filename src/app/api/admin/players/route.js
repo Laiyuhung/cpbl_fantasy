@@ -24,7 +24,7 @@ export async function GET(req) {
     }
 
     const { searchParams } = new URL(req.url)
-    const search = searchParams.get('search')
+    const search = searchParams.get('search')?.trim()
     const team = searchParams.get('team')
     const type = searchParams.get('type') // batter_or_pitcher
 
@@ -32,8 +32,10 @@ export async function GET(req) {
       .from('player_list')
       .select('*')
       .order('add_date', { ascending: false })
+      .limit(500) // 限制最大返回 500 條結果
 
-    if (search) {
+    // 只在搜尋字串至少 1 個字元時才進行搜尋
+    if (search && search.length > 0) {
       query = query.or(`name.ilike.%${search}%,original_name.ilike.%${search}%`)
     }
     if (team) {
