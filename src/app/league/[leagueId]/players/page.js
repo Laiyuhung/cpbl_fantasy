@@ -16,6 +16,10 @@ export default function PlayersPage() {
   const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
   const [members, setMembers] = useState([]); // 當前聯盟成員（含 nickname）
+  const [showConfirmAdd, setShowConfirmAdd] = useState(false); // 確認新增對話框
+  const [playerToAdd, setPlayerToAdd] = useState(null); // 待加入的球員
+  const [showSuccess, setShowSuccess] = useState(false); // 成功動畫
+  const [isRefreshing, setIsRefreshing] = useState(false); // 重新載入中
   const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
 
@@ -239,6 +243,61 @@ export default function PlayersPage() {
       e.target.src = window.location.origin + '/photo/defaultPlayer.png';
     }
   };
+  // 處理新增球員到隊伍
+  const handleAddPlayer = async (player) => {
+    if (!myManagerId) {
+      alert('請先登入');
+      return;
+    }
+
+    // 顯示確認對話框
+    setPlayerToAdd(player);
+    setShowConfirmAdd(true);
+  };
+
+  // 確認加入球員
+  const confirmAddPlayer = async () => {
+    if (!playerToAdd) return;
+
+    try {
+      setShowConfirmAdd(false);
+      
+      const res = await fetch(`/api/league/${leagueId}/ownership`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: playerToAdd.player_id,
+          manager_id: myManagerId
+        })
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        // 顯示成功動畫
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        
+        // 重新載入 ownerships 資料
+        setIsRefreshing(true);
+        const ownershipsRes = await fetch(`/api/league/${leagueId}/ownership`);
+        const ownershipsData = await ownershipsRes.json();
+        if (ownershipsData.success) {
+          setOwnerships(ownershipsData.ownerships || []);
+        }
+        setIsRefreshing(false);
+      } else {
+        alert(`❌ Failed to add player: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Add player error:', err);
+      alert('❌ Operation failed, please try again');
+      setIsRefreshing(false);
+    } finally {
+      setPlayerToAdd(null);
+    }
+  };
+
   const getPlayerActionButton = (player) => {
     // 查找該球員的 ownership 資料
     const ownership = ownerships.find(
@@ -248,7 +307,10 @@ export default function PlayersPage() {
     // 如果沒有找到 ownership，顯示線色 + 按鈕
     if (!ownership) {
       return (
-        <button className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold hover:bg-green-700 transition-colors">
+        <button 
+          onClick={() => handleAddPlayer(player)}
+          className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold hover:bg-green-700 transition-colors"
+        >
           +
         </button>
       );
@@ -462,6 +524,61 @@ export default function PlayersPage() {
           </div>
         </div>
       </div>
+
+      {/* 確認新增對話框 */}
+      {showConfirmAdd && playerToAdd && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-purple-500/30 shadow-2xl">
+            <h3 className="text-2xl font-bold text-white mb-4">Add Player</h3>
+            <p className="text-purple-200 mb-6">
+              Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowConfirmAdd(false);
+                  setPlayerToAdd(null);
+                }}
+                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAddPlayer}
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 成功動畫 */}
+      {showSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce">
+            <div className="flex items-center gap-3">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-xl font-bold">Player Added Successfully!</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 重新載入動畫 */}
+      {isRefreshing && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-white font-bold text-lg">Refreshing...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
