@@ -61,6 +61,25 @@ export default function PlayersPage() {
   const batters = filteredPlayers.filter(p => p.batter_or_pitcher === 'B');
   const pitchers = filteredPlayers.filter(p => p.batter_or_pitcher === 'P');
 
+  const getTeamColor = (team) => {
+    switch(team) {
+      case '統一獅':
+        return 'bg-orange-600 text-white';
+      case '富邦悍將':
+        return 'bg-blue-600 text-white';
+      case '台鋼雄鷹':
+        return 'bg-green-800 text-white';
+      case '味全龍':
+        return 'bg-red-600 text-white';
+      case '樂天桃猿':
+        return 'bg-rose-800 text-white';
+      case '中信兄弟':
+        return 'bg-yellow-700 text-white';
+      default:
+        return 'bg-slate-600 text-white';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
@@ -93,53 +112,52 @@ export default function PlayersPage() {
         <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-2">
-              Available Players
+              Players
             </h1>
-            <p className="text-purple-300/70">Total: {filteredPlayers.length} players ({batters.length} batters, {pitchers.length} pitchers)</p>
           </div>
 
           {/* Filters */}
-          <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-6 shadow-2xl">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Search */}
               <div>
-                <label className="block text-purple-300 text-sm font-medium mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Search
                 </label>
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Name, team..."
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/30 rounded-lg text-white placeholder-purple-300/50 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  placeholder="Search player name or alias"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               {/* Player Type */}
               <div>
-                <label className="block text-purple-300 text-sm font-medium mb-2">
-                  Player Type
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type
                 </label>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/30 rounded-lg text-white focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All</option>
-                  <option value="batter">Batters</option>
-                  <option value="pitcher">Pitchers</option>
+                  <option value="batter">Batter</option>
+                  <option value="pitcher">Pitcher</option>
                 </select>
               </div>
 
               {/* Identity */}
               <div>
-                <label className="block text-purple-300 text-sm font-medium mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Identity
                 </label>
                 <select
                   value={filterIdentity}
                   onChange={(e) => setFilterIdentity(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/30 rounded-lg text-white focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All</option>
                   <option value="local">Local</option>
@@ -166,17 +184,15 @@ export default function PlayersPage() {
               <thead className="bg-slate-900/60 border-b border-purple-500/20">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Name</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Original Name</th>
                   <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Team</th>
                   <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Type</th>
                   <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Identity</th>
-                  <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Added Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-500/10">
                 {filteredPlayers.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center">
+                    <td colSpan="4" className="px-6 py-12 text-center">
                       <div className="text-purple-300/50 text-lg">
                         {searchTerm || filterType !== 'all' || filterIdentity !== 'all' 
                           ? 'No players found matching your filters'
@@ -195,16 +211,20 @@ export default function PlayersPage() {
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold shadow-lg shadow-purple-500/30">
                             {player.name?.charAt(0).toUpperCase() || '?'}
                           </div>
-                          <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
-                            {player.name || 'Unknown'}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
+                              {player.name || 'Unknown'}
+                            </span>
+                            {player.original_name && player.original_name !== player.name && (
+                              <span className="text-purple-300/60 text-sm">
+                                {player.original_name}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-purple-200/80">
-                        {player.original_name || '-'}
-                      </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold ${getTeamColor(player.team)} shadow-md`}>
                           {player.team || 'N/A'}
                         </span>
                       </td>
@@ -214,7 +234,7 @@ export default function PlayersPage() {
                             ? 'bg-green-500/20 text-green-300 border border-green-500/30'
                             : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
                         }`}>
-                          {player.batter_or_pitcher === 'B' ? '🏏 Batter' : '⚾ Pitcher'}
+                          {player.batter_or_pitcher === 'B' ? 'Batter' : 'Pitcher'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -223,11 +243,8 @@ export default function PlayersPage() {
                             ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                             : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                         }`}>
-                          {player.identity === 'local' ? '🏠 Local' : '🌏 Foreigner'}
+                          {player.identity === 'local' ? 'Local' : 'Foreigner'}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 text-center text-purple-200/80">
-                        {player.add_date ? new Date(player.add_date).toLocaleDateString() : '-'}
                       </td>
                     </tr>
                   ))
@@ -245,10 +262,10 @@ export default function PlayersPage() {
                 </div>
                 <div className="flex gap-6">
                   <span className="text-green-300 font-medium">
-                    🏏 Batters: {batters.length}
+                    Batters: {batters.length}
                   </span>
                   <span className="text-orange-300 font-medium">
-                    ⚾ Pitchers: {pitchers.length}
+                    Pitchers: {pitchers.length}
                   </span>
                 </div>
               </div>
