@@ -126,7 +126,7 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { settings, manager_id } = body;
+    const { settings, manager_id, categoryWeights } = body;
 
     if (!manager_id) {
       return NextResponse.json(
@@ -264,6 +264,48 @@ export async function POST(request) {
       }
     }
 
+    // 如果是 Head-to-Head Fantasy Points 模式，處理權重
+    if (settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && categoryWeights) {
+      // 準備權重記錄
+      const weightsToInsert = [];
+
+      // 處理 batter 權重
+      if (categoryWeights.batter && typeof categoryWeights.batter === 'object') {
+        Object.entries(categoryWeights.batter).forEach(([categoryName, weight]) => {
+          weightsToInsert.push({
+            league_id: leagueId,
+            category_type: 'batter',
+            category_name: categoryName,
+            weight: parseFloat(weight) || 1.0,
+          });
+        });
+      }
+
+      // 處理 pitcher 權重
+      if (categoryWeights.pitcher && typeof categoryWeights.pitcher === 'object') {
+        Object.entries(categoryWeights.pitcher).forEach(([categoryName, weight]) => {
+          weightsToInsert.push({
+            league_id: leagueId,
+            category_type: 'pitcher',
+            category_name: categoryName,
+            weight: parseFloat(weight) || 1.0,
+          });
+        });
+      }
+
+      // 插入權重
+      if (weightsToInsert.length > 0) {
+        const { error: weightError } = await supabase
+          .from('league_stat_category_weights')
+          .insert(weightsToInsert);
+
+        if (weightError) {
+          console.error('Error inserting weights:', weightError);
+          console.warn('Failed to save category weights:', weightError.message);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'League created successfully!',
@@ -282,13 +324,31 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { league_id, settings } = body;
+    const { league_id, settings, categoryWeights } = body;
 
     if (!league_id) {
       return NextResponse.json(
         { error: 'league_id is required' },
         { status: 400 }
       );
+    }
+
+    // 檢查 Scoring Type 是否改變
+    const { data: currentSettings } = await supabase
+      .from('league_settings')
+      .select('scoring_type')
+      .eq('league_id', league_id)
+      .single();
+
+    const oldScoringType = currentSettings?.scoring_type;
+    const newScoringType = settings.general['Scoring Type'];
+
+    // 如果 Scoring Type 改變且舊的是 Head-to-Head Fantasy Points，刪除權重
+    if (oldScoringType === 'Head-to-Head Fantasy Points' && newScoringType !== 'Head-to-Head Fantasy Points') {
+      await supabase
+        .from('league_stat_category_weights')
+        .delete()
+        .eq('league_id', league_id);
     }
 
     const draftType = settings.general['Draft Type'];
@@ -369,6 +429,54 @@ export async function PUT(request) {
       if (scheduleInsertError) {
         console.error('Supabase schedule error:', scheduleInsertError);
         console.warn('Failed to update league schedule:', scheduleInsertError.message);
+      }
+    }
+
+    // 如果是 Head-to-Head Fantasy Points 模式，處理權重
+    if (newScoringType === 'Head-to-Head Fantasy Points' && categoryWeights) {
+      // 先刪除舊的權重
+      await supabase
+        .from('league_stat_category_weights')
+        .delete()
+        .eq('league_id', league_id);
+
+      // 準備新的權重記錄
+      const weightsToInsert = [];
+
+      // 處理 batter 權重
+      if (categoryWeights.batter && typeof categoryWeights.batter === 'object') {
+        Object.entries(categoryWeights.batter).forEach(([categoryName, weight]) => {
+          weightsToInsert.push({
+            league_id: league_id,
+            category_type: 'batter',
+            category_name: categoryName,
+            weight: parseFloat(weight) || 1.0,
+          });
+        });
+      }
+
+      // 處理 pitcher 權重
+      if (categoryWeights.pitcher && typeof categoryWeights.pitcher === 'object') {
+        Object.entries(categoryWeights.pitcher).forEach(([categoryName, weight]) => {
+          weightsToInsert.push({
+            league_id: league_id,
+            category_type: 'pitcher',
+            category_name: categoryName,
+            weight: parseFloat(weight) || 1.0,
+          });
+        });
+      }
+
+      // 插入新的權重
+      if (weightsToInsert.length > 0) {
+        const { error: weightError } = await supabase
+          .from('league_stat_category_weights')
+          .insert(weightsToInsert);
+
+        if (weightError) {
+          console.error('Error inserting weights:', weightError);
+          console.warn('Failed to save category weights:', weightError.message);
+        }
       }
     }
 

@@ -542,6 +542,7 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [currentUserRole, setCurrentUserRole] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
@@ -786,6 +787,16 @@ const EditLeagueSettingsPage = ({ params }) => {
         },
       };
     });
+
+    // Clear weight when unchecking if in Fantasy Points mode
+    if (!checked && settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points') {
+      const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
+      setCategoryWeights(prev => {
+        const updated = { ...prev };
+        delete updated[categoryType][option];
+        return updated;
+      });
+    }
   };
 
   const handleRosterPositionChange = (position, value) => {
@@ -798,6 +809,17 @@ const EditLeagueSettingsPage = ({ params }) => {
           ...prev.roster['Roster Positions'],
           [position]: numValue,
         },
+      },
+    }));
+  };
+
+  const handleWeightChange = (categoryType, categoryName, weight) => {
+    const numWeight = parseFloat(weight) || 1.0;
+    setCategoryWeights(prev => ({
+      ...prev,
+      [categoryType]: {
+        ...prev[categoryType],
+        [categoryName]: numWeight,
       },
     }));
   };
@@ -1015,6 +1037,19 @@ const EditLeagueSettingsPage = ({ params }) => {
         }
         setSettings(mapDbToSettings(json.data));
         setStatus(json.status || '');
+
+        // Fetch category weights if scoring type is Head-to-Head Fantasy Points
+        if (json.data.scoring_type === 'Head-to-Head Fantasy Points') {
+          const weightsRes = await fetch(`/api/league-settings/weights?league_id=${leagueId}`);
+          const weightsJson = await weightsRes.json();
+          if (weightsRes.ok && weightsJson.success) {
+            const weights = { batter: {}, pitcher: {} };
+            weightsJson.data.forEach(w => {
+              weights[w.category_type][w.category_name] = parseFloat(w.weight);
+            });
+            setCategoryWeights(weights);
+          }
+        }
       } catch (err) {
         setError(err.message || 'Failed to load league settings');
       } finally {
@@ -1041,7 +1076,11 @@ const EditLeagueSettingsPage = ({ params }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ league_id: leagueId, settings }),
+        body: JSON.stringify({ 
+          league_id: leagueId, 
+          settings,
+          categoryWeights: settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' ? categoryWeights : null
+        }),
       });
 
       const result = await response.json();
@@ -1282,34 +1321,63 @@ const EditLeagueSettingsPage = ({ params }) => {
                                 </div>
                               ) : isMultiSelectField(key) ? (
                                 <div>
-                                  <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 border rounded-md ${
+                                  {settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && (
+                                    <div className="mb-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded text-sm text-blue-300">
+                                      ℹ️ Set weights for each category (default: 1.0)
+                                    </div>
+                                  )}
+                                  <div className={`grid grid-cols-1 gap-2 p-3 border rounded-md ${
                                     !isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0)
                                       ? 'border-red-500 bg-red-900/30'
                                       : 'border-purple-500/30 bg-slate-800/40'
                                   }`}>
-                                    {settingOptions[key]?.map((option) => (
-                                      <label key={option} className="flex items-center gap-2 text-purple-300">
-                                        <input
-                                          type="checkbox"
-                                          checked={Array.isArray(value) && value.includes(option)}
-                                          disabled={
-                                            (isFieldDisabled(section.key, key)) ||
-                                            ((!Array.isArray(value) || !value.includes(option)) &&
-                                            ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                              (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30)
-                                          }
-                                          onChange={(e) =>
-                                            handleMultiSelectChange(
-                                              section.key,
-                                              key,
-                                              option,
-                                              e.target.checked
-                                            )
-                                          }
-                                        />
-                                        <span className={isFieldDisabled(section.key, key) ? 'text-gray-500' : 'text-purple-300'}>{option}</span>
-                                      </label>
-                                    ))}
+                                    {settingOptions[key]?.map((option) => {
+                                      const isChecked = Array.isArray(value) && value.includes(option);
+                                      const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
+                                      const currentWeight = categoryWeights[categoryType]?.[option] || 1.0;
+                                      const showWeight = settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && isChecked;
+                                      
+                                      return (
+                                        <div key={option} className={`flex items-center gap-2 ${showWeight ? 'justify-between' : ''}`}>
+                                          <label className="flex items-center gap-2 text-purple-300 flex-1">
+                                            <input
+                                              type="checkbox"
+                                              checked={isChecked}
+                                              disabled={
+                                                (isFieldDisabled(section.key, key)) ||
+                                                ((!Array.isArray(value) || !value.includes(option)) &&
+                                                ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
+                                                  (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30)
+                                              }
+                                              onChange={(e) =>
+                                                handleMultiSelectChange(
+                                                  section.key,
+                                                  key,
+                                                  option,
+                                                  e.target.checked
+                                                )
+                                              }
+                                            />
+                                            <span className={isFieldDisabled(section.key, key) ? 'text-gray-500' : 'text-purple-300'}>{option}</span>
+                                          </label>
+                                          {showWeight && (
+                                            <div className="flex items-center gap-1">
+                                              <span className="text-xs text-purple-400">Weight:</span>
+                                              <input
+                                                type="number"
+                                                min="0.1"
+                                                max="10"
+                                                step="0.1"
+                                                value={currentWeight}
+                                                onChange={(e) => handleWeightChange(categoryType, option, e.target.value)}
+                                                disabled={isFieldDisabled(section.key, key)}
+                                                className="w-20 px-2 py-1 bg-slate-700/60 border border-purple-500/30 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-slate-700/40 disabled:cursor-not-allowed"
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                     <div className="text-xs text-purple-400 mt-2 col-span-full">
                                       selected: {(
                                         (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
