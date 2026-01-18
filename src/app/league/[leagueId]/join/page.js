@@ -10,6 +10,7 @@ export default function JoinLeaguePage() {
 
   const [loading, setLoading] = useState(true);
   const [leagueSettings, setLeagueSettings] = useState(null);
+  const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -32,6 +33,11 @@ export default function JoinLeaguePage() {
 
         if (response.ok && result.success) {
           setLeagueSettings(result.league);
+          
+          // 如果是 Fantasy Points，載入權重
+          if (result.league?.scoring_type === 'Head-to-Head Fantasy Points') {
+            fetchCategoryWeights();
+          }
         } else {
           setError(result.error || 'Failed to load league information');
         }
@@ -40,6 +46,27 @@ export default function JoinLeaguePage() {
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchCategoryWeights = async () => {
+      try {
+        const response = await fetch(`/api/league-settings/weights?league_id=${leagueId}`);
+        const result = await response.json();
+        if (result.success && result.data) {
+          const batterWeights = {};
+          const pitcherWeights = {};
+          result.data.forEach(w => {
+            if (w.category_type === 'batter') {
+              batterWeights[w.category_name] = w.weight;
+            } else if (w.category_type === 'pitcher') {
+              pitcherWeights[w.category_name] = w.weight;
+            }
+          });
+          setCategoryWeights({ batter: batterWeights, pitcher: pitcherWeights });
+        }
+      } catch (err) {
+        console.error('Failed to fetch category weights:', err);
       }
     };
 
@@ -305,9 +332,14 @@ export default function JoinLeaguePage() {
                   {leagueSettings.batter_stat_categories?.length > 0 && (
                     <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
                       <span className="text-purple-400 text-sm font-medium">Batter Stats</span>
-                      <div className="text-white text-sm mt-2 flex flex-wrap gap-2">
+                      <div className="text-white text-sm mt-2 space-y-1">
                         {leagueSettings.batter_stat_categories.map((stat, idx) => (
-                          <span key={idx} className="bg-slate-700/40 rounded px-2 py-1 text-purple-200">{stat}</span>
+                          <div key={idx} className="bg-slate-700/40 rounded px-2 py-1 text-purple-200 flex justify-between items-center">
+                            <span>{stat}</span>
+                            {leagueSettings.scoring_type === 'Head-to-Head Fantasy Points' && categoryWeights.batter[stat] && (
+                              <span className="text-yellow-300 text-xs font-bold ml-2">w: {categoryWeights.batter[stat]}</span>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -315,9 +347,14 @@ export default function JoinLeaguePage() {
                   {leagueSettings.pitcher_stat_categories?.length > 0 && (
                     <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
                       <span className="text-purple-400 text-sm font-medium">Pitcher Stats</span>
-                      <div className="text-white text-sm mt-2 flex flex-wrap gap-2">
+                      <div className="text-white text-sm mt-2 space-y-1">
                         {leagueSettings.pitcher_stat_categories.map((stat, idx) => (
-                          <span key={idx} className="bg-slate-700/40 rounded px-2 py-1 text-purple-200">{stat}</span>
+                          <div key={idx} className="bg-slate-700/40 rounded px-2 py-1 text-purple-200 flex justify-between items-center">
+                            <span>{stat}</span>
+                            {leagueSettings.scoring_type === 'Head-to-Head Fantasy Points' && categoryWeights.pitcher[stat] && (
+                              <span className="text-yellow-300 text-xs font-bold ml-2">w: {categoryWeights.pitcher[stat]}</span>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
