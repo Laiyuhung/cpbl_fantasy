@@ -759,12 +759,17 @@ const CreateLeaguePage = () => {
       return false;
     }
 
+    let hasErrors = false;
+    const errors = [];
+
     // Check batter weights
     const batterCategories = settings.scoring['Batter Stat Categories'] || [];
     for (const category of batterCategories) {
       const weight = categoryWeights.batter?.[category];
-      if (validateWeight(weight)) {
-        return true;
+      const error = validateWeight(weight);
+      if (error) {
+        hasErrors = true;
+        errors.push(`[Batter] ${category}: ${error} (current value: ${weight})`);
       }
     }
 
@@ -772,12 +777,19 @@ const CreateLeaguePage = () => {
     const pitcherCategories = settings.scoring['Pitcher Stat Categories'] || [];
     for (const category of pitcherCategories) {
       const weight = categoryWeights.pitcher?.[category];
-      if (validateWeight(weight)) {
-        return true;
+      const error = validateWeight(weight);
+      if (error) {
+        hasErrors = true;
+        errors.push(`[Pitcher] ${category}: ${error} (current value: ${weight})`);
       }
     }
 
-    return false;
+    if (hasErrors) {
+      console.log('❌ Weight Validation Errors:');
+      errors.forEach(err => console.log('  -', err));
+    }
+
+    return hasErrors;
   };
 
   const validateSettings = () => {
