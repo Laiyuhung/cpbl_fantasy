@@ -65,6 +65,7 @@ export default function LeagueSettingsPage() {
       try {
         const response = await fetch(`/api/league-settings/weights?leagueId=${leagueId}`);
         const result = await response.json();
+        console.log('📊 Weight API Response:', result);
         if (result.success && result.weights) {
           const batterWeights = {};
           const pitcherWeights = {};
@@ -75,6 +76,8 @@ export default function LeagueSettingsPage() {
               pitcherWeights[w.category_name] = w.weight;
             }
           });
+          console.log('⚾ Batter Weights:', batterWeights);
+          console.log('⚾ Pitcher Weights:', pitcherWeights);
           setCategoryWeights({ batter: batterWeights, pitcher: pitcherWeights });
         }
       } catch (err) {
@@ -253,9 +256,9 @@ export default function LeagueSettingsPage() {
                   leagueSettings.batter_stat_categories.map((cat, index) => (
                     <div key={index} className="flex justify-between items-center py-3 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20 hover:border-purple-400/40 transition-colors">
                       <span className="text-white font-semibold">{cat}</span>
-                      {leagueSettings.scoring_type === 'Head-to-Head Fantasy Points' && categoryWeights.batter[cat] && (
+                      {leagueSettings.scoring_type === 'Head-to-Head Fantasy Points' && (
                         <span className="text-purple-300 text-sm">
-                          Weight: <span className="font-bold text-white">{categoryWeights.batter[cat]}</span>
+                          Weight: <span className="font-bold text-white">{categoryWeights.batter[cat] || 'N/A'}</span>
                         </span>
                       )}
                     </div>
@@ -283,9 +286,9 @@ export default function LeagueSettingsPage() {
                   leagueSettings.pitcher_stat_categories.map((cat, index) => (
                     <div key={index} className="flex justify-between items-center py-3 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20 hover:border-purple-400/40 transition-colors">
                       <span className="text-white font-semibold">{cat}</span>
-                      {leagueSettings.scoring_type === 'Head-to-Head Fantasy Points' && categoryWeights.pitcher[cat] && (
+                      {leagueSettings.scoring_type === 'Head-to-Head Fantasy Points' && (
                         <span className="text-purple-300 text-sm">
-                          Weight: <span className="font-bold text-white">{categoryWeights.pitcher[cat]}</span>
+                          Weight: <span className="font-bold text-white">{categoryWeights.pitcher[cat] || 'N/A'}</span>
                         </span>
                       )}
                     </div>
