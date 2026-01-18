@@ -855,6 +855,33 @@ const EditLeagueSettingsPage = ({ params }) => {
     return null;
   };
 
+  // Check if all weights are valid
+  const hasWeightErrors = () => {
+    if (settings.general['Scoring Type'] !== 'Head-to-Head Fantasy Points') {
+      return false;
+    }
+
+    // Check batter weights
+    const batterCategories = settings.scoring['Batter Stat Categories'] || [];
+    for (const category of batterCategories) {
+      const weight = categoryWeights.batter?.[category];
+      if (validateWeight(weight)) {
+        return true;
+      }
+    }
+
+    // Check pitcher weights
+    const pitcherCategories = settings.scoring['Pitcher Stat Categories'] || [];
+    for (const category of pitcherCategories) {
+      const weight = categoryWeights.pitcher?.[category];
+      if (validateWeight(weight)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const validateSettings = () => {
     const errors = [];
 
@@ -1516,12 +1543,23 @@ const EditLeagueSettingsPage = ({ params }) => {
                 Button disabled: Schedule validation error
               </div>
             )}
+            {hasWeightErrors() && (
+              <div className="px-4 py-2 rounded-md bg-red-500/20 text-red-300 border border-red-500/50 text-sm">
+                Button disabled: Invalid weight values detected
+              </div>
+            )}
             <button
               onClick={handleSave}
-              disabled={isSaving || scheduleError}
-              title={scheduleError ? 'Schedule validation failed - please check the Schedule preview below' : ''}
+              disabled={isSaving || scheduleError || hasWeightErrors()}
+              title={
+                scheduleError 
+                  ? 'Schedule validation failed - please check the Schedule preview below' 
+                  : hasWeightErrors()
+                  ? 'Please fix all weight validation errors'
+                  : ''
+              }
               className={`px-6 py-2 font-semibold rounded-md transition-colors ${
-                isSaving || scheduleError
+                isSaving || scheduleError || hasWeightErrors()
                   ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg'
               }`}

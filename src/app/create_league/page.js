@@ -753,6 +753,33 @@ const CreateLeaguePage = () => {
     return null;
   };
 
+  // Check if all weights are valid
+  const hasWeightErrors = () => {
+    if (settings.general['Scoring Type'] !== 'Head-to-Head Fantasy Points') {
+      return false;
+    }
+
+    // Check batter weights
+    const batterCategories = settings.scoring['Batter Stat Categories'] || [];
+    for (const category of batterCategories) {
+      const weight = categoryWeights.batter?.[category];
+      if (validateWeight(weight)) {
+        return true;
+      }
+    }
+
+    // Check pitcher weights
+    const pitcherCategories = settings.scoring['Pitcher Stat Categories'] || [];
+    for (const category of pitcherCategories) {
+      const weight = categoryWeights.pitcher?.[category];
+      if (validateWeight(weight)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const validateSettings = () => {
     const errors = [];
 
@@ -1302,6 +1329,11 @@ const CreateLeaguePage = () => {
                 Button disabled: Schedule validation error
               </div>
             )}
+            {hasWeightErrors() && (
+              <div className="px-4 py-2 rounded-md bg-red-100 text-red-800 border border-red-300 text-sm">
+                Button disabled: Invalid weight values detected
+              </div>
+            )}
             <button
               onClick={() => {
                 setSettings(cloneSettings(initialSettings));
@@ -1314,10 +1346,16 @@ const CreateLeaguePage = () => {
             </button>
             <button
               onClick={handleSave}
-              disabled={isSaving || scheduleError}
-              title={scheduleError ? 'Schedule validation failed - please check the Schedule preview below' : ''}
+              disabled={isSaving || scheduleError || hasWeightErrors()}
+              title={
+                scheduleError 
+                  ? 'Schedule validation failed - please check the Schedule preview below' 
+                  : hasWeightErrors()
+                  ? 'Please fix all weight validation errors'
+                  : ''
+              }
               className={`px-6 py-2 font-semibold rounded-md transition-colors ${
-                isSaving || scheduleError
+                isSaving || scheduleError || hasWeightErrors()
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
