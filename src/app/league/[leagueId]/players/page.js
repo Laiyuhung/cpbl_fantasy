@@ -15,6 +15,7 @@ export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
+  const [members, setMembers] = useState([]); // 當前聯盟成員（含 nickname）
   const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
 
@@ -31,9 +32,10 @@ export default function PlayersPage() {
         }
         
         // 並行請求 players 和 ownerships
-        const [playersRes, ownershipsRes] = await Promise.all([
+        const [playersRes, ownershipsRes, leagueRes] = await Promise.all([
           fetch('/api/playerslist?available=true'),
-          fetch(`/api/league/${leagueId}/ownership`)
+          fetch(`/api/league/${leagueId}/ownership`),
+          fetch(`/api/league/${leagueId}`)
         ]);
 
         // 處理 players
@@ -50,6 +52,12 @@ export default function PlayersPage() {
         const ownershipsData = await ownershipsRes.json();
         if (ownershipsData.success) {
           setOwnerships(ownershipsData.ownerships || []);
+        }
+
+        // 處理 members (取得 nickname 對照)
+        const leagueData = await leagueRes.json();
+        if (leagueData.success) {
+          setMembers(leagueData.members || []);
         }
       } catch (err) {
         console.error('Unexpected error:', err);
@@ -127,6 +135,40 @@ export default function PlayersPage() {
       default:
         return 'bg-slate-600 text-white';
     }
+  };
+
+  // 根據 manager_id 取得該成員在此聯盟的 nickname
+  const getOwnerNickname = (managerId) => {
+    const m = members.find(x => x.manager_id === managerId);
+    return m?.nickname || '-';
+  };
+
+  // 將 ownership 狀態顯示在名字後面
+  const renderStatusTag = (player) => {
+    const ownership = ownerships.find(o => o.player_id === player.player_id);
+    if (!ownership) {
+      return (
+        <span className="ml-2 text-green-300 font-semibold">| FA</span>
+      );
+    }
+
+    const status = (ownership.status || '').toLowerCase();
+    if (status === 'waiver') {
+      const off = ownership.off_waiver ? new Date(ownership.off_waiver) : null;
+      const md = off ? `${off.getMonth() + 1}/${off.getDate()}` : '-';
+      return (
+        <span className="ml-2 text-yellow-300 font-semibold">| W [{md}]</span>
+      );
+    }
+
+    if (status === 'on team') {
+      const nick = getOwnerNickname(ownership.manager_id);
+      return (
+        <span className="ml-2 text-blue-300 font-semibold">| {nick}</span>
+      );
+    }
+
+    return null;
   };
   const getPlayerPhotoPaths = (player) => {
     const paths = [];
@@ -375,6 +417,7 @@ export default function PlayersPage() {
                             <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
                               {player.name || 'Unknown'}
                             </span>
+                            {renderStatusTag(player)}
                             {player.original_name && player.original_name !== player.name && (
                               <span className="text-purple-300/60 text-sm">
                                 {player.original_name}
