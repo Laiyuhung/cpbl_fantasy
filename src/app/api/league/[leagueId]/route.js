@@ -98,3 +98,41 @@ export async function GET(request, { params }) {
     );
   }
 }
+// DELETE: Delete entire league (Commissioner only)
+export async function DELETE(request, { params }) {
+  try {
+    const { leagueId } = params;
+
+    if (!leagueId) {
+      return NextResponse.json(
+        { success: false, error: 'League ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Delete league_settings will cascade delete all related data
+    const { error: deleteError } = await supabase
+      .from('league_settings')
+      .delete()
+      .eq('league_id', leagueId);
+
+    if (deleteError) {
+      console.error('Error deleting league:', deleteError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete league', details: deleteError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'League deleted successfully'
+    });
+  } catch (error) {
+    console.error('Server error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Server error', details: error.message },
+      { status: 500 }
+    );
+  }
+}

@@ -16,6 +16,7 @@ export default function LeagueSettingsPage() {
   const [currentUserRole, setCurrentUserRole] = useState('');
   const [leagueStatus, setLeagueStatus] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -96,6 +97,62 @@ export default function LeagueSettingsPage() {
     router.push(`/league/${leagueId}/edit_league_settings`);
   };
 
+  const handleDelete = async () => {
+    const isCommissioner = currentUserRole === 'Commissioner';
+    const confirmMessage = isCommissioner 
+      ? 'Are you sure you want to DELETE this entire league? This will remove all league data, members, and settings permanently. This action CANNOT be undone!'
+      : 'Are you sure you want to leave this league? You will need to be re-invited to join again.';
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      if (isCommissioner) {
+        // Delete entire league
+        const response = await fetch(`/api/league/${leagueId}`, {
+          method: 'DELETE',
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert('League deleted successfully');
+          router.push('/home');
+        } else {
+          alert(result.error || 'Failed to delete league');
+        }
+      } else {
+        // Delete team/member
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+        const managerId = cookie?.split('=')[1];
+
+        const response = await fetch(`/api/league/${leagueId}/member`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ manager_id: managerId }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert('Successfully left the league');
+          router.push('/home');
+        } else {
+          alert(result.error || 'Failed to leave league');
+        }
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('An unexpected error occurred');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
@@ -145,15 +202,6 @@ export default function LeagueSettingsPage() {
             <p className="text-purple-300/70">{leagueSettings.league_name}</p>
           </div>
           <div className="flex gap-4">
-            <button
-              onClick={() => router.push(`/league/${leagueId}`)}
-              className="bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to League
-            </button>
             {canEdit() && (
               <button
                 onClick={handleEditClick}
@@ -163,6 +211,18 @@ export default function LeagueSettingsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 Edit Settings
+              </button>
+            )}
+            {leagueStatus === 'pre-draft' && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {deleting ? 'Deleting...' : (currentUserRole === 'Commissioner' ? 'Delete League' : 'Delete Team')}
               </button>
             )}
           </div>
