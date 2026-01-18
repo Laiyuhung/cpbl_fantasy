@@ -686,14 +686,27 @@ const CreateLeaguePage = () => {
       };
     });
 
-    // Clear weight when unchecking if in Fantasy Points mode
-    if (!checked && settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points') {
+    // Handle weight when in Fantasy Points mode
+    if (settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points') {
       const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
-      setCategoryWeights(prev => {
-        const updated = { ...prev };
-        delete updated[categoryType][option];
-        return updated;
-      });
+      
+      if (checked) {
+        // Set default weight 1.0 when checking
+        setCategoryWeights(prev => ({
+          ...prev,
+          [categoryType]: {
+            ...prev[categoryType],
+            [option]: prev[categoryType]?.[option] || 1.0,
+          },
+        }));
+      } else {
+        // Clear weight when unchecking
+        setCategoryWeights(prev => {
+          const updated = { ...prev };
+          delete updated[categoryType][option];
+          return updated;
+        });
+      }
     }
   };
 
@@ -712,7 +725,8 @@ const CreateLeaguePage = () => {
   };
 
   const handleWeightChange = (categoryType, categoryName, weight) => {
-    const numWeight = parseFloat(weight) || 1.0;
+    // Allow any input for flexibility, validation will show warning
+    const numWeight = weight === '' || weight === '-' ? weight : parseFloat(weight);
     setCategoryWeights(prev => ({
       ...prev,
       [categoryType]: {
@@ -720,6 +734,23 @@ const CreateLeaguePage = () => {
         [categoryName]: numWeight,
       },
     }));
+  };
+
+  // Validate weight value
+  const validateWeight = (weight) => {
+    if (weight === '' || weight === '-') return 'Weight is required';
+    
+    const num = parseFloat(weight);
+    if (isNaN(num)) return 'Invalid number';
+    if (num < -10 || num > 10) return 'Weight must be between -10 and 10';
+    
+    // Check decimal places
+    const decimalPart = weight.toString().split('.')[1];
+    if (decimalPart && decimalPart.length > 1) {
+      return 'Only 1 decimal place allowed';
+    }
+    
+    return null;
   };
 
   const validateSettings = () => {
@@ -1115,7 +1146,7 @@ const CreateLeaguePage = () => {
                                 <div>
                                   {settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && (
                                     <div className="mb-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded text-sm text-blue-300">
-                                      ℹ️ Set weights for each category (default: 1.0)
+                                      ℹ️ Set weights for each category (range: -10 to 10, max 1 decimal place, default: 1.0)
                                     </div>
                                   )}
                                   <div className={`grid grid-cols-1 gap-2 p-3 border rounded-md ${
@@ -1126,8 +1157,11 @@ const CreateLeaguePage = () => {
                                     {settingOptions[key]?.map((option) => {
                                       const isChecked = Array.isArray(value) && value.includes(option);
                                       const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
-                                      const currentWeight = categoryWeights[categoryType]?.[option] || 1.0;
+                                      const currentWeight = categoryWeights[categoryType]?.[option] !== undefined 
+                                        ? categoryWeights[categoryType][option] 
+                                        : 1.0;
                                       const showWeight = settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && isChecked;
+                                      const weightError = showWeight ? validateWeight(currentWeight) : null;
                                       
                                       return (
                                         <div key={option} className={`flex items-center gap-2 ${showWeight ? 'justify-between' : ''}`}>
@@ -1152,17 +1186,24 @@ const CreateLeaguePage = () => {
                                             <span>{option}</span>
                                           </label>
                                           {showWeight && (
-                                            <div className="flex items-center gap-1">
-                                              <span className="text-xs text-purple-400">Weight:</span>
-                                              <input
-                                                type="number"
-                                                min="0.1"
-                                                max="10"
-                                                step="0.1"
-                                                value={currentWeight}
-                                                onChange={(e) => handleWeightChange(categoryType, option, e.target.value)}
-                                                className="w-20 px-2 py-1 bg-slate-700/60 border border-purple-500/30 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                              />
+                                            <div className="flex flex-col gap-1">
+                                              <div className="flex items-center gap-1">
+                                                <span className="text-xs text-purple-400">Weight:</span>
+                                                <input
+                                                  type="number"
+                                                  min="-10"
+                                                  max="10"
+                                                  step="0.1"
+                                                  value={currentWeight}
+                                                  onChange={(e) => handleWeightChange(categoryType, option, e.target.value)}
+                                                  className={`w-20 px-2 py-1 bg-slate-700/60 border rounded text-white text-sm focus:outline-none focus:ring-2 ${
+                                                    weightError ? 'border-red-500 focus:ring-red-500' : 'border-purple-500/30 focus:ring-purple-500'
+                                                  }`}
+                                                />
+                                              </div>
+                                              {weightError && (
+                                                <span className="text-xs text-red-400">{weightError}</span>
+                                              )}
                                             </div>
                                           )}
                                         </div>
