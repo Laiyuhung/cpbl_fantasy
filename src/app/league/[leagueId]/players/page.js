@@ -104,7 +104,7 @@ export default function PlayersPage() {
     }
     
     // 4. 最後使用預設照片
-    paths.push('/defaultPlayer.png');
+    paths.push('/photo/defaultPlayer.png');
     
     return paths;
   };
