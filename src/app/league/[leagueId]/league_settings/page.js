@@ -63,13 +63,13 @@ export default function LeagueSettingsPage() {
 
     const fetchCategoryWeights = async () => {
       try {
-        const response = await fetch(`/api/league-settings/weights?leagueId=${leagueId}`);
+        const response = await fetch(`/api/league-settings/weights?league_id=${leagueId}`);
         const result = await response.json();
         console.log('📊 Weight API Response:', result);
-        if (result.success && result.weights) {
+        if (result.success && result.data) {
           const batterWeights = {};
           const pitcherWeights = {};
-          result.weights.forEach(w => {
+          result.data.forEach(w => {
             if (w.category_type === 'batter') {
               batterWeights[w.category_name] = w.weight;
             } else if (w.category_type === 'pitcher') {
