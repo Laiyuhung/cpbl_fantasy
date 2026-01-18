@@ -21,6 +21,8 @@ export default function LeagueSettingsPage() {
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [newNickname, setNewNickname] = useState('');
   const [currentNickname, setCurrentNickname] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   useEffect(() => {
     if (!leagueId) return;
@@ -108,13 +110,20 @@ export default function LeagueSettingsPage() {
   };
 
   const handleSaveNickname = async () => {
-    if (!newNickname || newNickname.trim() === '') {
-      alert('Nickname cannot be empty');
+    const trimmedNickname = newNickname.trim();
+    
+    if (!trimmedNickname) {
+      alert('❌ Nickname cannot be empty\n\nPlease enter a valid nickname.');
       return;
     }
 
-    if (newNickname.trim() === currentNickname) {
+    if (trimmedNickname === currentNickname) {
       setShowNicknameModal(false);
+      return;
+    }
+
+    if (trimmedNickname.length < 2) {
+      alert('❌ Nickname too short\n\nNickname must be at least 2 characters long.');
       return;
     }
 
@@ -139,38 +148,32 @@ export default function LeagueSettingsPage() {
       if (response.ok && result.success) {
         setCurrentNickname(newNickname.trim());
         setShowNicknameModal(false);
-        alert('Nickname updated successfully');
+        alert(`✅ Nickname Updated Successfully!\n\nYour new nickname: "${newNickname.trim()}"\n\nThe page will refresh to show your changes.`);
         // Refresh the page to show updated nickname
         window.location.reload();
       } else {
-        alert(result.error || 'Failed to update nickname');
+        alert(`❌ Failed to Update Nickname\n\n${result.error || 'An error occurred. Please try again.'}`);
       }
     } catch (err) {
       console.error('Update nickname error:', err);
-      alert('An unexpected error occurred');
+      alert('❌ Connection Error\n\nUnable to connect to the server. Please check your internet connection and try again.');
     } finally {
       setEditingNickname(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
+    setDeleteConfirmText('');
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
     const isCommissioner = currentUserRole === 'Commissioner';
     const confirmText = isCommissioner 
       ? 'I agree to delete this league'
       : 'I agree to leave this league';
-    
-    const warningMessage = isCommissioner 
-      ? `⚠️ WARNING: You are about to DELETE this entire league!\n\nThis will permanently remove:\n• All league settings and data\n• All members and their teams\n• All schedules and records\n• All statistical category weights\n\nThis action CANNOT be undone!\n\nTo confirm, please type exactly: "${confirmText}"`
-      : `⚠️ WARNING: You are about to LEAVE this league!\n\nYou will:\n• Be removed from the league immediately\n• Lose access to all league data\n• Need to be re-invited to join again\n\nTo confirm, please type exactly: "${confirmText}"`;
-    
-    alert(warningMessage);
-    
-    const userInput = prompt(`Type "${confirmText}" to confirm:`);
-    
-    if (userInput !== confirmText) {
-      if (userInput !== null) {
-        alert('Confirmation text did not match. Action cancelled.');
-      }
+
+    if (deleteConfirmText !== confirmText) {
       return;
     }
 
@@ -185,10 +188,11 @@ export default function LeagueSettingsPage() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-          alert('League deleted successfully');
+          setShowDeleteModal(false);
           router.push('/home');
         } else {
-          alert(result.error || 'Failed to delete league');
+          setDeleting(false);
+          alert(`❌ Failed to Delete League\n\n${result.error || 'An error occurred. Please try again.'}`);
         }
       } else {
         // Delete team/member
@@ -206,15 +210,17 @@ export default function LeagueSettingsPage() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-          alert('Successfully left the league');
+          setShowDeleteModal(false);
           router.push('/home');
         } else {
-          alert(result.error || 'Failed to leave league');
+          setDeleting(false);
+          alert(`❌ Failed to Leave League\n\n${result.error || 'An error occurred. Please try again.'}`);
         }
       }
     } catch (err) {
       console.error('Delete error:', err);
-      alert('An unexpected error occurred');
+      setDeleting(false);
+      alert('❌ Connection Error\n\nUnable to connect to the server. Please check your internet connection and try again.');
     } finally {
       setDeleting(false);
     }
@@ -291,7 +297,7 @@ export default function LeagueSettingsPage() {
             </button>
             {leagueStatus === 'pre-draft' && (
               <button
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 disabled={deleting}
                 className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -501,20 +507,78 @@ export default function LeagueSettingsPage() {
       {showNicknameModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/30 rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-black text-white mb-4">Edit Nickname</h2>
-            <div className="mb-4">
-              <label className="block text-purple-300 text-sm font-medium mb-2">
-                Current Nickname: <span className="text-white font-bold">{currentNickname}</span>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-3 rounded-xl">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-black text-white">Edit Nickname</h2>
+            </div>
+            
+            <div className="bg-slate-900/50 border border-blue-500/20 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <label className="text-blue-300 text-sm font-medium">
+                  Current Nickname
+                </label>
+              </div>
+              <p className="text-white font-bold text-lg ml-6">{currentNickname}</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-cyan-300 text-sm font-medium mb-2">
+                New Nickname
               </label>
               <input
                 type="text"
                 value={newNickname}
                 onChange={(e) => setNewNickname(e.target.value)}
                 maxLength={50}
-                placeholder="Enter new nickname"
-                className="w-full px-4 py-3 bg-slate-900/50 border border-purple-500/30 rounded-lg text-white placeholder-purple-300/50 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                placeholder="Enter your new nickname..."
+                className="w-full px-4 py-3 bg-slate-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-cyan-300/40 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
+                autoFocus
               />
-              <p className="text-purple-300/70 text-xs mt-2">Maximum 50 characters</p>
+              <div className="flex justify-between items-center mt-2">
+                <div className="flex flex-col gap-1">
+                  <p className={`text-xs transition-colors ${
+                    newNickname.trim().length < 2 
+                      ? 'text-red-400 font-medium' 
+                      : newNickname.trim().length > 50 
+                      ? 'text-red-400 font-medium'
+                      : 'text-cyan-300/70'
+                  }`}>
+                    {newNickname.trim().length < 2 ? '⚠️ Minimum 2 characters' : '✓ Valid length'}
+                  </p>
+                </div>
+                <p className={`text-xs font-medium ${
+                  newNickname.length > 40 
+                    ? 'text-orange-400' 
+                    : newNickname.length > 45 
+                    ? 'text-red-400'
+                    : 'text-cyan-300/70'
+                }`}>
+                  {newNickname.length}/50
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-6">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-blue-300/90 text-xs">
+                  <p className="font-medium mb-1">Nickname Guidelines:</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-blue-300/70">
+                    <li>Must be 2-50 characters long</li>
+                    <li>Will be visible to all league members</li>
+                    <li>Can be changed anytime</li>
+                  </ul>
+                </div>
+              </div>
             </div>
             <div className="flex gap-3">
               <button
@@ -526,15 +590,176 @@ export default function LeagueSettingsPage() {
               </button>
               <button
                 onClick={handleSaveNickname}
-                disabled={editingNickname}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-3 rounded-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={editingNickname || !newNickname.trim() || newNickname.trim().length < 2 || newNickname.trim() === currentNickname}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-3 rounded-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {editingNickname ? 'Saving...' : 'Save'}
+                {editingNickname ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Changes
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (() => {
+        const isCommissioner = currentUserRole === 'Commissioner';
+        const confirmText = isCommissioner 
+          ? 'I agree to delete this league'
+          : 'I agree to leave this league';
+        const isValid = deleteConfirmText === confirmText;
+
+        return (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-red-500/50 rounded-2xl shadow-2xl max-w-lg w-full p-6">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gradient-to-br from-red-600 to-red-700 p-3 rounded-xl animate-pulse">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-red-400">
+                    {isCommissioner ? '⚠️ DELETE LEAGUE' : '⚠️ LEAVE LEAGUE'}
+                  </h2>
+                  <p className="text-red-300/70 text-sm font-medium">This action cannot be undone</p>
+                </div>
+              </div>
+
+              {/* Warning Content */}
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+                <h3 className="text-red-300 font-bold mb-3">
+                  {isCommissioner 
+                    ? '🔥 This will permanently remove:' 
+                    : '📤 You will:'}
+                </h3>
+                <ul className="space-y-2 text-red-200/90">
+                  {isCommissioner ? (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-400 mt-1">•</span>
+                        <span>All league settings and data</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-400 mt-1">•</span>
+                        <span>All members and their teams</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-400 mt-1">•</span>
+                        <span>All schedules and records</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-400 mt-1">•</span>
+                        <span>All statistical category weights</span>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-400 mt-1">•</span>
+                        <span>Be removed from the league immediately</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-400 mt-1">•</span>
+                        <span>Lose access to all league data</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-400 mt-1">•</span>
+                        <span>Need to be re-invited to join again</span>
+                      </li>
+                    </>
+                  )}
+                </ul>
+              </div>
+
+              {/* Confirmation Input */}
+              <div className="mb-6">
+                <label className="block text-red-300 font-bold mb-3">
+                  Type the following to confirm:
+                </label>
+                <div className="bg-slate-900/50 border border-red-500/30 rounded-lg p-3 mb-3">
+                  <code className="text-white font-mono text-sm">{confirmText}</code>
+                </div>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Type here..."
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-red-500/30 rounded-lg text-white placeholder-red-300/40 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20 transition-all font-mono"
+                  autoFocus
+                />
+                {deleteConfirmText && !isValid && (
+                  <p className="text-red-400 text-sm mt-2 flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Text does not match
+                  </p>
+                )}
+                {isValid && (
+                  <p className="text-green-400 text-sm mt-2 flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Confirmed
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmText('');
+                  }}
+                  disabled={deleting}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={!isValid || deleting}
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 rounded-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {isCommissioner ? 'Deleting...' : 'Leaving...'}
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      {isCommissioner ? 'Delete League' : 'Leave League'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
