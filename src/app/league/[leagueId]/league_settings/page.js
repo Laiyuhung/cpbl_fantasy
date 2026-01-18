@@ -249,8 +249,8 @@ export default function LeagueSettingsPage() {
             </div>
             <div className="p-6">
               <div className="space-y-2">
-                {leagueSettings.stat_categories?.batter && leagueSettings.stat_categories.batter.length > 0 ? (
-                  leagueSettings.stat_categories.batter.map((cat, index) => (
+                {leagueSettings.batter_stat_categories && leagueSettings.batter_stat_categories.length > 0 ? (
+                  leagueSettings.batter_stat_categories.map((cat, index) => (
                     <div key={index} className="flex justify-between items-center py-3 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20 hover:border-purple-400/40 transition-colors">
                       <span className="text-white font-semibold">{cat}</span>
                       {leagueSettings.scoring_type === 'Head-to-Head Fantasy Points' && categoryWeights.batter[cat] && (
@@ -279,8 +279,8 @@ export default function LeagueSettingsPage() {
             </div>
             <div className="p-6">
               <div className="space-y-2">
-                {leagueSettings.stat_categories?.pitcher && leagueSettings.stat_categories.pitcher.length > 0 ? (
-                  leagueSettings.stat_categories.pitcher.map((cat, index) => (
+                {leagueSettings.pitcher_stat_categories && leagueSettings.pitcher_stat_categories.length > 0 ? (
+                  leagueSettings.pitcher_stat_categories.map((cat, index) => (
                     <div key={index} className="flex justify-between items-center py-3 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20 hover:border-purple-400/40 transition-colors">
                       <span className="text-white font-semibold">{cat}</span>
                       {leagueSettings.scoring_type === 'Head-to-Head Fantasy Points' && categoryWeights.pitcher[cat] && (
