@@ -1,16 +1,18 @@
 // Navbar.js
 'use client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function Navbar() {
   const router = useRouter()
+  const pathname = usePathname()
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [leagues, setLeagues] = useState([])
   const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false)
+  const [currentLeague, setCurrentLeague] = useState(null)
 
   // Fetch user's leagues
   const fetchLeagues = (uid) => {
@@ -107,6 +109,18 @@ export default function Navbar() {
     return () => window.removeEventListener('auth-changed', handler)
   }, [])
 
+  // 監測當前路徑，如果在 league/[leagueId] 底下，設定當前聯盟
+  useEffect(() => {
+    const match = pathname?.match(/^\/league\/([^\/]+)/)
+    if (match && match[1]) {
+      const leagueId = match[1]
+      const found = leagues.find(l => l.league_id === leagueId)
+      setCurrentLeague(found || null)
+    } else {
+      setCurrentLeague(null)
+    }
+  }, [pathname, leagues])
+
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' })
@@ -163,7 +177,17 @@ export default function Navbar() {
               onClick={() => setLeagueDropdownOpen(!leagueDropdownOpen)}
               className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200 flex items-center gap-1.5"
             >
-              LEAGUES
+              {currentLeague ? (
+                <>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-400 font-black text-base drop-shadow-lg">
+                    {currentLeague.league_name}
+                  </span>
+                  <span className="text-white/50">|</span>
+                  <span>LEAGUES</span>
+                </>
+              ) : (
+                'LEAGUES'
+              )}
               <svg className={`w-4 h-4 transition-transform duration-200 ${leagueDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>

@@ -19,6 +19,9 @@ export default function PlayersPage() {
   const [showConfirmAdd, setShowConfirmAdd] = useState(false); // 確認新增對話框
   const [playerToAdd, setPlayerToAdd] = useState(null); // 待加入的球員
   const [isAdding, setIsAdding] = useState(false); // 執行新增中
+  const [showConfirmDrop, setShowConfirmDrop] = useState(false); // 確認刪除對話框
+  const [playerToDrop, setPlayerToDrop] = useState(null); // 待刪除的球員
+  const [isDropping, setIsDropping] = useState(false); // 執行刪除中
   const [showSuccess, setShowSuccess] = useState(false); // 成功動畫
   const [showError, setShowError] = useState(false); // 失敗動畫
   const [errorMessage, setErrorMessage] = useState(''); // 錯誤訊息
@@ -258,6 +261,18 @@ export default function PlayersPage() {
     setShowConfirmAdd(true);
   };
 
+  // 處理 DROP 球員
+  const handleDropPlayer = async (player) => {
+    if (!myManagerId) {
+      alert('請先登入');
+      return;
+    }
+
+    // 顯示確認對話框
+    setPlayerToDrop(player);
+    setShowConfirmDrop(true);
+  };
+
   // 確認加入球員
   const confirmAddPlayer = async () => {
     if (!playerToAdd) return;
@@ -314,6 +329,62 @@ export default function PlayersPage() {
     }
   };
 
+  // 確認 DROP 球員
+  const confirmDropPlayer = async () => {
+    if (!playerToDrop) return;
+
+    try {
+      setIsDropping(true);
+      
+      const res = await fetch(`/api/league/${leagueId}/ownership`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: playerToDrop.player_id,
+          manager_id: myManagerId
+        })
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        // 關閉對話框
+        setIsDropping(false);
+        setShowConfirmDrop(false);
+        
+        // 顯示成功動畫
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        
+        // 重新載入 ownerships 資料
+        setIsRefreshing(true);
+        const ownershipsRes = await fetch(`/api/league/${leagueId}/ownership`);
+        const ownershipsData = await ownershipsRes.json();
+        if (ownershipsData.success) {
+          setOwnerships(ownershipsData.ownerships || []);
+        }
+        setIsRefreshing(false);
+      } else {
+        // 顯示失敗動畫
+        setIsDropping(false);
+        setShowConfirmDrop(false);
+        setErrorMessage(data.error || 'Unknown error');
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
+      }
+    } catch (err) {
+      console.error('Drop player error:', err);
+      setIsDropping(false);
+      setShowConfirmDrop(false);
+      setErrorMessage('Operation failed, please try again');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
+      setIsRefreshing(false);
+    } finally {
+      setPlayerToDrop(null);
+    }
+  };
+
   const getPlayerActionButton = (player) => {
     // 查找該球員的 ownership 資料
     const ownership = ownerships.find(
@@ -345,7 +416,10 @@ export default function PlayersPage() {
       if (ownership.manager_id === myManagerId) {
         // 紅色底的 -
         return (
-          <button className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold hover:bg-red-700 transition-colors">
+          <button 
+            onClick={() => handleDropPlayer(player)}
+            className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold hover:bg-red-700 transition-colors"
+          >
             −
           </button>
         );
@@ -576,6 +650,47 @@ export default function PlayersPage() {
                 className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isAdding ? 'Processing...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 確認 DROP 對話框 */}
+      {showConfirmDrop && playerToDrop && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-red-500/30 shadow-2xl">
+            <h3 className="text-2xl font-bold text-white mb-4">Drop Player</h3>
+            <p className="text-red-200 mb-6">
+              Are you sure you want to drop <span className="font-bold text-white">{playerToDrop.name}</span>?
+            </p>
+            
+            {/* 執行中動畫 */}
+            {isDropping && (
+              <div className="mb-6 flex items-center justify-center gap-3 text-red-300">
+                <div className="w-6 h-6 border-3 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="font-semibold">Dropping player...</span>
+              </div>
+            )}
+            
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowConfirmDrop(false);
+                  setPlayerToDrop(null);
+                  setIsDropping(false);
+                }}
+                disabled={isDropping}
+                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDropPlayer}
+                disabled={isDropping}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDropping ? 'Processing...' : 'Confirm Drop'}
               </button>
             </div>
           </div>
