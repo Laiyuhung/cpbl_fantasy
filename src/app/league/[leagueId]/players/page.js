@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 
 export default function PlayersPage() {
@@ -15,7 +15,7 @@ export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
-  const [failedImages, setFailedImages] = useState(new Set()); // 記錄加載失敗的球員ID
+  const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
 
   useEffect(() => {
     const fetchData = async () => {
@@ -126,7 +126,7 @@ export default function PlayersPage() {
 
   const getPlayerPhoto = (player) => {
     // 如果球員圖片已知載入失敗，直接返回預設圖片
-    if (failedImages.has(player.player_id)) {
+    if (failedImages.current.has(player.player_id)) {
       return '/photo/defaultPlayer.png';
     }
     
@@ -162,7 +162,7 @@ export default function PlayersPage() {
       }
     } else {
       // 所有路徑都失敗，記錄此球員並使用預設圖片
-      setFailedImages(prev => new Set([...prev, player.player_id]));
+      failedImages.current.add(player.player_id); // 使用 ref 不會觸發重新渲染
       e.target.onerror = null; // 防止無限迴圈
       e.target.src = window.location.origin + '/photo/defaultPlayer.png';
     }
