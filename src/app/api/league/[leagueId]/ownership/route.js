@@ -269,14 +269,13 @@ export async function DELETE(req, { params }) {
       // 非同日 -> 設為 Waiver，off_waiver = 今天 + waiver_players_unfreeze_time 天
       const offWaiverDate = new Date(nowTaiwan);
       offWaiverDate.setDate(offWaiverDate.getDate() + waiverDays);
-      const offWaiverMD = `${offWaiverDate.getMonth() + 1}/${offWaiverDate.getDate()}`;
 
       const { error: updateError } = await supabase
         .from('league_player_ownership')
         .update({
           status: 'Waiver',
           acquired_at: nowTaiwan.toISOString(),
-          off_waiver: offWaiverMD
+          off_waiver: offWaiverDate.toISOString().split('T')[0]  // 只取日期部分 YYYY-MM-DD
         })
         .eq('id', ownership.id);
 
@@ -307,7 +306,7 @@ export async function DELETE(req, { params }) {
         success: true,
         message: 'Player moved to waiver',
         action: 'waiver',
-        off_waiver: offWaiverMD
+        off_waiver: offWaiverDate.toISOString().split('T')[0]
       });
     }
   } catch (err) {
