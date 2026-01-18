@@ -13,7 +13,6 @@ export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
-  const [photoFallbackIndex, setPhotoFallbackIndex] = useState({}); // 追蹤每個球員的照片 fallback 索引
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -80,54 +79,9 @@ export default function PlayersPage() {
         return 'bg-slate-600 text-white';
     }
   };
-  const getPlayerPhotoPaths = (player) => {
-    const paths = [];
-    
-    // 1. 嘗試使用 name
-    if (player.name) {
-      paths.push(`/photo/${player.name}.png`);
-    }
-    
-    // 2. 嘗試使用 original_name (逗號分隔)
-    if (player.original_name) {
-      const aliases = player.original_name.split(',').map(alias => alias.trim());
-      aliases.forEach(alias => {
-        if (alias) {
-          paths.push(`/photo/${alias}.png`);
-        }
-      });
-    }
-    
-    // 3. 嘗試使用 player_id
-    if (player.player_id) {
-      paths.push(`/photo/${player.player_id}.png`);
-    }
-    
-    return paths;
-  };
-
   const getPlayerPhoto = (player) => {
-    const paths = getPlayerPhotoPaths(player);
-    const index = photoFallbackIndex[player.player_id] || 0;
-    return paths[index] || null;
-  };
-
-  const handleImageError = (e, player) => {
-    const paths = getPlayerPhotoPaths(player);
-    const currentIndex = photoFallbackIndex[player.player_id] || 0;
-    const nextIndex = currentIndex + 1;
-    
-    if (nextIndex < paths.length) {
-      // 嘗試下一個照片路徑
-      setPhotoFallbackIndex(prev => ({
-        ...prev,
-        [player.player_id]: nextIndex
-      }));
-    } else {
-      // 所有照片都失敗，使用預設頭像
-      e.target.src = '/defaultPlayer.png';
-      e.target.onError = null; // 防止無限循環
-    }
+    // 使用球員名稱作為照片檔名
+    return player.name ? `/photo/${player.name}.png` : '/defaultPlayer.png';
   };
   if (loading) {
     return (
@@ -166,11 +120,11 @@ export default function PlayersPage() {
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Search */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-2">
                   Search
                 </label>
                 <input
@@ -178,19 +132,19 @@ export default function PlayersPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search player name or alias"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent bg-white/10 text-white placeholder-white/60"
                 />
               </div>
 
               {/* Player Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-2">
                   Type
                 </label>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent bg-white/10 text-white"
                 >
                   <option value="all">All</option>
                   <option value="batter">Batter</option>
@@ -200,13 +154,13 @@ export default function PlayersPage() {
 
               {/* Identity */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-2">
                   Identity
                 </label>
                 <select
                   value={filterIdentity}
                   onChange={(e) => setFilterIdentity(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent bg-white/10 text-white"
                 >
                   <option value="all">All</option>
                   <option value="local">Local</option>
@@ -257,15 +211,12 @@ export default function PlayersPage() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 shadow-lg shadow-purple-500/30">
-                            <img
-                              key={`${player.player_id}-${photoFallbackIndex[player.player_id] || 0}`}
-                              src={getPlayerPhoto(player)}
-                              alt={player.name}
-                              onError={(e) => handleImageError(e, player)}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
+                          <img
+                            src={getPlayerPhoto(player)}
+                            alt={`${player.name} Avatar`}
+                            className="w-12 h-12 rounded-full"
+                            onError={(e) => e.target.src = '/defaultPlayer.png'}
+                          />
                           <div className="flex flex-col">
                             <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
                               {player.name || 'Unknown'}
