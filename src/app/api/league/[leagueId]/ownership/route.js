@@ -208,7 +208,17 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    const waiverDays = leagueSettings.waiver_players_unfreeze_time || 2; // 預設 2 天
+    // 解析 waiver_players_unfreeze_time，可能是 "2 day(s)" 或數字
+    let waiverDays = 2; // 預設 2 天
+    const rawValue = leagueSettings.waiver_players_unfreeze_time;
+    if (rawValue) {
+      if (typeof rawValue === 'number') {
+        waiverDays = rawValue;
+      } else if (typeof rawValue === 'string') {
+        const match = rawValue.match(/(\d+)/);
+        waiverDays = match ? parseInt(match[1], 10) : 2;
+      }
+    }
 
     // 取得台灣當前時間
     const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));

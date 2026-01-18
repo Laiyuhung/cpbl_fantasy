@@ -333,21 +333,32 @@ export default function PlayersPage() {
   const confirmDropPlayer = async () => {
     if (!playerToDrop) return;
 
+    console.log('=== DROP PLAYER START ===');
+    console.log('Player to drop:', playerToDrop);
+    console.log('Manager ID:', myManagerId);
+    console.log('League ID:', leagueId);
+
     try {
       setIsDropping(true);
+      
+      const requestBody = {
+        player_id: playerToDrop.player_id,
+        manager_id: myManagerId
+      };
+      console.log('Request body:', requestBody);
       
       const res = await fetch(`/api/league/${leagueId}/ownership`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player_id: playerToDrop.player_id,
-          manager_id: myManagerId
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('Response status:', res.status);
       const data = await res.json();
+      console.log('Response data:', data);
       
       if (data.success) {
+        console.log('✓ Drop successful');
         // 關閉對話框
         setIsDropping(false);
         setShowConfirmDrop(false);
@@ -365,6 +376,7 @@ export default function PlayersPage() {
         }
         setIsRefreshing(false);
       } else {
+        console.error('✗ Drop failed:', data.error, data.details);
         // 顯示失敗動畫
         setIsDropping(false);
         setShowConfirmDrop(false);
@@ -373,7 +385,7 @@ export default function PlayersPage() {
         setTimeout(() => setShowError(false), 3000);
       }
     } catch (err) {
-      console.error('Drop player error:', err);
+      console.error('✗ Drop player error:', err);
       setIsDropping(false);
       setShowConfirmDrop(false);
       setErrorMessage('Operation failed, please try again');
@@ -382,6 +394,7 @@ export default function PlayersPage() {
       setIsRefreshing(false);
     } finally {
       setPlayerToDrop(null);
+      console.log('=== DROP PLAYER END ===');
     }
   };
 
