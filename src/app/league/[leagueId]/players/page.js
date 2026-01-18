@@ -13,6 +13,7 @@ export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
+  const [photoFallbackIndex, setPhotoFallbackIndex] = useState({}); // 追蹤每個球員的照片 fallback 索引
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -74,12 +75,60 @@ export default function PlayersPage() {
       case '樂天桃猿':
         return 'bg-rose-800 text-white';
       case '中信兄弟':
-        return 'bg-yellow-700 text-white';
+        return 'bg-yellow-500 text-white';
       default:
         return 'bg-slate-600 text-white';
     }
   };
+  const getPlayerPhotoPaths = (player) => {
+    const paths = [];
+    
+    // 1. 嘗試使用 name
+    if (player.name) {
+      paths.push(`/photo/${player.name}.png`);
+    }
+    
+    // 2. 嘗試使用 original_name (逗號分隔)
+    if (player.original_name) {
+      const aliases = player.original_name.split(',').map(alias => alias.trim());
+      aliases.forEach(alias => {
+        if (alias) {
+          paths.push(`/photo/${alias}.png`);
+        }
+      });
+    }
+    
+    // 3. 嘗試使用 player_id
+    if (player.player_id) {
+      paths.push(`/photo/${player.player_id}.png`);
+    }
+    
+    return paths;
+  };
 
+  const getPlayerPhoto = (player) => {
+    const paths = getPlayerPhotoPaths(player);
+    const index = photoFallbackIndex[player.player_id] || 0;
+    return paths[index] || null;
+  };
+
+  const handleImageError = (e, player) => {
+    const paths = getPlayerPhotoPaths(player);
+    const currentIndex = photoFallbackIndex[player.player_id] || 0;
+    const nextIndex = currentIndex + 1;
+    
+    if (nextIndex < paths.length) {
+      // 嘗試下一個照片路徑
+      setPhotoFallbackIndex(prev => ({
+        ...prev,
+        [player.player_id]: nextIndex
+      }));
+    } else {
+      // 所有照片都失敗，使用預設頭像
+      e.target.src = '/defaultPlayer.png';
+      e.target.onError = null; // 防止無限循環
+    }
+  };
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
@@ -208,8 +257,14 @@ export default function PlayersPage() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold shadow-lg shadow-purple-500/30">
-                            {player.name?.charAt(0).toUpperCase() || '?'}
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 shadow-lg shadow-purple-500/30">
+                            <img
+                              key={`${player.player_id}-${photoFallbackIndex[player.player_id] || 0}`}
+                              src={getPlayerPhoto(player)}
+                              alt={player.name}
+                              onError={(e) => handleImageError(e, player)}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <div className="flex flex-col">
                             <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
