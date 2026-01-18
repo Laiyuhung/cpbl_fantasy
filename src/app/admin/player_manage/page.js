@@ -8,8 +8,8 @@ export default function PlayerManagePage() {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [players, setPlayers] = useState([])
+  const [allPlayers, setAllPlayers] = useState([]) // 儲存所有球員資料
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [teamFilter, setTeamFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [identityFilter, setIdentityFilter] = useState('')
@@ -17,8 +17,6 @@ export default function PlayerManagePage() {
   const [sortBy, setSortBy] = useState('add_date')
   const [showModal, setShowModal] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
-  const [isComposing, setIsComposing] = useState(false)
-  const [isFetching, setIsFetching] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     team: '',
@@ -32,23 +30,17 @@ export default function PlayerManagePage() {
     checkAdminStatus()
   }, [])
 
-  // Debounce search input (500ms delay), but only when not composing (typing in Chinese)
-  useEffect(() => {
-    // 如果正在輸入注音，不要更新 debounced search
-    if (isComposing) return
-
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search)
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [search, isComposing])
-
+  // 只在初始載入時請求 API
   useEffect(() => {
     if (isAdmin) {
-      fetchPlayers()
+      fetchAllPlayers()
     }
-  }, [isAdmin, debouncedSearch, teamFilter, typeFilter, identityFilter, availableFilter, sortBy])
+  }, [isAdmin])
+
+  // 在前端進行篩選和排序
+  useEffect(() => {
+    filterAndSortPlayers()
+  }, [allPlayers, search, teamFilter, typeFilter, identityFilter, availableFilter, sortBy])
 
   const checkAdminStatus = async () => {
     try {
@@ -71,28 +63,70 @@ export default function PlayerManagePage() {
     }
   }
 
-  const fetchPlayers = async () => {
+  const fetchAllPlayers = async () => {
     try {
-      setIsFetching(true)
-      const params = new URLSearchParams()
-      if (debouncedSearch) params.append('search', debouncedSearch)
-      if (teamFilter) params.append('team', teamFilter)
-      if (typeFilter) params.append('type', typeFilter)
-      if (identityFilter) params.append('identity', identityFilter)
-      if (availableFilter) params.append('available', availableFilter)
-      if (sortBy) params.append('sortBy', sortBy)
-
-      const res = await fetch(`/api/admin/players?${params}`)
+      setLoading(true)
+      // 不帶任何篩選參數，載入所有球員
+      const res = await fetch('/api/admin/players')
       const data = await res.json()
       
       if (data.players) {
-        setPlayers(data.players)
+        setAllPlayers(data.players)
       }
     } catch (err) {
       console.error('Failed to fetch players:', err)
     } finally {
-      setIsFetching(false)
+      setLoading(false)
     }
+  }
+
+  const filterAndSortPlayers = () => {
+    let filtered = [...allPlayers]
+
+    // 搜尋篩選
+    if (search) {
+      const searchLower = search.toLowerCase()
+      filtered = filtered.filter(player => 
+        player.name?.toLowerCase().includes(searchLower) ||
+        player.original_name?.toLowerCase().includes(searchLower) ||
+        player.team?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // 隊伍篩選
+    if (teamFilter) {
+      filtered = filtered.filter(player => player.team === teamFilter)
+    }
+
+    // 類型篩選 (batter/pitcher)
+    if (typeFilter) {
+      filtered = filtered.filter(player => player.batter_or_pitcher === typeFilter)
+    }
+
+    // 身份篩選 (local/foreigner)
+    if (identityFilter) {
+      filtered = filtered.filter(player => player.identity === identityFilter)
+    }
+
+    // Available 篩選
+    if (availableFilter) {
+      const isAvailable = availableFilter === 'true'
+      filtered = filtered.filter(player => player.available === isAvailable)
+    }
+
+    // 排序
+    filtered.sort((a, b) => {
+      if (sortBy === 'add_date') {
+        return new Date(b.add_date) - new Date(a.add_date)
+      } else if (sortBy === 'name') {
+        return (a.name || '').localeCompare(b.name || '')
+      } else if (sortBy === 'team') {
+        return (a.team || '').localeCompare(b.team || '')
+      }
+      return 0
+    })
+
+    setPlayers(filtered)
   }
 
   const handleOpenModal = (player = null) => {
@@ -171,7 +205,7 @@ export default function PlayerManagePage() {
       }
       
       handleCloseModal()
-      fetchPlayers()
+      fetchAllPlayers()
     } catch (err) {
       alert(err.message)
     }
@@ -193,7 +227,7 @@ export default function PlayerManagePage() {
       }
       
       alert('Deleted successfully')
-      fetchPlayers()
+      fetchAllPlayers()
     } catch (err) {
       alert(err.message)
     }
@@ -215,7 +249,7 @@ export default function PlayerManagePage() {
         throw new Error(data.error || 'Update failed')
       }
       
-      fetchPlayers()
+      fetchAllPlayers()
     } catch (err) {
       alert(err.message)
     }
@@ -271,18 +305,9 @@ export default function PlayerManagePage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={(e) => {
-                  setIsComposing(false)
-                  // 注音輸入完成後，立即更新 search 並觸發搜尋
-                  setSearch(e.target.value)
-                }}
                 placeholder="Search player name or alias"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              {(search !== debouncedSearch || isFetching) && (
-                <p className="text-xs text-gray-500 mt-1">Loading...</p>
-              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Team</label>

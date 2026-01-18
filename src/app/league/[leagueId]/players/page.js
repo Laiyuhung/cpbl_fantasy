@@ -8,29 +8,46 @@ export default function PlayersPage() {
   const leagueId = params.leagueId;
 
   const [players, setPlayers] = useState([]);
+  const [ownerships, setOwnerships] = useState([]); // 球員擁有權資料
+  const [myManagerId, setMyManagerId] = useState(null); // 當前用戶的 manager_id
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
-  const [photoFallbackIndex, setPhotoFallbackIndex] = useState({}); // 追蹤每個球員的照片 fallback 索引
 
   useEffect(() => {
-    const fetchPlayers = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/playerslist?available=true');
-        const result = await response.json();
+        
+        // 並行請求多個 API
+        const [playersRes, ownershipsRes, userRes] = await Promise.all([
+          fetch('/api/playerslist?available=true'),
+          fetch(`/api/league/${leagueId}/ownership`),
+          fetch('/api/managers/detail')
+        ]);
 
-        if (!response.ok) {
-          setError(result.error || 'Failed to load players');
+        // 處理 players
+        const playersData = await playersRes.json();
+        if (!playersRes.ok) {
+          setError(playersData.error || 'Failed to load players');
           return;
         }
+        if (playersData.success) {
+          setPlayers(playersData.players || []);
+        }
 
-        if (result.success) {
-          setPlayers(result.players || []);
-        } else {
-          setError('Failed to load players');
+        // 處理 ownerships
+        const ownershipsData = await ownershipsRes.json();
+        if (ownershipsData.success) {
+          setOwnerships(ownershipsData.ownerships || []);
+        }
+
+        // 處理 user manager_id
+        const userData = await userRes.json();
+        if (userData.success && userData.manager) {
+          setMyManagerId(userData.manager.manager_id);
         }
       } catch (err) {
         console.error('Unexpected error:', err);
@@ -40,8 +57,8 @@ export default function PlayersPage() {
       }
     };
 
-    fetchPlayers();
-  }, []);
+    fetchData();
+  }, [leagueId]);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = searchTerm === '' || 
@@ -107,33 +124,70 @@ export default function PlayersPage() {
   };
 
   const getPlayerPhoto = (player) => {
-    const paths = getPlayerPhotoPaths(player);
-    const index = photoFallbackIndex[player.player_id] || 0;
-    const photoPath = paths[index];
-    console.log(`[Photo Debug] Player: ${player.name}, Index: ${index}, Path: ${photoPath}`);
-    return photoPath;
+    // 預設使用 name
+    return player.name ? `/photo/${player.name}.png` : '/photo/defaultPlayer.png';
   };
 
   const handleImageError = (e, player) => {
+    // 獲取當前嘗試的路徑
+    const currentSrc = e.target.src;
     const paths = getPlayerPhotoPaths(player);
-    const currentIndex = photoFallbackIndex[player.player_id] || 0;
+    const currentIndex = paths.findIndex(p => currentSrc.endsWith(p));
     const nextIndex = currentIndex + 1;
     
-    console.log(`[Photo Error] Player: ${player.name}, Failed path: ${paths[currentIndex]}, Next index: ${nextIndex}/${paths.length}`);
-    
     if (nextIndex < paths.length) {
-      // 嘗試下一個照片路徑
-      setPhotoFallbackIndex(prev => ({
-        ...prev,
-        [player.player_id]: nextIndex
-      }));
+      // 直接設定下一個路徑，不觸發重渲染
+      e.target.src = paths[nextIndex];
     } else {
-      // 已經是最後一個路徑，防止繼續錯誤
-      console.log(`[Photo Error] All paths failed for ${player.name}`);
+      // 所有路徑都失敗，防止繼續錯誤
       e.target.onerror = null;
     }
   };
-  if (loading) {
+  const getPlayerActionButton = (player) => {
+    // 查找該球員的 ownership 資料
+    const ownership = ownerships.find(
+      o => o.player_id === player.player_id
+    );
+
+    // 如果沒有找到 ownership，顯示線色 + 按鈕
+    if (!ownership) {
+      return (
+        <button className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold hover:bg-green-700 transition-colors">
+          +
+        </button>
+      );
+    }
+
+    const status = ownership.status?.toLowerCase();
+
+    // 如果 status 是 waiver，不顯示按鈕
+    if (status === 'waiver') {
+      return null;
+    }
+
+    // 如果 status 是 on team
+    if (status === 'on team') {
+      // 檢查是否是自己的球員
+      if (ownership.manager_id === myManagerId) {
+        // 紅色底的 -
+        return (
+          <button className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold hover:bg-red-700 transition-colors">
+            −
+          </button>
+        );
+      } else {
+        // 藍色框的 ⇌
+        return (
+          <button className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold hover:bg-blue-700 transition-colors">
+            ⇌
+          </button>
+        );
+      }
+    }
+
+    // 其他狀態不顯示按鈕
+    return null;
+  };  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -260,8 +314,8 @@ export default function PlayersPage() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
+                          {getPlayerActionButton(player)}
                           <img
-                            key={`${player.player_id}-${photoFallbackIndex[player.player_id] || 0}`}
                             src={getPlayerPhoto(player)}
                             alt={`${player.name} Avatar`}
                             className="w-12 h-12 rounded-full object-cover"
