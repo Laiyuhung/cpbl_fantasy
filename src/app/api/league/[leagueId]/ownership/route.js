@@ -47,8 +47,8 @@ export async function POST(req, { params }) {
       }
     }
 
-    // 取得台灣當地時間，再轉換為 UTC 格式寫入
-    const taiwanTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+    // 直接使用 UTC 時間
+    const now = new Date();
     
     // 插入新記錄（使用 upsert 確保原子性，但設定 onConflict 讓重複時返回錯誤）
     const { data: newOwnership, error: insertError } = await supabase
@@ -58,7 +58,7 @@ export async function POST(req, { params }) {
         player_id: player_id,
         manager_id: manager_id,
         status: 'On Team',
-        acquired_at: taiwanTime.toISOString(),
+        acquired_at: now.toISOString(),
         off_waiver: null
       })
       .select()
@@ -87,7 +87,7 @@ export async function POST(req, { params }) {
         player_id: player_id,
         manager_id: manager_id,
         transaction_type: 'ADD',
-        transaction_time: taiwanTime.toISOString()
+        transaction_time: now.toISOString()
       });
 
     if (transError) {
@@ -221,7 +221,8 @@ export async function DELETE(req, { params }) {
     }
 
     // 取得台灣當前時間
-    const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+    const now = new Date();
+    const nowTaiwan = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
     const todayMD = `${nowTaiwan.getMonth() + 1}/${nowTaiwan.getDate()}`;
 
     // 將 acquired_at (UTC) 轉換為台灣時間後取得 m/d
@@ -263,7 +264,7 @@ export async function DELETE(req, { params }) {
           player_id: player_id,
           manager_id: manager_id,
           transaction_type: 'DROP',
-          transaction_time: nowTaiwan.toISOString()
+          transaction_time: now.toISOString()
         });
 
       if (transError) {
@@ -278,14 +279,14 @@ export async function DELETE(req, { params }) {
     } else {
       console.log('→ Different day detected, setting to Waiver...');
       // 非同日 -> 設為 Waiver，off_waiver = 今天 + waiver_players_unfreeze_time 天
-      const offWaiverDate = new Date(nowTaiwan);
+      const offWaiverDate = new Date(now);
       offWaiverDate.setDate(offWaiverDate.getDate() + waiverDays);
 
       const { error: updateError } = await supabase
         .from('league_player_ownership')
         .update({
           status: 'Waiver',
-          acquired_at: nowTaiwan.toISOString(),
+          acquired_at: now.toISOString(),
           off_waiver: offWaiverDate.toISOString().split('T')[0]  // 只取日期部分 YYYY-MM-DD
         })
         .eq('id', ownership.id);
@@ -306,7 +307,7 @@ export async function DELETE(req, { params }) {
           player_id: player_id,
           manager_id: manager_id,
           transaction_type: 'DROP',
-          transaction_time: nowTaiwan.toISOString()
+          transaction_time: now.toISOString()
         });
 
       if (transError) {
