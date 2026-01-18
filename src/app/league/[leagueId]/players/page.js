@@ -13,6 +13,7 @@ export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
+  const [photoFallbackIndex, setPhotoFallbackIndex] = useState({}); // 追蹤每個球員的照片 fallback 索引
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -79,9 +80,61 @@ export default function PlayersPage() {
         return 'bg-slate-600 text-white';
     }
   };
+  const getPlayerPhotoPaths = (player) => {
+    const paths = [];
+    
+    // 1. 嘗試使用 name
+    if (player.name) {
+      paths.push(`/photo/${player.name}.png`);
+    }
+    
+    // 2. 嘗試使用 original_name (逗號+空白分隔)
+    if (player.original_name) {
+      const aliases = player.original_name.split(',').map(alias => alias.trim());
+      aliases.forEach(alias => {
+        if (alias) {
+          paths.push(`/photo/${alias}.png`);
+        }
+      });
+    }
+    
+    // 3. 嘗試使用 player_id
+    if (player.player_id) {
+      paths.push(`/photo/${player.player_id}.png`);
+    }
+    
+    // 4. 最後使用預設照片
+    paths.push('/defaultPlayer.png');
+    
+    return paths;
+  };
+
   const getPlayerPhoto = (player) => {
-    // 使用球員名稱作為照片檔名
-    return player.name ? `/photo/${player.name}.png` : '/defaultPlayer.png';
+    const paths = getPlayerPhotoPaths(player);
+    const index = photoFallbackIndex[player.player_id] || 0;
+    const photoPath = paths[index];
+    console.log(`[Photo Debug] Player: ${player.name}, Index: ${index}, Path: ${photoPath}`);
+    return photoPath;
+  };
+
+  const handleImageError = (e, player) => {
+    const paths = getPlayerPhotoPaths(player);
+    const currentIndex = photoFallbackIndex[player.player_id] || 0;
+    const nextIndex = currentIndex + 1;
+    
+    console.log(`[Photo Error] Player: ${player.name}, Failed path: ${paths[currentIndex]}, Next index: ${nextIndex}/${paths.length}`);
+    
+    if (nextIndex < paths.length) {
+      // 嘗試下一個照片路徑
+      setPhotoFallbackIndex(prev => ({
+        ...prev,
+        [player.player_id]: nextIndex
+      }));
+    } else {
+      // 已經是最後一個路徑，防止繼續錯誤
+      console.log(`[Photo Error] All paths failed for ${player.name}`);
+      e.target.onerror = null;
+    }
   };
   if (loading) {
     return (
@@ -212,13 +265,11 @@ export default function PlayersPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <img
+                            key={`${player.player_id}-${photoFallbackIndex[player.player_id] || 0}`}
                             src={getPlayerPhoto(player)}
                             alt={`${player.name} Avatar`}
                             className="w-12 h-12 rounded-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null; // 防止無限循環
-                              e.target.src = '/defaultPlayer.png';
-                            }}
+                            onError={(e) => handleImageError(e, player)}
                           />
                           <div className="flex flex-col">
                             <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
