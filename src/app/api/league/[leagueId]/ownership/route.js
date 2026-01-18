@@ -79,6 +79,22 @@ export async function POST(req, { params }) {
       );
     }
 
+    // 記錄 ADD 交易到 transactions_2025
+    const { error: transError } = await supabase
+      .from('transactions_2025')
+      .insert({
+        league_id: leagueId,
+        player_id: player_id,
+        manager_id: manager_id,
+        transaction_type: 'ADD',
+        transaction_time: taiwanTime.toISOString()
+      });
+
+    if (transError) {
+      console.error('Failed to log transaction:', transError);
+      // 不阻擋主流程，僅記錄錯誤
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Player added successfully',
@@ -123,6 +139,167 @@ export async function GET(req, { params }) {
       success: true,
       ownerships: ownerships || [],
     });
+  } catch (err) {
+    console.error('Server error:', err);
+    return NextResponse.json(
+      { success: false, error: 'Server error', details: err.message },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - DROP 球員（設為 Waiver 或直接刪除）
+export async function DELETE(req, { params }) {
+  try {
+    const { leagueId } = params;
+    const body = await req.json();
+    const { player_id, manager_id } = body;
+
+    // 驗證必要參數
+    if (!leagueId || !player_id || !manager_id) {
+      return NextResponse.json(
+        { success: false, error: 'League ID, Player ID, and Manager ID are required' },
+        { status: 400 }
+      );
+    }
+
+    // 檢查該球員是否由此 manager 擁有
+    const { data: ownership, error: checkError } = await supabase
+      .from('league_player_ownership')
+      .select('id, status, manager_id, acquired_at')
+      .eq('league_id', leagueId)
+      .eq('player_id', player_id)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Check ownership error:', checkError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to verify player ownership', details: checkError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!ownership) {
+      return NextResponse.json(
+        { success: false, error: 'Player not found in this league' },
+        { status: 404 }
+      );
+    }
+
+    if (ownership.manager_id !== manager_id) {
+      return NextResponse.json(
+        { success: false, error: 'You do not own this player' },
+        { status: 403 }
+      );
+    }
+
+    // 取得聯盟設定中的 waiver_players_unfreeze_time
+    const { data: leagueSettings, error: settingsError } = await supabase
+      .from('league_settings')
+      .select('waiver_players_unfreeze_time')
+      .eq('league_id', leagueId)
+      .single();
+
+    if (settingsError || !leagueSettings) {
+      console.error('Failed to fetch league settings:', settingsError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch league settings', details: settingsError?.message },
+        { status: 500 }
+      );
+    }
+
+    const waiverDays = leagueSettings.waiver_players_unfreeze_time || 2; // 預設 2 天
+
+    // 取得台灣當前時間
+    const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+    const todayMD = `${nowTaiwan.getMonth() + 1}/${nowTaiwan.getDate()}`;
+
+    // 將 acquired_at (UTC) 轉換為台灣時間後取得 m/d
+    const acquiredUTC = new Date(ownership.acquired_at);
+    const acquiredTaiwan = new Date(acquiredUTC.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+    const acquiredMD = `${acquiredTaiwan.getMonth() + 1}/${acquiredTaiwan.getDate()}`;
+
+    // 判斷是否為同日 add & drop
+    if (acquiredMD === todayMD) {
+      // 同日 add & drop -> 直接刪除記錄（回到 FA）
+      const { error: deleteError } = await supabase
+        .from('league_player_ownership')
+        .delete()
+        .eq('id', ownership.id);
+
+      if (deleteError) {
+        console.error('Delete ownership error:', deleteError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to drop player', details: deleteError.message },
+          { status: 500 }
+        );
+      }
+
+      // 記錄 DROP 交易到 transactions_2025
+      const { error: transError } = await supabase
+        .from('transactions_2025')
+        .insert({
+          league_id: leagueId,
+          player_id: player_id,
+          manager_id: manager_id,
+          transaction_type: 'DROP',
+          transaction_time: nowTaiwan.toISOString()
+        });
+
+      if (transError) {
+        console.error('Failed to log transaction:', transError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Player dropped (same day add & drop)',
+        action: 'deleted'
+      });
+    } else {
+      // 非同日 -> 設為 Waiver，off_waiver = 今天 + waiver_players_unfreeze_time 天
+      const offWaiverDate = new Date(nowTaiwan);
+      offWaiverDate.setDate(offWaiverDate.getDate() + waiverDays);
+      const offWaiverMD = `${offWaiverDate.getMonth() + 1}/${offWaiverDate.getDate()}`;
+
+      const { error: updateError } = await supabase
+        .from('league_player_ownership')
+        .update({
+          status: 'Waiver',
+          acquired_at: nowTaiwan.toISOString(),
+          off_waiver: offWaiverMD
+        })
+        .eq('id', ownership.id);
+
+      if (updateError) {
+        console.error('Update ownership error:', updateError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to drop player', details: updateError.message },
+          { status: 500 }
+        );
+      }
+
+      // 記錄 DROP 交易到 transactions_2025
+      const { error: transError } = await supabase
+        .from('transactions_2025')
+        .insert({
+          league_id: leagueId,
+          player_id: player_id,
+          manager_id: manager_id,
+          transaction_type: 'DROP',
+          transaction_time: nowTaiwan.toISOString()
+        });
+
+      if (transError) {
+        console.error('Failed to log transaction:', transError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Player moved to waiver',
+        action: 'waiver',
+        off_waiver: offWaiverMD
+      });
+    }
   } catch (err) {
     console.error('Server error:', err);
     return NextResponse.json(
