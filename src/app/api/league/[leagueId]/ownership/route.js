@@ -47,6 +47,9 @@ export async function POST(req, { params }) {
       }
     }
 
+    // 取得台灣當地時間，再轉換為 UTC 格式寫入
+    const taiwanTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+    
     // 插入新記錄（使用 upsert 確保原子性，但設定 onConflict 讓重複時返回錯誤）
     const { data: newOwnership, error: insertError } = await supabase
       .from('league_player_ownership')
@@ -55,7 +58,7 @@ export async function POST(req, { params }) {
         player_id: player_id,
         manager_id: manager_id,
         status: 'On Team',
-        acquired_at: new Date().toISOString(),
+        acquired_at: taiwanTime.toISOString(),
         off_waiver: null
       })
       .select()
