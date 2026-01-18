@@ -50,8 +50,8 @@ export default function PlayersPage() {
       player.team?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesType = 
-      (filterType === 'batter' && player.batter_or_pitcher === 'B') ||
-      (filterType === 'pitcher' && player.batter_or_pitcher === 'P');
+      (filterType === 'batter' && player.batter_or_pitcher === 'batter') ||
+      (filterType === 'pitcher' && player.batter_or_pitcher === 'pitcher');
 
     const matchesIdentity = filterIdentity === 'all' || 
       player.identity?.toLowerCase() === filterIdentity.toLowerCase();
@@ -182,7 +182,7 @@ export default function PlayersPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search player name or alias"
-                  className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent bg-white/10 text-white placeholder-white/60"
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
@@ -194,7 +194,7 @@ export default function PlayersPage() {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent bg-white/10 text-white"
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="batter">Batter</option>
                   <option value="pitcher">Pitcher</option>
@@ -209,7 +209,7 @@ export default function PlayersPage() {
                 <select
                   value={filterIdentity}
                   onChange={(e) => setFilterIdentity(e.target.value)}
-                  className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent bg-white/10 text-white"
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All</option>
                   <option value="local">Local</option>
@@ -286,11 +286,11 @@ export default function PlayersPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
-                          player.batter_or_pitcher === 'B'
+                          player.batter_or_pitcher === 'batter'
                             ? 'bg-green-500/20 text-green-300 border border-green-500/30'
                             : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
                         }`}>
-                          {player.batter_or_pitcher === 'B' ? 'Batter' : 'Pitcher'}
+                          {player.batter_or_pitcher === 'batter' ? 'Batter' : 'Pitcher'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
