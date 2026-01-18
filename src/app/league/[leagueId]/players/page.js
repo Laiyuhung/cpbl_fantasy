@@ -11,7 +11,7 @@ export default function PlayersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all'); // all, batter, pitcher
+  const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
   const [photoFallbackIndex, setPhotoFallbackIndex] = useState({}); // 追蹤每個球員的照片 fallback 索引
 
@@ -49,7 +49,7 @@ export default function PlayersPage() {
       player.original_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.team?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesType = filterType === 'all' || 
+    const matchesType = 
       (filterType === 'batter' && player.batter_or_pitcher === 'B') ||
       (filterType === 'pitcher' && player.batter_or_pitcher === 'P');
 
@@ -58,9 +58,6 @@ export default function PlayersPage() {
 
     return matchesSearch && matchesType && matchesIdentity;
   });
-
-  const batters = filteredPlayers.filter(p => p.batter_or_pitcher === 'B');
-  const pitchers = filteredPlayers.filter(p => p.batter_or_pitcher === 'P');
 
   const getTeamColor = (team) => {
     switch(team) {
@@ -199,7 +196,6 @@ export default function PlayersPage() {
                   onChange={(e) => setFilterType(e.target.value)}
                   className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent bg-white/10 text-white"
                 >
-                  <option value="all">All</option>
                   <option value="batter">Batter</option>
                   <option value="pitcher">Pitcher</option>
                 </select>
@@ -312,25 +308,6 @@ export default function PlayersPage() {
               </tbody>
             </table>
           </div>
-
-          {/* Summary Footer */}
-          {filteredPlayers.length > 0 && (
-            <div className="bg-slate-900/60 border-t border-purple-500/20 p-4">
-              <div className="flex justify-between items-center text-sm">
-                <div className="text-purple-300/70">
-                  Showing {filteredPlayers.length} of {players.length} total players
-                </div>
-                <div className="flex gap-6">
-                  <span className="text-green-300 font-medium">
-                    Batters: {batters.length}
-                  </span>
-                  <span className="text-orange-300 font-medium">
-                    Pitchers: {pitchers.length}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
