@@ -335,11 +335,6 @@ export default function PlayersPage() {
   const confirmDropPlayer = async () => {
     if (!playerToDrop) return;
 
-    console.log('=== DROP PLAYER START ===');
-    console.log('Player to drop:', playerToDrop);
-    console.log('Manager ID:', myManagerId);
-    console.log('League ID:', leagueId);
-
     try {
       setIsDropping(true);
       
@@ -347,7 +342,6 @@ export default function PlayersPage() {
         player_id: playerToDrop.player_id,
         manager_id: myManagerId
       };
-      console.log('Request body:', requestBody);
       
       const res = await fetch(`/api/league/${leagueId}/ownership`, {
         method: 'DELETE',
@@ -355,12 +349,9 @@ export default function PlayersPage() {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('Response status:', res.status);
       const data = await res.json();
-      console.log('Response data:', data);
       
       if (data.success) {
-        console.log('✓ Drop successful');
         // 關閉對話框
         setIsDropping(false);
         setShowConfirmDrop(false);
@@ -379,7 +370,6 @@ export default function PlayersPage() {
         }
         setIsRefreshing(false);
       } else {
-        console.error('✗ Drop failed:', data.error, data.details);
         // 顯示失敗動畫
         setIsDropping(false);
         setShowConfirmDrop(false);
@@ -388,7 +378,7 @@ export default function PlayersPage() {
         setTimeout(() => setShowError(false), 3000);
       }
     } catch (err) {
-      console.error('✗ Drop player error:', err);
+      console.error('Drop player error:', err);
       setIsDropping(false);
       setShowConfirmDrop(false);
       setErrorMessage('Operation failed, please try again');
@@ -397,7 +387,6 @@ export default function PlayersPage() {
       setIsRefreshing(false);
     } finally {
       setPlayerToDrop(null);
-      console.log('=== DROP PLAYER END ===');
     }
   };
 
@@ -716,7 +705,7 @@ export default function PlayersPage() {
       {/* 成功動畫 */}
       {showSuccess && (
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className="bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce">
+          <div className={`text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce ${successMessage.includes('Dropped') ? 'bg-red-600' : 'bg-green-600'}`}>
             <div className="flex items-center gap-3">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />

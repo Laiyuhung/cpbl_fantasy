@@ -230,7 +230,17 @@ export async function DELETE(req, { params }) {
     const acquiredMD = `${acquiredTaiwan.getMonth() + 1}/${acquiredTaiwan.getDate()}`;
 
     // 判斷是否為同日 add & drop
+    console.log('=== Checking same day add & drop ===');
+    console.log('acquired_at (raw):', ownership.acquired_at);
+    console.log('acquired_at (UTC Date):', acquiredUTC);
+    console.log('acquired_at (Taiwan Time):', acquiredTaiwan);
+    console.log('acquiredMD:', acquiredMD);
+    console.log('nowTaiwan:', nowTaiwan);
+    console.log('todayMD:', todayMD);
+    console.log('Is same day?:', acquiredMD === todayMD);
+
     if (acquiredMD === todayMD) {
+      console.log('→ Same day detected, deleting record...');
       // 同日 add & drop -> 直接刪除記錄（回到 FA）
       const { error: deleteError } = await supabase
         .from('league_player_ownership')
@@ -266,6 +276,7 @@ export async function DELETE(req, { params }) {
         action: 'deleted'
       });
     } else {
+      console.log('→ Different day detected, setting to Waiver...');
       // 非同日 -> 設為 Waiver，off_waiver = 今天 + waiver_players_unfreeze_time 天
       const offWaiverDate = new Date(nowTaiwan);
       offWaiverDate.setDate(offWaiverDate.getDate() + waiverDays);
