@@ -70,31 +70,34 @@ export default function PlayersPage() {
     fetchData();
   }, [leagueId]);
 
-  // 解析每位球員可用的圖片一次並快取，改用 API 在伺服器端確認檔案存在，避免任何 404
+  // 解析每位球員可用的圖片一次並快取，批次傳送所有候選路徑到 API 一次解析，避免大量請求
   useEffect(() => {
     let cancelled = false;
     const resolvePhotos = async () => {
       if (!players || players.length === 0) return;
 
-      const entries = await Promise.all(
-        players.map(async (player) => {
-          const paths = getPlayerPhotoPaths(player).filter(p => !p.endsWith('/defaultPlayer.png'));
-          try {
-            const res = await fetch('/api/photo/resolve', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ candidates: paths })
-            });
-            const data = await res.json();
-            return [player.player_id, data.path || '/photo/defaultPlayer.png'];
-          } catch {
-            return [player.player_id, '/photo/defaultPlayer.png'];
-          }
-        })
-      );
+      // 組成批次請求資料
+      const batchPayload = players.map(player => ({
+        id: player.player_id,
+        candidates: getPlayerPhotoPaths(player).filter(p => !p.endsWith('/defaultPlayer.png'))
+      }));
 
-      if (!cancelled) {
-        setPhotoSrcMap(Object.fromEntries(entries));
+      try {
+        const res = await fetch('/api/photo/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ players: batchPayload })
+        });
+        const data = await res.json();
+        if (!cancelled && data.results) {
+          setPhotoSrcMap(data.results);
+        }
+      } catch {
+        // 失敗時全部用預設
+        if (!cancelled) {
+          const fallback = Object.fromEntries(players.map(p => [p.player_id, '/photo/defaultPlayer.png']));
+          setPhotoSrcMap(fallback);
+        }
       }
     };
 
