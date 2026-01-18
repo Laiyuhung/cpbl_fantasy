@@ -17,6 +17,10 @@ export default function LeagueSettingsPage() {
   const [leagueStatus, setLeagueStatus] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [newNickname, setNewNickname] = useState('');
+  const [currentNickname, setCurrentNickname] = useState('');
 
   useEffect(() => {
     if (!leagueId) return;
@@ -45,6 +49,7 @@ export default function LeagueSettingsPage() {
           if (currentUserId) {
             const currentMember = result.members?.find(m => m.manager_id === currentUserId);
             setCurrentUserRole(currentMember?.role || 'Member');
+            setCurrentNickname(currentMember?.nickname || '');
           }
 
           // 如果是 Fantasy Points，載入權重
@@ -97,13 +102,75 @@ export default function LeagueSettingsPage() {
     router.push(`/league/${leagueId}/edit_league_settings`);
   };
 
+  const handleEditNickname = () => {
+    setNewNickname(currentNickname);
+    setShowNicknameModal(true);
+  };
+
+  const handleSaveNickname = async () => {
+    if (!newNickname || newNickname.trim() === '') {
+      alert('Nickname cannot be empty');
+      return;
+    }
+
+    if (newNickname.trim() === currentNickname) {
+      setShowNicknameModal(false);
+      return;
+    }
+
+    setEditingNickname(true);
+    try {
+      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+      const managerId = cookie?.split('=')[1];
+
+      const response = await fetch(`/api/league/${leagueId}/member`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          manager_id: managerId,
+          nickname: newNickname.trim()
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setCurrentNickname(newNickname.trim());
+        setShowNicknameModal(false);
+        alert('Nickname updated successfully');
+        // Refresh the page to show updated nickname
+        window.location.reload();
+      } else {
+        alert(result.error || 'Failed to update nickname');
+      }
+    } catch (err) {
+      console.error('Update nickname error:', err);
+      alert('An unexpected error occurred');
+    } finally {
+      setEditingNickname(false);
+    }
+  };
+
   const handleDelete = async () => {
     const isCommissioner = currentUserRole === 'Commissioner';
-    const confirmMessage = isCommissioner 
-      ? 'Are you sure you want to DELETE this entire league? This will remove all league data, members, and settings permanently. This action CANNOT be undone!'
-      : 'Are you sure you want to leave this league? You will need to be re-invited to join again.';
+    const confirmText = isCommissioner 
+      ? 'I agree to delete this league'
+      : 'I agree to leave this league';
     
-    if (!confirm(confirmMessage)) {
+    const warningMessage = isCommissioner 
+      ? `⚠️ WARNING: You are about to DELETE this entire league!\n\nThis will permanently remove:\n• All league settings and data\n• All members and their teams\n• All schedules and records\n• All statistical category weights\n\nThis action CANNOT be undone!\n\nTo confirm, please type exactly: "${confirmText}"`
+      : `⚠️ WARNING: You are about to LEAVE this league!\n\nYou will:\n• Be removed from the league immediately\n• Lose access to all league data\n• Need to be re-invited to join again\n\nTo confirm, please type exactly: "${confirmText}"`;
+    
+    alert(warningMessage);
+    
+    const userInput = prompt(`Type "${confirmText}" to confirm:`);
+    
+    if (userInput !== confirmText) {
+      if (userInput !== null) {
+        alert('Confirmation text did not match. Action cancelled.');
+      }
       return;
     }
 
@@ -213,6 +280,15 @@ export default function LeagueSettingsPage() {
                 Edit Settings
               </button>
             )}
+            <button
+              onClick={handleEditNickname}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Edit Nickname
+            </button>
             {leagueStatus === 'pre-draft' && (
               <button
                 onClick={handleDelete}
@@ -420,6 +496,45 @@ export default function LeagueSettingsPage() {
           </div>
         )}
       </div>
+
+      {/* Nickname Edit Modal */}
+      {showNicknameModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/30 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-black text-white mb-4">Edit Nickname</h2>
+            <div className="mb-4">
+              <label className="block text-purple-300 text-sm font-medium mb-2">
+                Current Nickname: <span className="text-white font-bold">{currentNickname}</span>
+              </label>
+              <input
+                type="text"
+                value={newNickname}
+                onChange={(e) => setNewNickname(e.target.value)}
+                maxLength={50}
+                placeholder="Enter new nickname"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-purple-500/30 rounded-lg text-white placeholder-purple-300/50 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+              />
+              <p className="text-purple-300/70 text-xs mt-2">Maximum 50 characters</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowNicknameModal(false)}
+                disabled={editingNickname}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveNickname}
+                disabled={editingNickname}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-3 rounded-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {editingNickname ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
