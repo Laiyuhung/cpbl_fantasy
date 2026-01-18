@@ -18,7 +18,10 @@ export default function PlayersPage() {
   const [members, setMembers] = useState([]); // 當前聯盟成員（含 nickname）
   const [showConfirmAdd, setShowConfirmAdd] = useState(false); // 確認新增對話框
   const [playerToAdd, setPlayerToAdd] = useState(null); // 待加入的球員
+  const [isAdding, setIsAdding] = useState(false); // 執行新增中
   const [showSuccess, setShowSuccess] = useState(false); // 成功動畫
+  const [showError, setShowError] = useState(false); // 失敗動畫
+  const [errorMessage, setErrorMessage] = useState(''); // 錯誤訊息
   const [isRefreshing, setIsRefreshing] = useState(false); // 重新載入中
   const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
@@ -260,7 +263,7 @@ export default function PlayersPage() {
     if (!playerToAdd) return;
 
     try {
-      setShowConfirmAdd(false);
+      setIsAdding(true);
       
       const res = await fetch(`/api/league/${leagueId}/ownership`, {
         method: 'POST',
@@ -274,6 +277,10 @@ export default function PlayersPage() {
       const data = await res.json();
       
       if (data.success) {
+        // 關閉對話框
+        setIsAdding(false);
+        setShowConfirmAdd(false);
+        
         // 顯示成功動畫
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
@@ -287,11 +294,20 @@ export default function PlayersPage() {
         }
         setIsRefreshing(false);
       } else {
-        alert(`❌ Failed to add player: ${data.error || 'Unknown error'}`);
+        // 顯示失敗動畫
+        setIsAdding(false);
+        setShowConfirmAdd(false);
+        setErrorMessage(data.error || 'Unknown error');
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
       }
     } catch (err) {
       console.error('Add player error:', err);
-      alert('❌ Operation failed, please try again');
+      setIsAdding(false);
+      setShowConfirmAdd(false);
+      setErrorMessage('Operation failed, please try again');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
       setIsRefreshing(false);
     } finally {
       setPlayerToAdd(null);
@@ -533,21 +549,33 @@ export default function PlayersPage() {
             <p className="text-purple-200 mb-6">
               Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?
             </p>
+            
+            {/* 執行中動畫 */}
+            {isAdding && (
+              <div className="mb-6 flex items-center justify-center gap-3 text-purple-300">
+                <div className="w-6 h-6 border-3 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="font-semibold">Adding player...</span>
+              </div>
+            )}
+            
             <div className="flex gap-4">
               <button
                 onClick={() => {
                   setShowConfirmAdd(false);
                   setPlayerToAdd(null);
+                  setIsAdding(false);
                 }}
-                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors"
+                disabled={isAdding}
+                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmAddPlayer}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                disabled={isAdding}
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm
+                {isAdding ? 'Processing...' : 'Confirm'}
               </button>
             </div>
           </div>
@@ -575,6 +603,23 @@ export default function PlayersPage() {
             <div className="flex items-center gap-4">
               <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
               <span className="text-white font-bold text-lg">Refreshing...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 失敗動畫 */}
+      {showError && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-red-600 text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce max-w-md mx-4">
+            <div className="flex items-center gap-3">
+              <svg className="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <div>
+                <div className="text-xl font-bold">Failed!</div>
+                <div className="text-sm">{errorMessage}</div>
+              </div>
             </div>
           </div>
         </div>

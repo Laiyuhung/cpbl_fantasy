@@ -16,31 +16,38 @@ export async function POST(req, { params }) {
       );
     }
 
-    // 檢查該球員是否已在此聯盟中
+    // 【執行前再次檢查】檢查該球員是否已在此聯盟中，避免多人同時操作衝突
     const { data: existing, error: checkError } = await supabase
       .from('league_player_ownership')
       .select('id, status, manager_id')
       .eq('league_id', leagueId)
       .eq('player_id', player_id)
-      .single();
+      .maybeSingle();  // 使用 maybeSingle 而非 single，避免 no rows 錯誤
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 = no rows returned (正常情況)
+    if (checkError) {
       console.error('Check ownership error:', checkError);
       return NextResponse.json(
-        { success: false, error: 'Failed to check ownership', details: checkError.message },
+        { success: false, error: 'Failed to verify player status', details: checkError.message },
         { status: 500 }
       );
     }
 
     if (existing) {
-      return NextResponse.json(
-        { success: false, error: '此球員已在聯盟中，無法重複加入' },
-        { status: 409 }
-      );
+      // 球員已被佔用，返回具體錯誤
+      if (existing.manager_id === manager_id) {
+        return NextResponse.json(
+          { success: false, error: 'You already own this player' },
+          { status: 409 }
+        );
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'This player has been taken by another team' },
+          { status: 409 }
+        );
+      }
     }
 
-    // 插入新記錄
+    // 插入新記錄（使用 upsert 確保原子性，但設定 onConflict 讓重複時返回錯誤）
     const { data: newOwnership, error: insertError } = await supabase
       .from('league_player_ownership')
       .insert({
@@ -56,6 +63,13 @@ export async function POST(req, { params }) {
 
     if (insertError) {
       console.error('Insert ownership error:', insertError);
+      // 如果是唯一性約束違反（race condition），返回友善錯誤
+      if (insertError.code === '23505') {
+        return NextResponse.json(
+          { success: false, error: 'This player was just taken by another team' },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { success: false, error: 'Failed to add player', details: insertError.message },
         { status: 500 }
