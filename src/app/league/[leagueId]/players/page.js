@@ -21,11 +21,17 @@ export default function PlayersPage() {
       try {
         setLoading(true);
         
-        // 並行請求多個 API
-        const [playersRes, ownershipsRes, userRes] = await Promise.all([
+        // 從 cookie 取得當前用戶的 user_id (即 manager_id)
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+        const userId = cookie?.split('=')[1];
+        if (userId) {
+          setMyManagerId(userId);
+        }
+        
+        // 並行請求 players 和 ownerships
+        const [playersRes, ownershipsRes] = await Promise.all([
           fetch('/api/playerslist?available=true'),
-          fetch(`/api/league/${leagueId}/ownership`),
-          fetch('/api/managers/detail')
+          fetch(`/api/league/${leagueId}/ownership`)
         ]);
 
         // 處理 players
@@ -42,12 +48,6 @@ export default function PlayersPage() {
         const ownershipsData = await ownershipsRes.json();
         if (ownershipsData.success) {
           setOwnerships(ownershipsData.ownerships || []);
-        }
-
-        // 處理 user manager_id
-        const userData = await userRes.json();
-        if (userData.success && userData.manager) {
-          setMyManagerId(userData.manager.manager_id);
         }
       } catch (err) {
         console.error('Unexpected error:', err);
