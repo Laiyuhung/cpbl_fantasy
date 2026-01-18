@@ -148,7 +148,7 @@ export default function PlayersPage() {
     const ownership = ownerships.find(o => o.player_id === player.player_id);
     if (!ownership) {
       return (
-        <span className="ml-2 text-green-300 font-semibold">| FA</span>
+        <span className="text-green-300 font-semibold">| FA</span>
       );
     }
 
@@ -157,14 +157,14 @@ export default function PlayersPage() {
       const off = ownership.off_waiver ? new Date(ownership.off_waiver) : null;
       const md = off ? `${off.getMonth() + 1}/${off.getDate()}` : '-';
       return (
-        <span className="ml-2 text-yellow-300 font-semibold">| W [{md}]</span>
+        <span className="text-yellow-300 font-semibold">| W [{md}]</span>
       );
     }
 
     if (status === 'on team') {
       const nick = getOwnerNickname(ownership.manager_id);
       return (
-        <span className="ml-2 text-blue-300 font-semibold">| {nick}</span>
+        <span className="text-blue-300 font-semibold">| {nick}</span>
       );
     }
 
@@ -414,10 +414,12 @@ export default function PlayersPage() {
                             className="w-12 h-12 rounded-full object-cover"
                           />
                           <div className="flex flex-col">
-                            <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
-                              {player.name || 'Unknown'}
-                            </span>
-                            {renderStatusTag(player)}
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
+                                {player.name || 'Unknown'}
+                              </span>
+                              {renderStatusTag(player)}
+                            </div>
                             {player.original_name && player.original_name !== player.name && (
                               <span className="text-purple-300/60 text-sm">
                                 {player.original_name}
