@@ -62,7 +62,7 @@ export default function PlayersPage() {
     fetchData();
   }, [leagueId]);
 
-  // 解析每位球員可用的圖片一次並快取，避免 <img> 直接觸發 404
+  // 解析每位球員可用的圖片一次並快取，改用 API 在伺服器端確認檔案存在，避免任何 404
   useEffect(() => {
     let cancelled = false;
     const resolvePhotos = async () => {
@@ -71,24 +71,17 @@ export default function PlayersPage() {
       const entries = await Promise.all(
         players.map(async (player) => {
           const paths = getPlayerPhotoPaths(player).filter(p => !p.endsWith('/defaultPlayer.png'));
-          for (const path of paths) {
-            try {
-              // 先嘗試 HEAD，若不支援則回退 GET
-              let ok = false;
-              try {
-                const headRes = await fetch(path, { method: 'HEAD' });
-                ok = headRes.ok;
-              } catch {}
-              if (!ok) {
-                const getRes = await fetch(path, { method: 'GET', cache: 'no-store' });
-                ok = getRes.ok;
-              }
-              if (ok) return [player.player_id, path];
-            } catch {
-              // 忽略錯誤，嘗試下一個路徑
-            }
+          try {
+            const res = await fetch('/api/photo/resolve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ candidates: paths })
+            });
+            const data = await res.json();
+            return [player.player_id, data.path || '/photo/defaultPlayer.png'];
+          } catch {
+            return [player.player_id, '/photo/defaultPlayer.png'];
           }
-          return [player.player_id, '/photo/defaultPlayer.png'];
         })
       );
 
