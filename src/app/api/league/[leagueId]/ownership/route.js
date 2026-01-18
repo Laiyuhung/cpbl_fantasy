@@ -278,16 +278,20 @@ export async function DELETE(req, { params }) {
       });
     } else {
       console.log('→ Different day detected, setting to Waiver...');
-      // 非同日 -> 設為 Waiver，off_waiver = 今天 + waiver_players_unfreeze_time 天
-      const offWaiverDate = new Date(now);
-      offWaiverDate.setDate(offWaiverDate.getDate() + waiverDays);
+      // 非同日 -> 設為 Waiver，off_waiver = 台灣今天 + waiver_players_unfreeze_time 天
+      // 使用台灣時間計算 waiver 解凍日期
+      const offWaiverTaiwan = new Date(nowTaiwan);
+      offWaiverTaiwan.setDate(offWaiverTaiwan.getDate() + waiverDays);
+      
+      // 將台灣時間轉回 UTC 存入資料庫
+      const offWaiverUTC = new Date(offWaiverTaiwan.toLocaleString('en-US', { timeZone: 'UTC' }));
 
       const { error: updateError } = await supabase
         .from('league_player_ownership')
         .update({
           status: 'Waiver',
           acquired_at: now.toISOString(),
-          off_waiver: offWaiverDate.toISOString().split('T')[0]  // 只取日期部分 YYYY-MM-DD
+          off_waiver: offWaiverUTC.toISOString().split('T')[0]  // 只取日期部分 YYYY-MM-DD
         })
         .eq('id', ownership.id);
 
@@ -318,7 +322,7 @@ export async function DELETE(req, { params }) {
         success: true,
         message: 'Player moved to waiver',
         action: 'waiver',
-        off_waiver: offWaiverDate.toISOString().split('T')[0]
+        off_waiver: offWaiverUTC.toISOString().split('T')[0]
       });
     }
   } catch (err) {
