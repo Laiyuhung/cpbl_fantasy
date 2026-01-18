@@ -1,6 +1,44 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
 
+// GET - 獲取球員列表
+export async function GET(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const availableOnly = searchParams.get('available') !== 'false';
+
+    let query = supabase
+      .from('player_list')
+      .select('*')
+      .order('add_date', { ascending: false });
+
+    if (availableOnly) {
+      query = query.eq('available', true);
+    }
+
+    const { data: players, error } = await query;
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch players', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      players: players || [],
+    });
+  } catch (err) {
+    console.error('Server error:', err);
+    return NextResponse.json(
+      { success: false, error: 'Server error', details: err.message },
+      { status: 500 }
+    );
+  }
+}
+
 // 新增球員 API
 export async function POST(req) {
   try {
