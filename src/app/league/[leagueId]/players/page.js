@@ -16,6 +16,7 @@ export default function PlayersPage() {
   const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
   const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
+  const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,6 +61,45 @@ export default function PlayersPage() {
 
     fetchData();
   }, [leagueId]);
+
+  // 解析每位球員可用的圖片一次並快取，避免 <img> 直接觸發 404
+  useEffect(() => {
+    let cancelled = false;
+    const resolvePhotos = async () => {
+      if (!players || players.length === 0) return;
+
+      const entries = await Promise.all(
+        players.map(async (player) => {
+          const paths = getPlayerPhotoPaths(player).filter(p => !p.endsWith('/defaultPlayer.png'));
+          for (const path of paths) {
+            try {
+              // 先嘗試 HEAD，若不支援則回退 GET
+              let ok = false;
+              try {
+                const headRes = await fetch(path, { method: 'HEAD' });
+                ok = headRes.ok;
+              } catch {}
+              if (!ok) {
+                const getRes = await fetch(path, { method: 'GET', cache: 'no-store' });
+                ok = getRes.ok;
+              }
+              if (ok) return [player.player_id, path];
+            } catch {
+              // 忽略錯誤，嘗試下一個路徑
+            }
+          }
+          return [player.player_id, '/photo/defaultPlayer.png'];
+        })
+      );
+
+      if (!cancelled) {
+        setPhotoSrcMap(Object.fromEntries(entries));
+      }
+    };
+
+    resolvePhotos();
+    return () => { cancelled = true; };
+  }, [players]);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = searchTerm === '' || 
@@ -125,14 +165,8 @@ export default function PlayersPage() {
   };
 
   const getPlayerPhoto = (player) => {
-    // 如果球員圖片已知載入失敗，直接返回預設圖片
-    if (failedImages.current.has(player.player_id)) {
-      return '/photo/defaultPlayer.png';
-    }
-    
-    const paths = getPlayerPhotoPaths(player);
-    // 預設返回第一個路徑（name）
-    return paths[0] || '/photo/defaultPlayer.png';
+    // 使用預解析的路徑，沒有就回退為預設
+    return photoSrcMap[player.player_id] || '/photo/defaultPlayer.png';
   };
 
   const handleImageError = (e, player) => {
@@ -343,7 +377,6 @@ export default function PlayersPage() {
                             src={getPlayerPhoto(player)}
                             alt={`${player.name} Avatar`}
                             className="w-12 h-12 rounded-full object-cover"
-                            onError={(e) => handleImageError(e, player)}
                           />
                           <div className="flex flex-col">
                             <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
