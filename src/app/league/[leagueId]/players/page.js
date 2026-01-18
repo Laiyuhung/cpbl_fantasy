@@ -15,6 +15,7 @@ export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
+  const [failedImages, setFailedImages] = useState(new Set()); // 記錄加載失敗的球員ID
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,6 +125,11 @@ export default function PlayersPage() {
   };
 
   const getPlayerPhoto = (player) => {
+    // 如果球員圖片已知載入失敗，直接返回預設圖片
+    if (failedImages.has(player.player_id)) {
+      return '/photo/defaultPlayer.png';
+    }
+    
     const paths = getPlayerPhotoPaths(player);
     // 預設返回第一個路徑（name）
     return paths[0] || '/photo/defaultPlayer.png';
@@ -155,7 +161,8 @@ export default function PlayersPage() {
         e.target.src = window.location.origin + nextPath;
       }
     } else {
-      // 所有路徑都失敗，使用預設圖片
+      // 所有路徑都失敗，記錄此球員並使用預設圖片
+      setFailedImages(prev => new Set([...prev, player.player_id]));
       e.target.onerror = null; // 防止無限迴圈
       e.target.src = window.location.origin + '/photo/defaultPlayer.png';
     }
