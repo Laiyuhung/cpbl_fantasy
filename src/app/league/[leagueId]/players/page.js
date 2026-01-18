@@ -124,23 +124,40 @@ export default function PlayersPage() {
   };
 
   const getPlayerPhoto = (player) => {
-    // 預設使用 name
-    return player.name ? `/photo/${player.name}.png` : '/photo/defaultPlayer.png';
+    const paths = getPlayerPhotoPaths(player);
+    // 預設返回第一個路徑（name）
+    return paths[0] || '/photo/defaultPlayer.png';
   };
 
   const handleImageError = (e, player) => {
     // 獲取當前嘗試的路徑
     const currentSrc = e.target.src;
     const paths = getPlayerPhotoPaths(player);
-    const currentIndex = paths.findIndex(p => currentSrc.endsWith(p));
+    
+    // 找到當前路徑在 paths 中的位置
+    let currentIndex = -1;
+    for (let i = 0; i < paths.length; i++) {
+      if (currentSrc.includes(paths[i])) {
+        currentIndex = i;
+        break;
+      }
+    }
+    
     const nextIndex = currentIndex + 1;
     
     if (nextIndex < paths.length) {
-      // 直接設定下一個路徑，不觸發重渲染
-      e.target.src = paths[nextIndex];
+      // 嘗試下一個路徑
+      const nextPath = paths[nextIndex];
+      // 確保路徑是完整的 URL
+      if (nextPath.startsWith('http')) {
+        e.target.src = nextPath;
+      } else {
+        e.target.src = window.location.origin + nextPath;
+      }
     } else {
-      // 所有路徑都失敗，防止繼續錯誤
-      e.target.onerror = null;
+      // 所有路徑都失敗，使用預設圖片
+      e.target.onerror = null; // 防止無限迴圈
+      e.target.src = window.location.origin + '/photo/defaultPlayer.png';
     }
   };
   const getPlayerActionButton = (player) => {
