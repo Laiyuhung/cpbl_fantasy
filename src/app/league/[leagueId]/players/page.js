@@ -214,8 +214,11 @@ export default function PlayersPage() {
                           <img
                             src={getPlayerPhoto(player)}
                             alt={`${player.name} Avatar`}
-                            className="w-12 h-12 rounded-full"
-                            onError={(e) => e.target.src = '/defaultPlayer.png'}
+                            className="w-12 h-12 rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null; // 防止無限循環
+                              e.target.src = '/defaultPlayer.png';
+                            }}
                           />
                           <div className="flex flex-col">
                             <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
