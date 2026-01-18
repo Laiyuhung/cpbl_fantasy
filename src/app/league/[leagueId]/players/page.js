@@ -26,6 +26,7 @@ export default function PlayersPage() {
   const [showError, setShowError] = useState(false); // 失敗動畫
   const [errorMessage, setErrorMessage] = useState(''); // 錯誤訊息
   const [isRefreshing, setIsRefreshing] = useState(false); // 重新載入中
+  const [successMessage, setSuccessMessage] = useState(''); // 成功訊息
   const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
 
@@ -170,7 +171,7 @@ export default function PlayersPage() {
       const off = ownership.off_waiver ? new Date(ownership.off_waiver) : null;
       const md = off ? `${off.getMonth() + 1}/${off.getDate()}` : '-';
       return (
-        <span className="text-yellow-300 font-semibold">| W [{md}]</span>
+        <span className="text-yellow-300 font-semibold">| W {md}</span>
       );
     }
 
@@ -297,6 +298,7 @@ export default function PlayersPage() {
         setShowConfirmAdd(false);
         
         // 顯示成功動畫
+        setSuccessMessage('Player Added Successfully!');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
         
@@ -364,6 +366,7 @@ export default function PlayersPage() {
         setShowConfirmDrop(false);
         
         // 顯示成功動畫
+        setSuccessMessage('Player Dropped Successfully!');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
         
@@ -718,7 +721,7 @@ export default function PlayersPage() {
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
-              <span className="text-xl font-bold">Player Added Successfully!</span>
+              <span className="text-xl font-bold">{successMessage}</span>
             </div>
           </div>
         </div>
