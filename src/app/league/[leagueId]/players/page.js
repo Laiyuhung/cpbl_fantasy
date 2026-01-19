@@ -30,6 +30,7 @@ export default function PlayersPage() {
   const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
   const [rosterPositions, setRosterPositions] = useState({}); // 聯盟守備位置設定
+  const [showInfoModal, setShowInfoModal] = useState(false); // 守位資格說明視窗
 
   useEffect(() => {
     const fetchData = async () => {
@@ -493,10 +494,17 @@ export default function PlayersPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col gap-4">
-          <div>
+          <div className="flex items-center gap-3">
             <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-2">
               Players
             </h1>
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="mb-2 w-8 h-8 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors"
+              title="Position Eligibility Rules"
+            >
+              <span className="text-lg font-bold">?</span>
+            </button>
           </div>
 
           {/* Filters */}
@@ -766,6 +774,76 @@ export default function PlayersPage() {
                 <div className="text-xl font-bold">Failed!</div>
                 <div className="text-sm">{errorMessage}</div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 守位資格說明視窗 */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowInfoModal(false)}>
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Position Eligibility Rules
+              </h3>
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="space-y-5 text-purple-100">
+              <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                  Batter Position Eligibility
+                </h4>
+                <p className="text-purple-200 leading-relaxed">
+                  Players must appear in <span className="font-bold text-green-300">8 or more games</span> at a position to be eligible for that position.
+                </p>
+              </div>
+
+              <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                  Pitcher Position Eligibility
+                </h4>
+                <div className="space-y-2 text-purple-200">
+                  <p className="leading-relaxed">
+                    <span className="font-bold text-orange-300">SP (Starting Pitcher):</span> Must have <span className="font-bold text-orange-300">3 or more</span> starting appearances.
+                  </p>
+                  <p className="leading-relaxed">
+                    <span className="font-bold text-orange-300">RP (Relief Pitcher):</span> Must have <span className="font-bold text-orange-300">5 or more</span> relief appearances.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-blue-500/10 rounded-lg p-5 border border-blue-500/20">
+                <h4 className="text-lg font-bold text-blue-300 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                  Data Coverage
+                </h4>
+                <p className="text-blue-200 leading-relaxed">
+                  Position eligibility is calculated using <span className="font-bold text-blue-300">2025 OR 2026</span> season statistics (union of both seasons).
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Got it
+              </button>
             </div>
           </div>
         </div>
