@@ -68,31 +68,17 @@ export default function LeaguePage() {
 
   // Countdown timer for draft time
   useEffect(() => {
-    console.log('=== Draft Time Debug ===');
-    console.log('leagueSettings:', leagueSettings);
-    console.log('draft_type:', leagueSettings?.draft_type);
-    console.log('live_draft_time:', leagueSettings?.live_draft_time);
-    
     if (!leagueSettings?.live_draft_time || leagueSettings?.draft_type !== 'Live Draft') {
-      console.log('Draft time NOT shown - Reason:', 
-        !leagueSettings?.live_draft_time ? 'No live_draft_time' : 
-        leagueSettings?.draft_type !== 'Live Draft' ? `draft_type is "${leagueSettings?.draft_type}", not "Live Draft"` : 
-        'Unknown');
       setDraftTimeStatus('loading');
       return;
     }
-
-    console.log('Draft time SHOULD show - Starting countdown...');
 
     const updateCountdown = () => {
       const now = new Date();
       const draftTime = new Date(leagueSettings.live_draft_time);
       const diff = draftTime - now;
 
-      console.log('Countdown update:', { now, draftTime, diff });
-
       if (diff <= 0) {
-        console.log('Draft time has passed!');
         setDraftTimeStatus('passed');
         setCountdown(null);
         return;
@@ -105,7 +91,6 @@ export default function LeaguePage() {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-      console.log('Countdown:', { days, hours, minutes, seconds });
       setCountdown({ days, hours, minutes, seconds });
     };
 
@@ -246,7 +231,13 @@ export default function LeaguePage() {
               <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-4">
                 Draft Time
               </h2>
-              <div className="text-lg text-indigo-200 mb-2">
+              <div className="text-sm text-yellow-300/90 font-bold mb-3 flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Even number of managers required</span>
+              </div>
+              <div className="text-lg text-indigo-200 mb-6">
                 {new Date(leagueSettings.live_draft_time).toLocaleString('en-US', {
                   timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                   year: 'numeric',
@@ -257,9 +248,6 @@ export default function LeaguePage() {
                   hour12: true
                 })}
               </div>
-              <div className="text-sm text-indigo-300/70 mb-6">
-                (Based on Local Time)
-              </div>
 
               {draftTimeStatus === 'passed' ? (
                 <div className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600/80 to-pink-600/80 backdrop-blur-md px-8 py-4 rounded-full border border-red-400/50 shadow-lg shadow-red-500/30">
@@ -269,22 +257,27 @@ export default function LeaguePage() {
                   <span className="text-2xl font-black text-white">Time&apos;s Up!</span>
                 </div>
               ) : draftTimeStatus === 'upcoming' && countdown ? (
-                <div className="flex justify-center gap-4 flex-wrap">
-                  <div className="bg-gradient-to-br from-indigo-600/80 to-purple-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-indigo-400/30 shadow-lg shadow-indigo-500/30">
-                    <div className="text-5xl font-black text-white mb-2">{countdown.days}</div>
-                    <div className="text-sm font-bold text-indigo-200 uppercase tracking-wider">Days</div>
+                <div className="flex justify-center items-center gap-6 flex-wrap">
+                  <div className="flex gap-4">
+                    <div className="bg-gradient-to-br from-indigo-600/80 to-purple-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-indigo-400/30 shadow-lg shadow-indigo-500/30">
+                      <div className="text-5xl font-black text-white mb-2">{countdown.days}</div>
+                      <div className="text-sm font-bold text-indigo-200 uppercase tracking-wider">Days</div>
+                    </div>
+                    <div className="bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-purple-400/30 shadow-lg shadow-purple-500/30">
+                      <div className="text-5xl font-black text-white mb-2">{countdown.hours}</div>
+                      <div className="text-sm font-bold text-purple-200 uppercase tracking-wider">Hours</div>
+                    </div>
+                    <div className="bg-gradient-to-br from-pink-600/80 to-red-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-pink-400/30 shadow-lg shadow-pink-500/30">
+                      <div className="text-5xl font-black text-white mb-2">{countdown.minutes}</div>
+                      <div className="text-sm font-bold text-pink-200 uppercase tracking-wider">Minutes</div>
+                    </div>
+                    <div className="bg-gradient-to-br from-red-600/80 to-orange-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-red-400/30 shadow-lg shadow-red-500/30">
+                      <div className="text-5xl font-black text-white mb-2">{countdown.seconds}</div>
+                      <div className="text-sm font-bold text-red-200 uppercase tracking-wider">Seconds</div>
+                    </div>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-purple-400/30 shadow-lg shadow-purple-500/30">
-                    <div className="text-5xl font-black text-white mb-2">{countdown.hours}</div>
-                    <div className="text-sm font-bold text-purple-200 uppercase tracking-wider">Hours</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-pink-600/80 to-red-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-pink-400/30 shadow-lg shadow-pink-500/30">
-                    <div className="text-5xl font-black text-white mb-2">{countdown.minutes}</div>
-                    <div className="text-sm font-bold text-pink-200 uppercase tracking-wider">Minutes</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-red-600/80 to-orange-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-red-400/30 shadow-lg shadow-red-500/30">
-                    <div className="text-5xl font-black text-white mb-2">{countdown.seconds}</div>
-                    <div className="text-sm font-bold text-red-200 uppercase tracking-wider">Seconds</div>
+                  <div className="text-4xl font-black text-indigo-200">
+                    Left
                   </div>
                 </div>
               ) : null}
