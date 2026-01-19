@@ -68,17 +68,31 @@ export default function LeaguePage() {
 
   // Countdown timer for draft time
   useEffect(() => {
-    if (!leagueSettings?.draft_date) {
+    console.log('=== Draft Time Debug ===');
+    console.log('leagueSettings:', leagueSettings);
+    console.log('draft_type:', leagueSettings?.draft_type);
+    console.log('live_draft_time:', leagueSettings?.live_draft_time);
+    
+    if (!leagueSettings?.live_draft_time || leagueSettings?.draft_type !== 'Live Draft') {
+      console.log('Draft time NOT shown - Reason:', 
+        !leagueSettings?.live_draft_time ? 'No live_draft_time' : 
+        leagueSettings?.draft_type !== 'Live Draft' ? `draft_type is "${leagueSettings?.draft_type}", not "Live Draft"` : 
+        'Unknown');
       setDraftTimeStatus('loading');
       return;
     }
 
+    console.log('Draft time SHOULD show - Starting countdown...');
+
     const updateCountdown = () => {
       const now = new Date();
-      const draftTime = new Date(leagueSettings.draft_date);
+      const draftTime = new Date(leagueSettings.live_draft_time);
       const diff = draftTime - now;
 
+      console.log('Countdown update:', { now, draftTime, diff });
+
       if (diff <= 0) {
+        console.log('Draft time has passed!');
         setDraftTimeStatus('passed');
         setCountdown(null);
         return;
@@ -91,6 +105,7 @@ export default function LeaguePage() {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
+      console.log('Countdown:', { days, hours, minutes, seconds });
       setCountdown({ days, hours, minutes, seconds });
     };
 
@@ -225,14 +240,14 @@ export default function LeaguePage() {
         </div>
 
         {/* Draft Time Section */}
-        {leagueSettings?.draft_date && (
+        {leagueSettings?.live_draft_time && leagueSettings?.draft_type === 'Live Draft' && (
           <div className="mb-8 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 backdrop-blur-lg border border-indigo-500/30 rounded-2xl p-8 shadow-2xl">
             <div className="text-center">
               <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-4">
                 Draft Time
               </h2>
               <div className="text-lg text-indigo-200 mb-2">
-                {new Date(leagueSettings.draft_date).toLocaleString('en-US', {
+                {new Date(leagueSettings.live_draft_time).toLocaleString('en-US', {
                   timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                   year: 'numeric',
                   month: 'long',
