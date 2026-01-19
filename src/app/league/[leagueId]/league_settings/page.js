@@ -424,6 +424,9 @@ export default function LeagueSettingsPage() {
           setShowSuccessNotification(false);
         }, 4000);
       } else {
+        setShowDeleteMemberModal(false);
+        setMemberToDelete(null);
+        
         setSuccessMessage({
           title: 'Failed to Remove Member',
           description: result.error || 'An error occurred. Please try again.',
@@ -437,6 +440,9 @@ export default function LeagueSettingsPage() {
       }
     } catch (err) {
       console.error('Delete member error:', err);
+      setShowDeleteMemberModal(false);
+      setMemberToDelete(null);
+      
       setSuccessMessage({
         title: 'Connection Error',
         description: 'Unable to connect to the server. Please check your internet connection.',
