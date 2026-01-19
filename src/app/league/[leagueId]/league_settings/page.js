@@ -29,6 +29,9 @@ export default function LeagueSettingsPage() {
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [successMessage, setSuccessMessage] = useState({ title: '', description: '', updatedMember: null });
   const [currentUserId, setCurrentUserId] = useState('');
+  const [showFinalizedModal, setShowFinalizedModal] = useState(false);
+  const [isFinalized, setIsFinalized] = useState(false);
+  const [updatingFinalized, setUpdatingFinalized] = useState(false);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -51,6 +54,8 @@ export default function LeagueSettingsPage() {
           setLeagueSettings(result.league);
           setLeagueStatus(result.status || 'unknown');
           setMembers(result.members || []);
+          setIsFinalized(result.league?.is_finalized || false);
+          setIsFinalized(result.league?.is_finalized || false);
           
           // 獲取當前用戶的權限
           const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
@@ -195,6 +200,83 @@ export default function LeagueSettingsPage() {
 
   const handleManagePermissions = () => {
     setShowPermissionsModal(true);
+  };
+
+  const handleFinalizedClick = () => {
+    setShowFinalizedModal(true);
+  };
+
+  const handleUpdateFinalized = async (newFinalizedStatus) => {
+    // Check if members count is even when trying to set to true
+    if (newFinalizedStatus && members.length % 2 !== 0) {
+      setSuccessMessage({
+        title: 'Cannot Finalize Teams',
+        description: `You need an even number of managers to finalize. Current: ${members.length} managers`,
+        updatedMember: null,
+        isError: true
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
+      return;
+    }
+
+    setUpdatingFinalized(true);
+    try {
+      const response = await fetch(`/api/league/${leagueId}/finalized`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_finalized: newFinalizedStatus }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setIsFinalized(newFinalizedStatus);
+        setShowFinalizedModal(false);
+        
+        setSuccessMessage({
+          title: newFinalizedStatus ? 'Teams Finalized Successfully!' : 'Teams Unlocked Successfully!',
+          description: newFinalizedStatus 
+            ? 'Teams are now locked and ready for draft. DELETE buttons are now hidden.' 
+            : 'Teams are now unlocked. You can modify teams again.',
+          updatedMember: null
+        });
+        setShowSuccessNotification(true);
+        
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 4000);
+      } else {
+        setSuccessMessage({
+          title: 'Failed to Update Status',
+          description: result.error || 'An error occurred. Please try again.',
+          updatedMember: null,
+          isError: true
+        });
+        setShowSuccessNotification(true);
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 4000);
+      }
+    } catch (err) {
+      console.error('Update finalized error:', err);
+      setSuccessMessage({
+        title: 'Connection Error',
+        description: 'Unable to connect to the server. Please check your internet connection.',
+        updatedMember: null,
+        isError: true
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
+    } finally {
+      setUpdatingFinalized(false);
+    }
   };
 
   const handleUpdateMemberRole = async (managerId, newRole) => {
@@ -354,15 +436,26 @@ export default function LeagueSettingsPage() {
           </div>
           <div className="flex gap-4">
             {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && (
-              <button
-                onClick={handleManagePermissions}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                Manage Permissions
-              </button>
+              <>
+                <button
+                  onClick={handleManagePermissions}
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Manage Permissions
+                </button>
+                <button
+                  onClick={handleFinalizedClick}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Finalized
+                </button>
+              </>
             )}
             {canEdit() && (
               <button
@@ -384,7 +477,7 @@ export default function LeagueSettingsPage() {
               </svg>
               Edit Nickname
             </button>
-            {leagueStatus === 'pre-draft' && (
+            {leagueStatus === 'pre-draft' && !isFinalized && (
               <button
                 onClick={handleDeleteClick}
                 disabled={deleting}
@@ -704,23 +797,35 @@ export default function LeagueSettingsPage() {
         </div>
       )}
 
-      {/* Success Notification */}
+      {/* Success/Error Notification */}
       {showSuccessNotification && (
         <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
-          <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 backdrop-blur-xl border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+          <div className={`backdrop-blur-xl border rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300 ${
+            successMessage.isError 
+              ? 'bg-gradient-to-br from-red-600/95 to-rose-600/95 border-red-400/30'
+              : 'bg-gradient-to-br from-green-600/95 to-emerald-600/95 border-green-400/30'
+          }`}>
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
                 <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
+                  {successMessage.isError ? (
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
                 </div>
               </div>
               <div className="flex-1 pt-1">
                 <h3 className="text-xl font-black text-white mb-1">
                   {successMessage.title}
                 </h3>
-                <p className="text-green-50/90 text-sm mb-3">
+                <p className={`text-sm mb-3 ${
+                  successMessage.isError ? 'text-red-50/90' : 'text-green-50/90'
+                }`}>
                   {successMessage.description}
                 </p>
                 {successMessage.updatedMember && (
@@ -898,6 +1003,105 @@ export default function LeagueSettingsPage() {
               <button
                 onClick={() => setShowPermissionsModal(false)}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Finalized Status Modal */}
+      {showFinalizedModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-xl">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-black text-white">Finalize Teams</h2>
+              </div>
+              <button
+                onClick={() => setShowFinalizedModal(false)}
+                className="text-emerald-300 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-emerald-300/90 text-sm">
+                  <p className="font-medium mb-2">What does finalizing do?</p>
+                  <ul className="list-disc list-inside space-y-1 text-emerald-300/70">
+                    <li>Locks all teams and prepares them for draft</li>
+                    <li>Hides DELETE LEAGUE and DELETE TEAM buttons</li>
+                    <li>Requires an even number of managers</li>
+                    <li>Can be unlocked later if needed</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-500/20 rounded-lg p-5 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-bold text-lg mb-1">Finalize and lock teams</p>
+                  <p className="text-slate-400 text-sm">
+                    Current Status: {members.length} managers {members.length % 2 === 0 ? '✓' : '(Need even number)'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleUpdateFinalized(!isFinalized)}
+                  disabled={updatingFinalized}
+                  className={`relative inline-flex h-8 w-16 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isFinalized ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                      isFinalized ? 'translate-x-9' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              {members.length % 2 !== 0 && (
+                <div className="mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p className="text-yellow-300 text-sm">
+                      You need an even number of managers to finalize teams. Current: <strong>{members.length}</strong>
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {updatingFinalized && (
+              <div className="mb-4 flex items-center justify-center gap-2 text-emerald-300">
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Updating status...</span>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowFinalizedModal(false)}
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-lg"
               >
                 Close
               </button>

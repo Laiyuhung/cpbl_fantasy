@@ -257,27 +257,22 @@ export default function LeaguePage() {
                   <span className="text-2xl font-black text-white">Time&apos;s Up!</span>
                 </div>
               ) : draftTimeStatus === 'upcoming' && countdown ? (
-                <div className="flex justify-center items-center gap-6 flex-wrap">
-                  <div className="flex gap-4">
-                    <div className="bg-gradient-to-br from-indigo-600/80 to-purple-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-indigo-400/30 shadow-lg shadow-indigo-500/30">
-                      <div className="text-5xl font-black text-white mb-2">{countdown.days}</div>
-                      <div className="text-sm font-bold text-indigo-200 uppercase tracking-wider">Days</div>
-                    </div>
-                    <div className="bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-purple-400/30 shadow-lg shadow-purple-500/30">
-                      <div className="text-5xl font-black text-white mb-2">{countdown.hours}</div>
-                      <div className="text-sm font-bold text-purple-200 uppercase tracking-wider">Hours</div>
-                    </div>
-                    <div className="bg-gradient-to-br from-pink-600/80 to-red-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-pink-400/30 shadow-lg shadow-pink-500/30">
-                      <div className="text-5xl font-black text-white mb-2">{countdown.minutes}</div>
-                      <div className="text-sm font-bold text-pink-200 uppercase tracking-wider">Minutes</div>
-                    </div>
-                    <div className="bg-gradient-to-br from-red-600/80 to-orange-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-red-400/30 shadow-lg shadow-red-500/30">
-                      <div className="text-5xl font-black text-white mb-2">{countdown.seconds}</div>
-                      <div className="text-sm font-bold text-red-200 uppercase tracking-wider">Seconds</div>
-                    </div>
+                <div className="flex justify-center gap-4 flex-wrap">
+                  <div className="bg-gradient-to-br from-indigo-600/80 to-purple-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-indigo-400/30 shadow-lg shadow-indigo-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.days}</div>
+                    <div className="text-sm font-bold text-indigo-200 uppercase tracking-wider">Days</div>
                   </div>
-                  <div className="text-4xl font-black text-indigo-200">
-                    Left
+                  <div className="bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-purple-400/30 shadow-lg shadow-purple-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.hours}</div>
+                    <div className="text-sm font-bold text-purple-200 uppercase tracking-wider">Hours</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-pink-600/80 to-red-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-pink-400/30 shadow-lg shadow-pink-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.minutes}</div>
+                    <div className="text-sm font-bold text-pink-200 uppercase tracking-wider">Minutes</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-600/80 to-orange-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-red-400/30 shadow-lg shadow-red-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.seconds}</div>
+                    <div className="text-sm font-bold text-red-200 uppercase tracking-wider">Seconds</div>
                   </div>
                 </div>
               ) : null}
