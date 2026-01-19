@@ -85,11 +85,11 @@ export default function PlayersPage() {
 
   // 根據 roster_positions 過濾守備位置
   const filterPositions = (player) => {
-    let positionList = player.position_list;
+    const positionList = player.position_list;
     
-    // 若無守備位置資料，根據球員類型給預設值
+    // 若無守備位置資料，直接返回 NA
     if (!positionList) {
-      positionList = player.batter_or_pitcher === 'batter' ? 'Util' : 'P';
+      return 'NA';
     }
     
     // 解析位置列表
