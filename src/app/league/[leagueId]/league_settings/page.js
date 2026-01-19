@@ -348,7 +348,23 @@ export default function LeagueSettingsPage() {
 
         if (response.ok && result.success) {
           setShowDeleteModal(false);
-          router.push('/home');
+          setDeleting(false);
+          
+          // Show success notification
+          setSuccessMessage({
+            title: 'League Deleted Successfully!',
+            description: 'The league has been permanently removed. Redirecting to home page...',
+            updatedMember: null
+          });
+          setShowSuccessNotification(true);
+          
+          // Dispatch event to refresh navbar leagues
+          window.dispatchEvent(new Event('leagues-changed'));
+          
+          // Redirect after showing notification
+          setTimeout(() => {
+            router.push('/home');
+          }, 2000);
         } else {
           setDeleting(false);
           alert(`❌ Failed to Delete League\n\n${result.error || 'An error occurred. Please try again.'}`);
@@ -370,7 +386,23 @@ export default function LeagueSettingsPage() {
 
         if (response.ok && result.success) {
           setShowDeleteModal(false);
-          router.push('/home');
+          setDeleting(false);
+          
+          // Show success notification
+          setSuccessMessage({
+            title: 'Left League Successfully!',
+            description: 'You have left the league. Redirecting to home page...',
+            updatedMember: null
+          });
+          setShowSuccessNotification(true);
+          
+          // Dispatch event to refresh navbar leagues
+          window.dispatchEvent(new Event('leagues-changed'));
+          
+          // Redirect after showing notification
+          setTimeout(() => {
+            router.push('/home');
+          }, 2000);
         } else {
           setDeleting(false);
           alert(`❌ Failed to Leave League\n\n${result.error || 'An error occurred. Please try again.'}`);

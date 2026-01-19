@@ -130,6 +130,19 @@ export default function Navbar() {
     return () => window.removeEventListener('auth-changed', handler)
   }, [])
 
+  // 監聽 leagues 改變事件，當 league 被刪除或離開時更新列表
+  useEffect(() => {
+    const handler = () => {
+      if (userId) {
+        console.log('Refreshing leagues after change...')
+        fetchLeagues(userId)
+      }
+    }
+
+    window.addEventListener('leagues-changed', handler)
+    return () => window.removeEventListener('leagues-changed', handler)
+  }, [userId])
+
   // 監測當前路徑，如果在 league/[leagueId] 底下，設定當前聯盟
   useEffect(() => {
     const match = pathname?.match(/^\/league\/([^\/]+)/)
