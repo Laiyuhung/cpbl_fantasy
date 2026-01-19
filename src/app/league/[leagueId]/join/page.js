@@ -97,6 +97,10 @@ export default function JoinLeaguePage() {
       if (response.ok && result.success) {
         setJoinStatus('success');
         setJoinMessage('Successfully joined the league!');
+        
+        // Dispatch event to refresh navbar leagues
+        window.dispatchEvent(new Event('leagues-changed'));
+        
         setTimeout(() => router.push(`/league/${leagueId}`), 2000);
       } else {
         setJoinStatus('error');
