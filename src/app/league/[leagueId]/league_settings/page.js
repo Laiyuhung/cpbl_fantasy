@@ -205,7 +205,7 @@ export default function LeagueSettingsPage() {
         // Show success notification
         setSuccessMessage({
           title: 'Permission Updated Successfully!',
-          description: `${updatedMember?.nickname || updatedMember?.team_name || 'Member'}'s role has been changed to ${newRole}`,
+          description: `${updatedMember?.nickname || updatedMember?.managers?.name || 'Member'}'s role has been changed to ${newRole}`,
           updatedMember: { ...updatedMember, role: newRole }
         });
         setShowSuccessNotification(true);
@@ -717,7 +717,7 @@ export default function LeagueSettingsPage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-white font-bold text-sm">
-                          {successMessage.updatedMember.nickname || successMessage.updatedMember.team_name}
+                          {successMessage.updatedMember.nickname || successMessage.updatedMember.managers?.name}
                         </p>
                         <p className="text-green-50/70 text-xs">
                           New Role: <span className="font-semibold text-white">{successMessage.updatedMember.role}</span>
@@ -823,14 +823,9 @@ export default function LeagueSettingsPage() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="text-white font-bold">{member.nickname || member.team_name || 'Unknown'}</p>
-                              {isCommissioner && (
-                                <span className="bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 rounded-full font-medium">
-                                👑 Creator
-                                </span>
-                              )}
+                              <p className="text-white font-bold">{member.nickname || member.managers?.name || 'Unknown'}</p>
                             </div>
-                            <p className="text-purple-300/60 text-sm">{member.team_name || 'No team name'}</p>
+                            <p className="text-purple-300/60 text-sm">{member.managers?.name || 'No manager name'}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
