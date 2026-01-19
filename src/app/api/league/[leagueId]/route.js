@@ -81,24 +81,21 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Fetch latest finalized status from history table
+    // Check if league is finalized (record exists = finalized)
     const { data: finalizedStatus, error: finalizedError } = await supabase
       .from('league_finalized_status')
-      .select('finalized, update_time')
+      .select('league_id')
       .eq('league_id', leagueId)
-      .order('update_time', { ascending: false })
-      .limit(1)
       .single();
 
-    if (finalizedError && finalizedError.code !== 'PGRST116') {
-      console.error('Supabase finalized status error:', finalizedError);
-    }
+    // Record exists = finalized, no record or error = not finalized
+    const isFinalized = !finalizedError && finalizedStatus != null;
 
     return NextResponse.json({
       success: true,
       league: {
         ...leagueSettings,
-        is_finalized: finalizedStatus?.finalized || false
+        is_finalized: isFinalized
       },
       schedule: schedule || [],
       members: members || [],
@@ -126,16 +123,14 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Check if league is finalized
+    // Check if league is finalized (record exists = finalized)
     const { data: finalizedStatus, error: finalizedError } = await supabase
       .from('league_finalized_status')
-      .select('finalized')
+      .select('league_id')
       .eq('league_id', leagueId)
-      .order('update_time', { ascending: false })
-      .limit(1)
       .single();
 
-    if (!finalizedError && finalizedStatus?.finalized) {
+    if (!finalizedError && finalizedStatus) {
       return NextResponse.json(
         { success: false, error: 'Cannot delete finalized league. Please unlock teams first.' },
         { status: 403 }

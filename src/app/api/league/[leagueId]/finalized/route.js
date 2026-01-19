@@ -61,8 +61,8 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // If setting to true, check if member count is even
     if (is_finalized) {
+      // Finalize: Check member count and insert record
       const { data: members, error: countError } = await supabase
         .from('league_members')
         .select('manager_id')
@@ -81,43 +81,50 @@ export async function PATCH(request, { params }) {
           { status: 400 }
         );
       }
+
+      // Insert record (existence = finalized)
+      const { data: statusRecord, error: statusError } = await supabase
+        .from('league_finalized_status')
+        .insert({
+          league_id: leagueId,
+          updated_by: currentUserId
+        })
+        .select()
+        .single();
+
+      if (statusError) {
+        console.error('Error inserting finalized status:', statusError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to finalize teams' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: statusRecord,
+        message: 'Teams finalized successfully'
+      });
+    } else {
+      // Unlock: Delete the record
+      const { error: deleteError } = await supabase
+        .from('league_finalized_status')
+        .delete()
+        .eq('league_id', leagueId);
+
+      if (deleteError) {
+        console.error('Error deleting finalized status:', deleteError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to unlock teams' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Teams unlocked successfully'
+      });
     }
-
-    // Insert record into league_finalized_status table
-    const { data: statusRecord, error: statusError } = await supabase
-      .from('league_finalized_status')
-      .insert({
-        league_id: leagueId,
-        finalized: is_finalized,
-        updated_by: currentUserId
-      })
-      .select()
-      .single();
-
-    if (statusError) {
-      console.error('Error inserting finalized status:', statusError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to record finalized status' },
-        { status: 500 }
-      );
-    }
-
-    // Also update league_settings for easy access
-    const { error: updateError } = await supabase
-      .from('league_settings')
-      .update({ is_finalized })
-      .eq('league_id', leagueId);
-
-    if (updateError) {
-      console.error('Error updating league_settings:', updateError);
-      // Don't fail if this update fails since we already have the record
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: statusRecord,
-      message: is_finalized ? 'Teams finalized successfully' : 'Teams unlocked successfully'
-    });
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json(
