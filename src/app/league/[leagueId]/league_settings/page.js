@@ -154,11 +154,29 @@ export default function LeagueSettingsPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
+        const oldNickname = currentNickname;
         setCurrentNickname(newNickname.trim());
         setShowNicknameModal(false);
-        alert(`✅ Nickname Updated Successfully!\n\nYour new nickname: "${newNickname.trim()}"\n\nThe page will refresh to show your changes.`);
-        // Refresh the page to show updated nickname
-        window.location.reload();
+        
+        // Show success notification
+        setSuccessMessage({
+          title: 'Nickname Updated Successfully!',
+          description: `Your nickname has been changed from "${oldNickname}" to "${newNickname.trim()}"`,
+          updatedMember: null
+        });
+        setShowSuccessNotification(true);
+        
+        // Auto hide after 4 seconds
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 4000);
+        
+        // Update members list to reflect new nickname
+        setMembers(prevMembers => 
+          prevMembers.map(m => 
+            m.manager_id === managerId ? { ...m, nickname: newNickname.trim() } : m
+          )
+        );
       } else {
         alert(`❌ Failed to Update Nickname\n\n${result.error || 'An error occurred. Please try again.'}`);
       }
