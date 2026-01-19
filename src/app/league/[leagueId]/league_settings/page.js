@@ -28,6 +28,7 @@ export default function LeagueSettingsPage() {
   const [updatingPermissions, setUpdatingPermissions] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [successMessage, setSuccessMessage] = useState({ title: '', description: '', updatedMember: null });
+  const [currentUserId, setCurrentUserId] = useState('');
 
   useEffect(() => {
     if (!leagueId) return;
@@ -55,8 +56,9 @@ export default function LeagueSettingsPage() {
           const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
           const currentUserId = cookie?.split('=')[1];
           if (currentUserId) {
+            setCurrentUserId(currentUserId);
             const currentMember = result.members?.find(m => m.manager_id === currentUserId);
-            setCurrentUserRole(currentMember?.role || 'Member');
+            setCurrentUserRole(currentMember?.role || 'member');
             setCurrentNickname(currentMember?.nickname || '');
           }
 
@@ -103,7 +105,7 @@ export default function LeagueSettingsPage() {
   }, [leagueId]);
 
   const canEdit = () => {
-    return (currentUserRole === 'commissioner' || currentUserRole === 'co-commissioner') && leagueStatus === 'pre-draft';
+    return (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && leagueStatus === 'pre-draft';
   };
 
   const handleEditClick = () => {
@@ -226,7 +228,7 @@ export default function LeagueSettingsPage() {
   };
 
   const handleConfirmDelete = async () => {
-    const isCommissioner = currentUserRole === 'commissioner';
+    const isCommissioner = currentUserRole === 'Commissioner';
     const confirmText = isCommissioner 
       ? 'I agree to delete this league'
       : 'I agree to leave this league';
@@ -333,7 +335,7 @@ export default function LeagueSettingsPage() {
             <p className="text-purple-300/70">{leagueSettings.league_name}</p>
           </div>
           <div className="flex gap-4">
-            {(currentUserRole === 'commissioner' || currentUserRole === 'co-commissioner') && (
+            {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && (
               <button
                 onClick={handleManagePermissions}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
@@ -707,7 +709,7 @@ export default function LeagueSettingsPage() {
                   <div className="bg-white/10 rounded-lg p-3 border border-white/20">
                     <div className="flex items-center gap-2">
                       <div className={`p-1.5 rounded-lg ${
-                        successMessage.updatedMember.role === 'co-commissioner'
+                        successMessage.updatedMember.role === 'Co-Commissioner'
                           ? 'bg-purple-400/30'
                           : 'bg-blue-400/30'
                       }`}>
@@ -786,12 +788,13 @@ export default function LeagueSettingsPage() {
             <div className="space-y-3">
               {members
                 .sort((a, b) => {
-                  const roleOrder = { 'Commissioner': 0, 'Co-Commissioner': 1, 'Member': 2 };
+                  const roleOrder = { 'Commissioner': 0, 'Co-Commissioner': 1, 'member': 2 };
                   return roleOrder[a.role] - roleOrder[b.role];
                 })
                 .map((member) => {
-                  const isCommissioner = member.role === 'commissioner';
-                  const canModify = !isCommissioner;
+                  const isCommissioner = member.role === 'Commissioner';
+                  const isSelf = member.manager_id === currentUserId;
+                  const canModify = !isCommissioner && !isSelf;
                   
                   return (
                     <div
@@ -805,16 +808,16 @@ export default function LeagueSettingsPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
                           <div className={`p-2 rounded-lg ${
-                            member.role === 'commissioner' 
+                            member.role === 'Commissioner' 
                               ? 'bg-yellow-500/20' 
-                              : member.role === 'co-commissioner'
+                              : member.role === 'Co-Commissioner'
                               ? 'bg-purple-500/20'
                               : 'bg-blue-500/20'
                           }`}>
                             <svg className={`w-5 h-5 ${
-                              member.role === 'commissioner' 
+                              member.role === 'Commissioner' 
                                 ? 'text-yellow-400' 
-                                : member.role === 'co-commissioner'
+                                : member.role === 'Co-Commissioner'
                                 ? 'text-purple-400'
                                 : 'text-blue-400'
                             }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -824,6 +827,11 @@ export default function LeagueSettingsPage() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-white font-bold">{member.nickname || member.managers?.name || 'Unknown'}</p>
+                              {isSelf && (
+                                <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded-full font-medium">
+                                  You
+                                </span>
+                              )}
                             </div>
                             <p className="text-purple-300/60 text-sm">{member.managers?.name || 'No manager name'}</p>
                           </div>
@@ -836,12 +844,19 @@ export default function LeagueSettingsPage() {
                               disabled={updatingPermissions}
                               className="bg-slate-900/70 border border-purple-500/30 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                             >
-                              <option value="Member">Member</option>
+                              <option value="member">Member</option>
                               <option value="Co-Commissioner">Co-Commissioner</option>
                             </select>
-                          ) : (
+                          ) : isCommissioner ? (
                             <div className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-4 py-2 rounded-lg font-bold">
                               Commissioner
+                            </div>
+                          ) : (
+                            <div className="bg-slate-700/50 border border-slate-500/30 text-slate-300 px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+                              {member.role === 'Co-Commissioner' ? 'Co-Commissioner' : 'Member'}
+                              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                              </svg>
                             </div>
                           )}
                         </div>
