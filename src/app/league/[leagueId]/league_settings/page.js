@@ -759,14 +759,23 @@ export default function LeagueSettingsPage() {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4">
-                {leagueSettings.roster_positions && Object.entries(leagueSettings.roster_positions).map(([position, count]) => (
-                  count > 0 && (
-                    <div key={position} className="flex justify-between items-center py-2 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20">
-                      <span className="text-white font-semibold">{position}</span>
-                      <span className="text-purple-300 font-bold">{count}</span>
-                    </div>
-                  )
-                ))}
+                {leagueSettings.roster_positions && (() => {
+                  const positionOrder = ['C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util', 'SP', 'RP', 'P', 'BN', 'Minor'];
+                  return Object.entries(leagueSettings.roster_positions)
+                    .sort(([a], [b]) => {
+                      const indexA = positionOrder.indexOf(a);
+                      const indexB = positionOrder.indexOf(b);
+                      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+                    })
+                    .map(([position, count]) => (
+                      count > 0 && (
+                        <div key={position} className="flex justify-between items-center py-2 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20">
+                          <span className="text-white font-semibold">{position}</span>
+                          <span className="text-purple-300 font-bold">{count}</span>
+                        </div>
+                      )
+                    ));
+                })()}
               </div>
             </div>
           </div>
