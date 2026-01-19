@@ -132,8 +132,8 @@ export default function LeaguePage() {
   }
 
   const canShowInviteLink = () => {
-    // 联盟未满 且 状态是 pre-draft
-    if (members.length >= maxTeams || leagueStatus !== 'pre-draft') {
+    // 联盟未满 且 状态是 pre-draft 且 未 finalized
+    if (members.length >= maxTeams || leagueStatus !== 'pre-draft' || leagueSettings?.is_finalized) {
       return false;
     }
     
