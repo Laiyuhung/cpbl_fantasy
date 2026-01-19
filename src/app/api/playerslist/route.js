@@ -26,9 +26,46 @@ export async function GET(req) {
       );
     }
 
+    // 獲取野手位置資料
+    const { data: batterPositions, error: batterError } = await supabase
+      .from('v_batter_positions')
+      .select('player_id, position_list');
+
+    if (batterError) {
+      console.error('Error fetching batter positions:', batterError);
+    }
+
+    // 獲取投手位置資料
+    const { data: pitcherPositions, error: pitcherError } = await supabase
+      .from('v_pitcher_positions')
+      .select('player_id, position_list');
+
+    if (pitcherError) {
+      console.error('Error fetching pitcher positions:', pitcherError);
+    }
+
+    // 建立位置對照表
+    const positionMap = {};
+    if (batterPositions) {
+      batterPositions.forEach(bp => {
+        positionMap[bp.player_id] = bp.position_list;
+      });
+    }
+    if (pitcherPositions) {
+      pitcherPositions.forEach(pp => {
+        positionMap[pp.player_id] = pp.position_list;
+      });
+    }
+
+    // 將位置資料加入球員資料
+    const playersWithPositions = (players || []).map(player => ({
+      ...player,
+      position_list: positionMap[player.player_id] || null
+    }));
+
     return NextResponse.json({
       success: true,
-      players: players || [],
+      players: playersWithPositions,
     });
   } catch (err) {
     console.error('Server error:', err);

@@ -577,6 +577,11 @@ export default function PlayersPage() {
                             <div className="flex items-center gap-2">
                               <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
                                 {player.name || 'Unknown'}
+                                {player.position_list && (
+                                  <span className="text-purple-300/70 font-normal ml-2">
+                                    - {player.position_list}
+                                  </span>
+                                )}
                               </span>
                               {renderStatusTag(player)}
                             </div>
