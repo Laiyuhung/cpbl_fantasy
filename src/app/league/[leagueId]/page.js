@@ -251,7 +251,7 @@ export default function LeaguePage() {
                   <svg className="w-6 h-6 text-red-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="text-2xl font-black text-white">Time's Up!</span>
+                  <span className="text-2xl font-black text-white">Time&apos;s Up!</span>
                 </div>
               ) : draftTimeStatus === 'upcoming' && countdown ? (
                 <div className="flex justify-center gap-4 flex-wrap">
