@@ -103,7 +103,7 @@ export default function LeagueSettingsPage() {
   }, [leagueId]);
 
   const canEdit = () => {
-    return (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && leagueStatus === 'pre-draft';
+    return (currentUserRole === 'commissioner' || currentUserRole === 'co-commissioner') && leagueStatus === 'pre-draft';
   };
 
   const handleEditClick = () => {
@@ -226,7 +226,7 @@ export default function LeagueSettingsPage() {
   };
 
   const handleConfirmDelete = async () => {
-    const isCommissioner = currentUserRole === 'Commissioner';
+    const isCommissioner = currentUserRole === 'commissioner';
     const confirmText = isCommissioner 
       ? 'I agree to delete this league'
       : 'I agree to leave this league';
@@ -333,7 +333,7 @@ export default function LeagueSettingsPage() {
             <p className="text-purple-300/70">{leagueSettings.league_name}</p>
           </div>
           <div className="flex gap-4">
-            {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && (
+            {(currentUserRole === 'commissioner' || currentUserRole === 'co-commissioner') && (
               <button
                 onClick={handleManagePermissions}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
@@ -707,7 +707,7 @@ export default function LeagueSettingsPage() {
                   <div className="bg-white/10 rounded-lg p-3 border border-white/20">
                     <div className="flex items-center gap-2">
                       <div className={`p-1.5 rounded-lg ${
-                        successMessage.updatedMember.role === 'Co-Commissioner'
+                        successMessage.updatedMember.role === 'co-commissioner'
                           ? 'bg-purple-400/30'
                           : 'bg-blue-400/30'
                       }`}>
@@ -790,7 +790,7 @@ export default function LeagueSettingsPage() {
                   return roleOrder[a.role] - roleOrder[b.role];
                 })
                 .map((member) => {
-                  const isCommissioner = member.role === 'Commissioner';
+                  const isCommissioner = member.role === 'commissioner';
                   const canModify = !isCommissioner;
                   
                   return (
@@ -805,16 +805,16 @@ export default function LeagueSettingsPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
                           <div className={`p-2 rounded-lg ${
-                            member.role === 'Commissioner' 
+                            member.role === 'commissioner' 
                               ? 'bg-yellow-500/20' 
-                              : member.role === 'Co-Commissioner'
+                              : member.role === 'co-commissioner'
                               ? 'bg-purple-500/20'
                               : 'bg-blue-500/20'
                           }`}>
                             <svg className={`w-5 h-5 ${
-                              member.role === 'Commissioner' 
+                              member.role === 'commissioner' 
                                 ? 'text-yellow-400' 
-                                : member.role === 'Co-Commissioner'
+                                : member.role === 'co-commissioner'
                                 ? 'text-purple-400'
                                 : 'text-blue-400'
                             }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">

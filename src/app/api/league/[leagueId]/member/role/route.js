@@ -39,6 +39,9 @@ export async function PATCH(request, { params }) {
       );
     }
 
+    // Convert role to lowercase format that matches database constraint
+    const dbRole = role === 'Co-Commissioner' ? 'co-commissioner' : role.toLowerCase();
+
     // Check if the current user is Commissioner or Co-Commissioner
     const { data: currentMember, error: currentMemberError } = await supabase
       .from('league_members')
@@ -56,7 +59,7 @@ export async function PATCH(request, { params }) {
     }
 
     // Only Commissioner and Co-Commissioner can update roles
-    if (currentMember.role !== 'Commissioner' && currentMember.role !== 'Co-Commissioner') {
+    if (currentMember.role !== 'commissioner' && currentMember.role !== 'co-commissioner') {
       return NextResponse.json(
         { success: false, error: 'Only Commissioner and Co-Commissioner can manage permissions' },
         { status: 403 }
@@ -80,7 +83,7 @@ export async function PATCH(request, { params }) {
     }
 
     // Prevent changing the Commissioner's role
-    if (targetMember.role === 'Commissioner') {
+    if (targetMember.role === 'commissioner') {
       return NextResponse.json(
         { success: false, error: 'Cannot change the Commissioner\'s role' },
         { status: 403 }
@@ -98,7 +101,7 @@ export async function PATCH(request, { params }) {
     // Update the role
     const { error: updateError } = await supabase
       .from('league_members')
-      .update({ role: role })
+      .update({ role: dbRole })
       .eq('league_id', leagueId)
       .eq('manager_id', manager_id);
 
