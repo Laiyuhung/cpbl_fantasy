@@ -20,6 +20,22 @@ export async function DELETE(request, { params }) {
       );
     }
 
+    // Check if league is finalized
+    const { data: finalizedStatus, error: finalizedError } = await supabase
+      .from('league_finalized_status')
+      .select('finalized')
+      .eq('league_id', leagueId)
+      .order('update_time', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!finalizedError && finalizedStatus?.finalized) {
+      return NextResponse.json(
+        { success: false, error: 'Cannot leave finalized league. Please contact Commissioner to unlock teams first.' },
+        { status: 403 }
+      );
+    }
+
     // Check if the member is the Commissioner
     const { data: member, error: memberError } = await supabase
       .from('league_members')
