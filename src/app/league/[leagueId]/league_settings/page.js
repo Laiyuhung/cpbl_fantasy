@@ -32,6 +32,9 @@ export default function LeagueSettingsPage() {
   const [showFinalizedModal, setShowFinalizedModal] = useState(false);
   const [isFinalized, setIsFinalized] = useState(false);
   const [updatingFinalized, setUpdatingFinalized] = useState(false);
+  const [showDeleteMemberModal, setShowDeleteMemberModal] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState(null);
+  const [deletingMember, setDeletingMember] = useState(false);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -125,7 +128,16 @@ export default function LeagueSettingsPage() {
     const trimmedNickname = newNickname.trim();
     
     if (!trimmedNickname) {
-      alert('❌ Nickname cannot be empty\n\nPlease enter a valid nickname.');
+      setSuccessMessage({
+        title: 'Nickname Cannot Be Empty',
+        description: 'Please enter a valid nickname.',
+        updatedMember: null,
+        isError: true
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
       return;
     }
 
@@ -135,7 +147,16 @@ export default function LeagueSettingsPage() {
     }
 
     if (trimmedNickname.length < 2) {
-      alert('❌ Nickname too short\n\nNickname must be at least 2 characters long.');
+      setSuccessMessage({
+        title: 'Nickname Too Short',
+        description: 'Nickname must be at least 2 characters long.',
+        updatedMember: null,
+        isError: true
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
       return;
     }
 
@@ -182,11 +203,29 @@ export default function LeagueSettingsPage() {
           )
         );
       } else {
-        alert(`❌ Failed to Update Nickname\n\n${result.error || 'An error occurred. Please try again.'}`);
+        setSuccessMessage({
+          title: 'Failed to Update Nickname',
+          description: result.error || 'An error occurred. Please try again.',
+          updatedMember: null,
+          isError: true
+        });
+        setShowSuccessNotification(true);
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 4000);
       }
     } catch (err) {
       console.error('Update nickname error:', err);
-      alert('❌ Connection Error\n\nUnable to connect to the server. Please check your internet connection and try again.');
+      setSuccessMessage({
+        title: 'Connection Error',
+        description: 'Unable to connect to the server. Please check your internet connection and try again.',
+        updatedMember: null,
+        isError: true
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
     } finally {
       setEditingNickname(false);
     }
@@ -316,13 +355,100 @@ export default function LeagueSettingsPage() {
           setShowSuccessNotification(false);
         }, 4000);
       } else {
-        alert(`❌ Failed to Update Permission\n\n${result.error || 'An error occurred. Please try again.'}`);
+        setSuccessMessage({
+          title: 'Failed to Update Permission',
+          description: result.error || 'An error occurred. Please try again.',
+          updatedMember: null,
+          isError: true
+        });
+        setShowSuccessNotification(true);
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 4000);
       }
     } catch (err) {
       console.error('Update role error:', err);
-      alert('❌ 連線錯誤\n\n無法連接伺服器，請檢查網路連線');
+      setSuccessMessage({
+        title: 'Connection Error',
+        description: 'Unable to connect to the server. Please check your internet connection.',
+        updatedMember: null,
+        isError: true
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
     } finally {
       setUpdatingPermissions(false);
+    }
+  };
+
+  const handleDeleteMemberClick = (member) => {
+    setMemberToDelete(member);
+    setShowDeleteMemberModal(true);
+  };
+
+  const handleConfirmDeleteMember = async () => {
+    if (!memberToDelete) return;
+
+    setDeletingMember(true);
+    try {
+      const response = await fetch(`/api/league/${leagueId}/member`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ manager_id: memberToDelete.manager_id }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Remove member from local list
+        setMembers(prevMembers => 
+          prevMembers.filter(m => m.manager_id !== memberToDelete.manager_id)
+        );
+        
+        setShowDeleteMemberModal(false);
+        setMemberToDelete(null);
+        
+        // Show success notification
+        setSuccessMessage({
+          title: 'Member Removed Successfully!',
+          description: `${memberToDelete.nickname || memberToDelete.managers?.name} has been removed from the league.`,
+          updatedMember: null
+        });
+        setShowSuccessNotification(true);
+        
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 4000);
+      } else {
+        setSuccessMessage({
+          title: 'Failed to Remove Member',
+          description: result.error || 'An error occurred. Please try again.',
+          updatedMember: null,
+          isError: true
+        });
+        setShowSuccessNotification(true);
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 4000);
+      }
+    } catch (err) {
+      console.error('Delete member error:', err);
+      setSuccessMessage({
+        title: 'Connection Error',
+        description: 'Unable to connect to the server. Please check your internet connection.',
+        updatedMember: null,
+        isError: true
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
+    } finally {
+      setDeletingMember(false);
     }
   };
 
@@ -367,7 +493,16 @@ export default function LeagueSettingsPage() {
           }, 2000);
         } else {
           setDeleting(false);
-          alert(`❌ Failed to Delete League\n\n${result.error || 'An error occurred. Please try again.'}`);
+          setSuccessMessage({
+            title: 'Failed to Delete League',
+            description: result.error || 'An error occurred. Please try again.',
+            updatedMember: null,
+            isError: true
+          });
+          setShowSuccessNotification(true);
+          setTimeout(() => {
+            setShowSuccessNotification(false);
+          }, 4000);
         }
       } else {
         // Delete team/member
@@ -405,13 +540,31 @@ export default function LeagueSettingsPage() {
           }, 2000);
         } else {
           setDeleting(false);
-          alert(`❌ Failed to Leave League\n\n${result.error || 'An error occurred. Please try again.'}`);
+          setSuccessMessage({
+            title: 'Failed to Leave League',
+            description: result.error || 'An error occurred. Please try again.',
+            updatedMember: null,
+            isError: true
+          });
+          setShowSuccessNotification(true);
+          setTimeout(() => {
+            setShowSuccessNotification(false);
+          }, 4000);
         }
       }
     } catch (err) {
       console.error('Delete error:', err);
       setDeleting(false);
-      alert('❌ Connection Error\n\nUnable to connect to the server. Please check your internet connection and try again.');
+      setSuccessMessage({
+        title: 'Connection Error',
+        description: 'Unable to connect to the server. Please check your internet connection and try again.',
+        updatedMember: null,
+        isError: true
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
     } finally {
       setDeleting(false);
     }
@@ -1007,15 +1160,27 @@ export default function LeagueSettingsPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           {canModify ? (
-                            <select
-                              value={member.role}
-                              onChange={(e) => handleUpdateMemberRole(member.manager_id, e.target.value)}
-                              disabled={updatingPermissions}
-                              className="bg-slate-900/70 border border-purple-500/30 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                            >
-                              <option value="member">Member</option>
-                              <option value="Co-Commissioner">Co-Commissioner</option>
-                            </select>
+                            <>
+                              <select
+                                value={member.role}
+                                onChange={(e) => handleUpdateMemberRole(member.manager_id, e.target.value)}
+                                disabled={updatingPermissions}
+                                className="bg-slate-900/70 border border-purple-500/30 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                              >
+                                <option value="member">Member</option>
+                                <option value="Co-Commissioner">Co-Commissioner</option>
+                              </select>
+                              <button
+                                onClick={() => handleDeleteMemberClick(member)}
+                                disabled={updatingPermissions || deletingMember}
+                                className="bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 hover:border-red-500/50 text-red-400 hover:text-red-300 p-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Remove member from league"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </>
                           ) : isCommissioner ? (
                             <div className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-4 py-2 rounded-lg font-bold">
                               Commissioner
@@ -1301,6 +1466,91 @@ export default function LeagueSettingsPage() {
           </div>
         );
       })()}
+
+      {/* Delete Member Confirmation Modal */}
+      {showDeleteMemberModal && memberToDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-red-500/30 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-gradient-to-br from-red-500 to-rose-500 p-3 rounded-xl">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-black text-white">Remove Member?</h2>
+            </div>
+
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-lg bg-red-500/20">
+                  <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-white font-bold">{memberToDelete.nickname || memberToDelete.managers?.name}</p>
+                  <p className="text-red-300/70 text-sm">{memberToDelete.role}</p>
+                </div>
+              </div>
+              
+              <div className="text-red-200/90 text-sm space-y-2">
+                <p className="font-medium">⚠️ This action will:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Remove this member from the league immediately</li>
+                  <li>Delete their team and all associated data</li>
+                  <li>Remove them from all schedules and matchups</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-6">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-yellow-200/90 text-sm">
+                  <strong>Note:</strong> This member can rejoin the league if invited again.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteMemberModal(false);
+                  setMemberToDelete(null);
+                }}
+                disabled={deletingMember}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteMember}
+                disabled={deletingMember}
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 rounded-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {deletingMember ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Removing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Remove Member
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
