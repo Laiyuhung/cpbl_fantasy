@@ -23,6 +23,9 @@ export default function LeagueSettingsPage() {
   const [currentNickname, setCurrentNickname] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [updatingPermissions, setUpdatingPermissions] = useState(false);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -44,6 +47,7 @@ export default function LeagueSettingsPage() {
         if (result.success) {
           setLeagueSettings(result.league);
           setLeagueStatus(result.status || 'unknown');
+          setMembers(result.members || []);
           
           // 獲取當前用戶的權限
           const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
@@ -167,6 +171,45 @@ export default function LeagueSettingsPage() {
     setShowDeleteModal(true);
   };
 
+  const handleManagePermissions = () => {
+    setShowPermissionsModal(true);
+  };
+
+  const handleUpdateMemberRole = async (managerId, newRole) => {
+    setUpdatingPermissions(true);
+    try {
+      const response = await fetch(`/api/league/${leagueId}/member/role`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          manager_id: managerId,
+          role: newRole
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // 更新本地成員列表
+        setMembers(prevMembers => 
+          prevMembers.map(m => 
+            m.manager_id === managerId ? { ...m, role: newRole } : m
+          )
+        );
+        alert(`✅ 權限更新成功！\n\n已將該成員權限更改為: ${newRole}`);
+      } else {
+        alert(`❌ 權限更新失敗\n\n${result.error || '發生錯誤，請重試'}`);
+      }
+    } catch (err) {
+      console.error('Update role error:', err);
+      alert('❌ 連線錯誤\n\n無法連接伺服器，請檢查網路連線');
+    } finally {
+      setUpdatingPermissions(false);
+    }
+  };
+
   const handleConfirmDelete = async () => {
     const isCommissioner = currentUserRole === 'Commissioner';
     const confirmText = isCommissioner 
@@ -275,6 +318,17 @@ export default function LeagueSettingsPage() {
             <p className="text-purple-300/70">{leagueSettings.league_name}</p>
           </div>
           <div className="flex gap-4">
+            {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && (
+              <button
+                onClick={handleManagePermissions}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                設定權限
+              </button>
+            )}
             {canEdit() && (
               <button
                 onClick={handleEditClick}
@@ -609,6 +663,140 @@ export default function LeagueSettingsPage() {
                     Save Changes
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permissions Management Modal */}
+      {showPermissionsModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/30 rounded-2xl shadow-2xl max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-3 rounded-xl">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-black text-white">管理成員權限</h2>
+              </div>
+              <button
+                onClick={() => setShowPermissionsModal(false)}
+                className="text-purple-300 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-indigo-300/90 text-sm">
+                  <p className="font-medium mb-1">權限說明：</p>
+                  <ul className="list-disc list-inside space-y-1 text-indigo-300/70">
+                    <li><strong>Commissioner</strong>: 聯盟創建者，擁有所有權限（無法變更）</li>
+                    <li><strong>Co-Commissioner</strong>: 副管理員，可協助管理聯盟設定</li>
+                    <li><strong>Member</strong>: 一般成員，僅能管理自己的球隊</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {members
+                .sort((a, b) => {
+                  const roleOrder = { 'Commissioner': 0, 'Co-Commissioner': 1, 'Member': 2 };
+                  return roleOrder[a.role] - roleOrder[b.role];
+                })
+                .map((member) => {
+                  const isCommissioner = member.role === 'Commissioner';
+                  const canModify = !isCommissioner;
+                  
+                  return (
+                    <div
+                      key={member.manager_id}
+                      className={`bg-slate-900/50 border rounded-lg p-4 transition-all ${
+                        isCommissioner 
+                          ? 'border-yellow-500/30 bg-yellow-500/5' 
+                          : 'border-purple-500/20 hover:border-purple-400/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className={`p-2 rounded-lg ${
+                            member.role === 'Commissioner' 
+                              ? 'bg-yellow-500/20' 
+                              : member.role === 'Co-Commissioner'
+                              ? 'bg-purple-500/20'
+                              : 'bg-blue-500/20'
+                          }`}>
+                            <svg className={`w-5 h-5 ${
+                              member.role === 'Commissioner' 
+                                ? 'text-yellow-400' 
+                                : member.role === 'Co-Commissioner'
+                                ? 'text-purple-400'
+                                : 'text-blue-400'
+                            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-white font-bold">{member.nickname || member.team_name || 'Unknown'}</p>
+                              {isCommissioner && (
+                                <span className="bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 rounded-full font-medium">
+                                  👑 創建者
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-purple-300/60 text-sm">{member.team_name || 'No team name'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {canModify ? (
+                            <select
+                              value={member.role}
+                              onChange={(e) => handleUpdateMemberRole(member.manager_id, e.target.value)}
+                              disabled={updatingPermissions}
+                              className="bg-slate-900/70 border border-purple-500/30 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            >
+                              <option value="Member">Member</option>
+                              <option value="Co-Commissioner">Co-Commissioner</option>
+                            </select>
+                          ) : (
+                            <div className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-4 py-2 rounded-lg font-bold">
+                              Commissioner
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {updatingPermissions && (
+              <div className="mt-4 flex items-center justify-center gap-2 text-purple-300">
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>正在更新權限...</span>
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowPermissionsModal(false)}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-lg"
+              >
+                關閉
               </button>
             </div>
           </div>
