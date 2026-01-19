@@ -26,6 +26,8 @@ export default function LeagueSettingsPage() {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [members, setMembers] = useState([]);
   const [updatingPermissions, setUpdatingPermissions] = useState(false);
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [successMessage, setSuccessMessage] = useState({ title: '', description: '', updatedMember: null });
 
   useEffect(() => {
     if (!leagueId) return;
@@ -192,15 +194,28 @@ export default function LeagueSettingsPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // 更新本地成員列表
+        // Update local member list
+        const updatedMember = members.find(m => m.manager_id === managerId);
         setMembers(prevMembers => 
           prevMembers.map(m => 
             m.manager_id === managerId ? { ...m, role: newRole } : m
           )
         );
-        alert(`✅ 權限更新成功！\n\n已將該成員權限更改為: ${newRole}`);
+        
+        // Show success notification
+        setSuccessMessage({
+          title: 'Permission Updated Successfully!',
+          description: `${updatedMember?.nickname || updatedMember?.team_name || 'Member'}'s role has been changed to ${newRole}`,
+          updatedMember: { ...updatedMember, role: newRole }
+        });
+        setShowSuccessNotification(true);
+        
+        // Auto hide after 4 seconds
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 4000);
       } else {
-        alert(`❌ 權限更新失敗\n\n${result.error || '發生錯誤，請重試'}`);
+        alert(`❌ Failed to Update Permission\n\n${result.error || 'An error occurred. Please try again.'}`);
       }
     } catch (err) {
       console.error('Update role error:', err);
@@ -326,7 +341,7 @@ export default function LeagueSettingsPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
-                設定權限
+                Manage Permissions
               </button>
             )}
             {canEdit() && (
@@ -669,6 +684,66 @@ export default function LeagueSettingsPage() {
         </div>
       )}
 
+      {/* Success Notification */}
+      {showSuccessNotification && (
+        <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+          <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 backdrop-blur-xl border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1 pt-1">
+                <h3 className="text-xl font-black text-white mb-1">
+                  {successMessage.title}
+                </h3>
+                <p className="text-green-50/90 text-sm mb-3">
+                  {successMessage.description}
+                </p>
+                {successMessage.updatedMember && (
+                  <div className="bg-white/10 rounded-lg p-3 border border-white/20">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded-lg ${
+                        successMessage.updatedMember.role === 'Co-Commissioner'
+                          ? 'bg-purple-400/30'
+                          : 'bg-blue-400/30'
+                      }`}>
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white font-bold text-sm">
+                          {successMessage.updatedMember.nickname || successMessage.updatedMember.team_name}
+                        </p>
+                        <p className="text-green-50/70 text-xs">
+                          New Role: <span className="font-semibold text-white">{successMessage.updatedMember.role}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setShowSuccessNotification(false)}
+                className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Permissions Management Modal */}
       {showPermissionsModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -680,7 +755,7 @@ export default function LeagueSettingsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-black text-white">管理成員權限</h2>
+                <h2 className="text-2xl font-black text-white">Manage Member Permissions</h2>
               </div>
               <button
                 onClick={() => setShowPermissionsModal(false)}
@@ -698,11 +773,11 @@ export default function LeagueSettingsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="text-indigo-300/90 text-sm">
-                  <p className="font-medium mb-1">權限說明：</p>
+                  <p className="font-medium mb-1">Permission Roles:</p>
                   <ul className="list-disc list-inside space-y-1 text-indigo-300/70">
-                    <li><strong>Commissioner</strong>: 聯盟創建者，擁有所有權限（無法變更）</li>
-                    <li><strong>Co-Commissioner</strong>: 副管理員，可協助管理聯盟設定</li>
-                    <li><strong>Member</strong>: 一般成員，僅能管理自己的球隊</li>
+                    <li><strong>Commissioner</strong>: League creator with full permissions (cannot be changed)</li>
+                    <li><strong>Co-Commissioner</strong>: Assistant admin who can help manage league settings</li>
+                    <li><strong>Member</strong>: Regular member who can only manage their own team</li>
                   </ul>
                 </div>
               </div>
@@ -751,7 +826,7 @@ export default function LeagueSettingsPage() {
                               <p className="text-white font-bold">{member.nickname || member.team_name || 'Unknown'}</p>
                               {isCommissioner && (
                                 <span className="bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 rounded-full font-medium">
-                                  👑 創建者
+                                👑 Creator
                                 </span>
                               )}
                             </div>
@@ -787,7 +862,7 @@ export default function LeagueSettingsPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span>正在更新權限...</span>
+                <span>Updating permissions...</span>
               </div>
             )}
 
@@ -796,7 +871,7 @@ export default function LeagueSettingsPage() {
                 onClick={() => setShowPermissionsModal(false)}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-lg"
               >
-                關閉
+                Close
               </button>
             </div>
           </div>
