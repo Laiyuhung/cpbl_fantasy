@@ -32,15 +32,15 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    if (!role || !['Member', 'Co-Commissioner', 'Commissioner'].includes(role)) {
+    if (!role || !['member', 'Co-Commissioner', 'Commissioner'].includes(role)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid role. Must be Member, Co-Commissioner, or Commissioner' },
+        { success: false, error: 'Invalid role. Must be member, Co-Commissioner, or Commissioner' },
         { status: 400 }
       );
     }
 
     // Convert role to database format: 'Commissioner', 'Co-Commissioner', 'member'
-    const dbRole = role === 'Member' ? 'member' : role;
+    const dbRole = role; // Already in correct format
 
     // Check if the current user is Commissioner or Co-Commissioner
     const { data: currentMember, error: currentMemberError } = await supabase
