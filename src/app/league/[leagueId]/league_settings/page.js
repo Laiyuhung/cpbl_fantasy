@@ -630,14 +630,15 @@ export default function LeagueSettingsPage() {
                   </svg>
                   Manage Permissions
                 </button>
-                <button
-                  onClick={handleFinalizedClick}
-                  className={`font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 ${
-                    isFinalized
-                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
-                      : 'bg-gradient-to-r from-slate-600 to-gray-600 hover:from-slate-700 hover:to-gray-700 text-white'
-                  }`}
-                >
+                {leagueStatus === 'pre-draft' && (
+                  <button
+                    onClick={handleFinalizedClick}
+                    className={`font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 ${
+                      isFinalized
+                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+                        : 'bg-gradient-to-r from-slate-600 to-gray-600 hover:from-slate-700 hover:to-gray-700 text-white'
+                    }`}
+                  >
                   {isFinalized ? (
                     <>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -654,6 +655,7 @@ export default function LeagueSettingsPage() {
                     </>
                   )}
                 </button>
+                )}
               </>
             )}
             {canEdit() && (

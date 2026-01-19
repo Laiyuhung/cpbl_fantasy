@@ -40,6 +40,27 @@ export async function PATCH(request, { params }) {
       );
     }
 
+    // Check if league is in pre-draft status
+    const { data: leagueStatusData, error: leagueStatusError } = await supabase
+      .from('league_statuses')
+      .select('status')
+      .eq('league_id', leagueId)
+      .single();
+
+    if (leagueStatusError || !leagueStatusData) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to check league status' },
+        { status: 500 }
+      );
+    }
+
+    if (leagueStatusData.status !== 'pre-draft') {
+      return NextResponse.json(
+        { success: false, error: 'Finalized status can only be changed during pre-draft phase' },
+        { status: 400 }
+      );
+    }
+
     // If setting to true, check if member count is even
     if (is_finalized) {
       const { data: members, error: countError } = await supabase
