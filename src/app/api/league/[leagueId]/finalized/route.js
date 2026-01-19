@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabaseServer';
+import supabase from '@/lib/supabaseServer';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function PATCH(request, { params }) {
   try {
     const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
     const { leagueId } = params;
     const { is_finalized } = await request.json();
 
