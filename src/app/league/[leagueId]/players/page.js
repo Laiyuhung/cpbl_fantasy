@@ -29,6 +29,7 @@ export default function PlayersPage() {
   const [successMessage, setSuccessMessage] = useState(''); // 成功訊息
   const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
+  const [rosterPositions, setRosterPositions] = useState({}); // 聯盟守備位置設定
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,10 +66,11 @@ export default function PlayersPage() {
           setOwnerships(ownershipsData.ownerships || []);
         }
 
-        // 處理 members (取得 nickname 對照)
+        // 處理 members (取得 nickname 對照) 和 roster_positions
         const leagueData = await leagueRes.json();
         if (leagueData.success) {
           setMembers(leagueData.members || []);
+          setRosterPositions(leagueData.league?.roster_positions || {});
         }
       } catch (err) {
         console.error('Unexpected error:', err);
@@ -80,6 +82,27 @@ export default function PlayersPage() {
 
     fetchData();
   }, [leagueId]);
+
+  // 根據 roster_positions 過濾守備位置
+  const filterPositions = (player) => {
+    let positionList = player.position_list;
+    
+    // 若無守備位置資料，根據球員類型給預設值
+    if (!positionList) {
+      positionList = player.batter_or_pitcher === 'batter' ? 'Util' : 'P';
+    }
+    
+    // 解析位置列表
+    const positions = positionList.split(',').map(p => p.trim());
+    
+    // 過濾出在 roster_positions 中存在的守位
+    const validPositions = positions.filter(pos => {
+      return rosterPositions[pos] && rosterPositions[pos] > 0;
+    });
+    
+    // 若過濾後為空，返回 NA
+    return validPositions.length > 0 ? validPositions.join(', ') : 'NA';
+  };
 
   // 解析每位球員可用的圖片一次並快取，批次傳送所有候選路徑到 API 一次解析，避免大量請求
   useEffect(() => {
@@ -577,11 +600,9 @@ export default function PlayersPage() {
                             <div className="flex items-center gap-2">
                               <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
                                 {player.name || 'Unknown'}
-                                {player.position_list && (
-                                  <span className="text-purple-300/70 font-normal ml-2">
-                                    - {player.position_list}
-                                  </span>
-                                )}
+                                <span className="text-purple-300/70 font-normal ml-2">
+                                  - {filterPositions(player)}
+                                </span>
                               </span>
                               {renderStatusTag(player)}
                             </div>
