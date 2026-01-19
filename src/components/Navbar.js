@@ -13,6 +13,27 @@ export default function Navbar() {
   const [leagues, setLeagues] = useState([])
   const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false)
   const [currentLeague, setCurrentLeague] = useState(null)
+  const [taiwanTime, setTaiwanTime] = useState('')
+
+  // Update Taiwan time every second
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const options = {
+        timeZone: 'Asia/Taipei',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: false
+      };
+      const timeString = now.toLocaleString('en-US', options);
+      setTaiwanTime(timeString);
+    };
+
+    updateTime(); // Initial update
+    const interval = setInterval(updateTime, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch user's leagues
   const fetchLeagues = (uid) => {
@@ -241,6 +262,15 @@ export default function Navbar() {
         </div>
 
         <div className="hidden lg:flex items-center space-x-3">
+          {taiwanTime && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
+              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium text-cyan-300">Taiwan Time:</span>
+              <span className="text-sm font-bold text-white">{taiwanTime}</span>
+            </div>
+          )}
           {userName && (
             <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-sm font-bold">

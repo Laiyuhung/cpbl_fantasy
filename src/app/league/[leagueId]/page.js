@@ -18,6 +18,8 @@ export default function LeaguePage() {
   const [maxTeams, setMaxTeams] = useState(0);
   const [invitePermissions, setInvitePermissions] = useState('');
   const [showCopied, setShowCopied] = useState(false);
+  const [countdown, setCountdown] = useState(null);
+  const [draftTimeStatus, setDraftTimeStatus] = useState('loading'); // loading, upcoming, passed
 
   useEffect(() => {
     if (!leagueId) return;
@@ -63,6 +65,40 @@ export default function LeaguePage() {
 
     fetchLeagueData();
   }, [leagueId]);
+
+  // Countdown timer for draft time
+  useEffect(() => {
+    if (!leagueSettings?.draft_date) {
+      setDraftTimeStatus('loading');
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const draftTime = new Date(leagueSettings.draft_date);
+      const diff = draftTime - now;
+
+      if (diff <= 0) {
+        setDraftTimeStatus('passed');
+        setCountdown(null);
+        return;
+      }
+
+      setDraftTimeStatus('upcoming');
+      
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setCountdown({ days, hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [leagueSettings]);
 
   if (loading) {
     return (
@@ -187,6 +223,59 @@ export default function LeaguePage() {
             )}
           </div>
         </div>
+
+        {/* Draft Time Section */}
+        {leagueSettings?.draft_date && (
+          <div className="mb-8 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 backdrop-blur-lg border border-indigo-500/30 rounded-2xl p-8 shadow-2xl">
+            <div className="text-center">
+              <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-4">
+                Draft Time
+              </h2>
+              <div className="text-lg text-indigo-200 mb-2">
+                {new Date(leagueSettings.draft_date).toLocaleString('en-US', {
+                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </div>
+              <div className="text-sm text-indigo-300/70 mb-6">
+                (Based on Local Time)
+              </div>
+
+              {draftTimeStatus === 'passed' ? (
+                <div className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600/80 to-pink-600/80 backdrop-blur-md px-8 py-4 rounded-full border border-red-400/50 shadow-lg shadow-red-500/30">
+                  <svg className="w-6 h-6 text-red-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-2xl font-black text-white">Time's Up!</span>
+                </div>
+              ) : draftTimeStatus === 'upcoming' && countdown ? (
+                <div className="flex justify-center gap-4 flex-wrap">
+                  <div className="bg-gradient-to-br from-indigo-600/80 to-purple-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-indigo-400/30 shadow-lg shadow-indigo-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.days}</div>
+                    <div className="text-sm font-bold text-indigo-200 uppercase tracking-wider">Days</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-purple-400/30 shadow-lg shadow-purple-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.hours}</div>
+                    <div className="text-sm font-bold text-purple-200 uppercase tracking-wider">Hours</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-pink-600/80 to-red-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-pink-400/30 shadow-lg shadow-pink-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.minutes}</div>
+                    <div className="text-sm font-bold text-pink-200 uppercase tracking-wider">Minutes</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-600/80 to-orange-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-red-400/30 shadow-lg shadow-red-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.seconds}</div>
+                    <div className="text-sm font-bold text-red-200 uppercase tracking-wider">Seconds</div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
 
         {/* League Members Section */}
         <div className="mb-8 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
