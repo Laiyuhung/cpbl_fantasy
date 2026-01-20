@@ -511,10 +511,10 @@ export default function PlayersPage() {
     // 先设置loading状态，给用户立即反馈
     setTradeLoading(true);
 
-    if (!selectedMyPlayers.length && !selectedTheirPlayers.length) {
+    if (!selectedMyPlayers.length || !selectedTheirPlayers.length) {
       setTradeErrorMessage({
         title: 'Validation Error',
-        description: 'Please select at least one player to trade.'
+        description: 'Both sides must select at least one player to trade.'
       });
       setShowTradeErrorNotification(true);
       setTimeout(() => {
