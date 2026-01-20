@@ -674,9 +674,20 @@ const CreateLeaguePage = () => {
   const handleMultiSelectChange = (section, key, option, checked) => {
     setSettings((prev) => {
       const current = Array.isArray(prev[section][key]) ? prev[section][key] : [];
-      const next = checked
+      let next = checked
         ? Array.from(new Set([...current, option]))
         : current.filter((o) => o !== option);
+      
+      // 按照 settingOptions 中的顺序排序
+      const optionsList = settingOptions[key] || [];
+      if (optionsList.length > 0) {
+        next = next.sort((a, b) => {
+          const indexA = optionsList.indexOf(a);
+          const indexB = optionsList.indexOf(b);
+          return indexA - indexB;
+        });
+      }
+      
       return {
         ...prev,
         [section]: {
