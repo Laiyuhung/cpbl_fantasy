@@ -41,7 +41,8 @@ export default function PlayersPage() {
   const [selectedTheirPlayers, setSelectedTheirPlayers] = useState([]);
   const [tradeLoading, setTradeLoading] = useState(false);
   const [tradeError, setTradeError] = useState('');
-  const [tradeSuccess, setTradeSuccess] = useState('');
+  const [showTradeSuccessNotification, setShowTradeSuccessNotification] = useState(false);
+  const [tradeSuccessMessage, setTradeSuccessMessage] = useState({ title: '', description: '' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -526,11 +527,15 @@ export default function PlayersPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setTradeSuccess('Trade request sent successfully!');
+        setTradeSuccessMessage({
+          title: 'Trade Proposal Sent!',
+          description: 'Your trade request has been submitted and is pending approval.'
+        });
+        setShowTradeSuccessNotification(true);
         setTimeout(() => {
           setShowTradeModal(false);
-          setTradeSuccess('');
-        }, 1500);
+          setShowTradeSuccessNotification(false);
+        }, 4000);
       } else {
         setTradeError(data.error || 'Trade failed');
       }
@@ -666,7 +671,6 @@ export default function PlayersPage() {
               </div>
             </div>
             {tradeError && <div className="text-red-400 mt-2 px-6">{tradeError}</div>}
-            {tradeSuccess && <div className="text-green-300 mt-2 px-6">{tradeSuccess}</div>}
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl">
               <button
                 className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
@@ -1124,6 +1128,84 @@ export default function PlayersPage() {
 
       {/* Trade Modal */}
       {renderTradeModal()}
+
+      {/* Trade Success Notification */}
+      {showTradeSuccessNotification && (
+        <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+          <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1 pt-1">
+                <h3 className="text-xl font-black text-white mb-1">
+                  {tradeSuccessMessage.title}
+                </h3>
+                <p className="text-green-50/90 text-sm mb-3">
+                  {tradeSuccessMessage.description}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowTradeSuccessNotification(false)}
+                className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes slide-in-right {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes bounce-once {
+          0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+          }
+          40% {
+            transform: translateY(-10px);
+          }
+          60% {
+            transform: translateY(-5px);
+          }
+        }
+        @keyframes progress-bar {
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
+        }
+        .animate-slide-in-right {
+          animation: slide-in-right 0.5s ease-out;
+        }
+        .animate-bounce-once {
+          animation: bounce-once 1s ease-in-out;
+        }
+        .animate-progress-bar {
+          animation: progress-bar linear forwards;
+        }
+      `}</style>
     </div>
   );
 }
