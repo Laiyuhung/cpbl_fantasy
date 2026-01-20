@@ -6,6 +6,35 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// Roster Positions 預定義順序
+const ROSTER_POSITION_ORDER = [
+  'C', '1B', '2B', '3B', 'SS', 'MI', 'CI', 
+  'OF', 'LF', 'CF', 'RF', 'Util', 
+  'SP', 'RP', 'P', 
+  'BN', 'Minor'
+];
+
+// 按照預定義順序重新排列 Roster Positions
+const sortRosterPositions = (positions) => {
+  if (!positions || typeof positions !== 'object') return positions;
+  
+  const sorted = {};
+  ROSTER_POSITION_ORDER.forEach(pos => {
+    if (positions.hasOwnProperty(pos)) {
+      sorted[pos] = positions[pos];
+    }
+  });
+  
+  // 添加任何不在預定義列表中的位置（以防萬一）
+  Object.keys(positions).forEach(pos => {
+    if (!sorted.hasOwnProperty(pos)) {
+      sorted[pos] = positions[pos];
+    }
+  });
+  
+  return sorted;
+};
+
 // 將 datetime-local 字串視為台灣時間 (+08:00) 存成 ISO（UTC）
 const toTaiwanIso = (dt) => {
   if (!dt) return null;
@@ -162,8 +191,8 @@ export async function POST(request) {
 
       // Roster
       min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
-      // 直接塞入前端传来的数据
-      roster_positions: JSON.parse(JSON.stringify(settings.roster['Roster Positions'])),
+      // 按預定義順序排列 roster_positions
+      roster_positions: sortRosterPositions(settings.roster['Roster Positions']),
 
       // Scoring
       start_scoring_on: settings.scoring['Start Scoring On'],
@@ -378,8 +407,8 @@ export async function PUT(request) {
       trade_reject_percentage: settings.trading['Trade Review'] === 'No review' ? null : settings.trading['Trade Reject percentage needed'],
 
       min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
-      // 完全覆盖，无视原有数据
-      roster_positions: JSON.parse(JSON.stringify(settings.roster['Roster Positions'])),
+      // 按預定義順序排列 roster_positions
+      roster_positions: sortRosterPositions(settings.roster['Roster Positions']),
 
       start_scoring_on: settings.scoring['Start Scoring On'],
       // 完全覆盖，无视原有数据，保持前端传来的顺序
