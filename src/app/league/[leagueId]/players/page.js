@@ -162,8 +162,15 @@ export default function PlayersPage() {
       return '-';
     }
     
-    const value = stats[statKey.toLowerCase()];
-    console.log(`Player ${playerId}, stat ${statKey}:`, value);
+    // 提取括號內的縮寫作為實際欄位名，例如 "Runs (R)" -> "r"
+    let fieldName = statKey;
+    const match = statKey.match(/\(([^)]+)\)/);
+    if (match) {
+      fieldName = match[1]; // 使用括號內的內容
+    }
+    
+    const value = stats[fieldName.toLowerCase()];
+    console.log(`Player ${playerId}, stat ${statKey}, field ${fieldName.toLowerCase()}:`, value);
     return formatStatValue(value, statKey);
   };
 
@@ -681,16 +688,26 @@ export default function PlayersPage() {
                   <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Type</th>
                   <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Identity</th>
                   {/* 動態顯示統計項目 */}
-                  {filterType === 'batter' && batterStatCategories.map((stat) => (
-                    <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
-                      {stat}
-                    </th>
-                  ))}
-                  {filterType === 'pitcher' && pitcherStatCategories.map((stat) => (
-                    <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
-                      {stat}
-                    </th>
-                  ))}
+                  {filterType === 'batter' && batterStatCategories.map((stat) => {
+                    // 提取括號內的縮寫，例如 "Runs (R)" -> "R"
+                    const match = stat.match(/\(([^)]+)\)/);
+                    const displayName = match ? match[1] : stat;
+                    return (
+                      <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
+                        {displayName}
+                      </th>
+                    );
+                  })}
+                  {filterType === 'pitcher' && pitcherStatCategories.map((stat) => {
+                    // 提取括號內的縮寫，例如 "Earned Run Average (ERA)" -> "ERA"
+                    const match = stat.match(/\(([^)]+)\)/);
+                    const displayName = match ? match[1] : stat;
+                    return (
+                      <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
+                        {displayName}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-500/10">
