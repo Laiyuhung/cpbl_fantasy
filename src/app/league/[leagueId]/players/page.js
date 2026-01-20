@@ -40,9 +40,10 @@ export default function PlayersPage() {
   const [selectedMyPlayers, setSelectedMyPlayers] = useState([]);
   const [selectedTheirPlayers, setSelectedTheirPlayers] = useState([]);
   const [tradeLoading, setTradeLoading] = useState(false);
-  const [tradeError, setTradeError] = useState('');
   const [showTradeSuccessNotification, setShowTradeSuccessNotification] = useState(false);
   const [tradeSuccessMessage, setTradeSuccessMessage] = useState({ title: '', description: '' });
+  const [showTradeErrorNotification, setShowTradeErrorNotification] = useState(false);
+  const [tradeErrorMessage, setTradeErrorMessage] = useState({ title: '', description: '' });
 
   useEffect(() => {
     const fetchData = async () => {
