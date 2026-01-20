@@ -162,14 +162,18 @@ export async function POST(request) {
 
       // Roster
       min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
-      // 直接替换整个 roster_positions 对象，不使用 append
-      roster_positions: settings.roster['Roster Positions'],
+      // 直接塞入前端传来的数据
+      roster_positions: JSON.parse(JSON.stringify(settings.roster['Roster Positions'])),
 
       // Scoring
       start_scoring_on: settings.scoring['Start Scoring On'],
-      // 直接替换整个数组以保持原有顺序，不使用 append
-      batter_stat_categories: settings.scoring['Batter Stat Categories'],
-      pitcher_stat_categories: settings.scoring['Pitcher Stat Categories'],
+      // 直接塞入前端传来的数组，保持顺序
+      batter_stat_categories: Array.isArray(settings.scoring['Batter Stat Categories']) 
+        ? JSON.parse(JSON.stringify(settings.scoring['Batter Stat Categories'])) 
+        : [],
+      pitcher_stat_categories: Array.isArray(settings.scoring['Pitcher Stat Categories']) 
+        ? JSON.parse(JSON.stringify(settings.scoring['Pitcher Stat Categories'])) 
+        : [],
 
       // Playoffs
       playoffs: settings.playoffs['Playoffs'],
@@ -374,13 +378,17 @@ export async function PUT(request) {
       trade_reject_percentage: settings.trading['Trade Review'] === 'No review' ? null : settings.trading['Trade Reject percentage needed'],
 
       min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
-      // 直接替换整个 roster_positions 对象，不使用 append（保持原有顺序）
-      roster_positions: settings.roster['Roster Positions'],
+      // 完全覆盖，无视原有数据
+      roster_positions: JSON.parse(JSON.stringify(settings.roster['Roster Positions'])),
 
       start_scoring_on: settings.scoring['Start Scoring On'],
-      // 直接替换整个数组以保持原有设定顺序，不使用 append
-      batter_stat_categories: settings.scoring['Batter Stat Categories'],
-      pitcher_stat_categories: settings.scoring['Pitcher Stat Categories'],
+      // 完全覆盖，无视原有数据，保持前端传来的顺序
+      batter_stat_categories: Array.isArray(settings.scoring['Batter Stat Categories']) 
+        ? JSON.parse(JSON.stringify(settings.scoring['Batter Stat Categories'])) 
+        : [],
+      pitcher_stat_categories: Array.isArray(settings.scoring['Pitcher Stat Categories']) 
+        ? JSON.parse(JSON.stringify(settings.scoring['Pitcher Stat Categories'])) 
+        : [],
 
       playoffs: settings.playoffs['Playoffs'],
       playoffs_start: settings.playoffs['Playoffs'] === 'No playoffs' ? null : settings.playoffs['Playoffs start'],
