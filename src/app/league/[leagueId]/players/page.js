@@ -147,11 +147,11 @@ export default function PlayersPage() {
       return '-';
     }
     
-    // 提取括號內的縮寫作為實際欄位名，例如 "Runs (R)" -> "r"
+    // 提取最靠後的括號內的縮寫作為實際欄位名，例如 "Runs (R)" -> "r"
     let fieldName = statKey;
-    const match = statKey.match(/\(([^)]+)\)/);
-    if (match) {
-      fieldName = match[1]; // 使用括號內的內容
+    const matches = statKey.match(/\(([^)]+)\)/g);
+    if (matches) {
+      fieldName = matches[matches.length - 1].replace(/[()]/g, ''); // 使用最後一個括號內的內容
     }
     
     const value = stats[fieldName.toLowerCase()];
@@ -674,9 +674,9 @@ export default function PlayersPage() {
                   <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Identity</th>
                   {/* 動態顯示統計項目 */}
                   {filterType === 'batter' && batterStatCategories.map((stat) => {
-                    // 提取括號內的縮寫，例如 "Runs (R)" -> "R"
-                    const match = stat.match(/\(([^)]+)\)/);
-                    const displayName = match ? match[1] : stat;
+                    // 提取最靠後的括號內的縮寫，例如 "Runs (R)" -> "R"
+                    const matches = stat.match(/\(([^)]+)\)/g);
+                    const displayName = matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
                     return (
                       <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
                         {displayName}
@@ -684,9 +684,9 @@ export default function PlayersPage() {
                     );
                   })}
                   {filterType === 'pitcher' && pitcherStatCategories.map((stat) => {
-                    // 提取括號內的縮寫，例如 "Earned Run Average (ERA)" -> "ERA"
-                    const match = stat.match(/\(([^)]+)\)/);
-                    const displayName = match ? match[1] : stat;
+                    // 提取最靠後的括號內的縮寫，例如 "Earned Run Average (ERA)" -> "ERA"
+                    const matches = stat.match(/\(([^)]+)\)/g);
+                    const displayName = matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
                     return (
                       <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
                         {displayName}
