@@ -157,11 +157,6 @@ export async function POST(request) {
     const body = await request.json();
     const { settings, manager_id, categoryWeights } = body;
 
-    console.log('\n=== POST /api/league-settings ===');
-    console.log('📝 Roster Positions (原始):', JSON.stringify(settings.roster['Roster Positions'], null, 2));
-    console.log('📝 Batter Stats (原始):', settings.scoring['Batter Stat Categories']);
-    console.log('📝 Pitcher Stats (原始):', settings.scoring['Pitcher Stat Categories']);
-
     if (!manager_id) {
       return NextResponse.json(
         { error: 'Manager ID is required' },
@@ -220,10 +215,6 @@ export async function POST(request) {
       make_league_publicly_viewable: settings.league['Make League Publicly Viewable'],
       invite_permissions: settings.league['Invite Permissions'],
     };
-
-    console.log('✅ Roster Positions (排序後):', JSON.stringify(leagueData.roster_positions, null, 2));
-    console.log('✅ Batter Stats (處理後):', leagueData.batter_stat_categories);
-    console.log('✅ Pitcher Stats (處理後):', leagueData.pitcher_stat_categories);
 
     // 插入到資料庫
     const { data, error } = await supabase
@@ -370,12 +361,6 @@ export async function PUT(request) {
     const body = await request.json();
     const { league_id, settings, categoryWeights } = body;
 
-    console.log('\n=== PUT /api/league-settings ===');
-    console.log('🔄 League ID:', league_id);
-    console.log('📝 Roster Positions (原始):', JSON.stringify(settings.roster['Roster Positions'], null, 2));
-    console.log('📝 Batter Stats (原始):', settings.scoring['Batter Stat Categories']);
-    console.log('📝 Pitcher Stats (原始):', settings.scoring['Pitcher Stat Categories']);
-
     if (!league_id) {
       return NextResponse.json(
         { error: 'league_id is required' },
@@ -443,10 +428,6 @@ export async function PUT(request) {
       make_league_publicly_viewable: settings.league['Make League Publicly Viewable'],
       invite_permissions: settings.league['Invite Permissions'],
     };
-
-    console.log('✅ Roster Positions (排序後):', JSON.stringify(leagueData.roster_positions, null, 2));
-    console.log('✅ Batter Stats (處理後):', leagueData.batter_stat_categories);
-    console.log('✅ Pitcher Stats (處理後):', leagueData.pitcher_stat_categories);
 
     const { data, error } = await supabase
       .from('league_settings')
@@ -573,6 +554,11 @@ export async function GET(request) {
           { error: '找不到聯盟設定', details: error.message },
           { status: 404 }
         );
+      }
+
+      // 重新排序 roster_positions（因为 PostgreSQL jsonb 会按字典序存储）
+      if (data.roster_positions) {
+        data.roster_positions = sortRosterPositions(data.roster_positions);
       }
 
       // 取得狀態（若沒有就回傳 null）
