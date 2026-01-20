@@ -110,12 +110,17 @@ export default function PlayersPage() {
         const res = await fetch(endpoint);
         const data = await res.json();
         
+        console.log('Fetched player stats:', data);
+        console.log('Endpoint:', endpoint);
+        
         if (data.success && data.stats) {
           // 轉換為 player_id => stats 的對照表
           const statsMap = {};
           data.stats.forEach(stat => {
+            console.log('Player stat:', stat.player_id, stat);
             statsMap[stat.player_id] = stat;
           });
+          console.log('Stats map:', statsMap);
           setPlayerStats(statsMap);
         }
       } catch (err) {
@@ -152,9 +157,13 @@ export default function PlayersPage() {
   // 取得球員的統計數據
   const getPlayerStat = (playerId, statKey) => {
     const stats = playerStats[playerId];
-    if (!stats) return '-';
+    if (!stats) {
+      console.log('No stats for player:', playerId);
+      return '-';
+    }
     
     const value = stats[statKey.toLowerCase()];
+    console.log(`Player ${playerId}, stat ${statKey}:`, value);
     return formatStatValue(value, statKey);
   };
 
@@ -674,12 +683,12 @@ export default function PlayersPage() {
                   {/* 動態顯示統計項目 */}
                   {filterType === 'batter' && batterStatCategories.map((stat) => (
                     <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
-                      {stat.toUpperCase()}
+                      {stat}
                     </th>
                   ))}
                   {filterType === 'pitcher' && pitcherStatCategories.map((stat) => (
                     <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
-                      {stat.toUpperCase()}
+                      {stat}
                     </th>
                   ))}
                 </tr>
