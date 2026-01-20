@@ -359,7 +359,7 @@ export default function PlayersPage() {
   // 處理新增球員到隊伍
   const handleAddPlayer = async (player) => {
     if (!myManagerId) {
-      alert('請先登入');
+      alert('Please log in first');
       return;
     }
 
@@ -371,7 +371,7 @@ export default function PlayersPage() {
   // 處理 DROP 球員
   const handleDropPlayer = async (player) => {
     if (!myManagerId) {
-      alert('請先登入');
+      alert('Please log in first');
       return;
     }
 
@@ -507,7 +507,7 @@ export default function PlayersPage() {
   // 彈窗送出
   const handleSubmitTrade = async () => {
     if (!selectedMyPlayers.length && !selectedTheirPlayers.length) {
-      setTradeError('請選擇至少一位球員');
+      setTradeError('Please select at least one player');
       return;
     }
     setTradeLoading(true);
@@ -526,16 +526,16 @@ export default function PlayersPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setTradeSuccess('交易請求已送出！');
+        setTradeSuccess('Trade request sent successfully!');
         setTimeout(() => {
           setShowTradeModal(false);
           setTradeSuccess('');
         }, 1500);
       } else {
-        setTradeError(data.error || '交易失敗');
+        setTradeError(data.error || 'Trade failed');
       }
     } catch (err) {
-      setTradeError('交易失敗，請稍後再試');
+      setTradeError('Trade failed, please try again later');
     } finally {
       setTradeLoading(false);
     }
@@ -561,9 +561,11 @@ export default function PlayersPage() {
 
     const status = ownership.status?.toLowerCase();
 
-    // 如果 status 是 waiver，不顯示按鈕
+    // 如果 status 是 waiver，顯示占位符以保持對齊
     if (status === 'waiver') {
-      return null;
+      return (
+        <div className="w-8 h-8"></div>
+      );
     }
 
     // 如果 status 是 on team
@@ -592,7 +594,7 @@ export default function PlayersPage() {
               setTradeError('');
               setTradeSuccess('');
             }}
-            title="發起交易"
+            title="Propose Trade"
           >
             ⇌
           </button>
@@ -609,15 +611,15 @@ export default function PlayersPage() {
     if (!showTradeModal) return null;
     const myPlayers = getMyPlayers();
     const theirPlayers = getTheirPlayers();
-    const myNick = members.find(m => m.manager_id === myManagerId)?.nickname || '你';
-    const theirNick = members.find(m => m.manager_id === tradeTargetManagerId)?.nickname || '對方';
+    const myNick = members.find(m => m.manager_id === myManagerId)?.nickname || 'You';
+    const theirNick = members.find(m => m.manager_id === tradeTargetManagerId)?.nickname || 'Opponent';
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
         <div className="bg-gradient-to-br from-purple-700/90 to-blue-800/90 border border-purple-400/40 rounded-2xl shadow-2xl p-0 w-full max-w-2xl relative">
           <div className="flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-purple-400/20 bg-gradient-to-r from-purple-600/80 to-blue-700/80 rounded-t-2xl">
               <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                <span className="text-3xl">⇌</span> 發起交易
+                <span className="text-3xl">⇌</span> Trade Proposal
               </h2>
               <button className="text-purple-200 hover:text-white text-2xl font-bold" onClick={() => setShowTradeModal(false)}>
                 ×
@@ -630,7 +632,7 @@ export default function PlayersPage() {
             <div className="grid grid-cols-2 gap-6 px-6 pb-2">
               <div>
                 <div className="max-h-60 overflow-y-auto border rounded-xl p-2 bg-slate-900/60">
-                  {myPlayers.length === 0 && <div className="text-gray-400">無可交易球員</div>}
+                  {myPlayers.length === 0 && <div className="text-gray-400">No tradable players</div>}
                   {myPlayers.map(o => (
                     <label key={o.player_id} className="flex items-center gap-2 mb-1 text-purple-100">
                       <input
@@ -647,7 +649,7 @@ export default function PlayersPage() {
               </div>
               <div>
                 <div className="max-h-60 overflow-y-auto border rounded-xl p-2 bg-slate-900/60">
-                  {theirPlayers.length === 0 && <div className="text-gray-400">無可交易球員</div>}
+                  {theirPlayers.length === 0 && <div className="text-gray-400">No tradable players</div>}
                   {theirPlayers.map(o => (
                     <label key={o.player_id} className="flex items-center gap-2 mb-1 text-pink-100">
                       <input
@@ -670,12 +672,12 @@ export default function PlayersPage() {
                 className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
                 onClick={() => setShowTradeModal(false)}
                 disabled={tradeLoading}
-              >取消</button>
+              >Cancel</button>
               <button
                 className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow"
                 onClick={handleSubmitTrade}
                 disabled={tradeLoading}
-              >送出交易</button>
+              >Submit Trade</button>
             </div>
           </div>
         </div>
