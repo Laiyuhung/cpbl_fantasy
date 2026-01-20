@@ -507,11 +507,21 @@ export default function PlayersPage() {
 
   // 彈窗送出
   const handleSubmitTrade = async () => {
+    // 先设置loading状态，给用户立即反馈
+    setTradeLoading(true);
+
     if (!selectedMyPlayers.length && !selectedTheirPlayers.length) {
-      setTradeError('Please select at least one player');
+      setTradeErrorMessage({
+        title: 'Validation Error',
+        description: 'Please select at least one player to trade.'
+      });
+      setShowTradeErrorNotification(true);
+      setTimeout(() => {
+        setShowTradeErrorNotification(false);
+      }, 4000);
+      setTradeLoading(false); // 重置loading状态
       return;
     }
-    setTradeLoading(true);
     setTradeError('');
     try {
       const res = await fetch('/api/trade/pending', {
@@ -692,10 +702,15 @@ export default function PlayersPage() {
                 disabled={tradeLoading}
               >Cancel</button>
               <button
-                className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow"
+                className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 onClick={handleSubmitTrade}
                 disabled={tradeLoading}
-              >Submit Trade</button>
+              >
+                {tradeLoading && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                )}
+                {tradeLoading ? 'Submitting...' : 'Submit Trade'}
+              </button>
             </div>
           </div>
         </div>
