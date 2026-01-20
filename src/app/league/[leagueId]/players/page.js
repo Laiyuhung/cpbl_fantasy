@@ -31,6 +31,10 @@ export default function PlayersPage() {
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
   const [rosterPositions, setRosterPositions] = useState({}); // 聯盟守備位置設定
   const [showInfoModal, setShowInfoModal] = useState(false); // 守位資格說明視窗
+  const [timeWindow, setTimeWindow] = useState('2026 Season'); // 數據區間選擇
+  const [batterStatCategories, setBatterStatCategories] = useState([]); // 打者統計項目
+  const [pitcherStatCategories, setPitcherStatCategories] = useState([]); // 投手統計項目
+  const [playerStats, setPlayerStats] = useState({}); // 球員統計數據
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,6 +77,14 @@ export default function PlayersPage() {
           setMembers(leagueData.members || []);
           setRosterPositions(leagueData.league?.roster_positions || {});
         }
+
+        // 取得聯盟設定 (stat categories)
+        const settingsRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
+        const settingsData = await settingsRes.json();
+        if (settingsData.success && settingsData.data) {
+          setBatterStatCategories(settingsData.data.batter_stat_categories || []);
+          setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
+        }
       } catch (err) {
         console.error('Unexpected error:', err);
         setError('An unexpected error occurred');
@@ -83,6 +95,68 @@ export default function PlayersPage() {
 
     fetchData();
   }, [leagueId]);
+
+  // 取得球員統計數據
+  useEffect(() => {
+    const fetchPlayerStats = async () => {
+      if (!timeWindow) return;
+
+      try {
+        // 根據球員類型選擇不同的 API
+        const endpoint = filterType === 'batter' 
+          ? `/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`
+          : `/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`;
+        
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        
+        if (data.success && data.stats) {
+          // 轉換為 player_id => stats 的對照表
+          const statsMap = {};
+          data.stats.forEach(stat => {
+            statsMap[stat.player_id] = stat;
+          });
+          setPlayerStats(statsMap);
+        }
+      } catch (err) {
+        console.error('Failed to fetch player stats:', err);
+      }
+    };
+
+    fetchPlayerStats();
+  }, [timeWindow, filterType]);
+
+  // 格式化統計數據顯示
+  const formatStatValue = (value, statKey) => {
+    if (value === null || value === undefined) return '-';
+    
+    // 百分率數據 (avg, obp, slg, ops, obpa, win% 等)
+    if (['avg', 'obp', 'slg', 'ops', 'obpa', 'win%'].includes(statKey.toLowerCase())) {
+      return parseFloat(value).toFixed(3);
+    }
+    
+    // 兩位小數的數據 (era, whip, k/9, bb/9, h/9, k/bb 等)
+    if (['era', 'whip', 'k/9', 'bb/9', 'h/9', 'k/bb'].includes(statKey.toLowerCase())) {
+      return parseFloat(value).toFixed(2);
+    }
+    
+    // IP (局數) 保留一位小數
+    if (statKey.toLowerCase() === 'ip') {
+      return parseFloat(value).toFixed(1);
+    }
+    
+    // 整數數據
+    return Math.round(value);
+  };
+
+  // 取得球員的統計數據
+  const getPlayerStat = (playerId, statKey) => {
+    const stats = playerStats[playerId];
+    if (!stats) return '-';
+    
+    const value = stats[statKey.toLowerCase()];
+    return formatStatValue(value, statKey);
+  };
 
   // 根據 roster_positions 過濾守備位置
   const filterPositions = (player) => {
@@ -509,7 +583,7 @@ export default function PlayersPage() {
 
           {/* Filters */}
           <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
@@ -554,6 +628,26 @@ export default function PlayersPage() {
                   <option value="foreigner">Foreigner</option>
                 </select>
               </div>
+
+              {/* Time Window */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Stats Period
+                </label>
+                <select
+                  value={timeWindow}
+                  onChange={(e) => setTimeWindow(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="Today">Today</option>
+                  <option value="Yesterday">Yesterday</option>
+                  <option value="Last 7 Days">Last 7 Days</option>
+                  <option value="Last 14 Days">Last 14 Days</option>
+                  <option value="Last 30 Days">Last 30 Days</option>
+                  <option value="2026 Season">2026 Season</option>
+                  <option value="2025 Season">2025 Season</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -577,12 +671,23 @@ export default function PlayersPage() {
                   <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Team</th>
                   <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Type</th>
                   <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Identity</th>
+                  {/* 動態顯示統計項目 */}
+                  {filterType === 'batter' && batterStatCategories.map((stat) => (
+                    <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
+                      {stat.toUpperCase()}
+                    </th>
+                  ))}
+                  {filterType === 'pitcher' && pitcherStatCategories.map((stat) => (
+                    <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
+                      {stat.toUpperCase()}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-500/10">
                 {filteredPlayers.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center">
+                    <td colSpan={4 + (filterType === 'batter' ? batterStatCategories.length : pitcherStatCategories.length)} className="px-6 py-12 text-center">
                       <div className="text-purple-300/50 text-lg">
                         {searchTerm || filterType !== 'all' || filterIdentity !== 'all' 
                           ? 'No players found matching your filters'
@@ -645,6 +750,17 @@ export default function PlayersPage() {
                           {player.identity === 'local' ? 'Local' : 'Foreigner'}
                         </span>
                       </td>
+                      {/* 動態顯示統計數據 */}
+                      {filterType === 'batter' && batterStatCategories.map((stat) => (
+                        <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
+                          {getPlayerStat(player.player_id, stat)}
+                        </td>
+                      ))}
+                      {filterType === 'pitcher' && pitcherStatCategories.map((stat) => (
+                        <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
+                          {getPlayerStat(player.player_id, stat)}
+                        </td>
+                      ))}
                     </tr>
                   ))
                 )}
