@@ -135,23 +135,8 @@ export default function PlayersPage() {
   const formatStatValue = (value, statKey) => {
     if (value === null || value === undefined) return '-';
     
-    // 百分率數據 (avg, obp, slg, ops, obpa, win% 等)
-    if (['avg', 'obp', 'slg', 'ops', 'obpa', 'win%'].includes(statKey.toLowerCase())) {
-      return parseFloat(value).toFixed(3);
-    }
-    
-    // 兩位小數的數據 (era, whip, k/9, bb/9, h/9, k/bb 等)
-    if (['era', 'whip', 'k/9', 'bb/9', 'h/9', 'k/bb'].includes(statKey.toLowerCase())) {
-      return parseFloat(value).toFixed(2);
-    }
-    
-    // IP (局數) 保留一位小數
-    if (statKey.toLowerCase() === 'ip') {
-      return parseFloat(value).toFixed(1);
-    }
-    
-    // 整數數據
-    return Math.round(value);
+    // 直接返回後端傳過來的數字
+    return value;
   };
 
   // 取得球員的統計數據
