@@ -154,7 +154,7 @@ export default function PlayersPage() {
       return '-';
     }
     
-    // 提取最靠後的括號內的縮寫作為實際欄位名，例如 "Runs (R)" -> "r"
+    // 提取最靠後的括號內的縮寫作為實際欄位名，例如 "Runs (R)" -> "R"
     let fieldName = statKey;
     const matches = statKey.match(/\(([^)]+)\)/g);
     if (matches) {
@@ -609,64 +609,74 @@ export default function PlayersPage() {
     if (!showTradeModal) return null;
     const myPlayers = getMyPlayers();
     const theirPlayers = getTheirPlayers();
+    const myNick = members.find(m => m.manager_id === myManagerId)?.nickname || '你';
+    const theirNick = members.find(m => m.manager_id === tradeTargetManagerId)?.nickname || '對方';
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl relative">
-          <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700" onClick={() => setShowTradeModal(false)}>
-            ×
-          </button>
-          <h2 className="text-2xl font-bold mb-4 text-blue-700">發起交易</h2>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <div className="font-semibold mb-2 text-purple-700">我的球員</div>
-              <div className="max-h-60 overflow-y-auto border rounded p-2 bg-slate-50">
-                {myPlayers.length === 0 && <div className="text-gray-400">無可交易球員</div>}
-                {myPlayers.map(o => (
-                  <label key={o.player_id} className="flex items-center gap-2 mb-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedMyPlayers.includes(o.player_id)}
-                      onChange={e => {
-                        setSelectedMyPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
-                      }}
-                    />
-                    <span>{players.find(p => p.player_id === o.player_id)?.name || o.player_id}</span>
-                  </label>
-                ))}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-purple-700/90 to-blue-800/90 border border-purple-400/40 rounded-2xl shadow-2xl p-0 w-full max-w-2xl relative">
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-purple-400/20 bg-gradient-to-r from-purple-600/80 to-blue-700/80 rounded-t-2xl">
+              <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                <span className="text-3xl">⇌</span> 發起交易
+              </h2>
+              <button className="text-purple-200 hover:text-white text-2xl font-bold" onClick={() => setShowTradeModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="flex justify-between px-6 pt-4 pb-2">
+              <div className="font-bold text-purple-200">{myNick}</div>
+              <div className="font-bold text-pink-200">{theirNick}</div>
+            </div>
+            <div className="grid grid-cols-2 gap-6 px-6 pb-2">
+              <div>
+                <div className="max-h-60 overflow-y-auto border rounded-xl p-2 bg-slate-900/60">
+                  {myPlayers.length === 0 && <div className="text-gray-400">無可交易球員</div>}
+                  {myPlayers.map(o => (
+                    <label key={o.player_id} className="flex items-center gap-2 mb-1 text-purple-100">
+                      <input
+                        type="checkbox"
+                        checked={selectedMyPlayers.includes(o.player_id)}
+                        onChange={e => {
+                          setSelectedMyPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
+                        }}
+                      />
+                      <span>{players.find(p => p.player_id === o.player_id)?.name || o.player_id}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="max-h-60 overflow-y-auto border rounded-xl p-2 bg-slate-900/60">
+                  {theirPlayers.length === 0 && <div className="text-gray-400">無可交易球員</div>}
+                  {theirPlayers.map(o => (
+                    <label key={o.player_id} className="flex items-center gap-2 mb-1 text-pink-100">
+                      <input
+                        type="checkbox"
+                        checked={selectedTheirPlayers.includes(o.player_id)}
+                        onChange={e => {
+                          setSelectedTheirPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
+                        }}
+                      />
+                      <span>{players.find(p => p.player_id === o.player_id)?.name || o.player_id}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
-            <div>
-              <div className="font-semibold mb-2 text-pink-700">對方球員</div>
-              <div className="max-h-60 overflow-y-auto border rounded p-2 bg-slate-50">
-                {theirPlayers.length === 0 && <div className="text-gray-400">無可交易球員</div>}
-                {theirPlayers.map(o => (
-                  <label key={o.player_id} className="flex items-center gap-2 mb-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedTheirPlayers.includes(o.player_id)}
-                      onChange={e => {
-                        setSelectedTheirPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
-                      }}
-                    />
-                    <span>{players.find(p => p.player_id === o.player_id)?.name || o.player_id}</span>
-                  </label>
-                ))}
-              </div>
+            {tradeError && <div className="text-red-400 mt-2 px-6">{tradeError}</div>}
+            {tradeSuccess && <div className="text-green-300 mt-2 px-6">{tradeSuccess}</div>}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl">
+              <button
+                className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
+                onClick={() => setShowTradeModal(false)}
+                disabled={tradeLoading}
+              >取消</button>
+              <button
+                className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow"
+                onClick={handleSubmitTrade}
+                disabled={tradeLoading}
+              >送出交易</button>
             </div>
-          </div>
-          {tradeError && <div className="text-red-500 mt-4">{tradeError}</div>}
-          {tradeSuccess && <div className="text-green-600 mt-4">{tradeSuccess}</div>}
-          <div className="flex justify-end mt-6 gap-3">
-            <button
-              className="px-6 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
-              onClick={() => setShowTradeModal(false)}
-              disabled={tradeLoading}
-            >取消</button>
-            <button
-              className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold"
-              onClick={handleSubmitTrade}
-              disabled={tradeLoading}
-            >送出交易</button>
           </div>
         </div>
       </div>
