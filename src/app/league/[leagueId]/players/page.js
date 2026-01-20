@@ -532,8 +532,8 @@ export default function PlayersPage() {
           description: 'Your trade request has been submitted and is pending approval.'
         });
         setShowTradeSuccessNotification(true);
+        setShowTradeModal(false); // 立即关闭modal避免重复提交
         setTimeout(() => {
-          setShowTradeModal(false);
           setShowTradeSuccessNotification(false);
         }, 4000);
       } else {
