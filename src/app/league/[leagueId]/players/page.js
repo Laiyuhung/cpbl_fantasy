@@ -523,7 +523,6 @@ export default function PlayersPage() {
       setTradeLoading(false); // 重置loading状态
       return;
     }
-    setTradeError('');
     try {
       const res = await fetch('/api/trade/pending', {
         method: 'POST',
@@ -621,8 +620,6 @@ export default function PlayersPage() {
               setShowTradeModal(true);
               setSelectedMyPlayers([]);
               setSelectedTheirPlayers([]);
-              setTradeError('');
-              setTradeSuccess('');
             }}
             title="Propose Trade"
           >
@@ -695,7 +692,6 @@ export default function PlayersPage() {
                 </div>
               </div>
             </div>
-            {tradeError && <div className="text-red-400 mt-2 px-6">{tradeError}</div>}
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl">
               <button
                 className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
