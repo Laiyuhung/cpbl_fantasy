@@ -537,10 +537,24 @@ export default function PlayersPage() {
           setShowTradeSuccessNotification(false);
         }, 4000);
       } else {
-        setTradeError(data.error || 'Trade failed');
+        setTradeErrorMessage({
+          title: 'Trade Failed',
+          description: data.error || 'Failed to submit trade proposal. Please try again.'
+        });
+        setShowTradeErrorNotification(true);
+        setTimeout(() => {
+          setShowTradeErrorNotification(false);
+        }, 4000);
       }
     } catch (err) {
-      setTradeError('Trade failed, please try again later');
+      setTradeErrorMessage({
+        title: 'Trade Failed',
+        description: 'Trade failed, please try again later'
+      });
+      setShowTradeErrorNotification(true);
+      setTimeout(() => {
+        setShowTradeErrorNotification(false);
+      }, 4000);
     } finally {
       setTradeLoading(false);
     }
