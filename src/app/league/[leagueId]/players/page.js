@@ -35,6 +35,13 @@ export default function PlayersPage() {
   const [batterStatCategories, setBatterStatCategories] = useState([]); // 打者統計項目
   const [pitcherStatCategories, setPitcherStatCategories] = useState([]); // 投手統計項目
   const [playerStats, setPlayerStats] = useState({}); // 球員統計數據
+  const [showTradeModal, setShowTradeModal] = useState(false);
+  const [tradeTargetManagerId, setTradeTargetManagerId] = useState(null);
+  const [selectedMyPlayers, setSelectedMyPlayers] = useState([]);
+  const [selectedTheirPlayers, setSelectedTheirPlayers] = useState([]);
+  const [tradeLoading, setTradeLoading] = useState(false);
+  const [tradeError, setTradeError] = useState('');
+  const [tradeSuccess, setTradeSuccess] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -489,6 +496,51 @@ export default function PlayersPage() {
     }
   };
 
+  // 取得自己和對方的球員名單
+  const getMyPlayers = () => {
+    return ownerships.filter(o => o.manager_id === myManagerId && o.status?.toLowerCase() === 'on team');
+  };
+  const getTheirPlayers = () => {
+    return ownerships.filter(o => o.manager_id === tradeTargetManagerId && o.status?.toLowerCase() === 'on team');
+  };
+
+  // 彈窗送出
+  const handleSubmitTrade = async () => {
+    if (!selectedMyPlayers.length && !selectedTheirPlayers.length) {
+      setTradeError('請選擇至少一位球員');
+      return;
+    }
+    setTradeLoading(true);
+    setTradeError('');
+    try {
+      const res = await fetch('/api/trade/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          league_id: leagueId,
+          initiator_manager_id: myManagerId,
+          recipient_manager_id: tradeTargetManagerId,
+          initiator_player_ids: selectedMyPlayers,
+          recipient_player_ids: selectedTheirPlayers
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTradeSuccess('交易請求已送出！');
+        setTimeout(() => {
+          setShowTradeModal(false);
+          setTradeSuccess('');
+        }, 1500);
+      } else {
+        setTradeError(data.error || '交易失敗');
+      }
+    } catch (err) {
+      setTradeError('交易失敗，請稍後再試');
+    } finally {
+      setTradeLoading(false);
+    }
+  };
+
   const getPlayerActionButton = (player) => {
     // 查找該球員的 ownership 資料
     const ownership = ownerships.find(
@@ -530,7 +582,18 @@ export default function PlayersPage() {
       } else {
         // 藍色框的 ⇌
         return (
-          <button className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold hover:bg-blue-700 transition-colors">
+          <button
+            className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold hover:bg-blue-700 transition-colors"
+            onClick={() => {
+              setTradeTargetManagerId(ownership.manager_id);
+              setShowTradeModal(true);
+              setSelectedMyPlayers([]);
+              setSelectedTheirPlayers([]);
+              setTradeError('');
+              setTradeSuccess('');
+            }}
+            title="發起交易"
+          >
             ⇌
           </button>
         );
@@ -539,7 +602,78 @@ export default function PlayersPage() {
 
     // 其他狀態不顯示按鈕
     return null;
-  };  if (loading) {
+  };
+
+  // Trade Modal
+  const renderTradeModal = () => {
+    if (!showTradeModal) return null;
+    const myPlayers = getMyPlayers();
+    const theirPlayers = getTheirPlayers();
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl relative">
+          <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700" onClick={() => setShowTradeModal(false)}>
+            ×
+          </button>
+          <h2 className="text-2xl font-bold mb-4 text-blue-700">發起交易</h2>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <div className="font-semibold mb-2 text-purple-700">我的球員</div>
+              <div className="max-h-60 overflow-y-auto border rounded p-2 bg-slate-50">
+                {myPlayers.length === 0 && <div className="text-gray-400">無可交易球員</div>}
+                {myPlayers.map(o => (
+                  <label key={o.player_id} className="flex items-center gap-2 mb-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedMyPlayers.includes(o.player_id)}
+                      onChange={e => {
+                        setSelectedMyPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
+                      }}
+                    />
+                    <span>{players.find(p => p.player_id === o.player_id)?.name || o.player_id}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold mb-2 text-pink-700">對方球員</div>
+              <div className="max-h-60 overflow-y-auto border rounded p-2 bg-slate-50">
+                {theirPlayers.length === 0 && <div className="text-gray-400">無可交易球員</div>}
+                {theirPlayers.map(o => (
+                  <label key={o.player_id} className="flex items-center gap-2 mb-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedTheirPlayers.includes(o.player_id)}
+                      onChange={e => {
+                        setSelectedTheirPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
+                      }}
+                    />
+                    <span>{players.find(p => p.player_id === o.player_id)?.name || o.player_id}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          {tradeError && <div className="text-red-500 mt-4">{tradeError}</div>}
+          {tradeSuccess && <div className="text-green-600 mt-4">{tradeSuccess}</div>}
+          <div className="flex justify-end mt-6 gap-3">
+            <button
+              className="px-6 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
+              onClick={() => setShowTradeModal(false)}
+              disabled={tradeLoading}
+            >取消</button>
+            <button
+              className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold"
+              onClick={handleSubmitTrade}
+              disabled={tradeLoading}
+            >送出交易</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -975,6 +1109,9 @@ export default function PlayersPage() {
           </div>
         </div>
       )}
+
+      {/* Trade Modal */}
+      {renderTradeModal()}
     </div>
   );
 }
