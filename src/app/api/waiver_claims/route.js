@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseServer';
+import supabase from '@/lib/supabaseServer';
 
 // POST /api/waiver_claims
 export async function POST(request) {

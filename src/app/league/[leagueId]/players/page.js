@@ -19,12 +19,12 @@ export default function PlayersPage() {
   const [showConfirmAdd, setShowConfirmAdd] = useState(false); // 確認新增對話框
   const [playerToAdd, setPlayerToAdd] = useState(null); // 待加入的球員
   const [isAdding, setIsAdding] = useState(false); // 執行新增中
-    const [waiverMode, setWaiverMode] = useState(false); // 是否waiver申請
-    const [showWaiverSuccess, setShowWaiverSuccess] = useState(false);
-    const [waiverSuccessMsg, setWaiverSuccessMsg] = useState('');
-    const [showWaiverError, setShowWaiverError] = useState(false);
-    const [waiverErrorMsg, setWaiverErrorMsg] = useState('');
-    const [waiverDropPlayerId, setWaiverDropPlayerId] = useState(''); // 可選丟誰
+  const [waiverMode, setWaiverMode] = useState(false); // 是否waiver申請
+  const [showWaiverSuccess, setShowWaiverSuccess] = useState(false);
+  const [waiverSuccessMsg, setWaiverSuccessMsg] = useState('');
+  const [showWaiverError, setShowWaiverError] = useState(false);
+  const [waiverErrorMsg, setWaiverErrorMsg] = useState('');
+  const [waiverDropPlayerId, setWaiverDropPlayerId] = useState(''); // 可選丟誰
   const [showConfirmDrop, setShowConfirmDrop] = useState(false); // 確認刪除對話框
   const [playerToDrop, setPlayerToDrop] = useState(null); // 待刪除的球員
   const [isDropping, setIsDropping] = useState(false); // 執行刪除中
@@ -55,14 +55,14 @@ export default function PlayersPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // 從 cookie 取得當前用戶的 user_id (即 manager_id)
         const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
         const userId = cookie?.split('=')[1];
         if (userId) {
           setMyManagerId(userId);
         }
-        
+
         // 並行請求 players 和 ownerships
         const [playersRes, ownershipsRes, leagueRes] = await Promise.all([
           fetch('/api/playerslist?available=true'),
@@ -118,16 +118,16 @@ export default function PlayersPage() {
 
       try {
         // 根據球員類型選擇不同的 API
-        const endpoint = filterType === 'batter' 
+        const endpoint = filterType === 'batter'
           ? `/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`
           : `/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`;
-        
+
         const res = await fetch(endpoint);
         const data = await res.json();
-        
+
         console.log('Fetched player stats:', data);
         console.log('Endpoint:', endpoint);
-        
+
         if (data.success && data.stats) {
           // 轉換為 player_id => stats 的對照表
           const statsMap = {};
@@ -149,7 +149,7 @@ export default function PlayersPage() {
   // 格式化統計數據顯示
   const formatStatValue = (value, statKey) => {
     if (value === null || value === undefined) return '-';
-    
+
     // 直接返回後端傳過來的數字
     return value;
   };
@@ -158,39 +158,39 @@ export default function PlayersPage() {
   const getPlayerStat = (playerId, statKey) => {
     const stats = playerStats[playerId];
     if (!stats) {
-      console.log('No stats for player:', playerId);
+
       return '-';
     }
-    
+
     // 提取最靠後的括號內的縮寫作為實際欄位名，例如 "Runs (R)" -> "R"
     let fieldName = statKey;
     const matches = statKey.match(/\(([^)]+)\)/g);
     if (matches) {
       fieldName = matches[matches.length - 1].replace(/[()]/g, ''); // 使用最後一個括號內的內容
     }
-    
+
     const value = stats[fieldName.toLowerCase()];
-    console.log(`Player ${playerId}, stat ${statKey}, field ${fieldName.toLowerCase()}:`, value);
+
     return formatStatValue(value, statKey);
   };
 
   // 根據 roster_positions 過濾守備位置
   const filterPositions = (player) => {
     let positionList = player.position_list;
-    
+
     // 若無守備位置資料，根據球員類型給預設值
     if (!positionList) {
       positionList = player.batter_or_pitcher === 'batter' ? 'Util' : 'P';
     }
-    
+
     // 解析位置列表
     const positions = positionList.split(',').map(p => p.trim());
-    
+
     // 過濾出在 roster_positions 中存在的守位
     const validPositions = positions.filter(pos => {
       return rosterPositions[pos] && rosterPositions[pos] > 0;
     });
-    
+
     // 若過濾後為空，返回 NA
     return validPositions.length > 0 ? validPositions.join(', ') : 'NA';
   };
@@ -231,23 +231,23 @@ export default function PlayersPage() {
   }, [players]);
 
   const filteredPlayers = players.filter(player => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.original_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.team?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesType = 
+    const matchesType =
       (filterType === 'batter' && player.batter_or_pitcher === 'batter') ||
       (filterType === 'pitcher' && player.batter_or_pitcher === 'pitcher');
 
-    const matchesIdentity = filterIdentity === 'all' || 
+    const matchesIdentity = filterIdentity === 'all' ||
       player.identity?.toLowerCase() === filterIdentity.toLowerCase();
 
     return matchesSearch && matchesType && matchesIdentity;
   });
 
   const getTeamColor = (team) => {
-    switch(team) {
+    switch (team) {
       case '統一獅':
         return 'bg-orange-600 text-white';
       case '富邦悍將':
@@ -300,12 +300,12 @@ export default function PlayersPage() {
   };
   const getPlayerPhotoPaths = (player) => {
     const paths = [];
-    
+
     // 1. 嘗試使用 name
     if (player.name) {
       paths.push(`/photo/${player.name}.png`);
     }
-    
+
     // 2. 嘗試使用 original_name (逗號+空白分隔)
     if (player.original_name) {
       const aliases = player.original_name.split(',').map(alias => alias.trim());
@@ -315,15 +315,15 @@ export default function PlayersPage() {
         }
       });
     }
-    
+
     // 3. 嘗試使用 player_id
     if (player.player_id) {
       paths.push(`/photo/${player.player_id}.png`);
     }
-    
+
     // 4. 最後使用預設照片
     paths.push('/photo/defaultPlayer.png');
-    
+
     return paths;
   };
 
@@ -336,7 +336,7 @@ export default function PlayersPage() {
     // 獲取當前嘗試的路徑
     const currentSrc = e.target.src;
     const paths = getPlayerPhotoPaths(player);
-    
+
     // 找到當前路徑在 paths 中的位置
     let currentIndex = -1;
     for (let i = 0; i < paths.length; i++) {
@@ -345,9 +345,9 @@ export default function PlayersPage() {
         break;
       }
     }
-    
+
     const nextIndex = currentIndex + 1;
-    
+
     if (nextIndex < paths.length) {
       // 嘗試下一個路徑
       const nextPath = paths[nextIndex];
@@ -479,12 +479,12 @@ export default function PlayersPage() {
 
     try {
       setIsDropping(true);
-      
+
       const requestBody = {
         player_id: playerToDrop.player_id,
         manager_id: myManagerId
       };
-      
+
       const res = await fetch(`/api/league/${leagueId}/ownership`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -492,17 +492,17 @@ export default function PlayersPage() {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         // 關閉對話框
         setIsDropping(false);
         setShowConfirmDrop(false);
-        
+
         // 顯示成功動畫
         setSuccessMessage('Player Dropped Successfully!');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
-        
+
         // 重新載入 ownerships 資料
         setIsRefreshing(true);
         const ownershipsRes = await fetch(`/api/league/${leagueId}/ownership`);
@@ -651,7 +651,7 @@ export default function PlayersPage() {
       if (ownership.manager_id === myManagerId) {
         // 紅色底的 -
         return (
-          <button 
+          <button
             onClick={() => handleDropPlayer(player)}
             className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold hover:bg-red-700 transition-colors"
           >
@@ -924,7 +924,7 @@ export default function PlayersPage() {
                   <tr>
                     <td colSpan={4 + (filterType === 'batter' ? batterStatCategories.length : pitcherStatCategories.length)} className="px-6 py-12 text-center">
                       <div className="text-purple-300/50 text-lg">
-                        {searchTerm || filterType !== 'all' || filterIdentity !== 'all' 
+                        {searchTerm || filterType !== 'all' || filterIdentity !== 'all'
                           ? 'No players found matching your filters'
                           : 'No available players'}
                       </div>
@@ -968,20 +968,18 @@ export default function PlayersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
-                          player.batter_or_pitcher === 'batter'
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${player.batter_or_pitcher === 'batter'
                             ? 'bg-green-500/20 text-green-300 border border-green-500/30'
                             : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                        }`}>
+                          }`}>
                           {player.batter_or_pitcher === 'batter' ? 'Batter' : 'Pitcher'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          player.identity === 'local'
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${player.identity === 'local'
                             ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                             : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                        }`}>
+                          }`}>
                           {player.identity === 'local' ? 'Local' : 'Foreigner'}
                         </span>
                       </td>
@@ -1036,7 +1034,7 @@ export default function PlayersPage() {
                 <>Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?</>
               )}
             </p>
-            
+
             {/* 執行中動畫 */}
             {isAdding && (
               <div className="mb-6 flex items-center justify-center gap-3 text-purple-300">
@@ -1044,7 +1042,7 @@ export default function PlayersPage() {
                 <span className="font-semibold">{waiverMode ? 'Submitting...' : 'Adding player...'}</span>
               </div>
             )}
-            
+
             <div className="flex gap-4">
               <button
                 onClick={() => {
@@ -1079,7 +1077,7 @@ export default function PlayersPage() {
             <p className="text-red-200 mb-6">
               Are you sure you want to drop <span className="font-bold text-white">{playerToDrop.name}</span>?
             </p>
-            
+
             {/* 執行中動畫 */}
             {isDropping && (
               <div className="mb-6 flex items-center justify-center gap-3 text-red-300">
@@ -1087,7 +1085,7 @@ export default function PlayersPage() {
                 <span className="font-semibold">Dropping player...</span>
               </div>
             )}
-            
+
             <div className="flex gap-4">
               <button
                 onClick={() => {
@@ -1175,7 +1173,7 @@ export default function PlayersPage() {
                 </svg>
               </button>
             </div>
-            
+
             <div className="space-y-5 text-purple-100">
               <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
                 <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
