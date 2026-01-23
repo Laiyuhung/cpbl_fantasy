@@ -50,6 +50,8 @@ export default function PlayersPage() {
   const [tradeSuccessMessage, setTradeSuccessMessage] = useState({ title: '', description: '' });
   const [showTradeErrorNotification, setShowTradeErrorNotification] = useState(false);
   const [tradeErrorMessage, setTradeErrorMessage] = useState({ title: '', description: '' });
+  const [tradeEndDate, setTradeEndDate] = useState(null);
+  const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,7 +92,18 @@ export default function PlayersPage() {
         const leagueData = await leagueRes.json();
         if (leagueData.success) {
           setMembers(leagueData.members || []);
+          setMembers(leagueData.members || []);
           setRosterPositions(leagueData.league?.roster_positions || {});
+
+          // Get trade deadline info
+          setTradeEndDate(leagueData.league?.trade_end_date || null);
+          if (leagueData.league?.start_scoring_on) {
+            const parts = leagueData.league.start_scoring_on.split('.');
+            if (parts.length > 0) {
+              const year = parseInt(parts[0]);
+              if (!isNaN(year)) setSeasonYear(year);
+            }
+          }
         }
 
         // 取得聯盟設定 (stat categories)
@@ -604,6 +617,29 @@ export default function PlayersPage() {
     }
   };
 
+  const isTradeDeadlinePassed = () => {
+    if (!tradeEndDate || tradeEndDate === 'No trade deadline') return false;
+
+    try {
+      let dateStr = tradeEndDate;
+      // If the date string doesn't include a 4-digit year, append the season year
+      if (!/\d{4}/.test(tradeEndDate)) {
+        dateStr = `${tradeEndDate}, ${seasonYear}`;
+      }
+
+      const deadline = new Date(dateStr);
+      if (isNaN(deadline.getTime())) return false; // Fail safe
+
+      // Set deadline to end of day (23:59:59)
+      deadline.setHours(23, 59, 59, 999);
+
+      return new Date() > deadline;
+    } catch (e) {
+      console.error('Error checking trade deadline:', e);
+      return false;
+    }
+  };
+
   const getPlayerActionButton = (player) => {
     // 查找該球員的 ownership 資料
     const ownership = ownerships.find(
@@ -659,6 +695,11 @@ export default function PlayersPage() {
           </button>
         );
       } else {
+        // Check Trade Deadline
+        if (isTradeDeadlinePassed()) {
+          return null;
+        }
+
         // 藍色框的 ⇌
         return (
           <button
