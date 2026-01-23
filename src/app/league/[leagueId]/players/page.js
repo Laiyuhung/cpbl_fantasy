@@ -19,6 +19,12 @@ export default function PlayersPage() {
   const [showConfirmAdd, setShowConfirmAdd] = useState(false); // 確認新增對話框
   const [playerToAdd, setPlayerToAdd] = useState(null); // 待加入的球員
   const [isAdding, setIsAdding] = useState(false); // 執行新增中
+    const [waiverMode, setWaiverMode] = useState(false); // 是否waiver申請
+    const [showWaiverSuccess, setShowWaiverSuccess] = useState(false);
+    const [waiverSuccessMsg, setWaiverSuccessMsg] = useState('');
+    const [showWaiverError, setShowWaiverError] = useState(false);
+    const [waiverErrorMsg, setWaiverErrorMsg] = useState('');
+    const [waiverDropPlayerId, setWaiverDropPlayerId] = useState(''); // 可選丟誰
   const [showConfirmDrop, setShowConfirmDrop] = useState(false); // 確認刪除對話框
   const [playerToDrop, setPlayerToDrop] = useState(null); // 待刪除的球員
   const [isDropping, setIsDropping] = useState(false); // 執行刪除中
@@ -359,7 +365,7 @@ export default function PlayersPage() {
     }
   };
   // 處理新增球員到隊伍
-  const handleAddPlayer = async (player) => {
+  const handleAddPlayer = async (player, isWaiver = false) => {
     if (!myManagerId) {
       alert('Please log in first');
       return;
@@ -367,6 +373,7 @@ export default function PlayersPage() {
 
     // 顯示確認對話框
     setPlayerToAdd(player);
+    setWaiverMode(isWaiver);
     setShowConfirmAdd(true);
   };
 
@@ -385,57 +392,84 @@ export default function PlayersPage() {
   // 確認加入球員
   const confirmAddPlayer = async () => {
     if (!playerToAdd) return;
-
     try {
       setIsAdding(true);
-      
-      const res = await fetch(`/api/league/${leagueId}/ownership`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player_id: playerToAdd.player_id,
-          manager_id: myManagerId
-        })
-      });
-
-      const data = await res.json();
-      
-      if (data.success) {
-        // 關閉對話框
-        setIsAdding(false);
-        setShowConfirmAdd(false);
-        
-        // 顯示成功動畫
-        setSuccessMessage('Player Added Successfully!');
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
-        
-        // 重新載入 ownerships 資料
-        setIsRefreshing(true);
-        const ownershipsRes = await fetch(`/api/league/${leagueId}/ownership`);
-        const ownershipsData = await ownershipsRes.json();
-        if (ownershipsData.success) {
-          setOwnerships(ownershipsData.ownerships || []);
+      let res, data;
+      if (waiverMode) {
+        // Waiver申請
+        res = await fetch('/api/waiver_claims', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            league_id: leagueId,
+            manager_id: myManagerId,
+            player_id: playerToAdd.player_id,
+            drop_player_id: waiverDropPlayerId || null
+          })
+        });
+        data = await res.json();
+        if (data.success) {
+          setShowConfirmAdd(false);
+          setIsAdding(false);
+          setWaiverSuccessMsg('Waiver claim submitted!');
+          setShowWaiverSuccess(true);
+          setTimeout(() => setShowWaiverSuccess(false), 4000);
+        } else {
+          setShowConfirmAdd(false);
+          setIsAdding(false);
+          setWaiverErrorMsg(data.error || 'Waiver claim failed');
+          setShowWaiverError(true);
+          setTimeout(() => setShowWaiverError(false), 4000);
         }
-        setIsRefreshing(false);
       } else {
-        // 顯示失敗動畫
-        setIsAdding(false);
-        setShowConfirmAdd(false);
-        setErrorMessage(data.error || 'Unknown error');
+        // FA 直接加入
+        res = await fetch(`/api/league/${leagueId}/ownership`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player_id: playerToAdd.player_id,
+            manager_id: myManagerId
+          })
+        });
+        data = await res.json();
+        if (data.success) {
+          setIsAdding(false);
+          setShowConfirmAdd(false);
+          setSuccessMessage('Player Added Successfully!');
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 2000);
+          setIsRefreshing(true);
+          const ownershipsRes = await fetch(`/api/league/${leagueId}/ownership`);
+          const ownershipsData = await ownershipsRes.json();
+          if (ownershipsData.success) {
+            setOwnerships(ownershipsData.ownerships || []);
+          }
+          setIsRefreshing(false);
+        } else {
+          setIsAdding(false);
+          setShowConfirmAdd(false);
+          setErrorMessage(data.error || 'Unknown error');
+          setShowError(true);
+          setTimeout(() => setShowError(false), 3000);
+        }
+      }
+    } catch (err) {
+      setIsAdding(false);
+      setShowConfirmAdd(false);
+      if (waiverMode) {
+        setWaiverErrorMsg('Waiver claim failed, please try again');
+        setShowWaiverError(true);
+        setTimeout(() => setShowWaiverError(false), 4000);
+      } else {
+        setErrorMessage('Operation failed, please try again');
         setShowError(true);
         setTimeout(() => setShowError(false), 3000);
       }
-    } catch (err) {
-      console.error('Add player error:', err);
-      setIsAdding(false);
-      setShowConfirmAdd(false);
-      setErrorMessage('Operation failed, please try again');
-      setShowError(true);
-      setTimeout(() => setShowError(false), 3000);
       setIsRefreshing(false);
     } finally {
       setPlayerToAdd(null);
+      setWaiverMode(false);
+      setWaiverDropPlayerId('');
     }
   };
 
@@ -576,12 +610,26 @@ export default function PlayersPage() {
       o => o.player_id === player.player_id
     );
 
-    // 如果沒有找到 ownership，顯示線色 + 按鈕
+
+    // 如果沒有找到 ownership，顯示綠色 + 按鈕
     if (!ownership) {
       return (
-        <button 
+        <button
           onClick={() => handleAddPlayer(player)}
           className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold hover:bg-green-700 transition-colors"
+        >
+          +
+        </button>
+      );
+    }
+
+    // 如果是 waiver 狀態，顯示黃色 + 按鈕
+    if (ownership.status?.toLowerCase() === 'waiver') {
+      return (
+        <button
+          onClick={() => handleAddPlayer(player, true)}
+          className="w-8 h-8 rounded-full bg-yellow-400 text-white flex items-center justify-center font-bold hover:bg-yellow-500 transition-colors"
+          title="Claim via Waiver"
         >
           +
         </button>
@@ -961,16 +1009,39 @@ export default function PlayersPage() {
       {showConfirmAdd && playerToAdd && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-purple-500/30 shadow-2xl">
-            <h3 className="text-2xl font-bold text-white mb-4">Add Player</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">
+              {waiverMode ? 'Claim Waiver Player' : 'Add Player'}
+            </h3>
             <p className="text-purple-200 mb-6">
-              Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?
+              {waiverMode ? (
+                <>
+                  Submit a waiver claim for <span className="font-bold text-white">{playerToAdd.name}</span>?
+                  <br />
+                  <span className="text-sm text-purple-300">(Optional) Select a player to drop if claim successful:</span>
+                  <select
+                    className="block w-full mt-2 px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    value={waiverDropPlayerId}
+                    onChange={e => setWaiverDropPlayerId(e.target.value)}
+                    disabled={isAdding}
+                  >
+                    <option value="">No drop (just add)</option>
+                    {ownerships.filter(o => o.manager_id === myManagerId && o.status?.toLowerCase() === 'on team').map(o => (
+                      <option key={o.player_id} value={o.player_id}>
+                        {players.find(p => p.player_id === o.player_id)?.name || o.player_id}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <>Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?</>
+              )}
             </p>
             
             {/* 執行中動畫 */}
             {isAdding && (
               <div className="mb-6 flex items-center justify-center gap-3 text-purple-300">
                 <div className="w-6 h-6 border-3 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-semibold">Adding player...</span>
+                <span className="font-semibold">{waiverMode ? 'Submitting...' : 'Adding player...'}</span>
               </div>
             )}
             
@@ -980,6 +1051,8 @@ export default function PlayersPage() {
                   setShowConfirmAdd(false);
                   setPlayerToAdd(null);
                   setIsAdding(false);
+                  setWaiverMode(false);
+                  setWaiverDropPlayerId('');
                 }}
                 disabled={isAdding}
                 className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -989,9 +1062,9 @@ export default function PlayersPage() {
               <button
                 onClick={confirmAddPlayer}
                 disabled={isAdding}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex-1 px-4 py-2 ${waiverMode ? 'bg-yellow-400 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {isAdding ? 'Processing...' : 'Confirm'}
+                {isAdding ? (waiverMode ? 'Submitting...' : 'Processing...') : (waiverMode ? 'Submit Claim' : 'Confirm')}
               </button>
             </div>
           </div>
