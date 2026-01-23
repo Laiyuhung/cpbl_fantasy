@@ -698,7 +698,7 @@ export default function PlayersPage() {
       } else {
         // Check Trade Deadline
         if (isTradeDeadlinePassed()) {
-          return null;
+          return <div className="w-8 h-8"></div>;
         }
 
         // 藍色框的 ⇌

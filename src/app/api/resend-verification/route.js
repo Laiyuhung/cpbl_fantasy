@@ -31,7 +31,7 @@ export async function POST(request) {
         }
 
         // 2. Rate Limiting Logic
-        const MAX_DAILY_EMAILS = 3;
+        const MAX_DAILY_EMAILS = 5;
         const now = new Date();
         const lastSent = user.last_verification_email_sent_at ? new Date(user.last_verification_email_sent_at) : null;
 
