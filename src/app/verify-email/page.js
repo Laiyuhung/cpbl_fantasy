@@ -73,7 +73,7 @@ function VerifyEmailContent() {
 
             <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mb-6">
               <p className="text-blue-300 text-sm">
-                If you don't see the email, please check your spam or junk folder.
+                If you don&apos;t see the email, please check your spam or junk folder.
               </p>
             </div>
 
