@@ -21,9 +21,9 @@ const initialSettings = {
     'Max Acquisitions per Week': '6',
   },
   waivers: {
-    'Waiver Players Unfreeze Time': '2 days',
-    'Allow injured players from waivers or free agents to be added directly to the injury slot': 'No',
-    'Post Draft Players Unfreeze Time': '1 day',
+    'Waiver Players Time': '2 days',
+    'Allow minor players from waivers or free agents to be added directly to the minor slot': 'No',
+    'Post Draft Waiver Time': '1 day',
   },
   trading: {
     'Trade Review': 'League votes',
@@ -77,12 +77,12 @@ const settingOptions = {
   'Max Teams': ['4', '6', '8', '10'],
   'Scoring Type': ['Head-to-Head', 'Head-to-Head One Win', 'Head-to-Head Fantasy Points'],
   'Trade End Date': ['No trade deadline', 'June 15', 'July 1', 'July 15', 'August 1', 'August 7', 'August 15', 'August 30'],
-  'Waiver Players Unfreeze Time': ['0 days', '1 day', '2 days', '3 days', '5 days', '7 days'],
-  'Allow injured players from waivers or free agents to be added directly to the injury slot': ['Yes', 'No'],
+  'Waiver Players Time': ['0 days', '1 day', '2 days', '3 days', '5 days', '7 days'],
+  'Allow minor players from waivers or free agents to be added directly to the minor slot': ['Yes', 'No'],
   'Trade Review': ['League votes', 'Commissioner reviews', 'No review'],
   'Trade Reject Time': ['0 days', '1 day', '2 days', '3 days', '7 days'],
-  'Trade Reject percentage needed': [ '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
-  'Post Draft Players Unfreeze Time': [ '1 day', '2 days', '3 days'],
+  'Trade Reject percentage needed': ['10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
+  'Post Draft Waiver Time': ['1 day', '2 days', '3 days'],
   'Max Acquisitions per Week': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'No maximum'],
   'Min Innings pitched per team per week': ['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50'],
   'Start Scoring On': ['2026.3.28', '2026.4.6', '2026.4.13', '2026.4.20'],
@@ -151,7 +151,7 @@ const settingOptions = {
     'On-base Percentage Against (OBPA)'
   ],
   'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks'],
-  'Playoffs start': ['2026.8.10', '2026.8.17', '2026.8.24', '2026.8.31', '2026.9.7','2026.9.14'],
+  'Playoffs start': ['2026.8.10', '2026.8.17', '2026.8.24', '2026.8.31', '2026.9.7', '2026.9.14'],
   'Playoff/ranking Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
   'Playoff Reseeding': ['Yes', 'No'],
   'Lock Eliminated Teams': ['Yes', 'No'],
@@ -228,18 +228,18 @@ function SchedulePreview({ settings, onValidationChange }) {
       if (!dateStr || typeof dateStr !== 'string') return null;
       const parts = dateStr.split('.');
       if (parts.length !== 3) return null;
-      
+
       const year = parseInt(parts[0]);
       const month = parseInt(parts[1]) - 1;
       const day = parseInt(parts[2]);
-      
+
       // 檢查是否為有效數字
       if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
-      
+
       const date = new Date(year, month, day);
       // 檢查日期是否有效
       if (isNaN(date.getTime())) return null;
-      
+
       return date;
     };
 
@@ -428,27 +428,25 @@ function SchedulePreview({ settings, onValidationChange }) {
             {filteredSchedule.map((week, index) => (
               <tr
                 key={index}
-                className={`border-b ${
-                  week.week_type === 'playoffs'
+                className={`border-b ${week.week_type === 'playoffs'
                     ? 'bg-purple-900/40 hover:bg-purple-800/40'
                     : week.week_type === 'makeup'
-                    ? 'bg-yellow-900/40 hover:bg-yellow-800/40'
-                    : week.week_type === 'preparation'
-                    ? 'bg-green-900/40 hover:bg-green-800/40'
-                    : 'bg-slate-900/40 hover:bg-purple-500/20'
-                } border-purple-500/20 transition-colors`}
+                      ? 'bg-yellow-900/40 hover:bg-yellow-800/40'
+                      : week.week_type === 'preparation'
+                        ? 'bg-green-900/40 hover:bg-green-800/40'
+                        : 'bg-slate-900/40 hover:bg-purple-500/20'
+                  } border-purple-500/20 transition-colors`}
               >
                 <td className="px-4 py-2 text-white font-medium">{week.week_label}</td>
                 <td className="px-4 py-2 text-purple-300">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold shadow-lg ${
-                    week.week_type === 'playoffs'
+                  <span className={`px-2 py-1 rounded text-xs font-semibold shadow-lg ${week.week_type === 'playoffs'
                       ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50'
                       : week.week_type === 'makeup'
-                      ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50'
-                      : week.week_type === 'preparation'
-                      ? 'bg-green-500/80 text-green-100 shadow-green-500/50'
-                      : 'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
-                  }`}>
+                        ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50'
+                        : week.week_type === 'preparation'
+                          ? 'bg-green-500/80 text-green-100 shadow-green-500/50'
+                          : 'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
+                    }`}>
                     {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : week.week_type === 'preparation' ? 'Preparation' : 'Regular'}
                   </span>
                 </td>
@@ -517,11 +515,11 @@ const CreateLeaguePage = () => {
   const validateDraftAndScoringDates = () => {
     const liveDraftTime = settings.general['Live Draft Time'];
     const startScoringOn = settings.scoring['Start Scoring On'];
-    
+
     // console.log('=== Date Validation Check ===');
     // console.log('Live Draft Time (input):', liveDraftTime);
     // console.log('Start Scoring On (input):', startScoringOn);
-    
+
     const errors = {
       draftTimeError: '',
       scoringDateError: ''
@@ -531,28 +529,28 @@ const CreateLeaguePage = () => {
     if (startScoringOn) {
       // console.log('\n--- Checking Start Scoring On (must be future date) ---');
       const parts = startScoringOn.split('.');
-      
+
       if (parts.length === 3) {
         const year = parseInt(parts[0]);
         const month = parseInt(parts[1]) - 1;
         const day = parseInt(parts[2]);
         // console.log('Parsed Start Scoring On:', { year, month, day });
-        
+
         // 檢查是否為有效數字
         if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
           const scoringDate = new Date(year, month, day);
-          
+
           // 檢查日期是否有效
           if (!isNaN(scoringDate.getTime())) {
             // console.log('Scoring Date object:', scoringDate);
             // console.log('Scoring Date (Taiwan time):', scoringDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
-            
+
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             // console.log('Today (00:00:00):', today.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
             // console.log('Today timestamp:', today.getTime());
             // console.log('Scoring Date timestamp:', scoringDate.getTime());
-            
+
             if (scoringDate <= today) {
               errors.scoringDateError = 'Start Scoring On must be a future date';
               // console.log('❌ FAIL: Start Scoring On is NOT a future date');
@@ -576,30 +574,30 @@ const CreateLeaguePage = () => {
     // Check if Live Draft Time is at least 2 days before Start Scoring On (Taiwan time)
     if (liveDraftTime && startScoringOn && settings.general['Draft Type'] === 'Live Draft') {
       // console.log('\n--- Checking Live Draft Time (must be at least 2 days before Start Scoring On) ---');
-      
+
       // Parse Live Draft Time (local datetime-local input, treat as Taiwan time)
       const draftDateTime = new Date(liveDraftTime);
-      
+
       // 檢查 draftDateTime 是否有效
       if (!isNaN(draftDateTime.getTime())) {
         // console.log('Draft DateTime object:', draftDateTime);
         // console.log('Draft DateTime (Taiwan time):', draftDateTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
         // console.log('Draft DateTime timestamp:', draftDateTime.getTime());
-        
+
         // 檢查 1: Live Draft Time 必須至少是明天 0:00
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0);
         // console.log('Tomorrow (00:00:00):', tomorrow.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
         // console.log('Tomorrow timestamp:', tomorrow.getTime());
-        
+
         if (draftDateTime < tomorrow) {
           errors.draftTimeError = 'Live Draft Time must be at least tomorrow (00:00)';
           // console.log('❌ FAIL: Live Draft Time is before tomorrow');
         } else {
           // console.log('✅ PASS: Live Draft Time is at least tomorrow');
         }
-        
+
         // 檢查 2: Live Draft Time 必須至少在 Start Scoring On 的 2 天前
         if (!errors.draftTimeError) {
           // Parse Start Scoring On (format: YYYY.M.D, treat as Taiwan time 00:00:00)
@@ -608,25 +606,25 @@ const CreateLeaguePage = () => {
             const year = parseInt(parts[0]);
             const month = parseInt(parts[1]) - 1;
             const day = parseInt(parts[2]);
-            
+
             if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
               const scoringDate = new Date(year, month, day);
-              
+
               if (!isNaN(scoringDate.getTime())) {
                 scoringDate.setHours(0, 0, 0, 0);
                 // console.log('Scoring Date (00:00:00):', scoringDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
-                
+
                 // Calculate the latest allowed draft time (2 days before scoring date, end of day)
                 const latestDraftDate = new Date(scoringDate);
                 latestDraftDate.setDate(latestDraftDate.getDate() - 2);
                 latestDraftDate.setHours(23, 59, 59, 999);
                 // console.log('Latest Allowed Draft Date (2 days before, 23:59:59):', latestDraftDate.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
                 // console.log('Latest Allowed Draft Date timestamp:', latestDraftDate.getTime());
-                
+
                 // console.log('Comparison: draftDateTime > latestDraftDate?', draftDateTime > latestDraftDate);
                 // console.log('Difference in milliseconds:', draftDateTime.getTime() - latestDraftDate.getTime());
                 // console.log('Difference in hours:', (draftDateTime.getTime() - latestDraftDate.getTime()) / (1000 * 60 * 60));
-                
+
                 if (draftDateTime > latestDraftDate) {
                   errors.draftTimeError = 'Live Draft Time must be at least 2 days before season start';
                   // console.log('❌ FAIL: Live Draft Time is TOO LATE');
@@ -677,7 +675,7 @@ const CreateLeaguePage = () => {
       let next = checked
         ? Array.from(new Set([...current, option]))
         : current.filter((o) => o !== option);
-      
+
       // 按照 settingOptions 中的顺序排序
       const optionsList = settingOptions[key] || [];
       if (optionsList.length > 0) {
@@ -687,7 +685,7 @@ const CreateLeaguePage = () => {
           return indexA - indexB;
         });
       }
-      
+
       return {
         ...prev,
         [section]: {
@@ -700,7 +698,7 @@ const CreateLeaguePage = () => {
     // Handle weight when in Fantasy Points mode
     if (settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points') {
       const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
-      
+
       if (checked) {
         // Set default weight 1.0 when checking
         setCategoryWeights(prev => ({
@@ -750,17 +748,17 @@ const CreateLeaguePage = () => {
   // Validate weight value
   const validateWeight = (weight) => {
     if (weight === '' || weight === '-') return 'Weight is required';
-    
+
     const num = parseFloat(weight);
     if (isNaN(num)) return 'Invalid number';
     if (num < -10 || num > 10) return 'Weight must be between -10 and 10';
-    
+
     // Check decimal places
     const decimalPart = weight.toString().split('.')[1];
     if (decimalPart && decimalPart.length > 1) {
       return 'Only 1 decimal place allowed';
     }
-    
+
     return null;
   };
 
@@ -962,7 +960,7 @@ const CreateLeaguePage = () => {
   const handleSave = async () => {
     const validationErrors = validateSettings();
     console.log('Validation errors:', validationErrors);
-    
+
     if (validationErrors.length > 0) {
       console.warn('Form has validation errors:', validationErrors);
       setSaveMessage(validationErrors.join('\n'));
@@ -976,7 +974,7 @@ const CreateLeaguePage = () => {
       // 获取当前用户的 manager_id
       const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
       const manager_id = cookie?.split('=')[1];
-      
+
       if (!manager_id) {
         setSaveMessage('❌ 請先登入');
         setIsSaving(false);
@@ -989,8 +987,8 @@ const CreateLeaguePage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          settings, 
+        body: JSON.stringify({
+          settings,
           manager_id,
           categoryWeights: settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' ? categoryWeights : null
         }),
@@ -1003,7 +1001,7 @@ const CreateLeaguePage = () => {
       if (response.ok && result.success) {
         setLeagueId(result.league_id);
         setShowSuccessAnimation(true);
-        
+
         // 等待 2 秒后跳转到 league 页面
         setTimeout(() => {
           router.push(`/league/${result.league_id}`);
@@ -1084,242 +1082,232 @@ const CreateLeaguePage = () => {
                             return null;
                           }
                           return (
-                          <tr
-                            key={key}
-                            className={`${
-                              index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
-                            } hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}
-                          >
-                            <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
-                              {key}
-                            </td>
-                            <td className="px-6 py-4 text-purple-300 w-3/5">
-                              {isMultilineField(key) ? (
-                                <div>
-                                  <textarea
-                                    value={value}
-                                    onChange={(e) =>
-                                      handleSettingChange(section.key, key, e.target.value)
-                                    }
-                                    rows="3"
-                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm ${
-                                      !value || value.trim() === ''
-                                        ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30'
-                                    }`}
-                                  />
-                                  {(!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">required</p>
-                                  )}
-                                </div>
-                              ) : isDateTimeField(key) ? (
-                                <div>
-                                  <input
-                                    type="datetime-local"
-                                    min={minDraftDateTime()}
-                                    value={value}
-                                    onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
-                                    disabled={settings.general['Draft Type'] !== 'Live Draft'}
-                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 ${
-                                      (settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError
-                                        ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30'
-                                    }`}
-                                  />
-                                  {settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">required</p>
-                                  )}
-                                  {settings.general['Draft Type'] === 'Live Draft' && value && dateValidationErrors.draftTimeError && (
-                                    <p className="text-red-600 text-sm mt-1">{dateValidationErrors.draftTimeError}</p>
-                                  )}
-                                </div>
-                              ) : isRosterPositions(key) ? (
-                                <div className="space-y-4">
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                    {Object.entries(value).map(([position, count]) => {
-                                      const nonMinorTotal = Object.entries(value)
-                                        .filter(([pos]) => pos !== 'Minor')
-                                        .reduce((sum, [, cnt]) => sum + cnt, 0);
-                                      const minorCount = value['Minor'] || 0;
-                                      const isOverLimit = position === 'Minor' 
-                                        ? false 
-                                        : nonMinorTotal > 25;
-                                      const isMinorOverLimit = position === 'Minor' && minorCount > 5;
-                                      
-                                      return (
-                                        <div key={position} className="flex flex-col gap-1">
-                                          <label className="text-sm font-medium text-purple-300">
-                                            {position}
-                                          </label>
-                                          <input
-                                            type="number"
-                                            min="0"
-                                            max={position === 'Minor' ? '5' : '10'}
-                                            value={count}
-                                            onChange={(e) =>
-                                              handleRosterPositionChange(position, e.target.value)
-                                            }
-                                            className={`px-2 py-1 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                                              isOverLimit || isMinorOverLimit
-                                                ? 'border-red-500 bg-red-900/30'
-                                                : 'border-purple-500/30'
-                                            }`}
-                                          />
-                                        </div>
-                                      );
-                                    })}
+                            <tr
+                              key={key}
+                              className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
+                                } hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}
+                            >
+                              <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
+                                {key}
+                              </td>
+                              <td className="px-6 py-4 text-purple-300 w-3/5">
+                                {isMultilineField(key) ? (
+                                  <div>
+                                    <textarea
+                                      value={value}
+                                      onChange={(e) =>
+                                        handleSettingChange(section.key, key, e.target.value)
+                                      }
+                                      rows="3"
+                                      className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm ${!value || value.trim() === ''
+                                          ? 'border-red-500 bg-red-900/30'
+                                          : 'border-purple-500/30'
+                                        }`}
+                                    />
+                                    {(!value || value.trim() === '') && (
+                                      <p className="text-red-600 text-sm mt-1">required</p>
+                                    )}
                                   </div>
-                                  <div className="flex gap-4 text-sm">
-                                    <div className={`${
-                                      Object.entries(value)
-                                        .filter(([pos]) => pos !== 'Minor')
-                                        .reduce((sum, [, cnt]) => sum + cnt, 0) > 25
-                                        ? 'text-red-400 font-semibold'
-                                        : 'text-purple-300'
-                                    }`}>
-                                      Non-Minor total: {
-                                        Object.entries(value)
+                                ) : isDateTimeField(key) ? (
+                                  <div>
+                                    <input
+                                      type="datetime-local"
+                                      min={minDraftDateTime()}
+                                      value={value}
+                                      onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
+                                      disabled={settings.general['Draft Type'] !== 'Live Draft'}
+                                      className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 ${(settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError
+                                          ? 'border-red-500 bg-red-900/30'
+                                          : 'border-purple-500/30'
+                                        }`}
+                                    />
+                                    {settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '') && (
+                                      <p className="text-red-600 text-sm mt-1">required</p>
+                                    )}
+                                    {settings.general['Draft Type'] === 'Live Draft' && value && dateValidationErrors.draftTimeError && (
+                                      <p className="text-red-600 text-sm mt-1">{dateValidationErrors.draftTimeError}</p>
+                                    )}
+                                  </div>
+                                ) : isRosterPositions(key) ? (
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                      {Object.entries(value).map(([position, count]) => {
+                                        const nonMinorTotal = Object.entries(value)
                                           .filter(([pos]) => pos !== 'Minor')
-                                          .reduce((sum, [, cnt]) => sum + cnt, 0)
-                                      } / 25 (max)
-                                    </div>
-                                    <div className={`${
-                                      (value['Minor'] || 0) > 5
-                                        ? 'text-red-400 font-semibold'
-                                        : 'text-purple-300'
-                                    }`}>
-                                      Minor: {value['Minor'] || 0} / 5 (max)
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : isMultiSelectField(key) ? (
-                                <div>
-                                  {settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && (
-                                    <div className="mb-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded text-sm text-blue-300">
-                                      ℹ️ Set weights for each category (range: -10 to 10, max 1 decimal place, default: 1.0)
-                                    </div>
-                                  )}
-                                  <div className={`grid grid-cols-1 gap-2 p-3 border rounded-md ${
-                                    (!Array.isArray(value) || value.length === 0)
-                                      ? 'border-red-500 bg-red-900/30'
-                                      : 'border-purple-500/30 bg-slate-800/40'
-                                  }`}>
-                                    {settingOptions[key]?.map((option) => {
-                                      const isChecked = Array.isArray(value) && value.includes(option);
-                                      const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
-                                      const currentWeight = categoryWeights[categoryType]?.[option] !== undefined 
-                                        ? categoryWeights[categoryType][option] 
-                                        : 1.0;
-                                      const showWeight = settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && isChecked;
-                                      const weightError = showWeight ? validateWeight(currentWeight) : null;
-                                      
-                                      return (
-                                        <div key={option} className={`flex items-center gap-2 ${showWeight ? 'justify-between' : ''}`}>
-                                          <label className="flex items-center gap-2 text-purple-300 flex-1">
+                                          .reduce((sum, [, cnt]) => sum + cnt, 0);
+                                        const minorCount = value['Minor'] || 0;
+                                        const isOverLimit = position === 'Minor'
+                                          ? false
+                                          : nonMinorTotal > 25;
+                                        const isMinorOverLimit = position === 'Minor' && minorCount > 5;
+
+                                        return (
+                                          <div key={position} className="flex flex-col gap-1">
+                                            <label className="text-sm font-medium text-purple-300">
+                                              {position}
+                                            </label>
                                             <input
-                                              type="checkbox"
-                                              checked={isChecked}
-                                              disabled={
-                                                (!Array.isArray(value) || !value.includes(option)) &&
-                                                ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                                  (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30
-                                              }
+                                              type="number"
+                                              min="0"
+                                              max={position === 'Minor' ? '5' : '10'}
+                                              value={count}
                                               onChange={(e) =>
-                                                handleMultiSelectChange(
-                                                  section.key,
-                                                  key,
-                                                  option,
-                                                  e.target.checked
-                                                )
+                                                handleRosterPositionChange(position, e.target.value)
                                               }
+                                              className={`px-2 py-1 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${isOverLimit || isMinorOverLimit
+                                                  ? 'border-red-500 bg-red-900/30'
+                                                  : 'border-purple-500/30'
+                                                }`}
                                             />
-                                            <span>{option}</span>
-                                          </label>
-                                          {showWeight && (
-                                            <div className="flex flex-col gap-1">
-                                              <div className="flex items-center gap-1">
-                                                <span className="text-xs text-purple-400">Weight:</span>
-                                                <input
-                                                  type="number"
-                                                  min="-10"
-                                                  max="10"
-                                                  step="0.1"
-                                                  value={currentWeight}
-                                                  onChange={(e) => handleWeightChange(categoryType, option, e.target.value)}
-                                                  className={`w-20 px-2 py-1 bg-slate-700/60 border rounded text-white text-sm focus:outline-none focus:ring-2 ${
-                                                    weightError ? 'border-red-500 focus:ring-red-500' : 'border-purple-500/30 focus:ring-purple-500'
-                                                  }`}
-                                                />
-                                              </div>
-                                              {weightError && (
-                                                <span className="text-xs text-red-400">{weightError}</span>
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                    <div className="text-xs text-purple-400 mt-2 col-span-full">
-                                      selected: {(
-                                        (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                        (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
-                                      )} / 30 (max)
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="flex gap-4 text-sm">
+                                      <div className={`${Object.entries(value)
+                                          .filter(([pos]) => pos !== 'Minor')
+                                          .reduce((sum, [, cnt]) => sum + cnt, 0) > 25
+                                          ? 'text-red-400 font-semibold'
+                                          : 'text-purple-300'
+                                        }`}>
+                                        Non-Minor total: {
+                                          Object.entries(value)
+                                            .filter(([pos]) => pos !== 'Minor')
+                                            .reduce((sum, [, cnt]) => sum + cnt, 0)
+                                        } / 25 (max)
+                                      </div>
+                                      <div className={`${(value['Minor'] || 0) > 5
+                                          ? 'text-red-400 font-semibold'
+                                          : 'text-purple-300'
+                                        }`}>
+                                        Minor: {value['Minor'] || 0} / 5 (max)
+                                      </div>
                                     </div>
                                   </div>
-                                  {(!Array.isArray(value) || value.length === 0) && (
-                                    <p className="text-red-600 text-sm mt-1">required - select at least one</p>
-                                  )}
-                                </div>
-                              ) : isTextField(key) ? (
-                                <div>
-                                  <input
-                                    type="text"
-                                    value={value}
-                                    onChange={(e) =>
-                                      handleSettingChange(section.key, key, e.target.value)
-                                    }
-                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                                      !value || value.trim() === ''
+                                ) : isMultiSelectField(key) ? (
+                                  <div>
+                                    {settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && (
+                                      <div className="mb-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded text-sm text-blue-300">
+                                        ℹ️ Set weights for each category (range: -10 to 10, max 1 decimal place, default: 1.0)
+                                      </div>
+                                    )}
+                                    <div className={`grid grid-cols-1 gap-2 p-3 border rounded-md ${(!Array.isArray(value) || value.length === 0)
                                         ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30'
-                                    }`}
-                                  />
-                                  {(!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">required</p>
-                                  )}
-                                </div>
-                              ) : (
-                                <div>
-                                  <select
-                                    value={value}
-                                    onChange={(e) =>
-                                      handleSettingChange(section.key, key, e.target.value)
-                                    }
-                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                                      (!value || value.trim() === '') || (key === 'Start Scoring On' && dateValidationErrors.scoringDateError)
-                                        ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30'
-                                    }`}
-                                  >
-                                    {(() => {
-                                      const options = settingOptions[key];
-                                      return options?.map((option) => (
-                                        <option key={option} value={option}>
-                                          {option}
-                                        </option>
-                                      ));
-                                    })()}
-                                  </select>
-                                  {(!value || value.trim() === '') && (
-                                    <p className="text-red-600 text-sm mt-1">required</p>
-                                  )}
-                                  {key === 'Start Scoring On' && value && dateValidationErrors.scoringDateError && (
-                                    <p className="text-red-600 text-sm mt-1">{dateValidationErrors.scoringDateError}</p>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-                          </tr>
+                                        : 'border-purple-500/30 bg-slate-800/40'
+                                      }`}>
+                                      {settingOptions[key]?.map((option) => {
+                                        const isChecked = Array.isArray(value) && value.includes(option);
+                                        const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
+                                        const currentWeight = categoryWeights[categoryType]?.[option] !== undefined
+                                          ? categoryWeights[categoryType][option]
+                                          : 1.0;
+                                        const showWeight = settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && isChecked;
+                                        const weightError = showWeight ? validateWeight(currentWeight) : null;
+
+                                        return (
+                                          <div key={option} className={`flex items-center gap-2 ${showWeight ? 'justify-between' : ''}`}>
+                                            <label className="flex items-center gap-2 text-purple-300 flex-1">
+                                              <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                disabled={
+                                                  (!Array.isArray(value) || !value.includes(option)) &&
+                                                  ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
+                                                    (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30
+                                                }
+                                                onChange={(e) =>
+                                                  handleMultiSelectChange(
+                                                    section.key,
+                                                    key,
+                                                    option,
+                                                    e.target.checked
+                                                  )
+                                                }
+                                              />
+                                              <span>{option}</span>
+                                            </label>
+                                            {showWeight && (
+                                              <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-purple-400">Weight:</span>
+                                                  <input
+                                                    type="number"
+                                                    min="-10"
+                                                    max="10"
+                                                    step="0.1"
+                                                    value={currentWeight}
+                                                    onChange={(e) => handleWeightChange(categoryType, option, e.target.value)}
+                                                    className={`w-20 px-2 py-1 bg-slate-700/60 border rounded text-white text-sm focus:outline-none focus:ring-2 ${weightError ? 'border-red-500 focus:ring-red-500' : 'border-purple-500/30 focus:ring-purple-500'
+                                                      }`}
+                                                  />
+                                                </div>
+                                                {weightError && (
+                                                  <span className="text-xs text-red-400">{weightError}</span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                      <div className="text-xs text-purple-400 mt-2 col-span-full">
+                                        selected: {(
+                                          (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
+                                          (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
+                                        )} / 30 (max)
+                                      </div>
+                                    </div>
+                                    {(!Array.isArray(value) || value.length === 0) && (
+                                      <p className="text-red-600 text-sm mt-1">required - select at least one</p>
+                                    )}
+                                  </div>
+                                ) : isTextField(key) ? (
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={value}
+                                      onChange={(e) =>
+                                        handleSettingChange(section.key, key, e.target.value)
+                                      }
+                                      className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${!value || value.trim() === ''
+                                          ? 'border-red-500 bg-red-900/30'
+                                          : 'border-purple-500/30'
+                                        }`}
+                                    />
+                                    {(!value || value.trim() === '') && (
+                                      <p className="text-red-600 text-sm mt-1">required</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <select
+                                      value={value}
+                                      onChange={(e) =>
+                                        handleSettingChange(section.key, key, e.target.value)
+                                      }
+                                      className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${(!value || value.trim() === '') || (key === 'Start Scoring On' && dateValidationErrors.scoringDateError)
+                                          ? 'border-red-500 bg-red-900/30'
+                                          : 'border-purple-500/30'
+                                        }`}
+                                    >
+                                      {(() => {
+                                        const options = settingOptions[key];
+                                        return options?.map((option) => (
+                                          <option key={option} value={option}>
+                                            {option}
+                                          </option>
+                                        ));
+                                      })()}
+                                    </select>
+                                    {(!value || value.trim() === '') && (
+                                      <p className="text-red-600 text-sm mt-1">required</p>
+                                    )}
+                                    {key === 'Start Scoring On' && value && dateValidationErrors.scoringDateError && (
+                                      <p className="text-red-600 text-sm mt-1">{dateValidationErrors.scoringDateError}</p>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
                           );
                         })}
                       </tbody>
@@ -1337,11 +1325,10 @@ const CreateLeaguePage = () => {
 
           <div className="mt-8 flex justify-end gap-4">
             {saveMessage && (
-              <div className={`px-4 py-2 rounded-md ${
-                saveMessage.includes('✅') 
-                  ? 'bg-green-100 text-green-800 border border-green-300' 
+              <div className={`px-4 py-2 rounded-md ${saveMessage.includes('✅')
+                  ? 'bg-green-100 text-green-800 border border-green-300'
                   : 'bg-red-100 text-red-800 border border-red-300'
-              }`}>
+                }`}>
                 {saveMessage.split('\n').map((line, i) => (
                   <div key={i}>{line}</div>
                 ))}
@@ -1371,17 +1358,16 @@ const CreateLeaguePage = () => {
               onClick={handleSave}
               disabled={isSaving || scheduleError || hasWeightErrors()}
               title={
-                scheduleError 
-                  ? 'Schedule validation failed - please check the Schedule preview below' 
+                scheduleError
+                  ? 'Schedule validation failed - please check the Schedule preview below'
                   : hasWeightErrors()
-                  ? 'Please fix all weight validation errors'
-                  : ''
+                    ? 'Please fix all weight validation errors'
+                    : ''
               }
-              className={`px-6 py-2 font-semibold rounded-md transition-colors ${
-                isSaving || scheduleError || hasWeightErrors()
+              className={`px-6 py-2 font-semibold rounded-md transition-colors ${isSaving || scheduleError || hasWeightErrors()
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
+                }`}
             >
               {isSaving ? 'Creating...' : 'Create a new league'}
             </button>

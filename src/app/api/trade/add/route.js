@@ -35,6 +35,9 @@ export async function POST(req) {
 
     if (error) {
       console.error('❌ 寫入失敗:', error)
+      if (error.message.includes('idx_unique_pending_trade')) {
+        return NextResponse.json({ error: 'You already have a pending trade with this proposal.' }, { status: 400 })
+      }
       return NextResponse.json({ error: '寫入資料庫失敗', detail: error.message }, { status: 500 })
     }
 

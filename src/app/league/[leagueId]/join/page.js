@@ -33,7 +33,7 @@ export default function JoinLeaguePage() {
 
         if (response.ok && result.success) {
           setLeagueSettings(result.league);
-          
+
           // 如果是 Fantasy Points，載入權重
           if (result.league?.scoring_type === 'Head-to-Head Fantasy Points') {
             fetchCategoryWeights();
@@ -97,10 +97,10 @@ export default function JoinLeaguePage() {
       if (response.ok && result.success) {
         setJoinStatus('success');
         setJoinMessage('Successfully joined the league!');
-        
+
         // Dispatch event to refresh navbar leagues
         window.dispatchEvent(new Event('leagues-changed'));
-        
+
         setTimeout(() => router.push(`/league/${leagueId}`), 2000);
       } else {
         setJoinStatus('error');
@@ -230,7 +230,7 @@ export default function JoinLeaguePage() {
                   <p className="text-white text-lg font-bold mt-1">{leagueSettings.live_draft_pick_time || 'N/A'}</p>
                 </div>
                 <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Post-Draft Unfreeze</span>
+                  <span className="text-purple-400 text-sm font-medium">Post Draft Waiver Time</span>
                   <p className="text-white text-lg font-bold mt-1">{leagueSettings.post_draft_players_unfreeze_time || 'N/A'}</p>
                 </div>
               </div>
@@ -268,7 +268,7 @@ export default function JoinLeaguePage() {
                   <p className="text-white text-lg font-bold mt-1">{leagueSettings.max_acquisitions_per_week || 'N/A'}</p>
                 </div>
                 <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Waiver Unfreeze Time</span>
+                  <span className="text-purple-400 text-sm font-medium">Waiver Players Time</span>
                   <p className="text-white text-lg font-bold mt-1">{leagueSettings.waiver_players_unfreeze_time || 'N/A'}</p>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function JoinLeaguePage() {
               <h3 className="text-lg font-bold text-purple-300 mb-3">👥 Roster Settings</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Allow Injured to IL Slot</span>
+                  <span className="text-purple-400 text-sm font-medium">Allow Minor from Waivers/FA</span>
                   <p className="text-white text-lg font-bold mt-1">{leagueSettings.allow_injured_to_injury_slot || 'N/A'}</p>
                 </div>
                 <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">

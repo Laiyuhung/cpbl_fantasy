@@ -58,7 +58,7 @@ export default function LeagueSettingsPage() {
           setLeagueStatus(result.status || 'unknown');
           setMembers(result.members || []);
           setIsFinalized(result.league?.is_finalized || false);
-          
+
           // 獲取當前用戶的權限
           const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
           const currentUserId = cookie?.split('=')[1];
@@ -126,7 +126,7 @@ export default function LeagueSettingsPage() {
 
   const handleSaveNickname = async () => {
     const trimmedNickname = newNickname.trim();
-    
+
     if (!trimmedNickname) {
       setSuccessMessage({
         title: 'Nickname Cannot Be Empty',
@@ -170,7 +170,7 @@ export default function LeagueSettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           manager_id: managerId,
           nickname: newNickname.trim()
         }),
@@ -182,7 +182,7 @@ export default function LeagueSettingsPage() {
         const oldNickname = currentNickname;
         setCurrentNickname(newNickname.trim());
         setShowNicknameModal(false);
-        
+
         // Show success notification
         setSuccessMessage({
           title: 'Nickname Updated Successfully!',
@@ -190,15 +190,15 @@ export default function LeagueSettingsPage() {
           updatedMember: null
         });
         setShowSuccessNotification(true);
-        
+
         // Auto hide after 4 seconds
         setTimeout(() => {
           setShowSuccessNotification(false);
         }, 4000);
-        
+
         // Update members list to reflect new nickname
-        setMembers(prevMembers => 
-          prevMembers.map(m => 
+        setMembers(prevMembers =>
+          prevMembers.map(m =>
             m.manager_id === managerId ? { ...m, nickname: newNickname.trim() } : m
           )
         );
@@ -275,16 +275,16 @@ export default function LeagueSettingsPage() {
       if (response.ok && result.success) {
         setIsFinalized(newFinalizedStatus);
         setShowFinalizedModal(false);
-        
+
         setSuccessMessage({
           title: newFinalizedStatus ? 'Teams Finalized Successfully!' : 'Teams Unlocked Successfully!',
-          description: newFinalizedStatus 
-            ? 'Teams are now locked and ready for draft. DELETE buttons are now hidden.' 
+          description: newFinalizedStatus
+            ? 'Teams are now locked and ready for draft. DELETE buttons are now hidden.'
             : 'Teams are now unlocked. You can modify teams again.',
           updatedMember: null
         });
         setShowSuccessNotification(true);
-        
+
         setTimeout(() => {
           setShowSuccessNotification(false);
         }, 4000);
@@ -325,7 +325,7 @@ export default function LeagueSettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           manager_id: managerId,
           role: newRole
         }),
@@ -336,12 +336,12 @@ export default function LeagueSettingsPage() {
       if (response.ok && result.success) {
         // Update local member list
         const updatedMember = members.find(m => m.manager_id === managerId);
-        setMembers(prevMembers => 
-          prevMembers.map(m => 
+        setMembers(prevMembers =>
+          prevMembers.map(m =>
             m.manager_id === managerId ? { ...m, role: newRole } : m
           )
         );
-        
+
         // Show success notification
         setSuccessMessage({
           title: 'Permission Updated Successfully!',
@@ -349,7 +349,7 @@ export default function LeagueSettingsPage() {
           updatedMember: { ...updatedMember, role: newRole }
         });
         setShowSuccessNotification(true);
-        
+
         // Auto hide after 4 seconds
         setTimeout(() => {
           setShowSuccessNotification(false);
@@ -405,13 +405,13 @@ export default function LeagueSettingsPage() {
 
       if (response.ok && result.success) {
         // Remove member from local list
-        setMembers(prevMembers => 
+        setMembers(prevMembers =>
           prevMembers.filter(m => m.manager_id !== memberToDelete.manager_id)
         );
-        
+
         setShowDeleteMemberModal(false);
         setMemberToDelete(null);
-        
+
         // Show success notification
         setSuccessMessage({
           title: 'Member Removed Successfully!',
@@ -419,14 +419,14 @@ export default function LeagueSettingsPage() {
           updatedMember: null
         });
         setShowSuccessNotification(true);
-        
+
         setTimeout(() => {
           setShowSuccessNotification(false);
         }, 4000);
       } else {
         setShowDeleteMemberModal(false);
         setMemberToDelete(null);
-        
+
         setSuccessMessage({
           title: 'Failed to Remove Member',
           description: result.error || 'An error occurred. Please try again.',
@@ -442,7 +442,7 @@ export default function LeagueSettingsPage() {
       console.error('Delete member error:', err);
       setShowDeleteMemberModal(false);
       setMemberToDelete(null);
-      
+
       setSuccessMessage({
         title: 'Connection Error',
         description: 'Unable to connect to the server. Please check your internet connection.',
@@ -460,7 +460,7 @@ export default function LeagueSettingsPage() {
 
   const handleConfirmDelete = async () => {
     const isCommissioner = currentUserRole === 'Commissioner';
-    const confirmText = isCommissioner 
+    const confirmText = isCommissioner
       ? 'I agree to delete this league'
       : 'I agree to leave this league';
 
@@ -481,7 +481,7 @@ export default function LeagueSettingsPage() {
         if (response.ok && result.success) {
           setShowDeleteModal(false);
           setDeleting(false);
-          
+
           // Show success notification
           setSuccessMessage({
             title: 'League Deleted Successfully!',
@@ -489,10 +489,10 @@ export default function LeagueSettingsPage() {
             updatedMember: null
           });
           setShowSuccessNotification(true);
-          
+
           // Dispatch event to refresh navbar leagues
           window.dispatchEvent(new Event('leagues-changed'));
-          
+
           // Redirect after showing notification
           setTimeout(() => {
             router.push('/home');
@@ -528,7 +528,7 @@ export default function LeagueSettingsPage() {
         if (response.ok && result.success) {
           setShowDeleteModal(false);
           setDeleting(false);
-          
+
           // Show success notification
           setSuccessMessage({
             title: 'Left League Successfully!',
@@ -536,10 +536,10 @@ export default function LeagueSettingsPage() {
             updatedMember: null
           });
           setShowSuccessNotification(true);
-          
+
           // Dispatch event to refresh navbar leagues
           window.dispatchEvent(new Event('leagues-changed'));
-          
+
           // Redirect after showing notification
           setTimeout(() => {
             router.push('/home');
@@ -639,28 +639,27 @@ export default function LeagueSettingsPage() {
                 {leagueStatus === 'pre-draft' && (
                   <button
                     onClick={handleFinalizedClick}
-                    className={`font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 ${
-                      isFinalized
+                    className={`font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 ${isFinalized
                         ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
                         : 'bg-gradient-to-r from-slate-600 to-gray-600 hover:from-slate-700 hover:to-gray-700 text-white'
-                    }`}
+                      }`}
                   >
-                  {isFinalized ? (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Finalized ✓
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      Not Finalized
-                    </>
-                  )}
-                </button>
+                    {isFinalized ? (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Finalized ✓
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Not Finalized
+                      </>
+                    )}
+                  </button>
                 )}
               </>
             )}
@@ -735,12 +734,11 @@ export default function LeagueSettingsPage() {
               </div>
               <div className="flex justify-between items-center py-3">
                 <span className="text-purple-300/70 font-medium">League Status</span>
-                <span className={`font-bold px-3 py-1 rounded-full text-sm ${
-                  leagueStatus === 'pre-draft' ? 'bg-blue-500/30 text-blue-300' :
-                  leagueStatus === 'drafting' ? 'bg-yellow-500/30 text-yellow-300' :
-                  leagueStatus === 'in-season' ? 'bg-green-500/30 text-green-300' :
-                  'bg-gray-500/30 text-gray-300'
-                }`}>
+                <span className={`font-bold px-3 py-1 rounded-full text-sm ${leagueStatus === 'pre-draft' ? 'bg-blue-500/30 text-blue-300' :
+                    leagueStatus === 'drafting' ? 'bg-yellow-500/30 text-yellow-300' :
+                      leagueStatus === 'in-season' ? 'bg-green-500/30 text-green-300' :
+                        'bg-gray-500/30 text-gray-300'
+                  }`}>
                   {leagueStatus.toUpperCase()}
                 </span>
               </div>
@@ -840,6 +838,32 @@ export default function LeagueSettingsPage() {
             </div>
           </div>
 
+          {/* Waiver Settings */}
+          <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-teal-600/80 to-emerald-600/80 backdrop-blur-sm p-5 border-b border-teal-400/30">
+              <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Waiver Settings
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-center py-3 border-b border-purple-500/20">
+                <span className="text-purple-300/70 font-medium">Waiver Players Time</span>
+                <span className="text-white font-semibold">{leagueSettings.waiver_players_unfreeze_time || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-purple-500/20">
+                <span className="text-purple-300/70 font-medium">Post Draft Waiver Time</span>
+                <span className="text-white font-semibold">{leagueSettings.post_draft_players_unfreeze_time || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center py-3">
+                <span className="text-purple-300/70 font-medium">Allow Minor from Waivers/FA</span>
+                <span className="text-white font-semibold">{leagueSettings.allow_injured_to_injury_slot || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
           {/* Additional Settings */}
           <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden lg:col-span-2">
             <div className="bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-sm p-5 border-b border-indigo-400/30">
@@ -891,7 +915,7 @@ export default function LeagueSettingsPage() {
               <div>
                 <h3 className="text-lg font-bold text-yellow-300 mb-2">Viewing Only</h3>
                 <p className="text-yellow-200/80">
-                  {leagueStatus !== 'pre-draft' 
+                  {leagueStatus !== 'pre-draft'
                     ? 'League settings can only be edited during the pre-draft phase.'
                     : 'Only the Commissioner and Co-Commissioner can edit league settings.'}
                 </p>
@@ -913,7 +937,7 @@ export default function LeagueSettingsPage() {
               </div>
               <h2 className="text-2xl font-black text-white">Edit Nickname</h2>
             </div>
-            
+
             <div className="bg-slate-900/50 border border-blue-500/20 rounded-lg p-4 mb-4">
               <div className="flex items-center gap-2 mb-1">
                 <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -941,23 +965,21 @@ export default function LeagueSettingsPage() {
               />
               <div className="flex justify-between items-center mt-2">
                 <div className="flex flex-col gap-1">
-                  <p className={`text-xs transition-colors ${
-                    newNickname.trim().length < 2 
-                      ? 'text-red-400 font-medium' 
-                      : newNickname.trim().length > 50 
+                  <p className={`text-xs transition-colors ${newNickname.trim().length < 2
                       ? 'text-red-400 font-medium'
-                      : 'text-cyan-300/70'
-                  }`}>
+                      : newNickname.trim().length > 50
+                        ? 'text-red-400 font-medium'
+                        : 'text-cyan-300/70'
+                    }`}>
                     {newNickname.trim().length < 2 ? '⚠️ Minimum 2 characters' : '✓ Valid length'}
                   </p>
                 </div>
-                <p className={`text-xs font-medium ${
-                  newNickname.length > 40 
-                    ? 'text-orange-400' 
-                    : newNickname.length > 45 
-                    ? 'text-red-400'
-                    : 'text-cyan-300/70'
-                }`}>
+                <p className={`text-xs font-medium ${newNickname.length > 40
+                    ? 'text-orange-400'
+                    : newNickname.length > 45
+                      ? 'text-red-400'
+                      : 'text-cyan-300/70'
+                  }`}>
                   {newNickname.length}/50
                 </p>
               </div>
@@ -1016,11 +1038,10 @@ export default function LeagueSettingsPage() {
       {/* Success/Error Notification */}
       {showSuccessNotification && (
         <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
-          <div className={`backdrop-blur-xl border rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300 ${
-            successMessage.isError 
+          <div className={`backdrop-blur-xl border rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300 ${successMessage.isError
               ? 'bg-gradient-to-br from-red-600/95 to-rose-600/95 border-red-400/30'
               : 'bg-gradient-to-br from-green-600/95 to-emerald-600/95 border-green-400/30'
-          }`}>
+            }`}>
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
                 <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
@@ -1039,19 +1060,17 @@ export default function LeagueSettingsPage() {
                 <h3 className="text-xl font-black text-white mb-1">
                   {successMessage.title}
                 </h3>
-                <p className={`text-sm mb-3 ${
-                  successMessage.isError ? 'text-red-50/90' : 'text-green-50/90'
-                }`}>
+                <p className={`text-sm mb-3 ${successMessage.isError ? 'text-red-50/90' : 'text-green-50/90'
+                  }`}>
                   {successMessage.description}
                 </p>
                 {successMessage.updatedMember && (
                   <div className="bg-white/10 rounded-lg p-3 border border-white/20">
                     <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded-lg ${
-                        successMessage.updatedMember.role === 'Co-Commissioner'
+                      <div className={`p-1.5 rounded-lg ${successMessage.updatedMember.role === 'Co-Commissioner'
                           ? 'bg-purple-400/30'
                           : 'bg-blue-400/30'
-                      }`}>
+                        }`}>
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -1134,32 +1153,29 @@ export default function LeagueSettingsPage() {
                   const isCommissioner = member.role === 'Commissioner';
                   const isSelf = member.manager_id === currentUserId;
                   const canModify = !isCommissioner && !isSelf;
-                  
+
                   return (
                     <div
                       key={member.manager_id}
-                      className={`bg-slate-900/50 border rounded-lg p-4 transition-all ${
-                        isCommissioner 
-                          ? 'border-yellow-500/30 bg-yellow-500/5' 
+                      className={`bg-slate-900/50 border rounded-lg p-4 transition-all ${isCommissioner
+                          ? 'border-yellow-500/30 bg-yellow-500/5'
                           : 'border-purple-500/20 hover:border-purple-400/40'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
-                          <div className={`p-2 rounded-lg ${
-                            member.role === 'Commissioner' 
-                              ? 'bg-yellow-500/20' 
+                          <div className={`p-2 rounded-lg ${member.role === 'Commissioner'
+                              ? 'bg-yellow-500/20'
                               : member.role === 'Co-Commissioner'
-                              ? 'bg-purple-500/20'
-                              : 'bg-blue-500/20'
-                          }`}>
-                            <svg className={`w-5 h-5 ${
-                              member.role === 'Commissioner' 
-                                ? 'text-yellow-400' 
+                                ? 'bg-purple-500/20'
+                                : 'bg-blue-500/20'
+                            }`}>
+                            <svg className={`w-5 h-5 ${member.role === 'Commissioner'
+                                ? 'text-yellow-400'
                                 : member.role === 'Co-Commissioner'
-                                ? 'text-purple-400'
-                                : 'text-blue-400'
-                            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  ? 'text-purple-400'
+                                  : 'text-blue-400'
+                              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                           </div>
@@ -1290,18 +1306,16 @@ export default function LeagueSettingsPage() {
                 <button
                   onClick={() => handleUpdateFinalized(!isFinalized)}
                   disabled={updatingFinalized}
-                  className={`relative inline-flex h-8 w-16 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isFinalized ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-slate-600'
-                  }`}
+                  className={`relative inline-flex h-8 w-16 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 disabled:opacity-50 disabled:cursor-not-allowed ${isFinalized ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-slate-600'
+                    }`}
                 >
                   <span
-                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
-                      isFinalized ? 'translate-x-9' : 'translate-x-1'
-                    }`}
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${isFinalized ? 'translate-x-9' : 'translate-x-1'
+                      }`}
                   />
                 </button>
               </div>
-              
+
               {members.length % 2 !== 0 && (
                 <div className="mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
                   <div className="flex items-start gap-2">
@@ -1341,7 +1355,7 @@ export default function LeagueSettingsPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (() => {
         const isCommissioner = currentUserRole === 'Commissioner';
-        const confirmText = isCommissioner 
+        const confirmText = isCommissioner
           ? 'I agree to delete this league'
           : 'I agree to leave this league';
         const isValid = deleteConfirmText === confirmText;
@@ -1367,8 +1381,8 @@ export default function LeagueSettingsPage() {
               {/* Warning Content */}
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
                 <h3 className="text-red-300 font-bold mb-3">
-                  {isCommissioner 
-                    ? '🔥 This will permanently remove:' 
+                  {isCommissioner
+                    ? '🔥 This will permanently remove:'
                     : '📤 You will:'}
                 </h3>
                 <ul className="space-y-2 text-red-200/90">
@@ -1509,7 +1523,7 @@ export default function LeagueSettingsPage() {
                   <p className="text-red-300/70 text-sm">{memberToDelete.role}</p>
                 </div>
               </div>
-              
+
               <div className="text-red-200/90 text-sm space-y-2">
                 <p className="font-medium">⚠️ This action will:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">

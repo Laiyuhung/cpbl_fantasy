@@ -8,30 +8,30 @@ const supabase = createClient(
 
 // Roster Positions 預定義順序
 const ROSTER_POSITION_ORDER = [
-  'C', '1B', '2B', '3B', 'SS', 'MI', 'CI', 
-  'OF', 'LF', 'CF', 'RF', 'Util', 
-  'SP', 'RP', 'P', 
+  'C', '1B', '2B', '3B', 'SS', 'MI', 'CI',
+  'OF', 'LF', 'CF', 'RF', 'Util',
+  'SP', 'RP', 'P',
   'BN', 'Minor'
 ];
 
 // 按照預定義順序重新排列 Roster Positions
 const sortRosterPositions = (positions) => {
   if (!positions || typeof positions !== 'object') return positions;
-  
+
   const sorted = {};
   ROSTER_POSITION_ORDER.forEach(pos => {
     if (positions.hasOwnProperty(pos)) {
       sorted[pos] = positions[pos];
     }
   });
-  
+
   // 添加任何不在預定義列表中的位置（以防萬一）
   Object.keys(positions).forEach(pos => {
     if (!sorted.hasOwnProperty(pos)) {
       sorted[pos] = positions[pos];
     }
   });
-  
+
   return sorted;
 };
 
@@ -51,7 +51,7 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
   const maxWeeks = 23; // 总共可用周次（week_id 1-23）
   const reservedWeek = 23; // 保留周（补赛周）
   const maxRegularAndPlayoff = 21; // 例行赛+季后赛不能超过21周（留1周给补赛）
-  
+
   // 解析日期 (格式: YYYY.M.D)
   const parseDate = (dateStr) => {
     if (!dateStr) return null;
@@ -180,9 +180,9 @@ export async function POST(request) {
       max_acquisitions_per_week: settings.acquisitions['Max Acquisitions per Week'],
 
       // Waivers
-      waiver_players_unfreeze_time: settings.waivers['Waiver Players Unfreeze Time'],
-      allow_injured_to_injury_slot: settings.waivers['Allow injured players from waivers or free agents to be added directly to the injury slot'],
-      post_draft_players_unfreeze_time: settings.waivers['Post Draft Players Unfreeze Time'],
+      waiver_players_unfreeze_time: settings.waivers['Waiver Players Time'],
+      allow_injured_to_injury_slot: settings.waivers['Allow minor players from waivers or free agents to be added directly to the minor slot'],
+      post_draft_players_unfreeze_time: settings.waivers['Post Draft Waiver Time'],
 
       // Trading
       trade_review: settings.trading['Trade Review'],
@@ -197,11 +197,11 @@ export async function POST(request) {
       // Scoring
       start_scoring_on: settings.scoring['Start Scoring On'],
       // 直接塞入前端传来的数组，保持顺序
-      batter_stat_categories: Array.isArray(settings.scoring['Batter Stat Categories']) 
-        ? JSON.parse(JSON.stringify(settings.scoring['Batter Stat Categories'])) 
+      batter_stat_categories: Array.isArray(settings.scoring['Batter Stat Categories'])
+        ? JSON.parse(JSON.stringify(settings.scoring['Batter Stat Categories']))
         : [],
-      pitcher_stat_categories: Array.isArray(settings.scoring['Pitcher Stat Categories']) 
-        ? JSON.parse(JSON.stringify(settings.scoring['Pitcher Stat Categories'])) 
+      pitcher_stat_categories: Array.isArray(settings.scoring['Pitcher Stat Categories'])
+        ? JSON.parse(JSON.stringify(settings.scoring['Pitcher Stat Categories']))
         : [],
 
       // Playoffs
@@ -398,9 +398,9 @@ export async function PUT(request) {
       trade_end_date: settings.acquisitions['Trade End Date'],
       max_acquisitions_per_week: settings.acquisitions['Max Acquisitions per Week'],
 
-      waiver_players_unfreeze_time: settings.waivers['Waiver Players Unfreeze Time'],
-      allow_injured_to_injury_slot: settings.waivers['Allow injured players from waivers or free agents to be added directly to the injury slot'],
-      post_draft_players_unfreeze_time: settings.waivers['Post Draft Players Unfreeze Time'],
+      waiver_players_unfreeze_time: settings.waivers['Waiver Players Time'],
+      allow_injured_to_injury_slot: settings.waivers['Allow minor players from waivers or free agents to be added directly to the minor slot'],
+      post_draft_players_unfreeze_time: settings.waivers['Post Draft Waiver Time'],
 
       trade_review: settings.trading['Trade Review'],
       trade_reject_time: settings.trading['Trade Review'] === 'No review' ? null : settings.trading['Trade Reject Time'],
@@ -412,11 +412,11 @@ export async function PUT(request) {
 
       start_scoring_on: settings.scoring['Start Scoring On'],
       // 完全覆盖，无视原有数据，保持前端传来的顺序
-      batter_stat_categories: Array.isArray(settings.scoring['Batter Stat Categories']) 
-        ? JSON.parse(JSON.stringify(settings.scoring['Batter Stat Categories'])) 
+      batter_stat_categories: Array.isArray(settings.scoring['Batter Stat Categories'])
+        ? JSON.parse(JSON.stringify(settings.scoring['Batter Stat Categories']))
         : [],
-      pitcher_stat_categories: Array.isArray(settings.scoring['Pitcher Stat Categories']) 
-        ? JSON.parse(JSON.stringify(settings.scoring['Pitcher Stat Categories'])) 
+      pitcher_stat_categories: Array.isArray(settings.scoring['Pitcher Stat Categories'])
+        ? JSON.parse(JSON.stringify(settings.scoring['Pitcher Stat Categories']))
         : [],
 
       playoffs: settings.playoffs['Playoffs'],
