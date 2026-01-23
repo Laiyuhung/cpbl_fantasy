@@ -39,7 +39,7 @@ export default function Navbar() {
   const fetchLeagues = (uid) => {
     console.log('=== Navbar: Fetching leagues ===')
     console.log('Manager ID (user_id):', uid)
-    
+
     fetch('/api/managers/leagues', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -172,7 +172,7 @@ export default function Navbar() {
   return (
     <nav className="relative bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-2xl border-b border-blue-500/30">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f46e510_1px,transparent_1px),linear-gradient(to_bottom,#4f46e510_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none"></div>
-      
+
       <div className="relative px-6 py-4 flex items-center justify-between">
         <Link href="/home" className="flex items-center space-x-3 group">
           <div className="relative">
@@ -193,19 +193,15 @@ export default function Navbar() {
           <Link href="/roster" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
             ROSTER
           </Link>
-          <Link href="/player" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
-            PLAYERS
-          </Link>
+
           <Link href="/matchup" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
             MATCHUP
           </Link>
-          <Link href="/manager" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
-            MANAGER
-          </Link>
+
           <Link href="/record_book" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
             RECORDS
           </Link>
-          
+
           <div className="relative league-dropdown">
             <button
               onClick={() => setLeagueDropdownOpen(!leagueDropdownOpen)}
@@ -238,7 +234,7 @@ export default function Navbar() {
                   </svg>
                   <span className="font-bold text-sm">CREATE NEW LEAGUE</span>
                 </Link>
-                
+
                 {leagues.length > 0 ? (
                   <div className="max-h-[400px] overflow-y-auto">
                     {leagues.map((league, index) => (
@@ -340,14 +336,14 @@ export default function Navbar() {
             <div className="overflow-y-auto h-[calc(100%-180px)] p-4 space-y-1">
               <Link href="/home" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>HOME</Link>
               <Link href="/roster" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>ROSTER</Link>
-              <Link href="/player" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>PLAYERS</Link>
+
               <Link href="/matchup" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>MATCHUP</Link>
-              <Link href="/manager" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>MANAGER</Link>
+
               <Link href="/record_book" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>RECORDS</Link>
 
               <div className="border-t border-blue-500/30 mt-4 pt-4">
                 <div className="text-xs text-blue-300/70 mb-3 px-4 font-semibold tracking-wider">MY LEAGUES</div>
-                
+
                 <Link href="/create_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium" onClick={() => setMenuOpen(false)}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

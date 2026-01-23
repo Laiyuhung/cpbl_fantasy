@@ -24,6 +24,9 @@ export async function POST(request) {
       .select();
 
     if (error) {
+      if (error.message.includes('uniq_manager_claim_active')) {
+        return NextResponse.json({ success: false, error: 'You have already submitted a claim for this player.' }, { status: 400 });
+      }
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
     return NextResponse.json({ success: true, data: data[0] });
