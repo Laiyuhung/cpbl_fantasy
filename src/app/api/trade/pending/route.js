@@ -25,6 +25,53 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: '球員ID格式錯誤' }, { status: 400 });
     }
 
+    // 檢查聯盟設定中的交易截止日
+    const { data: leagueSettings, error: settingsError } = await supabase
+      .from('league_settings')
+      .select('trade_end_date, start_scoring_on')
+      .eq('league_id', league_id)
+      .single();
+
+    if (!settingsError && leagueSettings) {
+      const tradeEndDate = leagueSettings.trade_end_date;
+
+      if (tradeEndDate && tradeEndDate.trim().toLowerCase() !== 'no trade deadline') {
+        try {
+          const trimmedDate = tradeEndDate.trim();
+          let dateStr = trimmedDate;
+
+          // 如果沒有年份，嘗試從 start_scoring_on 取得年份或使用今年
+          if (!/\d{4}/.test(trimmedDate)) {
+            let year = new Date().getFullYear();
+            if (leagueSettings.start_scoring_on) {
+              const parts = leagueSettings.start_scoring_on.split('.');
+              if (parts.length > 0) {
+                const parsedYear = parseInt(parts[0]);
+                if (!isNaN(parsedYear)) year = parsedYear;
+              }
+            }
+            dateStr = `${trimmedDate}, ${year}`;
+          }
+
+          const deadline = new Date(dateStr);
+          if (!isNaN(deadline.getTime())) {
+            // 設定截止時間為當天 23:59:59
+            deadline.setHours(23, 59, 59, 999);
+
+            if (new Date() > deadline) {
+              return NextResponse.json({
+                success: false,
+                error: 'Trade deadline has passed'
+              }, { status: 400 });
+            }
+          }
+        } catch (e) {
+          console.error('Error checking trade deadline:', e);
+          // 發生錯誤時允許交易，避免因格式問題卡住
+        }
+      }
+    }
+
     // 寫入 pending_trade 表
     const { error } = await supabase.from('pending_trade').insert([
       {

@@ -618,13 +618,14 @@ export default function PlayersPage() {
   };
 
   const isTradeDeadlinePassed = () => {
-    if (!tradeEndDate || tradeEndDate === 'No trade deadline') return false;
+    if (!tradeEndDate || tradeEndDate.trim().toLowerCase() === 'no trade deadline') return false;
 
     try {
-      let dateStr = tradeEndDate;
+      const trimmedDate = tradeEndDate.trim();
+      let dateStr = trimmedDate;
       // If the date string doesn't include a 4-digit year, append the season year
-      if (!/\d{4}/.test(tradeEndDate)) {
-        dateStr = `${tradeEndDate}, ${seasonYear}`;
+      if (!/\d{4}/.test(trimmedDate)) {
+        dateStr = `${trimmedDate}, ${seasonYear}`;
       }
 
       const deadline = new Date(dateStr);
