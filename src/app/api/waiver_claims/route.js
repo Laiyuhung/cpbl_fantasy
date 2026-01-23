@@ -27,6 +27,9 @@ export async function POST(request) {
       if (error.message.includes('uniq_manager_claim_active')) {
         return NextResponse.json({ success: false, error: 'You have already submitted a claim for this player.' }, { status: 400 });
       }
+      if (error.message.includes('idx_waiver_claims_pending_unique')) {
+        return NextResponse.json({ success: false, error: 'You have already submitted an identical waiver claim for this player. Please change the player to drop or cancel your existing pending waiver(s).' }, { status: 400 });
+      }
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
     return NextResponse.json({ success: true, data: data[0] });
