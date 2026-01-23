@@ -28,11 +28,11 @@ function VerifyEmailContent() {
           setStatus('success');
           setMessage(data.message);
           setUserName(data.userName || '');
-          
+
           // Redirect to login after 5 seconds
-          setTimeout(() => {
-            router.push('/login');
-          }, 5000);
+          // setTimeout(() => {
+          //   router.push('/login');
+          // }, 5000);
         } else {
           setStatus('error');
           setMessage(data.error || 'Verification failed');
@@ -70,9 +70,19 @@ function VerifyEmailContent() {
               <p className="text-xl text-purple-200 mb-4">Welcome, {userName}!</p>
             )}
             <p className="text-purple-300 mb-6">{message}</p>
-            <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
-              <p className="text-blue-300 text-sm">Redirecting to login page...</p>
+
+            <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mb-6">
+              <p className="text-blue-300 text-sm">
+                If you don't see the email, please check your spam or junk folder.
+              </p>
             </div>
+
+            <button
+              onClick={() => router.push('/login')}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg"
+            >
+              Back to Login
+            </button>
           </div>
         )}
 

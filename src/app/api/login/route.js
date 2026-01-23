@@ -13,24 +13,24 @@ export async function POST(request) {
     .single()
 
   if (error || !data) {
-    return NextResponse.json({ error: '帳號或密碼錯誤' }, { status: 401 })
+    return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
   }
 
   // Check if email is verified
   if (!data.email_verified) {
-    return NextResponse.json({ error: '請先驗證您的電子郵件' }, { status: 403 })
+    return NextResponse.json({ error: 'Please verify your email address' }, { status: 403 })
   }
 
   // Compare password with hash
   const passwordMatch = await bcrypt.compare(password, data.password)
   if (!passwordMatch) {
-    return NextResponse.json({ error: '帳號或密碼錯誤' }, { status: 401 })
+    return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
   }
 
-  const response = NextResponse.json({ 
-    id: data.manager_id, 
-    duration: 123, 
-    must_change_password: !!data.must_change_password 
+  const response = NextResponse.json({
+    id: data.manager_id,
+    duration: 123,
+    must_change_password: !!data.must_change_password
   })
   response.cookies.set('user_id', String(data.manager_id), {
     path: '/',

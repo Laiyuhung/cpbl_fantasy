@@ -11,6 +11,8 @@ export default function LoginPage() {
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [isResending, setIsResending] = useState(false)
+  const [resendStatus, setResendStatus] = useState('')
 
   useEffect(() => {
     // 避免重複重定向檢查
@@ -34,7 +36,7 @@ export default function LoginPage() {
             router.push('/home')
           }
         })
-        .catch(() => {})
+        .catch(() => { })
     }, 100)
 
     return () => clearTimeout(timeoutId)
@@ -42,6 +44,8 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     setError('')
+    setResendStatus('')
+
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -60,8 +64,8 @@ export default function LoginPage() {
 
         // 若伺服器要求強制更改密碼 -> 導到 change-password
         // 通知全站 auth 狀態已改變，讓 Navbar 等元件立即更新
-        try { window.dispatchEvent(new Event('auth-changed')) } catch (e) {}
-        
+        try { window.dispatchEvent(new Event('auth-changed')) } catch (e) { }
+
         // 延遲導向，讓用戶看到提示
         setTimeout(() => {
           if (result.must_change_password) {
@@ -73,6 +77,33 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError('Login error, please try again later')
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setIsResending(true)
+    setResendStatus('')
+    try {
+      const res = await fetch('/api/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        setResendStatus('success')
+        setToastMessage('✅ Verification email sent! Please check your inbox.')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 5000)
+        setError('') // Clear the error to maybe hide the button? Or keep it? keeping it is fine.
+      } else {
+        setResendStatus(data.error || 'Failed to resend email')
+      }
+    } catch (e) {
+      setResendStatus('Error sending email')
+    } finally {
+      setIsResending(false)
     }
   }
 
@@ -128,7 +159,28 @@ export default function LoginPage() {
           Create New Account
         </button>
 
-        {error && <div className="text-red-400 bg-red-900/30 border border-red-500/50 rounded-lg p-3 mt-4">⚠️ {error}</div>}
+        {error && (
+          <div className="text-red-400 bg-red-900/30 border border-red-500/50 rounded-lg p-3 mt-4">
+            <p>⚠️ {error}</p>
+            {error === 'Please verify your email address' && (
+              <div className="mt-3">
+                <button
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                  className="text-sm bg-blue-600/50 hover:bg-blue-600 text-blue-100 py-2 px-4 rounded transition-colors disabled:opacity-50"
+                >
+                  {isResending ? 'Sending...' : 'Resend Verification Email'}
+                </button>
+                {resendStatus && resendStatus !== 'success' && (
+                  <p className="text-xs text-red-300 mt-2">{resendStatus}</p>
+                )}
+                {resendStatus === 'success' && (
+                  <p className="text-xs text-green-300 mt-2">Email sent successfully!</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
