@@ -322,6 +322,23 @@ export async function DELETE(req, { params }) {
     const nowTaiwan = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
     const todayMD = `${nowTaiwan.getMonth() + 1}/${nowTaiwan.getDate()}`;
 
+    // --- 清除未來及今日的 league_roster_positions ---
+    // 無論是 Same day drop 還是 Waiver drop，今天起該球員都不應再出現在 roster 中
+    const todayStr = nowTaiwan.toISOString().split('T')[0];
+
+    const { error: rosterDeleteError } = await supabase
+      .from('league_roster_positions')
+      .delete()
+      .eq('league_id', leagueId)
+      .eq('manager_id', manager_id)
+      .eq('player_id', player_id)
+      .gte('game_date', todayStr);
+
+    if (rosterDeleteError) {
+      console.error('Failed to cleanup roster positions:', rosterDeleteError);
+      // 不阻擋 Drop 流程，僅記錄錯誤
+    }
+
     // 將 acquired_at (UTC) 轉換為台灣時間後取得 m/d
     const acquiredUTC = new Date(ownership.acquired_at);
     const acquiredTaiwan = new Date(acquiredUTC.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));

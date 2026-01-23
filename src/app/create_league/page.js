@@ -1002,6 +1002,9 @@ const CreateLeaguePage = () => {
         setLeagueId(result.league_id);
         setShowSuccessAnimation(true);
 
+        // 通知 Navbar 更新聯賽列表
+        window.dispatchEvent(new Event('leagues-changed'));
+
         // 等待 2 秒后跳转到 league 页面
         setTimeout(() => {
           router.push(`/league/${result.league_id}`);

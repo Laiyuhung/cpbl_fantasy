@@ -36,7 +36,7 @@ export async function POST(request, { params }) {
 
     if (statusData.status !== 'pre-draft') {
       return NextResponse.json(
-        { error: 'Cannot join league. League is not in pre-draft status' },
+        { error: 'The league draft is complete and the season has started.' },
         { status: 400 }
       );
     }
