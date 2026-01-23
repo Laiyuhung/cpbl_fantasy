@@ -79,9 +79,9 @@ export async function POST(req, { params }) {
       );
     }
 
-    // 記錄 ADD 交易到 transactions_2025
+    // 記錄 ADD 交易到 transactions_2026
     const { error: transError } = await supabase
-      .from('transactions_2025')
+      .from('transactions_2026')
       .insert({
         league_id: leagueId,
         player_id: player_id,
@@ -256,9 +256,9 @@ export async function DELETE(req, { params }) {
         );
       }
 
-      // 記錄 DROP 交易到 transactions_2025
+      // 記錄 DROP 交易到 transactions_2026
       const { error: transError } = await supabase
-        .from('transactions_2025')
+        .from('transactions_2026')
         .insert({
           league_id: leagueId,
           player_id: player_id,
@@ -303,9 +303,9 @@ export async function DELETE(req, { params }) {
         );
       }
 
-      // 記錄 DROP 交易到 transactions_2025
+      // 記錄 DROP 交易到 transactions_2026
       const { error: transError } = await supabase
-        .from('transactions_2025')
+        .from('transactions_2026')
         .insert({
           league_id: leagueId,
           player_id: player_id,
