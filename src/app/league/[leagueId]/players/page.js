@@ -969,16 +969,16 @@ export default function PlayersPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${player.batter_or_pitcher === 'batter'
-                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                            : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                          ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                          : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
                           }`}>
                           {player.batter_or_pitcher === 'batter' ? 'Batter' : 'Pitcher'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${player.identity === 'local'
-                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                            : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                          : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                           }`}>
                           {player.identity === 'local' ? 'Local' : 'Foreigner'}
                         </span>
@@ -1225,6 +1225,80 @@ export default function PlayersPage() {
 
       {/* Trade Modal */}
       {renderTradeModal()}
+
+      {/* Waiver Success Notification */}
+      {showWaiverSuccess && (
+        <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+          <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1 pt-1">
+                <h3 className="text-xl font-black text-white mb-1">
+                  Success!
+                </h3>
+                <p className="text-green-50/90 text-sm mb-3">
+                  {waiverSuccessMsg}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWaiverSuccess(false)}
+                className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Waiver Error Notification */}
+      {showWaiverError && (
+        <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+          <div className="bg-gradient-to-br from-red-600/95 to-rose-600/95 border border-red-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1 pt-1">
+                <h3 className="text-xl font-black text-white mb-1">
+                  Error
+                </h3>
+                <p className="text-red-50/90 text-sm mb-3">
+                  {waiverErrorMsg}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWaiverError(false)}
+                className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Trade Success Notification */}
       {showTradeSuccessNotification && (
