@@ -77,7 +77,7 @@ const settingOptions = {
   'Max Teams': ['4', '6', '8', '10'],
   'Scoring Type': ['Head-to-Head', 'Head-to-Head One Win', 'Head-to-Head Fantasy Points'],
   'Trade End Date': ['No trade deadline', 'June 15', 'July 1', 'July 15', 'August 1', 'August 7', 'August 15', 'August 30'],
-  'Waiver Players Time': ['0 days', '1 day', '2 days', '3 days', '5 days', '7 days'],
+  'Waiver Players Time': ['0 days', '1 day', '2 days', '3 days', '4 days', '5 days', '6 days', '7 days'],
   'Allow minor players from waivers or free agents to be added directly to the minor slot': ['Yes', 'No'],
   'Trade Review': ['League votes', 'Commissioner reviews', 'No review'],
   'Trade Reject Time': ['0 days', '1 day', '2 days', '3 days', '7 days'],
@@ -429,23 +429,23 @@ function SchedulePreview({ settings, onValidationChange }) {
               <tr
                 key={index}
                 className={`border-b ${week.week_type === 'playoffs'
-                    ? 'bg-purple-900/40 hover:bg-purple-800/40'
-                    : week.week_type === 'makeup'
-                      ? 'bg-yellow-900/40 hover:bg-yellow-800/40'
-                      : week.week_type === 'preparation'
-                        ? 'bg-green-900/40 hover:bg-green-800/40'
-                        : 'bg-slate-900/40 hover:bg-purple-500/20'
+                  ? 'bg-purple-900/40 hover:bg-purple-800/40'
+                  : week.week_type === 'makeup'
+                    ? 'bg-yellow-900/40 hover:bg-yellow-800/40'
+                    : week.week_type === 'preparation'
+                      ? 'bg-green-900/40 hover:bg-green-800/40'
+                      : 'bg-slate-900/40 hover:bg-purple-500/20'
                   } border-purple-500/20 transition-colors`}
               >
                 <td className="px-4 py-2 text-white font-medium">{week.week_label}</td>
                 <td className="px-4 py-2 text-purple-300">
                   <span className={`px-2 py-1 rounded text-xs font-semibold shadow-lg ${week.week_type === 'playoffs'
-                      ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50'
-                      : week.week_type === 'makeup'
-                        ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50'
-                        : week.week_type === 'preparation'
-                          ? 'bg-green-500/80 text-green-100 shadow-green-500/50'
-                          : 'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
+                    ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50'
+                    : week.week_type === 'makeup'
+                      ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50'
+                      : week.week_type === 'preparation'
+                        ? 'bg-green-500/80 text-green-100 shadow-green-500/50'
+                        : 'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
                     }`}>
                     {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : week.week_type === 'preparation' ? 'Preparation' : 'Regular'}
                   </span>
@@ -1100,8 +1100,8 @@ const CreateLeaguePage = () => {
                                       }
                                       rows="3"
                                       className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm ${!value || value.trim() === ''
-                                          ? 'border-red-500 bg-red-900/30'
-                                          : 'border-purple-500/30'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                         }`}
                                     />
                                     {(!value || value.trim() === '') && (
@@ -1117,8 +1117,8 @@ const CreateLeaguePage = () => {
                                       onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
                                       disabled={settings.general['Draft Type'] !== 'Live Draft'}
                                       className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 ${(settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError
-                                          ? 'border-red-500 bg-red-900/30'
-                                          : 'border-purple-500/30'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                         }`}
                                     />
                                     {settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '') && (
@@ -1155,8 +1155,8 @@ const CreateLeaguePage = () => {
                                                 handleRosterPositionChange(position, e.target.value)
                                               }
                                               className={`px-2 py-1 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${isOverLimit || isMinorOverLimit
-                                                  ? 'border-red-500 bg-red-900/30'
-                                                  : 'border-purple-500/30'
+                                                ? 'border-red-500 bg-red-900/30'
+                                                : 'border-purple-500/30'
                                                 }`}
                                             />
                                           </div>
@@ -1165,10 +1165,10 @@ const CreateLeaguePage = () => {
                                     </div>
                                     <div className="flex gap-4 text-sm">
                                       <div className={`${Object.entries(value)
-                                          .filter(([pos]) => pos !== 'Minor')
-                                          .reduce((sum, [, cnt]) => sum + cnt, 0) > 25
-                                          ? 'text-red-400 font-semibold'
-                                          : 'text-purple-300'
+                                        .filter(([pos]) => pos !== 'Minor')
+                                        .reduce((sum, [, cnt]) => sum + cnt, 0) > 25
+                                        ? 'text-red-400 font-semibold'
+                                        : 'text-purple-300'
                                         }`}>
                                         Non-Minor total: {
                                           Object.entries(value)
@@ -1177,8 +1177,8 @@ const CreateLeaguePage = () => {
                                         } / 25 (max)
                                       </div>
                                       <div className={`${(value['Minor'] || 0) > 5
-                                          ? 'text-red-400 font-semibold'
-                                          : 'text-purple-300'
+                                        ? 'text-red-400 font-semibold'
+                                        : 'text-purple-300'
                                         }`}>
                                         Minor: {value['Minor'] || 0} / 5 (max)
                                       </div>
@@ -1192,8 +1192,8 @@ const CreateLeaguePage = () => {
                                       </div>
                                     )}
                                     <div className={`grid grid-cols-1 gap-2 p-3 border rounded-md ${(!Array.isArray(value) || value.length === 0)
-                                        ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30 bg-slate-800/40'
+                                      ? 'border-red-500 bg-red-900/30'
+                                      : 'border-purple-500/30 bg-slate-800/40'
                                       }`}>
                                       {settingOptions[key]?.map((option) => {
                                         const isChecked = Array.isArray(value) && value.includes(option);
@@ -1269,8 +1269,8 @@ const CreateLeaguePage = () => {
                                         handleSettingChange(section.key, key, e.target.value)
                                       }
                                       className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${!value || value.trim() === ''
-                                          ? 'border-red-500 bg-red-900/30'
-                                          : 'border-purple-500/30'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                         }`}
                                     />
                                     {(!value || value.trim() === '') && (
@@ -1285,8 +1285,8 @@ const CreateLeaguePage = () => {
                                         handleSettingChange(section.key, key, e.target.value)
                                       }
                                       className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${(!value || value.trim() === '') || (key === 'Start Scoring On' && dateValidationErrors.scoringDateError)
-                                          ? 'border-red-500 bg-red-900/30'
-                                          : 'border-purple-500/30'
+                                        ? 'border-red-500 bg-red-900/30'
+                                        : 'border-purple-500/30'
                                         }`}
                                     >
                                       {(() => {
@@ -1326,8 +1326,8 @@ const CreateLeaguePage = () => {
           <div className="mt-8 flex justify-end gap-4">
             {saveMessage && (
               <div className={`px-4 py-2 rounded-md ${saveMessage.includes('✅')
-                  ? 'bg-green-100 text-green-800 border border-green-300'
-                  : 'bg-red-100 text-red-800 border border-red-300'
+                ? 'bg-green-100 text-green-800 border border-green-300'
+                : 'bg-red-100 text-red-800 border border-red-300'
                 }`}>
                 {saveMessage.split('\n').map((line, i) => (
                   <div key={i}>{line}</div>
@@ -1365,8 +1365,8 @@ const CreateLeaguePage = () => {
                     : ''
               }
               className={`px-6 py-2 font-semibold rounded-md transition-colors ${isSaving || scheduleError || hasWeightErrors()
-                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
             >
               {isSaving ? 'Creating...' : 'Create a new league'}
