@@ -57,10 +57,28 @@ export async function GET(req) {
       });
     }
 
-    // 將位置資料加入球員資料
+    // 獲取球員真實狀態
+    const { data: realLifeStatus, error: statusError } = await supabase
+      .from('real_life_player_status')
+      .select('player_id, status');
+
+    if (statusError) {
+      console.error('Error fetching real life status:', statusError);
+    }
+
+    // 建立狀態對照表
+    const statusMap = {};
+    if (realLifeStatus) {
+      realLifeStatus.forEach(s => {
+        statusMap[s.player_id] = s.status;
+      });
+    }
+
+    // 將位置資料和真實狀態加入球員資料
     const playersWithPositions = (players || []).map(player => ({
       ...player,
-      position_list: positionMap[player.player_id] || null
+      position_list: positionMap[player.player_id] || null,
+      real_life_status: statusMap[player.player_id] || 'UNREGISTERED' // 預設
     }));
 
     return NextResponse.json({

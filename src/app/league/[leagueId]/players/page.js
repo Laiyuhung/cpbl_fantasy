@@ -1001,6 +1001,16 @@ export default function PlayersPage() {
                                   {player.original_name}
                                 </span>
                               )}
+                              {player.real_life_status && player.real_life_status !== 'MAJOR' && (
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${player.real_life_status === 'MINOR'
+                                    ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                                    : player.real_life_status === 'DEREGISTERED'
+                                      ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                                      : 'bg-slate-500/20 text-slate-300 border-slate-500/30' // UNREGISTERED
+                                  }`} title={player.real_life_status}>
+                                  {player.real_life_status === 'MINOR' ? 'NA' : player.real_life_status === 'DEREGISTERED' ? 'DR' : 'NR'}
+                                </span>
+                              )}
                               {player.identity !== 'local' && (
                                 <span className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold" title="Foreign Player">
                                   F
