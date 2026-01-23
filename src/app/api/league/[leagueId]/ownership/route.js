@@ -49,7 +49,7 @@ export async function POST(req, { params }) {
 
     // 直接使用 UTC 時間
     const now = new Date();
-    
+
     // 插入新記錄（使用 upsert 確保原子性，但設定 onConflict 讓重複時返回錯誤）
     const { data: newOwnership, error: insertError } = await supabase
       .from('league_player_ownership')
@@ -93,6 +93,103 @@ export async function POST(req, { params }) {
     if (transError) {
       console.error('Failed to log transaction:', transError);
       // 不阻擋主流程，僅記錄錯誤
+    }
+
+    // --- 自動生成 league_roster_positions ---
+    try {
+      // 1. 取得聯盟賽程的開始與結束週資訊
+      const { data: scheduleInfo, error: scheduleError } = await supabase
+        .from('league_schedule')
+        .select('week_number, week_start, week_end')
+        .eq('league_id', leagueId)
+        .order('week_number', { ascending: true }); // 用於取第一週
+
+      if (!scheduleError && scheduleInfo && scheduleInfo.length > 0) {
+        // 第一週開始日 (Season Start)
+        const firstWeek = scheduleInfo[0];
+        const lastWeek = scheduleInfo[scheduleInfo.length - 1]; // 最後一週
+
+        let seasonStart = new Date(firstWeek.week_start);
+        let seasonEnd = null;
+
+        // 2. 透過最後一週的 week_end 去 schedule_date 找 week_id
+        const { data: weekData, error: weekError } = await supabase
+          .from('schedule_date')
+          .select('week')
+          .eq('end', lastWeek.week_end) // 假設完全匹配
+          .single();
+
+        if (!weekError && weekData) {
+          // 3. 找到 week_id + 1 作為賽季結束判定點
+          const currentWeekNum = parseInt(weekData.week.replace('W', ''), 10);
+          const nextWeekNum = currentWeekNum + 1;
+          const nextWeekStr = `W${nextWeekNum}`;
+
+          const { data: nextWeekData, error: nextWeekError } = await supabase
+            .from('schedule_date')
+            .select('end')
+            .eq('week', nextWeekStr)
+            .single();
+
+          if (!nextWeekError && nextWeekData) {
+            seasonEnd = new Date(nextWeekData.end);
+          }
+        }
+
+        // 如果找不到 next week，fallback 使用最後一週的 end date + 1 天? 
+        // 依照需求："將week_id+1才是這裡要的賽季結束"，若找不到可能代表賽季未定義完全，暫時不生成或報錯？
+        // 這裡做個 fallback：如果找不到 week+1，就用 lastWeek.week_end
+        if (!seasonEnd) {
+          seasonEnd = new Date(lastWeek.week_end);
+          // 通常 end date 是包含的，所以如果要用作 exclusive upper bound，可能要 +1 天，但這裡暫且依賴 week+1 邏輯
+        }
+
+        // 4. 決定生成區間
+        // 取得台灣時間的今天 (去除時間部分)
+        const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+        nowTaiwan.setHours(0, 0, 0, 0);
+
+        // 如果 Today < SeasonStart，從 SeasonStart 開始
+        // 如果 Today >= SeasonStart，從 Today 開始
+        // 注意：這裡的 seasonStart 應該也是 Date 物件 (UTC 00:00:00)，比較時要注意時區
+        // 為求保險，將 seasonStart 也視為當日 00:00
+
+        let startDate = nowTaiwan < seasonStart ? seasonStart : nowTaiwan;
+
+        // 生成每一天的資料
+        const rosterRows = [];
+        let currentDate = new Date(startDate);
+
+        // 迴圈：currentDate <= seasonEnd
+        // 注意：seasonEnd 是 "Week+1" 的 end，即本季最後一天。
+        // 所以 <= seasonEnd 以包含這一天。
+        while (currentDate <= seasonEnd) {
+          rosterRows.push({
+            league_id: leagueId,
+            manager_id: manager_id,
+            player_id: player_id,
+            game_date: currentDate.toISOString().split('T')[0], // YYYY-MM-DD
+            position: 'BN' // 預設板凳
+          });
+
+          // 加一天
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        if (rosterRows.length > 0) {
+          const { error: rosterError } = await supabase
+            .from('league_roster_positions')
+            .upsert(rosterRows, { onConflict: 'league_id, player_id, game_date' }); // 避免重複報錯
+
+          if (rosterError) {
+            console.error('Failed to generate roster positions:', rosterError);
+          } else {
+            console.log(`Generated ${rosterRows.length} roster positions for player ${player_id}`);
+          }
+        }
+      }
+    } catch (rosterGenError) {
+      console.error('Error in roster generation logic:', rosterGenError);
     }
 
     return NextResponse.json({
@@ -282,7 +379,7 @@ export async function DELETE(req, { params }) {
       // 使用台灣時間計算 waiver 解凍日期
       const offWaiverTaiwan = new Date(nowTaiwan);
       offWaiverTaiwan.setDate(offWaiverTaiwan.getDate() + waiverDays);
-      
+
       // 將台灣時間轉回 UTC 存入資料庫
       const offWaiverUTC = new Date(offWaiverTaiwan.toLocaleString('en-US', { timeZone: 'UTC' }));
 

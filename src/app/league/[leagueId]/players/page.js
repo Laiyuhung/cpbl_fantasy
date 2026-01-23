@@ -936,8 +936,7 @@ export default function PlayersPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Name</th>
                   <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Team</th>
-                  <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Type</th>
-                  <th className="px-6 py-4 text-center text-sm font-bold text-purple-300">Identity</th>
+
                   {/* 動態顯示統計項目 */}
                   {filterType === 'batter' && batterStatCategories.map((stat) => {
                     // 提取最靠後的括號內的縮寫，例如 "Runs (R)" -> "R"
@@ -996,11 +995,18 @@ export default function PlayersPage() {
                               </span>
                               {renderStatusTag(player)}
                             </div>
-                            {player.original_name && player.original_name !== player.name && (
-                              <span className="text-purple-300/60 text-sm">
-                                {player.original_name}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {player.original_name && player.original_name !== player.name && (
+                                <span className="text-purple-300/60 text-sm">
+                                  {player.original_name}
+                                </span>
+                              )}
+                              {player.identity !== 'local' && (
+                                <span className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold" title="Foreign Player">
+                                  F
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -1009,22 +1015,7 @@ export default function PlayersPage() {
                           {player.team || 'N/A'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${player.batter_or_pitcher === 'batter'
-                          ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                          : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                          }`}>
-                          {player.batter_or_pitcher === 'batter' ? 'Batter' : 'Pitcher'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${player.identity === 'local'
-                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                          : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                          }`}>
-                          {player.identity === 'local' ? 'Local' : 'Foreigner'}
-                        </span>
-                      </td>
+
                       {/* 動態顯示統計數據 */}
                       {filterType === 'batter' && batterStatCategories.map((stat) => (
                         <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
