@@ -17,15 +17,15 @@ export async function GET(request, { params }) {
         const formattedDate = taiwanDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
         // Fetch roster from Supabase
-        // Join with player_list
-        const { data, error } = await supabase
+        // Join with player_list (Only fetch existing columns)
+        const { data: rosterData, error: rosterError } = await supabase
             .from('league_roster_positions')
             .select(`
         *,
         player:player_list (
+          player_id,
           name,
           team,
-          position_list,
           batter_or_pitcher
         )
       `)
@@ -33,9 +33,31 @@ export async function GET(request, { params }) {
             .eq('manager_id', managerId)
             .eq('game_date', formattedDate);
 
-        if (error) {
-            console.error('Supabase error:', error);
+        if (rosterError) {
+            console.error('Supabase error:', rosterError);
             return NextResponse.json({ success: false, error: 'Database Error' }, { status: 500 });
+        }
+
+        // Prepare to fetch position eligibility from views
+        const playerIds = rosterData.map(r => r.player_id);
+        const positionMap = {};
+
+        if (playerIds.length > 0) {
+            // Fetch batter positions
+            const { data: batterPos } = await supabase
+                .from('v_batter_positions')
+                .select('player_id, position_list')
+                .in('player_id', playerIds);
+
+            // Fetch pitcher positions
+            const { data: pitcherPos } = await supabase
+                .from('v_pitcher_positions')
+                .select('player_id, position_list')
+                .in('player_id', playerIds);
+
+            // Merge into map
+            batterPos?.forEach(p => positionMap[p.player_id] = p.position_list);
+            pitcherPos?.forEach(p => positionMap[p.player_id] = p.position_list);
         }
 
         // Flatten and Sort
@@ -56,18 +78,20 @@ export async function GET(request, { params }) {
             'RP': 14,
             'P': 15,
             'BN': 16,
-            'NA': 17 // Minor
+            'NA': 17, // Minor
+            'IL': 18
         };
 
-        const roster = (data || []).map(item => ({
+        const roster = (rosterData || []).map(item => ({
             ...item,
             name: item.player?.name,
             team: item.player?.team,
-            position_list: item.player?.position_list,
+            // Use map to get position_list since it's not in player_list table
+            position_list: positionMap[item.player_id] || '',
             batter_or_pitcher: item.player?.batter_or_pitcher
         })).sort((a, b) => {
-            const orderA = positionOrder[a.position] || 12;
-            const orderB = positionOrder[b.position] || 12;
+            const orderA = positionOrder[a.position] || 99;
+            const orderB = positionOrder[b.position] || 99;
             return orderA - orderB;
         });
 
