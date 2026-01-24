@@ -14,12 +14,10 @@ export async function GET(request, { params }) {
         // 1. Calculate Today's Date in Taiwan Time (UTC+8)
         const now = new Date();
         const nowTaiwan = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
-        // Normalize to YYYY-MM-DD
         const todayStr = nowTaiwan.toISOString().split('T')[0];
         const todayDate = new Date(todayStr); // 00:00:00 UTC representing Taiwan midnight
 
         // 2. Fetch League Settings (Start Scoring On) and Schedule (Season End)
-        // Fetch Start Scoring On
         const { data: settings, error: settingsError } = await supabase
             .from('league_settings')
             .select('start_scoring_on')
@@ -31,8 +29,7 @@ export async function GET(request, { params }) {
             return NextResponse.json({ success: false, error: 'Settings Error' }, { status: 500 });
         }
 
-        // Fetch Last Week to calculate Season End (Preparation Week End)
-        const { data: scheduleInfo, error: scheduleError } = await supabase
+        const { data: scheduleInfo } = await supabase
             .from('league_schedule')
             .select('week_number, week_end')
             .eq('league_id', leagueId)
@@ -43,7 +40,6 @@ export async function GET(request, { params }) {
         let seasonStart = null;
 
         if (settings && settings.start_scoring_on) {
-            // Only parse YYYY-MM-DD part if dot separated
             const parts = settings.start_scoring_on.split('.');
             if (parts.length === 3) {
                 seasonStart = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -51,32 +47,30 @@ export async function GET(request, { params }) {
         }
 
         if (scheduleInfo && scheduleInfo.length > 0) {
-            const lastWeek = scheduleInfo[scheduleInfo.length - 1]; // Last week of generated schedule
+            const lastWeek = scheduleInfo[scheduleInfo.length - 1];
 
-            // Logic from ownership/route.js: Find week_id + 1 for Season End
-            const { data: weekData, error: weekError } = await supabase
+            const { data: weekData } = await supabase
                 .from('schedule_date')
                 .select('week')
                 .eq('end', lastWeek.week_end)
                 .single();
 
-            if (!weekError && weekData) {
+            if (weekData) {
                 const currentWeekNum = parseInt(weekData.week.replace('W', ''), 10);
                 const nextWeekNum = currentWeekNum + 1;
                 const nextWeekStr = `W${nextWeekNum}`;
 
-                const { data: nextWeekData, error: nextWeekError } = await supabase
+                const { data: nextWeekData } = await supabase
                     .from('schedule_date')
                     .select('end')
                     .eq('week', nextWeekStr)
                     .single();
 
-                if (!nextWeekError && nextWeekData) {
+                if (nextWeekData) {
                     seasonEnd = new Date(nextWeekData.end);
                 }
             }
 
-            // Fallback if no next week found
             if (!seasonEnd) {
                 seasonEnd = new Date(lastWeek.week_end);
             }
@@ -84,14 +78,11 @@ export async function GET(request, { params }) {
 
         // 3. Logic: Clamp Date
         if (seasonStart && todayDate < seasonStart) {
-            // Before Season Start -> Use Start Date
-            // Helper to format Date -> YYYY-MM-DD
             const year = seasonStart.getFullYear();
             const month = String(seasonStart.getMonth() + 1).padStart(2, '0');
             const day = String(seasonStart.getDate()).padStart(2, '0');
             gameDateStr = `${year}-${month}-${day}`;
         } else if (seasonEnd && todayDate > seasonEnd) {
-            // After Season End -> Use End Date
             const year = seasonEnd.getFullYear();
             const month = String(seasonEnd.getMonth() + 1).padStart(2, '0');
             const day = String(seasonEnd.getDate()).padStart(2, '0');
@@ -119,27 +110,41 @@ export async function GET(request, { params }) {
             return NextResponse.json({ success: false, error: 'Database Error', details: rosterError.message }, { status: 500 });
         }
 
-        // Prepare to fetch position eligibility from views
-        const playerIds = (rosterData || []).map(r => r.player_id);
-        const positionMap = {};
+        // --- ALIGNMENT WITH playerslist API ---
+        // Fetch ALL positions from views, without filtering by ID.
+        // This matches the logic exactly from src/app/api/playerslist/route.js
 
-        if (playerIds.length > 0) {
-            // Fetch batter positions
-            const { data: batterPos } = await supabase
-                .from('v_batter_positions')
-                .select('player_id, position_list')
-                .in('player_id', playerIds);
+        // 獲取野手位置資料
+        const { data: batterPositions, error: batterError } = await supabase
+            .from('v_batter_positions')
+            .select('player_id, position_list');
 
-            // Fetch pitcher positions
-            const { data: pitcherPos } = await supabase
-                .from('v_pitcher_positions')
-                .select('player_id, position_list')
-                .in('player_id', playerIds);
-
-            // Merge into map
-            batterPos?.forEach(p => positionMap[p.player_id] = p.position_list);
-            pitcherPos?.forEach(p => positionMap[p.player_id] = p.position_list);
+        if (batterError) {
+            console.error('Error fetching batter positions:', batterError);
         }
+
+        // 獲取投手位置資料
+        const { data: pitcherPositions, error: pitcherError } = await supabase
+            .from('v_pitcher_positions')
+            .select('player_id, position_list');
+
+        if (pitcherError) {
+            console.error('Error fetching pitcher positions:', pitcherError);
+        }
+
+        // 建立位置對照表
+        const positionMap = {};
+        if (batterPositions) {
+            batterPositions.forEach(bp => {
+                positionMap[bp.player_id] = bp.position_list;
+            });
+        }
+        if (pitcherPositions) {
+            pitcherPositions.forEach(pp => {
+                positionMap[pp.player_id] = pp.position_list;
+            });
+        }
+        // --------------------------------------
 
         // Flatten and Sort
         const positionOrder = {
@@ -164,12 +169,14 @@ export async function GET(request, { params }) {
 
         const roster = (rosterData || []).map(item => {
             const defaultPos = item.player?.batter_or_pitcher === 'pitcher' ? 'P' : 'Util';
+            // Use the map populated from the full views
+            const posList = positionMap[item.player_id] || defaultPos;
+
             return {
                 ...item,
                 name: item.player?.name,
                 team: item.player?.team,
-                // Use map to get position_list, fallback if not found in views
-                position_list: positionMap[item.player_id] || defaultPos,
+                position_list: posList,
                 batter_or_pitcher: item.player?.batter_or_pitcher
             };
         }).sort((a, b) => {
