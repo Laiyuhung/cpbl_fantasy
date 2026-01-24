@@ -13,6 +13,12 @@ export default function RosterPage() {
     const [error, setError] = useState('');
     const [date, setDate] = useState(''); // 伺服器回傳的 Game Date
 
+    // Stats State
+    const [timeWindow, setTimeWindow] = useState('Today');
+    const [playerStats, setPlayerStats] = useState({}); // player_id -> stats
+    const [batterStatCategories, setBatterStatCategories] = useState([]);
+    const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
+
     // Roster Helpers
     const getTeamAbbr = (team) => {
         switch (team) {
@@ -61,7 +67,6 @@ export default function RosterPage() {
             try {
                 setLoading(true);
 
-                // 先取得當前登入者 ID
                 const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
                 const managerId = cookie?.split('=')[1];
 
@@ -90,6 +95,70 @@ export default function RosterPage() {
 
         fetchRoster();
     }, [leagueId]);
+
+    // Fetch League Settings (Stat Categories)
+    useEffect(() => {
+        const fetchSettings = async () => {
+            const settingsRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
+            const settingsData = await settingsRes.json();
+            if (settingsData.success && settingsData.data) {
+                setBatterStatCategories(settingsData.data.batter_stat_categories || []);
+                setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
+            }
+        };
+        fetchSettings();
+    }, [leagueId]);
+
+    // Fetch Player Stats
+    useEffect(() => {
+        const fetchStats = async () => {
+            if (!timeWindow) return;
+
+            try {
+                // Fetch both batter and pitcher stats
+                const [batterRes, pitcherRes] = await Promise.all([
+                    fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
+                    fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
+                ]);
+
+                const batterData = await batterRes.json();
+                const pitcherData = await pitcherRes.json();
+
+                const newStats = {};
+
+                if (batterData.success && batterData.stats) {
+                    batterData.stats.forEach(s => newStats[s.player_id] = s);
+                }
+                if (pitcherData.success && pitcherData.stats) {
+                    pitcherData.stats.forEach(s => newStats[s.player_id] = s);
+                }
+
+                setPlayerStats(newStats);
+
+            } catch (err) {
+                console.error('Failed to fetch stats:', err);
+            }
+        };
+
+        fetchStats();
+    }, [timeWindow]);
+
+    const getPlayerStat = (playerId, statKey) => {
+        const stats = playerStats[playerId];
+        if (!stats) return '-';
+
+        // Parse stat key like "Runs (R)" -> "R"
+        let fieldName = statKey;
+        const matches = statKey.match(/\(([^)]+)\)/g);
+        if (matches) {
+            fieldName = matches[matches.length - 1].replace(/[()]/g, '');
+        }
+
+        // Exact match for keys from API (usually lowercase in my previous steps, but let's check)
+        // The previous code used .toLowerCase()
+        const value = stats[fieldName.toLowerCase()];
+        return value !== undefined && value !== null ? value : '-';
+    };
 
     // Photo resolution
     useEffect(() => {
@@ -172,20 +241,28 @@ export default function RosterPage() {
     // Modals
     const [showInfoModal, setShowInfoModal] = useState(false);
     const [showLegendModal, setShowLegendModal] = useState(false);
-    const [batterStatCategories, setBatterStatCategories] = useState([]);
-    const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            const settingsRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
-            const settingsData = await settingsRes.json();
-            if (settingsData.success && settingsData.data) {
-                setBatterStatCategories(settingsData.data.batter_stat_categories || []);
-                setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
-            }
-        };
-        fetchSettings();
-    }, [leagueId]);
+    // Split Roster
+    const batterPositions = ['C', '1B', '2B', '3B', 'SS', 'OF', 'Util'];
+    const pitcherPositions = ['SP', 'RP', 'P']; // Adjusted P for general pitcher slot if any
+
+    // Helper to check if a roster spot is for batter
+    // If position is BN, check batter_or_pitcher
+    const isBatterRow = (player) => {
+        if (batterPositions.includes(player.position)) return true;
+        if (pitcherPositions.includes(player.position)) return false;
+        // BN or IL
+        return player.batter_or_pitcher === 'batter';
+    };
+
+    const batterRoster = roster.filter(p => isBatterRow(p));
+    const pitcherRoster = roster.filter(p => !isBatterRow(p));
+
+    // Helper to parse stat name
+    const parseStatName = (stat) => {
+        const matches = stat.match(/\(([^)]+)\)/g);
+        return matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
+    };
 
     if (loading) {
         return (
@@ -210,6 +287,21 @@ export default function RosterPage() {
                     My Roster
                 </h1>
                 <div className="flex items-center gap-4">
+                    {/* Time Window Selector */}
+                    <select
+                        value={timeWindow}
+                        onChange={(e) => setTimeWindow(e.target.value)}
+                        className="px-3 py-1 bg-slate-800/60 border border-purple-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                    >
+                        <option value="Today">Today</option>
+                        <option value="Yesterday">Yesterday</option>
+                        <option value="Last 7 Days">Last 7 Days</option>
+                        <option value="Last 14 Days">Last 14 Days</option>
+                        <option value="Last 30 Days">Last 30 Days</option>
+                        <option value="2026 Season">2026 Season</option>
+                        <option value="2025 Season">2025 Season</option>
+                    </select>
+
                     <button
                         onClick={() => setShowLegendModal(true)}
                         className="px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
@@ -230,64 +322,160 @@ export default function RosterPage() {
                 </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
-                <table className="w-full">
-                    <thead className="bg-purple-900/40 border-b border-purple-500/30">
-                        <tr>
-                            <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 w-24">Slot</th>
-                            <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Player</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-purple-500/10">
-                        {roster.length === 0 ? (
+            {/* Batters Table */}
+            <div className="mb-8">
+                <h2 className="text-xl font-bold text-purple-300 mb-2 flex items-center gap-2">
+                    <span className="w-2 h-6 bg-pink-500 rounded-full"></span>
+                    Batter Roster
+                </h2>
+                <div className="bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+                    <table className="w-full">
+                        <thead className="bg-purple-900/40 border-b border-purple-500/30">
                             <tr>
-                                <td colSpan="2" className="px-6 py-12 text-center text-purple-300/50">
-                                    No roster data found for today.
-                                </td>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 w-24">Slot</th>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Player</th>
+                                {batterStatCategories.map(stat => (
+                                    <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300 w-16">
+                                        {parseStatName(stat)}
+                                    </th>
+                                ))}
                             </tr>
-                        ) : (
-                            roster.map((player) => (
-                                <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
-                                                ? 'bg-slate-700 text-slate-300'
-                                                : 'bg-purple-600 text-white'
-                                            }`}>
-                                            {player.position}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-4">
-                                            {/* Photo */}
-                                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
-                                                <img
-                                                    src={getPlayerPhoto(player)}
-                                                    alt={player.name}
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => handleImageError(e, player)}
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <div className="font-bold text-white text-lg">
-                                                    {player.name}
-                                                    <span className="text-purple-300/70 text-sm font-normal ml-2">
-                                                        - {player.position_list}
-                                                    </span>
-                                                    <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
-                                                        {player.team ? `${getTeamAbbr(player.team)}` : ''}
-                                                    </span>
-                                                    {/* Badges */}
-                                                    {renderPlayerBadges(player)}
-                                                </div>
-                                            </div>
-                                        </div>
+                        </thead>
+                        <tbody className="divide-y divide-purple-500/10">
+                            {batterRoster.length === 0 ? (
+                                <tr>
+                                    <td colSpan={2 + batterStatCategories.length} className="px-6 py-12 text-center text-purple-300/50">
+                                        No batters in roster.
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                batterRoster.map((player) => (
+                                    <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
+                                                    ? 'bg-slate-700 text-slate-300'
+                                                    : 'bg-purple-600 text-white'
+                                                }`}>
+                                                {player.position}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-4">
+                                                {/* Photo */}
+                                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                    <img
+                                                        src={getPlayerPhoto(player)}
+                                                        alt={player.name}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => handleImageError(e, player)}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <div className="font-bold text-white text-lg">
+                                                        {player.name}
+                                                        <span className="text-purple-300/70 text-sm font-normal ml-2">
+                                                            - {player.position_list}
+                                                        </span>
+                                                        <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
+                                                            {player.team ? `${getTeamAbbr(player.team)}` : ''}
+                                                        </span>
+                                                        {/* Badges */}
+                                                        {renderPlayerBadges(player)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        {/* Stats */}
+                                        {batterStatCategories.map(stat => (
+                                            <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
+                                                {getPlayerStat(player.player_id, stat)}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Pitchers Table */}
+            <div>
+                <h2 className="text-xl font-bold text-purple-300 mb-2 flex items-center gap-2">
+                    <span className="w-2 h-6 bg-orange-500 rounded-full"></span>
+                    Pitcher Roster
+                </h2>
+                <div className="bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+                    <table className="w-full">
+                        <thead className="bg-purple-900/40 border-b border-purple-500/30">
+                            <tr>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 w-24">Slot</th>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Player</th>
+                                {pitcherStatCategories.map(stat => (
+                                    <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300 w-16">
+                                        {parseStatName(stat)}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-purple-500/10">
+                            {pitcherRoster.length === 0 ? (
+                                <tr>
+                                    <td colSpan={2 + pitcherStatCategories.length} className="px-6 py-12 text-center text-purple-300/50">
+                                        No pitchers in roster.
+                                    </td>
+                                </tr>
+                            ) : (
+                                pitcherRoster.map((player) => (
+                                    <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
+                                                    ? 'bg-slate-700 text-slate-300'
+                                                    : 'bg-purple-600 text-white'
+                                                }`}>
+                                                {player.position}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-4">
+                                                {/* Photo */}
+                                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                    <img
+                                                        src={getPlayerPhoto(player)}
+                                                        alt={player.name}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => handleImageError(e, player)}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <div className="font-bold text-white text-lg">
+                                                        {player.name}
+                                                        <span className="text-purple-300/70 text-sm font-normal ml-2">
+                                                            - {player.position_list}
+                                                        </span>
+                                                        <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
+                                                            {player.team ? `${getTeamAbbr(player.team)}` : ''}
+                                                        </span>
+                                                        {/* Badges */}
+                                                        {renderPlayerBadges(player)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        {/* Stats */}
+                                        {pitcherStatCategories.map(stat => (
+                                            <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
+                                                {getPlayerStat(player.player_id, stat)}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Legend Modal */}
