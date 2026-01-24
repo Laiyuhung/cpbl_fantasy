@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '../../../../../lib/db';
+import supabase from '@/lib/supabase';
 
 export async function GET(request, { params }) {
     const { leagueId } = params;
@@ -16,40 +16,67 @@ export async function GET(request, { params }) {
         const taiwanDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
         const formattedDate = taiwanDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
-        const client = await pool.connect();
-        try {
-            const query = `
-        SELECT r.id, r.position, r.player_id, p.name, p.team, p.position_list, p.batter_or_pitcher
-        FROM league_roster_positions r
-        JOIN player_list p ON r.player_id = p.player_id
-        WHERE r.league_id = $1 AND r.manager_id = $2 AND r.game_date = $3
-        ORDER BY
-          CASE
-            WHEN r.position = 'C' THEN 1
-            WHEN r.position = '1B' THEN 2
-            WHEN r.position = '2B' THEN 3
-            WHEN r.position = '3B' THEN 4
-            WHEN r.position = 'SS' THEN 5
-            WHEN r.position = 'OF' THEN 6
-            WHEN r.position = 'DH' THEN 7
-            WHEN r.position = 'SP' THEN 8
-            WHEN r.position = 'RP' THEN 9
-            WHEN r.position = 'BN' THEN 10
-            WHEN r.position = 'IL' THEN 11
-            ELSE 12
-          END
-      `;
-            const values = [leagueId, managerId, formattedDate];
-            const res = await client.query(query, values);
+        // Fetch roster from Supabase
+        // Join with player_list
+        const { data, error } = await supabase
+            .from('league_roster_positions')
+            .select(`
+        *,
+        player:player_list (
+          name,
+          team,
+          position_list,
+          batter_or_pitcher
+        )
+      `)
+            .eq('league_id', leagueId)
+            .eq('manager_id', managerId)
+            .eq('game_date', formattedDate);
 
-            return NextResponse.json({
-                success: true,
-                date: formattedDate,
-                roster: res.rows
-            });
-        } finally {
-            client.release();
+        if (error) {
+            console.error('Supabase error:', error);
+            return NextResponse.json({ success: false, error: 'Database Error' }, { status: 500 });
         }
+
+        // Flatten and Sort
+        const positionOrder = {
+            'C': 1,
+            '1B': 2,
+            '2B': 3,
+            '3B': 4,
+            'SS': 5,
+            'CI': 6,
+            'MI': 7,
+            'LF': 8,
+            'CF': 9,
+            'RF': 10,
+            'OF': 11,
+            'Util': 12,
+            'SP': 13,
+            'RP': 14,
+            'P': 15,
+            'BN': 16,
+            'NA': 17 // Minor
+        };
+
+        const roster = (data || []).map(item => ({
+            ...item,
+            name: item.player?.name,
+            team: item.player?.team,
+            position_list: item.player?.position_list,
+            batter_or_pitcher: item.player?.batter_or_pitcher
+        })).sort((a, b) => {
+            const orderA = positionOrder[a.position] || 12;
+            const orderB = positionOrder[b.position] || 12;
+            return orderA - orderB;
+        });
+
+        return NextResponse.json({
+            success: true,
+            date: formattedDate,
+            roster: roster
+        });
+
     } catch (error) {
         console.error('Error fetching roster:', error);
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
