@@ -19,6 +19,9 @@ export default function RosterPage() {
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
 
+    // Settings State for Empty Slots Logic
+    const [rosterPositionsConfig, setRosterPositionsConfig] = useState({});
+
     // Roster Helpers
     const getTeamAbbr = (team) => {
         switch (team) {
@@ -96,7 +99,7 @@ export default function RosterPage() {
         fetchRoster();
     }, [leagueId]);
 
-    // Fetch League Settings (Stat Categories)
+    // Fetch League Settings (Stat Categories & Roster Positions)
     useEffect(() => {
         const fetchSettings = async () => {
             const settingsRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
@@ -104,6 +107,7 @@ export default function RosterPage() {
             if (settingsData.success && settingsData.data) {
                 setBatterStatCategories(settingsData.data.batter_stat_categories || []);
                 setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
+                setRosterPositionsConfig(settingsData.data.roster_positions || {});
             }
         };
         fetchSettings();
@@ -144,6 +148,8 @@ export default function RosterPage() {
     }, [timeWindow]);
 
     const getPlayerStat = (playerId, statKey) => {
+        if (!playerId || playerId === 'empty') return '-'; // Empty slots have no stats
+
         const stats = playerStats[playerId];
         if (!stats) return '-';
 
@@ -194,6 +200,7 @@ export default function RosterPage() {
     }, [roster]);
 
     const getPlayerPhoto = (player) => {
+        if (player.player_id === 'empty') return null;
         return photoSrcMap[player.player_id] || '/photo/defaultPlayer.png';
     };
 
@@ -204,6 +211,8 @@ export default function RosterPage() {
 
     // Badge Helper
     const renderPlayerBadges = (player) => {
+        if (player.player_id === 'empty') return null;
+
         // Debug Identity
         if (player.identity === 'foreigner' || player.identity === 'Foreigner') {
             console.log(`[BadgeCheck] ${player.name} is Foreigner?`, player.identity);
@@ -247,21 +256,73 @@ export default function RosterPage() {
     const [showInfoModal, setShowInfoModal] = useState(false);
     const [showLegendModal, setShowLegendModal] = useState(false);
 
-    // Split Roster
-    const batterPositions = ['C', '1B', '2B', '3B', 'SS', 'OF', 'Util'];
-    const pitcherPositions = ['SP', 'RP', 'P']; // Adjusted P for general pitcher slot if any
+    // --- Logic to Generate Empty Slots ---
+    // Positions that should have Empty Slots
+    const ACTIVE_POSITIONS_ORDER = [
+        'C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util',
+        'SP', 'RP', 'P'
+    ];
 
-    // Helper to check if a roster spot is for batter
-    // If position is BN, check batter_or_pitcher
-    const isBatterRow = (player) => {
-        if (batterPositions.includes(player.position)) return true;
-        if (pitcherPositions.includes(player.position)) return false;
-        // BN or IL
-        return player.batter_or_pitcher === 'batter';
+    // Helper: Categorize rows
+    const generateRosterWithEmptySlots = (currentRoster, config) => {
+        const result = [...currentRoster];
+
+        // Exclude BN and Minor from check
+        const positionsToCheck = ACTIVE_POSITIONS_ORDER.filter(pos => config[pos] > 0);
+
+        positionsToCheck.forEach(pos => {
+            const limit = config[pos] || 0;
+            const currentCount = currentRoster.filter(p => p.position === pos).length;
+
+            if (currentCount < limit) {
+                const needed = limit - currentCount;
+                for (let i = 0; i < needed; i++) {
+                    result.push({
+                        id: `empty-${pos}-${i}`,
+                        player_id: 'empty',
+                        position: pos,
+                        name: 'Empty',
+                        isEmpty: true
+                    });
+                }
+            }
+        });
+        return result;
     };
 
-    const batterRoster = roster.filter(p => isBatterRow(p));
-    const pitcherRoster = roster.filter(p => !isBatterRow(p));
+    // Categorize for Tables
+    // Batter: C, 1B, 2B, 3B, SS, OF, CI, MI, LF, CF, RF, Util, BN-Batters, IL-Batters
+    const isBatterPos = (pos) => ['C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util'].includes(pos);
+    // Pitcher: SP, RP, P, BN-Pitchers, IL-Pitchers
+    const isPitcherPos = (pos) => ['SP', 'RP', 'P'].includes(pos);
+
+    const fullRoster = generateRosterWithEmptySlots(roster, rosterPositionsConfig);
+
+    // Split Logic
+    const batterRoster = fullRoster.filter(p => {
+        if (isBatterPos(p.position)) return true;
+        if (isPitcherPos(p.position)) return false;
+        // BN/NA/IL - Check batter_or_pitcher
+        return p.batter_or_pitcher === 'batter';
+    }).sort((a, b) => {
+        // Custom Sort
+        const orderConfig = { 'C': 1, '1B': 2, '2B': 3, '3B': 4, 'SS': 5, 'CI': 6, 'MI': 7, 'LF': 8, 'CF': 9, 'RF': 10, 'OF': 11, 'Util': 12, 'BN': 20, 'NA': 21 };
+        const orderA = orderConfig[a.position] || 99;
+        const orderB = orderConfig[b.position] || 99;
+        return orderA - orderB;
+    });
+
+    const pitcherRoster = fullRoster.filter(p => {
+        if (isPitcherPos(p.position)) return true;
+        if (isBatterPos(p.position)) return false;
+        // BN/NA/IL - Check batter_or_pitcher
+        return p.batter_or_pitcher === 'pitcher';
+    }).sort((a, b) => {
+        const orderConfig = { 'SP': 1, 'RP': 2, 'P': 3, 'BN': 20, 'NA': 21 };
+        const orderA = orderConfig[a.position] || 99;
+        const orderB = orderConfig[b.position] || 99;
+        return orderA - orderB;
+    });
 
     // Helper to parse stat name
     const parseStatName = (stat) => {
@@ -357,41 +418,50 @@ export default function RosterPage() {
                                 batterRoster.map((player) => (
                                     <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
                                         <td className="px-6 py-4">
-                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
-                                                ? 'bg-slate-700 text-slate-300'
-                                                : 'bg-purple-600 text-white'
+                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${player.isEmpty ? 'bg-slate-800 text-slate-500' :
+                                                    ['BN', 'IL', 'NA'].includes(player.position)
+                                                        ? 'bg-slate-700 text-slate-300'
+                                                        : 'bg-purple-600 text-white'
                                                 }`}>
                                                 {player.position}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-4">
-                                                {/* Photo */}
-                                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
-                                                    <img
-                                                        src={getPlayerPhoto(player)}
-                                                        alt={player.name}
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => handleImageError(e, player)}
-                                                    />
+                                            {player.isEmpty ? (
+                                                <div className="flex items-center gap-4 text-slate-500 font-bold italic">
+                                                    Empty
                                                 </div>
+                                            ) : (
+                                                <div className="flex items-center gap-4">
+                                                    {/* Photo */}
+                                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                        {getPlayerPhoto(player) && (
+                                                            <img
+                                                                src={getPlayerPhoto(player)}
+                                                                alt={player.name}
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => handleImageError(e, player)}
+                                                            />
+                                                        )}
+                                                    </div>
 
-                                                <div>
-                                                    <div className="font-bold text-white text-lg flex items-center">
-                                                        {player.name}
-                                                        <span className="text-purple-300/70 text-sm font-normal ml-2">
-                                                            - {player.position_list}
-                                                        </span>
-                                                        <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
-                                                            {player.team ? `${getTeamAbbr(player.team)}` : ''}
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-1">
-                                                        {/* Badges */}
-                                                        {renderPlayerBadges(player)}
+                                                    <div>
+                                                        <div className="font-bold text-white text-lg flex items-center">
+                                                            {player.name}
+                                                            <span className="text-purple-300/70 text-sm font-normal ml-2">
+                                                                - {player.position_list}
+                                                            </span>
+                                                            <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
+                                                                {player.team ? `${getTeamAbbr(player.team)}` : ''}
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-1">
+                                                            {/* Badges */}
+                                                            {renderPlayerBadges(player)}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </td>
                                         {/* Stats */}
                                         {batterStatCategories.map(stat => (
@@ -437,41 +507,50 @@ export default function RosterPage() {
                                 pitcherRoster.map((player) => (
                                     <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
                                         <td className="px-6 py-4">
-                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
-                                                ? 'bg-slate-700 text-slate-300'
-                                                : 'bg-purple-600 text-white'
+                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${player.isEmpty ? 'bg-slate-800 text-slate-500' :
+                                                    ['BN', 'IL', 'NA'].includes(player.position)
+                                                        ? 'bg-slate-700 text-slate-300'
+                                                        : 'bg-purple-600 text-white'
                                                 }`}>
                                                 {player.position}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-4">
-                                                {/* Photo */}
-                                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
-                                                    <img
-                                                        src={getPlayerPhoto(player)}
-                                                        alt={player.name}
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => handleImageError(e, player)}
-                                                    />
+                                            {player.isEmpty ? (
+                                                <div className="flex items-center gap-4 text-slate-500 font-bold italic">
+                                                    Empty
                                                 </div>
+                                            ) : (
+                                                <div className="flex items-center gap-4">
+                                                    {/* Photo */}
+                                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                        {getPlayerPhoto(player) && (
+                                                            <img
+                                                                src={getPlayerPhoto(player)}
+                                                                alt={player.name}
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => handleImageError(e, player)}
+                                                            />
+                                                        )}
+                                                    </div>
 
-                                                <div>
-                                                    <div className="font-bold text-white text-lg flex items-center">
-                                                        {player.name}
-                                                        <span className="text-purple-300/70 text-sm font-normal ml-2">
-                                                            - {player.position_list}
-                                                        </span>
-                                                        <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
-                                                            {player.team ? `${getTeamAbbr(player.team)}` : ''}
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-1">
-                                                        {/* Badges */}
-                                                        {renderPlayerBadges(player)}
+                                                    <div>
+                                                        <div className="font-bold text-white text-lg flex items-center">
+                                                            {player.name}
+                                                            <span className="text-purple-300/70 text-sm font-normal ml-2">
+                                                                - {player.position_list}
+                                                            </span>
+                                                            <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
+                                                                {player.team ? `${getTeamAbbr(player.team)}` : ''}
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-1">
+                                                            {/* Badges */}
+                                                            {renderPlayerBadges(player)}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </td>
                                         {/* Stats */}
                                         {pitcherStatCategories.map(stat => (
