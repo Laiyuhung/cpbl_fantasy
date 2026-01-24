@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import LegendModal from '../../../../components/LegendModal';
 
 export default function PlayersPage() {
   const params = useParams();
@@ -37,6 +38,7 @@ export default function PlayersPage() {
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
   const [rosterPositions, setRosterPositions] = useState({}); // 聯盟守備位置設定
   const [showInfoModal, setShowInfoModal] = useState(false); // 守位資格說明視窗
+  const [showLegendModal, setShowLegendModal] = useState(false); // Legend視窗
   const [timeWindow, setTimeWindow] = useState('2026 Season'); // 數據區間選擇
   const [batterStatCategories, setBatterStatCategories] = useState([]); // 打者統計項目
   const [pitcherStatCategories, setPitcherStatCategories] = useState([]); // 投手統計項目
@@ -840,6 +842,13 @@ export default function PlayersPage() {
               Players
             </h1>
             <button
+              onClick={() => setShowLegendModal(true)}
+              className="mb-2 px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+              title="View Legend"
+            >
+              LEGEND
+            </button>
+            <button
               onClick={() => setShowInfoModal(true)}
               className="mb-2 w-8 h-8 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors"
               title="Position Eligibility Rules"
@@ -1003,10 +1012,10 @@ export default function PlayersPage() {
                               )}
                               {player.real_life_status && player.real_life_status !== 'MAJOR' && (
                                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${player.real_life_status === 'MINOR'
-                                    ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
-                                    : player.real_life_status === 'DEREGISTERED'
-                                      ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                                      : 'bg-slate-500/20 text-slate-300 border-slate-500/30' // UNREGISTERED
+                                  ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                                  : player.real_life_status === 'DEREGISTERED'
+                                    ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                                    : 'bg-slate-500/20 text-slate-300 border-slate-500/30' // UNREGISTERED
                                   }`} title={player.real_life_status}>
                                   {player.real_life_status === 'MINOR' ? 'NA' : player.real_life_status === 'DEREGISTERED' ? 'DR' : 'NR'}
                                 </span>
@@ -1416,6 +1425,14 @@ export default function PlayersPage() {
           </div>
         </div>
       )}
+
+      {/* Legend Modal */}
+      <LegendModal
+        isOpen={showLegendModal}
+        onClose={() => setShowLegendModal(false)}
+        batterStats={batterStatCategories}
+        pitcherStats={pitcherStatCategories}
+      />
 
       <style jsx>{`
         @keyframes slide-in-right {
