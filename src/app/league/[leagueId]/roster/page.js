@@ -78,13 +78,12 @@ export default function RosterPage() {
                             <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 w-24">Slot</th>
                             <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Player</th>
                             <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Team</th>
-                            <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Eligibility</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-purple-500/10">
                         {roster.length === 0 ? (
                             <tr>
-                                <td colSpan="4" className="px-6 py-12 text-center text-purple-300/50">
+                                <td colSpan="3" className="px-6 py-12 text-center text-purple-300/50">
                                     No roster data found for today.
                                 </td>
                             </tr>
@@ -92,7 +91,7 @@ export default function RosterPage() {
                             roster.map((player) => (
                                 <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
                                     <td className="px-6 py-4">
-                                        <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL'].includes(player.position)
+                                        <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
                                                 ? 'bg-slate-700 text-slate-300'
                                                 : 'bg-purple-600 text-white'
                                             }`}>
@@ -100,14 +99,16 @@ export default function RosterPage() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="font-bold text-white text-lg">{player.name}</div>
+                                        <div className="font-bold text-white text-lg">
+                                            {player.name}
+                                            <span className="text-purple-300/70 text-sm font-normal ml-2">
+                                                - {player.position_list}
+                                            </span>
+                                        </div>
                                         <div className="text-xs text-purple-300/60 font-mono mt-0.5">ID: {player.player_id.split('-')[0]}...</div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className="text-purple-200">{player.team || 'FA'}</span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-purple-300/70 text-sm">{player.position_list}</span>
                                     </td>
                                 </tr>
                             ))

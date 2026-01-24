@@ -162,13 +162,17 @@ export async function GET(request, { params }) {
             'NA': 17 // Minor
         };
 
-        const roster = (rosterData || []).map(item => ({
-            ...item,
-            name: item.player?.name,
-            team: item.player?.team,
-            position_list: positionMap[item.player_id] || '',
-            batter_or_pitcher: item.player?.batter_or_pitcher
-        })).sort((a, b) => {
+        const roster = (rosterData || []).map(item => {
+            const defaultPos = item.player?.batter_or_pitcher === 'pitcher' ? 'P' : 'Util';
+            return {
+                ...item,
+                name: item.player?.name,
+                team: item.player?.team,
+                // Use map to get position_list, fallback if not found in views
+                position_list: positionMap[item.player_id] || defaultPos,
+                batter_or_pitcher: item.player?.batter_or_pitcher
+            };
+        }).sort((a, b) => {
             const orderA = positionOrder[a.position] || 99;
             const orderB = positionOrder[b.position] || 99;
             return orderA - orderB;
