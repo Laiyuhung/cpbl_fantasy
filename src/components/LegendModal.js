@@ -89,30 +89,36 @@ export default function LegendModal({ isOpen, onClose, batterStats = [], pitcher
                                 <span className="w-1 h-4 bg-green-500 rounded-full"></span>
                                 Team Abbreviations
                             </h3>
-                            <div className="bg-slate-900/50 rounded-xl p-4 border border-purple-500/10 grid grid-cols-2 gap-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-orange-400 font-bold">UL</span>
-                                    <span className="text-gray-300 text-sm">Uni-Lions (統一獅)</span>
+                            <div className="bg-slate-900/50 rounded-xl p-4 border border-purple-500/10 grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div className="flex flex-col items-center p-2 bg-slate-800/50 rounded-lg">
+                                    <span className="text-orange-400 font-bold text-lg">UL</span>
+                                    <span className="text-gray-400 text-xs mt-1">Uni-Lions</span>
+                                    <span className="text-gray-500 text-[10px]">(統一獅)</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-blue-400 font-bold">FG</span>
-                                    <span className="text-gray-300 text-sm">Fubon Guardians (富邦悍將)</span>
+                                <div className="flex flex-col items-center p-2 bg-slate-800/50 rounded-lg">
+                                    <span className="text-blue-400 font-bold text-lg">FG</span>
+                                    <span className="text-gray-400 text-xs mt-1">Guardians</span>
+                                    <span className="text-gray-500 text-[10px]">(富邦悍將)</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-rose-400 font-bold">RM</span>
-                                    <span className="text-gray-300 text-sm">Rakuten Monkeys (樂天桃猿)</span>
+                                <div className="flex flex-col items-center p-2 bg-slate-800/50 rounded-lg">
+                                    <span className="text-rose-400 font-bold text-lg">RM</span>
+                                    <span className="text-gray-400 text-xs mt-1">Monkeys</span>
+                                    <span className="text-gray-500 text-[10px]">(樂天桃猿)</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-yellow-400 font-bold">B</span>
-                                    <span className="text-gray-300 text-sm">CTBC Brothers (中信兄弟)</span>
+                                <div className="flex flex-col items-center p-2 bg-slate-800/50 rounded-lg">
+                                    <span className="text-yellow-400 font-bold text-lg">B</span>
+                                    <span className="text-gray-400 text-xs mt-1">Brothers</span>
+                                    <span className="text-gray-500 text-[10px]">(中信兄弟)</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-red-400 font-bold">W</span>
-                                    <span className="text-gray-300 text-sm">Wei Chuan Dragons (味全龍)</span>
+                                <div className="flex flex-col items-center p-2 bg-slate-800/50 rounded-lg">
+                                    <span className="text-red-400 font-bold text-lg">W</span>
+                                    <span className="text-gray-400 text-xs mt-1">Dragons</span>
+                                    <span className="text-gray-500 text-[10px]">(味全龍)</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-green-400 font-bold">TSG</span>
-                                    <span className="text-gray-300 text-sm">TSG Hawks (台鋼雄鷹)</span>
+                                <div className="flex flex-col items-center p-2 bg-slate-800/50 rounded-lg">
+                                    <span className="text-green-400 font-bold text-lg">TSG</span>
+                                    <span className="text-gray-400 text-xs mt-1">Hawks</span>
+                                    <span className="text-gray-500 text-[10px]">(台鋼雄鷹)</span>
                                 </div>
                             </div>
                         </section>

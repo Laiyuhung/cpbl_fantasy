@@ -956,7 +956,7 @@ export default function PlayersPage() {
               <thead className="bg-slate-900/60 border-b border-purple-500/20">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Name</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Team</th>
+
 
                   {/* 動態顯示統計項目 */}
                   {filterType === 'batter' && batterStatCategories.map((stat) => {
@@ -984,7 +984,7 @@ export default function PlayersPage() {
               <tbody className="divide-y divide-purple-500/10">
                 {filteredPlayers.length === 0 ? (
                   <tr>
-                    <td colSpan={4 + (filterType === 'batter' ? batterStatCategories.length : pitcherStatCategories.length)} className="px-6 py-12 text-center">
+                    <td colSpan={3 + (filterType === 'batter' ? batterStatCategories.length : pitcherStatCategories.length)} className="px-6 py-12 text-center">
                       <div className="text-purple-300/50 text-lg">
                         {searchTerm || filterType !== 'all' || filterIdentity !== 'all'
                           ? 'No players found matching your filters'
@@ -1012,6 +1012,9 @@ export default function PlayersPage() {
                                 {player.name || 'Unknown'}
                                 <span className="text-purple-300/70 font-normal ml-2">
                                   - {filterPositions(player)}
+                                </span>
+                                <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
+                                  {player.team ? `${getTeamAbbr(player.team)}` : ''}
                                 </span>
                               </span>
                               {renderStatusTag(player)}
@@ -1041,11 +1044,7 @@ export default function PlayersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold ${getTeamColor(player.team)} shadow-md`}>
-                          {player.team || 'N/A'}
-                        </span>
-                      </td>
+
 
                       {/* 動態顯示統計數據 */}
                       {filterType === 'batter' && batterStatCategories.map((stat) => (

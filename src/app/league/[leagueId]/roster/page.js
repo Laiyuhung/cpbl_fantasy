@@ -275,7 +275,7 @@ export default function RosterPage() {
                                                         - {player.position_list}
                                                     </span>
                                                     <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
-                                                        {player.team ? `| ${getTeamAbbr(player.team)}` : ''}
+                                                        {player.team ? `${getTeamAbbr(player.team)}` : ''}
                                                     </span>
                                                     {/* Badges */}
                                                     {renderPlayerBadges(player)}
