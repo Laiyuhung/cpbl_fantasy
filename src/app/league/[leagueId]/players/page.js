@@ -261,22 +261,34 @@ export default function PlayersPage() {
     return matchesSearch && matchesType && matchesIdentity;
   });
 
+  const getTeamAbbr = (team) => {
+    switch (team) {
+      case '統一獅': return 'UL';
+      case '富邦悍將': return 'FG';
+      case '樂天桃猿': return 'RM';
+      case '中信兄弟': return 'B';
+      case '味全龍': return 'W';
+      case '台鋼雄鷹': return 'TSG';
+      default: return team;
+    }
+  };
+
   const getTeamColor = (team) => {
     switch (team) {
       case '統一獅':
-        return 'bg-orange-600 text-white';
+        return 'text-orange-400';
       case '富邦悍將':
-        return 'bg-blue-600 text-white';
+        return 'text-blue-400';
       case '台鋼雄鷹':
-        return 'bg-green-800 text-white';
+        return 'text-green-400';
       case '味全龍':
-        return 'bg-red-600 text-white';
+        return 'text-red-400';
       case '樂天桃猿':
-        return 'bg-rose-800 text-white';
+        return 'text-rose-400';
       case '中信兄弟':
-        return 'bg-yellow-500 text-white';
+        return 'text-yellow-400';
       default:
-        return 'bg-slate-600 text-white';
+        return 'text-slate-400';
     }
   };
 
@@ -291,7 +303,7 @@ export default function PlayersPage() {
     const ownership = ownerships.find(o => o.player_id === player.player_id);
     if (!ownership) {
       return (
-        <span className="text-green-300 font-semibold">| FA</span>
+        <span className="text-green-300 font-semibold ml-1">| FA</span>
       );
     }
 
@@ -300,14 +312,14 @@ export default function PlayersPage() {
       const off = ownership.off_waiver ? new Date(ownership.off_waiver) : null;
       const md = off ? `${off.getMonth() + 1}/${off.getDate()}` : '-';
       return (
-        <span className="text-yellow-300 font-semibold">| W {md}</span>
+        <span className="text-yellow-300 font-semibold ml-1">| W {md}</span>
       );
     }
 
     if (status === 'on team') {
       const nick = getOwnerNickname(ownership.manager_id);
       return (
-        <span className="text-blue-300 font-semibold">| {nick}</span>
+        <span className="text-blue-300 font-semibold ml-1">| {nick}</span>
       );
     }
 

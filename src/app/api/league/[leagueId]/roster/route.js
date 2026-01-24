@@ -98,7 +98,8 @@ export async function GET(request, { params }) {
           player_id,
           name,
           team,
-          batter_or_pitcher
+          batter_or_pitcher,
+          identity
         )
       `)
             .eq('league_id', leagueId)

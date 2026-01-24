@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import LegendModal from '../../../../components/LegendModal';
 
 export default function RosterPage() {
     const params = useParams();
@@ -92,8 +93,8 @@ export default function RosterPage() {
                                 <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
                                     <td className="px-6 py-4">
                                         <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
-                                                ? 'bg-slate-700 text-slate-300'
-                                                : 'bg-purple-600 text-white'
+                                            ? 'bg-slate-700 text-slate-300'
+                                            : 'bg-purple-600 text-white'
                                             }`}>
                                             {player.position}
                                         </span>
