@@ -204,9 +204,14 @@ export default function RosterPage() {
 
     // Badge Helper
     const renderPlayerBadges = (player) => {
+        // Debug Identity
+        if (player.identity === 'foreigner' || player.identity === 'Foreigner') {
+            console.log(`[BadgeCheck] ${player.name} is Foreigner?`, player.identity);
+        }
+
         const badges = [];
         // F Flag
-        if (player.identity === 'foreigner') {
+        if (player.identity && player.identity.toLowerCase() === 'foreigner') {
             badges.push(
                 <span key="foreigner" title="Foreign Player" className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold">F</span>
             );
@@ -353,8 +358,8 @@ export default function RosterPage() {
                                     <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
                                         <td className="px-6 py-4">
                                             <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
-                                                    ? 'bg-slate-700 text-slate-300'
-                                                    : 'bg-purple-600 text-white'
+                                                ? 'bg-slate-700 text-slate-300'
+                                                : 'bg-purple-600 text-white'
                                                 }`}>
                                                 {player.position}
                                             </span>
@@ -372,7 +377,7 @@ export default function RosterPage() {
                                                 </div>
 
                                                 <div>
-                                                    <div className="font-bold text-white text-lg">
+                                                    <div className="font-bold text-white text-lg flex items-center">
                                                         {player.name}
                                                         <span className="text-purple-300/70 text-sm font-normal ml-2">
                                                             - {player.position_list}
@@ -380,6 +385,8 @@ export default function RosterPage() {
                                                         <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
                                                             {player.team ? `${getTeamAbbr(player.team)}` : ''}
                                                         </span>
+                                                    </div>
+                                                    <div className="mt-1">
                                                         {/* Badges */}
                                                         {renderPlayerBadges(player)}
                                                     </div>
@@ -431,8 +438,8 @@ export default function RosterPage() {
                                     <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
                                         <td className="px-6 py-4">
                                             <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${['BN', 'IL', 'NA'].includes(player.position)
-                                                    ? 'bg-slate-700 text-slate-300'
-                                                    : 'bg-purple-600 text-white'
+                                                ? 'bg-slate-700 text-slate-300'
+                                                : 'bg-purple-600 text-white'
                                                 }`}>
                                                 {player.position}
                                             </span>
@@ -450,7 +457,7 @@ export default function RosterPage() {
                                                 </div>
 
                                                 <div>
-                                                    <div className="font-bold text-white text-lg">
+                                                    <div className="font-bold text-white text-lg flex items-center">
                                                         {player.name}
                                                         <span className="text-purple-300/70 text-sm font-normal ml-2">
                                                             - {player.position_list}
@@ -458,6 +465,8 @@ export default function RosterPage() {
                                                         <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
                                                             {player.team ? `${getTeamAbbr(player.team)}` : ''}
                                                         </span>
+                                                    </div>
+                                                    <div className="mt-1">
                                                         {/* Badges */}
                                                         {renderPlayerBadges(player)}
                                                     </div>

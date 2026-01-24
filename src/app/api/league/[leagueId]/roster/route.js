@@ -147,6 +147,23 @@ export async function GET(request, { params }) {
         }
         // --------------------------------------
 
+        // 獲取球員真實狀態
+        const { data: realLifeStatus, error: statusError } = await supabase
+            .from('real_life_player_status')
+            .select('player_id, status');
+
+        if (statusError) {
+            console.error('Error fetching real life status:', statusError);
+        }
+
+        // 建立狀態對照表
+        const statusMap = {};
+        if (realLifeStatus) {
+            realLifeStatus.forEach(s => {
+                statusMap[s.player_id] = s.status;
+            });
+        }
+
         // Flatten and Sort
         const positionOrder = {
             'C': 1,
@@ -178,7 +195,11 @@ export async function GET(request, { params }) {
                 name: item.player?.name,
                 team: item.player?.team,
                 position_list: posList,
-                batter_or_pitcher: item.player?.batter_or_pitcher
+                team: item.player?.team,
+                position_list: posList,
+                batter_or_pitcher: item.player?.batter_or_pitcher,
+                identity: item.player?.identity,
+                real_life_status: statusMap[item.player_id] || 'UNREGISTERED'
             };
         }).sort((a, b) => {
             const orderA = positionOrder[a.position] || 99;
