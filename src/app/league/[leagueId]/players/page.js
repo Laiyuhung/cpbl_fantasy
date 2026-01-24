@@ -850,10 +850,10 @@ export default function PlayersPage() {
             </button>
             <button
               onClick={() => setShowInfoModal(true)}
-              className="mb-2 w-8 h-8 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors"
+              className="mb-2 px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
               title="Position Eligibility Rules"
             >
-              <span className="text-lg font-bold">?</span>
+              POS RULES
             </button>
           </div>
 

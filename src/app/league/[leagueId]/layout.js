@@ -8,7 +8,7 @@ export default function LeagueLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const leagueId = params.leagueId;
-  
+
   const [currentUserRole, setCurrentUserRole] = useState('');
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -27,7 +27,7 @@ export default function LeagueLayout({ children }) {
       try {
         const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
         const currentUserId = cookie?.split('=')[1];
-        
+
         if (!currentUserId) {
           setAccessDenied(true);
           setError('Please log in to view this league');
@@ -40,7 +40,7 @@ export default function LeagueLayout({ children }) {
 
         if (result.success && result.members) {
           const isMember = result.members.some(m => m.manager_id === currentUserId);
-          
+
           if (!isMember) {
             setAccessDenied(true);
             setError('Access Denied: You are not a member of this league');
@@ -114,21 +114,19 @@ export default function LeagueLayout({ children }) {
             <div className="flex items-center gap-1">
               <a
                 href={`/league/${leagueId}`}
-                className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${
-                  isActive(`/league/${leagueId}`) && !pathname.includes('/league_settings') && !pathname.includes('/edit_league_settings') && !pathname.includes('/players')
+                className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${isActive(`/league/${leagueId}`) && !pathname.includes('/league_settings') && !pathname.includes('/edit_league_settings') && !pathname.includes('/players') && !pathname.includes('/roster')
                     ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
                     : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
-                }`}
+                  }`}
               >
                 Overview
               </a>
               <a
                 href={`/league/${leagueId}/players`}
-                className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${
-                  pathname.includes('/players')
+                className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${pathname.includes('/players')
                     ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
                     : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,12 +136,25 @@ export default function LeagueLayout({ children }) {
                 </div>
               </a>
               <a
-                href={`/league/${leagueId}/league_settings`}
-                className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${
-                  pathname.includes('/league_settings') || pathname.includes('/edit_league_settings')
+                href={`/league/${leagueId}/roster`}
+                className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${pathname.includes('/roster')
                     ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
                     : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
-                }`}
+                  }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                  My Roster
+                </div>
+              </a>
+              <a
+                href={`/league/${leagueId}/league_settings`}
+                className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${pathname.includes('/league_settings') || pathname.includes('/edit_league_settings')
+                    ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
+                    : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
+                  }`}
               >
                 <div className="flex items-center justify-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,7 +168,7 @@ export default function LeagueLayout({ children }) {
           </div>
         </div>
       )}
-      
+
       {/* Page Content */}
       {children}
     </div>

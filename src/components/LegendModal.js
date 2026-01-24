@@ -66,19 +66,19 @@ export default function LegendModal({ isOpen, onClose, batterStats = [], pitcher
                             <div className="bg-slate-900/50 rounded-xl p-4 border border-purple-500/10 space-y-3">
                                 <div className="flex items-center justify-between group">
                                     <span className="w-6 h-6 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold">F</span>
-                                    <span className="text-gray-300 text-sm">Foreign Player (外籍球員)</span>
+                                    <span className="text-gray-300 text-sm">Foreign Player</span>
                                 </div>
                                 <div className="flex items-center justify-between group">
                                     <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">NA</span>
-                                    <span className="text-gray-300 text-sm">Minor League Status (二軍)</span>
+                                    <span className="text-gray-300 text-sm">Minor League Status</span>
                                 </div>
                                 <div className="flex items-center justify-between group">
                                     <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30">DR</span>
-                                    <span className="text-gray-300 text-sm">Deregistered (除役/註銷)</span>
+                                    <span className="text-gray-300 text-sm">Deregistered</span>
                                 </div>
                                 <div className="flex items-center justify-between group">
                                     <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">NR</span>
-                                    <span className="text-gray-300 text-sm">Unregistered (未註冊)</span>
+                                    <span className="text-gray-300 text-sm">Unregistered</span>
                                 </div>
                             </div>
                         </section>
