@@ -82,6 +82,40 @@ export default function LegendModal({ isOpen, onClose, batterStats = [], pitcher
                                 </div>
                             </div>
                         </section>
+
+                        {/* Team Abbreviations */}
+                        <section>
+                            <h3 className="text-purple-300 font-bold mb-3 flex items-center gap-2">
+                                <span className="w-1 h-4 bg-green-500 rounded-full"></span>
+                                Team Abbreviations
+                            </h3>
+                            <div className="bg-slate-900/50 rounded-xl p-4 border border-purple-500/10 grid grid-cols-2 gap-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-orange-400 font-bold">UL</span>
+                                    <span className="text-gray-300 text-sm">Uni-Lions (統一獅)</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-blue-400 font-bold">FG</span>
+                                    <span className="text-gray-300 text-sm">Fubon Guardians (富邦悍將)</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-rose-400 font-bold">RM</span>
+                                    <span className="text-gray-300 text-sm">Rakuten Monkeys (樂天桃猿)</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-yellow-400 font-bold">B</span>
+                                    <span className="text-gray-300 text-sm">CTBC Brothers (中信兄弟)</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-red-400 font-bold">W</span>
+                                    <span className="text-gray-300 text-sm">Wei Chuan Dragons (味全龍)</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-green-400 font-bold">TSG</span>
+                                    <span className="text-gray-300 text-sm">TSG Hawks (台鋼雄鷹)</span>
+                                </div>
+                            </div>
+                        </section>
                     </div>
 
                     {/* Stats Definitions */}
