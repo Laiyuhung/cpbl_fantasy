@@ -23,6 +23,12 @@ export default function RosterPage() {
     // Settings State for Empty Slots Logic
     const [rosterPositionsConfig, setRosterPositionsConfig] = useState({});
 
+    // Modals & Move Logic
+    const [showInfoModal, setShowInfoModal] = useState(false);
+    const [showLegendModal, setShowLegendModal] = useState(false);
+    const [showMoveModal, setShowMoveModal] = useState(false);
+    const [playerToMove, setPlayerToMove] = useState(null);
+
     // Roster Helpers
     const getTeamAbbr = (team) => {
         switch (team) {
@@ -65,6 +71,70 @@ export default function RosterPage() {
     const [photoSrcMap, setPhotoSrcMap] = useState({});
     const failedImages = useRef(new Set());
 
+    // Refresh Trigger
+    const refreshRoster = () => {
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+        const managerId = cookie?.split('=')[1];
+        if (!managerId) return;
+
+        setLoading(true);
+        fetch(`/api/league/${leagueId}/roster?manager_id=${managerId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setRoster(data.roster || []);
+                    setDate(data.date);
+                }
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    };
+
+    const handleSlotClick = (player) => {
+        if (player.isEmpty) return;
+        setPlayerToMove(player);
+        setShowMoveModal(true);
+    };
+
+    const handleMovePlayer = async (targetPos) => {
+        if (!playerToMove) return;
+
+        setShowMoveModal(false);
+        setLoading(true);
+
+        try {
+            const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+            const managerId = cookie?.split('=')[1];
+            if (!managerId) return;
+
+            const res = await fetch(`/api/league/${leagueId}/roster/move`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    managerId,
+                    playerId: playerToMove.player_id,
+                    currentPosition: playerToMove.position,
+                    targetPosition: targetPos,
+                    gameDate: date
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                refreshRoster();
+            } else {
+                setError(data.error || 'Move failed');
+                setLoading(false);
+                setPlayerToMove(null);
+                setTimeout(() => setError(''), 3000);
+            }
+
+        } catch (err) {
+            console.error(err);
+            setLoading(false);
+        }
+    };
+
     // Roster fetch
     useEffect(() => {
         const fetchRoster = async () => {
@@ -100,7 +170,7 @@ export default function RosterPage() {
         fetchRoster();
     }, [leagueId]);
 
-    // Fetch League Settings (Stat Categories & Roster Positions)
+    // Fetch League Settings
     useEffect(() => {
         const fetchSettings = async () => {
             const settingsRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
@@ -120,7 +190,6 @@ export default function RosterPage() {
             if (!timeWindow) return;
 
             try {
-                // Fetch both batter and pitcher stats
                 const [batterRes, pitcherRes] = await Promise.all([
                     fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
                     fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
@@ -149,20 +218,16 @@ export default function RosterPage() {
     }, [timeWindow]);
 
     const getPlayerStat = (playerId, statKey) => {
-        if (!playerId || playerId === 'empty') return '-'; // Empty slots have no stats
-
+        if (!playerId || playerId === 'empty') return '-';
         const stats = playerStats[playerId];
         if (!stats) return '-';
 
-        // Parse stat key like "Runs (R)" -> "R"
         let fieldName = statKey;
         const matches = statKey.match(/\(([^)]+)\)/g);
         if (matches) {
             fieldName = matches[matches.length - 1].replace(/[()]/g, '');
         }
 
-        // Exact match for keys from API (usually lowercase in my previous steps, but let's check)
-        // The previous code used .toLowerCase()
         const value = stats[fieldName.toLowerCase()];
         return value !== undefined && value !== null ? value : '-';
     };
@@ -214,11 +279,6 @@ export default function RosterPage() {
     const renderPlayerBadges = (player) => {
         if (player.player_id === 'empty') return null;
 
-        // Debug Identity
-        if (player.identity === 'foreigner' || player.identity === 'Foreigner') {
-            console.log(`[BadgeCheck] ${player.name} is Foreigner?`, player.identity);
-        }
-
         const badges = [];
         // F Flag
         if (player.identity && player.identity.toLowerCase() === 'foreigner') {
@@ -253,22 +313,14 @@ export default function RosterPage() {
         return <div className="flex items-center gap-1">{badges}</div>;
     };
 
-    // Modals
-    const [showInfoModal, setShowInfoModal] = useState(false);
-    const [showLegendModal, setShowLegendModal] = useState(false);
-
     // --- Logic to Generate Empty Slots ---
-    // Positions that should have Empty Slots
     const ACTIVE_POSITIONS_ORDER = [
         'C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util',
         'SP', 'RP', 'P'
     ];
 
-    // Helper: Categorize rows
     const generateRosterWithEmptySlots = (currentRoster, config) => {
         const result = [...currentRoster];
-
-        // Exclude BN and Minor from check
         const positionsToCheck = ACTIVE_POSITIONS_ORDER.filter(pos => config[pos] > 0);
 
         positionsToCheck.forEach(pos => {
@@ -291,22 +343,16 @@ export default function RosterPage() {
         return result;
     };
 
-    // Categorize for Tables
-    // Batter: C, 1B, 2B, 3B, SS, OF, CI, MI, LF, CF, RF, Util, BN-Batters, IL-Batters
     const isBatterPos = (pos) => ['C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util'].includes(pos);
-    // Pitcher: SP, RP, P, BN-Pitchers, IL-Pitchers
     const isPitcherPos = (pos) => ['SP', 'RP', 'P'].includes(pos);
 
     const fullRoster = generateRosterWithEmptySlots(roster, rosterPositionsConfig);
 
-    // Split Logic
     const batterRoster = fullRoster.filter(p => {
         if (isBatterPos(p.position)) return true;
         if (isPitcherPos(p.position)) return false;
-        // BN/NA/IL - Check batter_or_pitcher
         return p.batter_or_pitcher === 'batter';
     }).sort((a, b) => {
-        // Custom Sort
         const orderConfig = { 'C': 1, '1B': 2, '2B': 3, '3B': 4, 'SS': 5, 'CI': 6, 'MI': 7, 'LF': 8, 'CF': 9, 'RF': 10, 'OF': 11, 'Util': 12, 'BN': 20, 'NA': 21 };
         const orderA = orderConfig[a.position] || 99;
         const orderB = orderConfig[b.position] || 99;
@@ -316,7 +362,6 @@ export default function RosterPage() {
     const pitcherRoster = fullRoster.filter(p => {
         if (isPitcherPos(p.position)) return true;
         if (isBatterPos(p.position)) return false;
-        // BN/NA/IL - Check batter_or_pitcher
         return p.batter_or_pitcher === 'pitcher';
     }).sort((a, b) => {
         const orderConfig = { 'SP': 1, 'RP': 2, 'P': 3, 'BN': 20, 'NA': 21 };
@@ -325,7 +370,6 @@ export default function RosterPage() {
         return orderA - orderB;
     });
 
-    // Helper to parse stat name
     const parseStatName = (stat) => {
         const matches = stat.match(/\(([^)]+)\)/g);
         return matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
@@ -354,7 +398,6 @@ export default function RosterPage() {
                     My Roster
                 </h1>
                 <div className="flex items-center gap-4">
-                    {/* Time Window Selector */}
                     <select
                         value={timeWindow}
                         onChange={(e) => setTimeWindow(e.target.value)}
@@ -419,13 +462,16 @@ export default function RosterPage() {
                                 batterRoster.map((player) => (
                                     <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
                                         <td className="px-6 py-4">
-                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${player.isEmpty ? 'bg-slate-800 text-slate-500' :
-                                                ['BN', 'IL', 'NA'].includes(player.position)
-                                                    ? 'bg-slate-700 text-slate-300'
-                                                    : 'bg-purple-600 text-white'
-                                                }`}>
+                                            <button
+                                                onClick={() => handleSlotClick(player)}
+                                                disabled={player.isEmpty}
+                                                className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
+                                                    ['BN', 'IL', 'NA'].includes(player.position)
+                                                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
+                                                        : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
+                                                    }`}>
                                                 {player.position}
-                                            </span>
+                                            </button>
                                         </td>
                                         <td className="px-6 py-4">
                                             {player.isEmpty ? (
@@ -508,13 +554,16 @@ export default function RosterPage() {
                                 pitcherRoster.map((player) => (
                                     <tr key={player.id} className="hover:bg-purple-500/5 transition-colors">
                                         <td className="px-6 py-4">
-                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center ${player.isEmpty ? 'bg-slate-800 text-slate-500' :
-                                                ['BN', 'IL', 'NA'].includes(player.position)
-                                                    ? 'bg-slate-700 text-slate-300'
-                                                    : 'bg-purple-600 text-white'
-                                                }`}>
+                                            <button
+                                                onClick={() => handleSlotClick(player)}
+                                                disabled={player.isEmpty}
+                                                className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
+                                                    ['BN', 'IL', 'NA'].includes(player.position)
+                                                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
+                                                        : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
+                                                    }`}>
                                                 {player.position}
-                                            </span>
+                                            </button>
                                         </td>
                                         <td className="px-6 py-4">
                                             {player.isEmpty ? (
@@ -666,6 +715,17 @@ export default function RosterPage() {
                     </div>
                 </div>
             )}
+
+            {/* Move Modal */}
+            <MoveModal
+                isOpen={showMoveModal}
+                onClose={() => {
+                    setShowMoveModal(false);
+                    setPlayerToMove(null);
+                }}
+                player={playerToMove}
+                onMove={handleMovePlayer}
+            />
         </div>
     );
 }
