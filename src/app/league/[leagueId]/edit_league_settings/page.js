@@ -552,9 +552,10 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [saveMessage, setSaveMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [scheduleError, setScheduleError] = useState('');
-  const [currentUserRole, setCurrentUserRole] = useState('');
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [showDeleteMemberModal, setShowDeleteMemberModal] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState(null);
+  const [deletingMember, setDeletingMember] = useState(false);
+  const [activeHelpKey, setActiveHelpKey] = useState(null); // State for help modal
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
 
@@ -1299,6 +1300,36 @@ const EditLeagueSettingsPage = ({ params }) => {
       `}</style>
 
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+        {/* Help Modal */}
+        {activeHelpKey && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn" onClick={() => setActiveHelpKey(null)}>
+            <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl max-w-md w-full animate-scaleIn" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-bold text-white">{activeHelpKey}</h3>
+                <button
+                  onClick={() => setActiveHelpKey(null)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-purple-200 leading-relaxed">
+                {getSettingDescription(activeHelpKey)}
+              </p>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setActiveHelpKey(null)}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all font-medium shadow-lg"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
             <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
@@ -1349,14 +1380,13 @@ const EditLeagueSettingsPage = ({ params }) => {
                                 <div className="flex items-center gap-2">
                                   {key}
                                   {getSettingDescription(key) && (
-                                    <div className="group relative">
-                                      <div className="cursor-help text-purple-400 hover:text-purple-200 bg-purple-500/20 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold border border-purple-500/50">
-                                        ?
-                                      </div>
-                                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-64 p-2 bg-slate-900 border border-purple-500/50 rounded-lg shadow-xl text-xs text-purple-200 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                        {getSettingDescription(key)}
-                                      </div>
-                                    </div>
+                                    <button
+                                      onClick={() => setActiveHelpKey(key)}
+                                      className="cursor-help text-purple-400 hover:text-purple-200 bg-purple-500/20 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold border border-purple-500/50 transition-colors"
+                                      type="button"
+                                    >
+                                      ?
+                                    </button>
                                   )}
                                 </div>
                               </td>

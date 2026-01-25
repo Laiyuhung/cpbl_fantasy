@@ -286,6 +286,18 @@ export default function JoinLeaguePage() {
                   <span className="text-purple-400 text-sm font-medium">Min IP Per Week</span>
                   <p className="text-white text-lg font-bold mt-1">{leagueSettings.min_innings_pitched_per_week || 'N/A'}</p>
                 </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Foreigner On Team Limit</span>
+                  <p className="text-white text-lg font-bold mt-1">
+                    {leagueSettings.foreigner_on_team_limit === null ? 'No limit' : leagueSettings.foreigner_on_team_limit}
+                  </p>
+                </div>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
+                  <span className="text-purple-400 text-sm font-medium">Foreigner Active Limit</span>
+                  <p className="text-white text-lg font-bold mt-1">
+                    {leagueSettings.foreigner_active_limit === null ? 'No limit' : leagueSettings.foreigner_active_limit}
+                  </p>
+                </div>
                 {leagueSettings.roster_positions && (
                   <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4 md:col-span-2">
                     <span className="text-purple-400 text-sm font-medium">Roster Positions</span>

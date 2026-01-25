@@ -640,8 +640,8 @@ export default function LeagueSettingsPage() {
                   <button
                     onClick={handleFinalizedClick}
                     className={`font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 ${isFinalized
-                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
-                        : 'bg-gradient-to-r from-slate-600 to-gray-600 hover:from-slate-700 hover:to-gray-700 text-white'
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+                      : 'bg-gradient-to-r from-slate-600 to-gray-600 hover:from-slate-700 hover:to-gray-700 text-white'
                       }`}
                   >
                     {isFinalized ? (
@@ -735,9 +735,9 @@ export default function LeagueSettingsPage() {
               <div className="flex justify-between items-center py-3">
                 <span className="text-purple-300/70 font-medium">League Status</span>
                 <span className={`font-bold px-3 py-1 rounded-full text-sm ${leagueStatus === 'pre-draft' ? 'bg-blue-500/30 text-blue-300' :
-                    leagueStatus === 'drafting' ? 'bg-yellow-500/30 text-yellow-300' :
-                      leagueStatus === 'in-season' ? 'bg-green-500/30 text-green-300' :
-                        'bg-gray-500/30 text-gray-300'
+                  leagueStatus === 'drafting' ? 'bg-yellow-500/30 text-yellow-300' :
+                    leagueStatus === 'in-season' ? 'bg-green-500/30 text-green-300' :
+                      'bg-gray-500/30 text-gray-300'
                   }`}>
                   {leagueStatus.toUpperCase()}
                 </span>
@@ -756,6 +756,21 @@ export default function LeagueSettingsPage() {
               </h2>
             </div>
             <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="flex justify-between items-center py-2 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20">
+                  <span className="text-white font-semibold">Foreigner On Team Limit</span>
+                  <span className="text-purple-300 font-bold">
+                    {leagueSettings.foreigner_on_team_limit === null ? 'No limit' : leagueSettings.foreigner_on_team_limit}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20">
+                  <span className="text-white font-semibold">Foreigner Active Limit</span>
+                  <span className="text-purple-300 font-bold">
+                    {leagueSettings.foreigner_active_limit === null ? 'No limit' : leagueSettings.foreigner_active_limit}
+                  </span>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 {leagueSettings.roster_positions && (() => {
                   const positionOrder = ['C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util', 'SP', 'RP', 'P', 'BN', 'Minor'];
@@ -966,19 +981,19 @@ export default function LeagueSettingsPage() {
               <div className="flex justify-between items-center mt-2">
                 <div className="flex flex-col gap-1">
                   <p className={`text-xs transition-colors ${newNickname.trim().length < 2
+                    ? 'text-red-400 font-medium'
+                    : newNickname.trim().length > 50
                       ? 'text-red-400 font-medium'
-                      : newNickname.trim().length > 50
-                        ? 'text-red-400 font-medium'
-                        : 'text-cyan-300/70'
+                      : 'text-cyan-300/70'
                     }`}>
                     {newNickname.trim().length < 2 ? '⚠️ Minimum 2 characters' : '✓ Valid length'}
                   </p>
                 </div>
                 <p className={`text-xs font-medium ${newNickname.length > 40
-                    ? 'text-orange-400'
-                    : newNickname.length > 45
-                      ? 'text-red-400'
-                      : 'text-cyan-300/70'
+                  ? 'text-orange-400'
+                  : newNickname.length > 45
+                    ? 'text-red-400'
+                    : 'text-cyan-300/70'
                   }`}>
                   {newNickname.length}/50
                 </p>
@@ -1039,8 +1054,8 @@ export default function LeagueSettingsPage() {
       {showSuccessNotification && (
         <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
           <div className={`backdrop-blur-xl border rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300 ${successMessage.isError
-              ? 'bg-gradient-to-br from-red-600/95 to-rose-600/95 border-red-400/30'
-              : 'bg-gradient-to-br from-green-600/95 to-emerald-600/95 border-green-400/30'
+            ? 'bg-gradient-to-br from-red-600/95 to-rose-600/95 border-red-400/30'
+            : 'bg-gradient-to-br from-green-600/95 to-emerald-600/95 border-green-400/30'
             }`}>
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
@@ -1068,8 +1083,8 @@ export default function LeagueSettingsPage() {
                   <div className="bg-white/10 rounded-lg p-3 border border-white/20">
                     <div className="flex items-center gap-2">
                       <div className={`p-1.5 rounded-lg ${successMessage.updatedMember.role === 'Co-Commissioner'
-                          ? 'bg-purple-400/30'
-                          : 'bg-blue-400/30'
+                        ? 'bg-purple-400/30'
+                        : 'bg-blue-400/30'
                         }`}>
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -1158,23 +1173,23 @@ export default function LeagueSettingsPage() {
                     <div
                       key={member.manager_id}
                       className={`bg-slate-900/50 border rounded-lg p-4 transition-all ${isCommissioner
-                          ? 'border-yellow-500/30 bg-yellow-500/5'
-                          : 'border-purple-500/20 hover:border-purple-400/40'
+                        ? 'border-yellow-500/30 bg-yellow-500/5'
+                        : 'border-purple-500/20 hover:border-purple-400/40'
                         }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
                           <div className={`p-2 rounded-lg ${member.role === 'Commissioner'
-                              ? 'bg-yellow-500/20'
-                              : member.role === 'Co-Commissioner'
-                                ? 'bg-purple-500/20'
-                                : 'bg-blue-500/20'
+                            ? 'bg-yellow-500/20'
+                            : member.role === 'Co-Commissioner'
+                              ? 'bg-purple-500/20'
+                              : 'bg-blue-500/20'
                             }`}>
                             <svg className={`w-5 h-5 ${member.role === 'Commissioner'
-                                ? 'text-yellow-400'
-                                : member.role === 'Co-Commissioner'
-                                  ? 'text-purple-400'
-                                  : 'text-blue-400'
+                              ? 'text-yellow-400'
+                              : member.role === 'Co-Commissioner'
+                                ? 'text-purple-400'
+                                : 'text-blue-400'
                               }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
