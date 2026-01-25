@@ -6,7 +6,11 @@ export async function POST(request, { params }) {
 
     try {
         const body = await request.json();
-        const { managerId, addPlayerId, dropPlayerId, requestedSlot } = body;
+        console.log('[AddDrop API] Body:', body);
+
+        // Frontend sends 'targetSlot'
+        const { managerId, addPlayerId, dropPlayerId, targetSlot: requestedSlot } = body;
+        console.log('[AddDrop API] Requested Slot:', requestedSlot);
 
         if (!managerId || !addPlayerId) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
