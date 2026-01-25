@@ -157,34 +157,72 @@ export async function POST(req, { params }) {
           .single();
 
         // 6. 檢查是否可以放入 Minor
+        // 需滿足:
+        // 1. 聯盟設定允許 allow_injured_to_injury_slot == 'Yes'
+        // 2. 聯盟有設定 Minor 格子 (limit > 0)
+        // 3. 球員真實狀態符合 'NA', 'DR', 'NR' (User request: "NR DR NA badge")
+        // 4. 當天 Minor 格子未滿
+
+        console.log(`[AddPlayer] Checking Minor slot eligibility for player ${player_id}...`);
+        console.log(`[AddPlayer] Setting - Allow Injured to Injury Slot: ${leagueSettings?.allow_injured_to_injury_slot}`);
+        console.log(`[AddPlayer] Setting - Minor Slot Limit: ${leagueSettings?.roster_positions?.['Minor']}`);
+
         if (!settingsError && leagueSettings) {
           const allowDirectToMinor = leagueSettings.allow_injured_to_injury_slot === 'Yes';
           const minorLimit = leagueSettings.roster_positions?.['Minor'] || 0;
 
           if (allowDirectToMinor && minorLimit > 0) {
-            // User request: 檢查 "台灣時間今天"
-            const checkDateStr = nowTaiwan.toISOString().split('T')[0];
+            // Fetch player's real life status
+            const { data: playerStatusData, error: statusError } = await supabase
+              .from('real_life_player_status')
+              .select('status')
+              .eq('player_id', player_id)
+              .single();
 
-            const { count, error: countError } = await supabase
-              .from('league_roster_positions')
-              .select('*', { count: 'exact', head: true })
-              .eq('league_id', leagueId)
-              .eq('manager_id', manager_id)
-              .eq('game_date', checkDateStr)
-              .eq('position', 'NA'); // User request: use 'NA' in DB
+            const playerStatus = playerStatusData?.status || 'Active'; // Default to Active? Or UNREGISTERED
+            console.log(`[AddPlayer] Player Real Life Status: ${playerStatus}`);
 
-            if (!countError) {
-              // 如果未滿，則目標設為 NA
-              if (count < minorLimit) {
-                targetPos = 'NA';
+            const eligibleStatuses = ['NA', 'DR', 'NR'];
+            const isEligibleStatus = eligibleStatuses.includes(playerStatus.toUpperCase());
+            console.log(`[AddPlayer] Is eligible status for Minor? ${isEligibleStatus}`);
+
+            if (isEligibleStatus) {
+              // 查詢 startDate 當天，該經理在 Minor 位置的球員數量
+              // User request: 檢查 "台灣時間今天"
+              const checkDateStr = nowTaiwan.toISOString().split('T')[0];
+              console.log(`[AddPlayer] Checking Minor usage for date: ${checkDateStr}`);
+
+              const { count, error: countError } = await supabase
+                .from('league_roster_positions')
+                .select('*', { count: 'exact', head: true })
+                .eq('league_id', leagueId)
+                .eq('manager_id', manager_id)
+                .eq('game_date', checkDateStr)
+                .eq('position', 'NA'); // User request: use 'NA' in DB
+
+              if (!countError) {
+                console.log(`[AddPlayer] Current Minor (NA) usage: ${count} / ${minorLimit}`);
+                // 如果未滿，則目標設為 NA
+                if (count < minorLimit) {
+                  targetPos = 'NA';
+                  console.log(`[AddPlayer] >>> DECISION: Assign to NA slot.`);
+                } else {
+                  console.log(`[AddPlayer] >>> DECISION: Minor slot full. Assign to BN.`);
+                }
+              } else {
+                console.error('Failed to count minor usage:', countError);
               }
             } else {
-              console.error('Failed to count minor usage:', countError);
+              console.log(`[AddPlayer] >>> DECISION: Status not eligible for Minor. Assign to BN.`);
             }
+          } else {
+            if (!allowDirectToMinor) console.log(`[AddPlayer] >>> DECISION: Settings do not allow direct to Minor.`);
+            else if (minorLimit <= 0) console.log(`[AddPlayer] >>> DECISION: League has no Minor slots.`);
           }
         }
 
-        console.log(`Adding player ${player_id} to position: ${targetPos}`);
+        console.log(`[AddPlayer] Final Target Position: ${targetPos}`);
+
 
         // 生成每一天的資料
         const rosterRows = [];
