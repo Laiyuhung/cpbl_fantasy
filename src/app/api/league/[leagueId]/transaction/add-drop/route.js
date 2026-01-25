@@ -28,7 +28,7 @@ export async function POST(request, { params }) {
 
         // 2. Process DROP first (to free up space/limits)
         if (dropPlayerId) {
-            // Check Drop Player Ownership Info for acquired_date
+            // Check Drop Player Ownership Info for acquired_at
             const { data: dropOwnership, error: fetchDropError } = await supabase
                 .from('league_player_ownership')
                 .select('*')
@@ -51,7 +51,7 @@ export async function POST(request, { params }) {
             // Actually 'en-CA' is better for ISO format YYYY-MM-DD
             const todayIso = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 
-            const acquiredDate = new Date(dropOwnership.acquired_date);
+            const acquiredDate = new Date(dropOwnership.acquired_at);
             const acquiredIso = acquiredDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 
             const isSameDay = todayIso === acquiredIso;
@@ -241,7 +241,7 @@ export async function POST(request, { params }) {
                 manager_id: managerId,
                 player_id: addPlayerId,
                 status: 'On Team',
-                acquired_date: new Date().toISOString()
+                acquired_at: new Date().toISOString()
             });
 
         if (addOwnError) throw addOwnError;
