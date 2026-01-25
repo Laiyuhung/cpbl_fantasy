@@ -246,18 +246,87 @@ export async function POST(request, { params }) {
 
         if (addOwnError) throw addOwnError;
 
-        // Insert Roster Position
-        const { error: addPosError } = await supabase
-            .from('league_roster_positions')
-            .insert({
+        // Insert Roster Position (Full Season Generation)
+        // Logic adapted from ownership/route.js to ensure consistency (game_date range)
+
+        // 1. Get Schedule Info for Season End
+        const { data: scheduleInfo } = await supabase
+            .from('league_schedule')
+            .select('week_number, week_start, week_end')
+            .eq('league_id', leagueId)
+            .order('week_number', { ascending: true });
+
+        let seasonEnd = null;
+        let seasonStart = null;
+
+        if (scheduleInfo && scheduleInfo.length > 0) {
+            const firstWeek = scheduleInfo[0];
+            const lastWeek = scheduleInfo[scheduleInfo.length - 1];
+            seasonStart = new Date(firstWeek.week_start);
+
+            // Try to find schedule_date end for last week
+            const { data: weekData } = await supabase
+                .from('schedule_date')
+                .select('week')
+                .eq('end', lastWeek.week_end)
+                .single();
+
+            if (weekData) {
+                const currentWeekNum = parseInt(weekData.week.replace('W', ''), 10);
+                const nextWeekNum = currentWeekNum + 1;
+                const { data: nextWeekData } = await supabase
+                    .from('schedule_date')
+                    .select('end')
+                    .eq('week', `W${nextWeekNum}`)
+                    .single();
+                if (nextWeekData) {
+                    seasonEnd = new Date(nextWeekData.end);
+                }
+            }
+            if (!seasonEnd) seasonEnd = new Date(lastWeek.week_end);
+        }
+
+        // 2. Determine Start Date (Today)
+        const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+        nowTaiwan.setHours(0, 0, 0, 0);
+
+        let startDate = nowTaiwan;
+        if (seasonStart && nowTaiwan < seasonStart) {
+            startDate = seasonStart;
+        }
+
+        // 3. Generate Rows
+        const rosterRows = [];
+        if (seasonEnd) {
+            let currentDate = new Date(startDate);
+            while (currentDate <= seasonEnd) {
+                rosterRows.push({
+                    league_id: leagueId,
+                    manager_id: managerId,
+                    player_id: addPlayerId,
+                    position: targetSlot,
+                    game_date: currentDate.toISOString().split('T')[0]
+                });
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        } else {
+            // Fallback if no schedule: Insert for Today only
+            rosterRows.push({
                 league_id: leagueId,
                 manager_id: managerId,
                 player_id: addPlayerId,
                 position: targetSlot,
-                game_date: new Date().toISOString().split('T')[0] // Effective Today/Now
+                game_date: new Date().toISOString().split('T')[0]
             });
+        }
 
-        if (addPosError) throw addPosError;
+        if (rosterRows.length > 0) {
+            const { error: addPosError } = await supabase
+                .from('league_roster_positions')
+                .upsert(rosterRows, { onConflict: 'league_id, player_id, game_date' });
+
+            if (addPosError) throw addPosError;
+        }
 
         // Log Add Transaction
         await supabase.from('transactions_2026').insert({
