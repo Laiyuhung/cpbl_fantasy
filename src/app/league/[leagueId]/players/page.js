@@ -63,6 +63,8 @@ export default function PlayersPage() {
   const [limitViolationMsg, setLimitViolationMsg] = useState('');
   const [checkingAdd, setCheckingAdd] = useState(false); // Local loading for pre-check
   const [violationType, setViolationType] = useState(''); // 'foreigner_limit' etc.
+  const [currentRosterState, setCurrentRosterState] = useState([]); // Store roster for dynamic slot calc
+  const [naLimitState, setNaLimitState] = useState(0); // Store NA limit
 
   useEffect(() => {
     const fetchData = async () => {
@@ -434,6 +436,11 @@ export default function PlayersPage() {
       // Find key for Minor/NA
       const minorKey = Object.keys(rosterConfig).find(k => k.toLowerCase() === 'minor') || 'Minor';
       const minorLimit = rosterConfig[minorKey] || 0;
+
+      // Store for dynamic recalc
+      setCurrentRosterState(myRoster);
+      setNaLimitState(minorLimit);
+
       const currentMinorCount = myRoster.filter(p => ['NA', 'Minor'].includes(p.position)).length;
 
       let targetSlot = 'BN';
@@ -512,6 +519,36 @@ export default function PlayersPage() {
       setCheckingAdd(false);
     }
   };
+
+  // Auto-recalculate Slot when Drop Candidate Changes
+  useEffect(() => {
+    if (!pendingAddPlayer || !currentRosterState) return;
+
+    // Logic similar to Initial Check but considering Drop
+    const status = (pendingAddPlayer.real_life_status || 'Active').toUpperCase();
+    const isNaEligible = status !== 'MAJOR';
+
+    // Count NA usage
+    let currentMinorCount = currentRosterState.filter(p => ['NA', 'Minor'].includes(p.position)).length;
+
+    // Adjust if Drop Candidate is in NA
+    if (dropCandidateID) {
+      const dropPlayerPosition = currentRosterState.find(p => p.player_id === dropCandidateID)?.position;
+      if (['NA', 'Minor'].includes(dropPlayerPosition)) {
+        currentMinorCount = Math.max(0, currentMinorCount - 1);
+      }
+    }
+
+    let targetSlot = 'BN';
+    if (isNaEligible && currentMinorCount < (naLimitState || 0)) {
+      targetSlot = 'NA';
+    }
+
+    if (targetSlot !== projectedAddSlot) {
+      setProjectedAddSlot(targetSlot);
+    }
+
+  }, [dropCandidateID, pendingAddPlayer, currentRosterState, naLimitState]);
   // 處理新增球員到隊伍
   const handleAddPlayer = async (player, isWaiver = false) => {
     if (!myManagerId) {
