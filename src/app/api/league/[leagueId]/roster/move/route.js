@@ -207,7 +207,12 @@ export async function POST(request, { params }) {
                 // Clean up
                 occupantPositions = [...new Set(occupantPositions)];
 
+                console.log(`[MoveRoster STANDARD] Checking Swap: Main=${playerId} vs Target=${targetOccupant.player_id}`);
+                console.log(`[MoveRoster STANDARD] Target Positions: ${occupantPositions.join(', ')}`);
+                console.log(`[MoveRoster STANDARD] Need Match: ${currentPosition}`);
+
                 const canSwap = occupantPositions.includes(currentPosition);
+                console.log(`[MoveRoster STANDARD] Match Result: ${canSwap}`);
 
                 if (canSwap) {
                     // Swap
@@ -215,6 +220,7 @@ export async function POST(request, { params }) {
                     updates.push({ player_id: targetOccupant.player_id, new_position: currentPosition });
                 } else {
                     // Move Target to BN
+                    console.log(`[MoveRoster STANDARD] No match. Target -> BN`);
                     updates.push({ player_id: playerId, new_position: targetPosition });
                     updates.push({ player_id: targetOccupant.player_id, new_position: 'BN' });
                 }
