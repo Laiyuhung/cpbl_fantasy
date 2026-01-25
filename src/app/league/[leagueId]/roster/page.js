@@ -13,6 +13,7 @@ export default function RosterPage() {
     const [loading, setLoading] = useState(true); // Initial Load
     const [actionLoading, setActionLoading] = useState(false); // Action Load (Blur)
     const [error, setError] = useState('');
+    const [notification, setNotification] = useState(null); // { type: 'success'|'error', message: '', details: [] }
     const [date, setDate] = useState('');
 
     // Stats State
@@ -123,6 +124,32 @@ export default function RosterPage() {
 
             const data = await res.json();
             if (data.success) {
+                // Construct Success Message
+                const updates = data.updates || [];
+                let msg = 'Roster Updated';
+                let details = [];
+
+                if (updates.length > 0) {
+                    // Map updates to readable strings
+                    details = updates.map(u => {
+                        // Find player name from current roster state (before refresh)
+                        // Note: If player was in roster, we find them.
+                        const p = roster.find(rp => rp.player_id === u.player_id);
+                        const pName = p ? p.name : 'Player';
+                        return `${pName} ➔ ${u.new_position}`;
+                    });
+
+                    if (updates.length === 1) {
+                        msg = details[0];
+                        details = []; // Simple message
+                    } else {
+                        msg = 'Swap Successful';
+                    }
+                }
+
+                setNotification({ type: 'success', message: msg, details });
+                setTimeout(() => setNotification(null), 5000); // Auto dismiss
+
                 await refreshRoster(); // Wait for refresh
             } else {
                 setError(data.error || 'Move failed');
@@ -134,6 +161,8 @@ export default function RosterPage() {
         } catch (err) {
             console.error(err);
             setActionLoading(false);
+            setError('System Error');
+            setTimeout(() => setError(''), 3000);
         }
     };
 
@@ -317,6 +346,40 @@ export default function RosterPage() {
                     <div className="flex flex-col items-center gap-4">
                         <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                         <div className="text-white font-bold tracking-widest animate-pulse">UPDATING ROSTER...</div>
+                    </div>
+                </div>
+            )}
+
+            {/* Notification Toast */}
+            {notification && (
+                <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-[70] animate-fade-in-down">
+                    <div className={`px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-md flex flex-col gap-1 items-center
+                        ${notification.type === 'success'
+                            ? 'bg-green-900/80 border-green-500/50 text-white'
+                            : 'bg-red-900/80 border-red-500/50 text-white'}
+                    `}>
+                        <div className="flex items-center gap-3">
+                            {notification.type === 'success' ? (
+                                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-300">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                </div>
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-300">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </div>
+                            )}
+                            <span className="font-bold text-lg tracking-wide">{notification.message}</span>
+                        </div>
+                        {notification.details && notification.details.length > 0 && (
+                            <div className="mt-2 space-y-1 w-full border-t border-white/10 pt-2">
+                                {notification.details.map((line, idx) => (
+                                    <div key={idx} className="text-sm font-mono opacity-90 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-white/50"></span>
+                                        {line}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

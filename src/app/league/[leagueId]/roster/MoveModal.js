@@ -87,6 +87,9 @@ export default function MoveModal({
 
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                     {options.map(pos => {
+                        // Prevent moving to same position (LF -> LF)
+                        if (pos === player.position) return null;
+
                         // Find Occupant(s) at this position
                         const occupants = roster.filter(p => p.position === pos && !p.isEmpty);
                         const empties = roster.filter(p => p.position === pos && p.isEmpty);
@@ -105,7 +108,6 @@ export default function MoveModal({
                             // Full: Show Swap Options for EACH occupant
                             return (
                                 <div key={pos} className="space-y-2">
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Swap with {pos} ({occupants.length}/{limit})</div>
                                     {occupants.map(occ => (
                                         <button
                                             key={`${pos}-${occ.id}`}
