@@ -575,7 +575,8 @@ export default function PlayersPage() {
         body: JSON.stringify({
           managerId: myManagerId,
           addPlayerId: pendingAddPlayer.player_id,
-          dropPlayerId: dropCandidateID
+          dropPlayerId: dropCandidateID,
+          targetSlot: projectedAddSlot // Pass the frontend calculated slot
         })
       });
       const data = await res.json();
@@ -1379,7 +1380,7 @@ export default function PlayersPage() {
       {/* 成功動畫 */}
       {showSuccess && (
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className={`text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce ${successMessage.includes('Dropped') ? 'bg-red-600' : 'bg-green-600'}`}>
+          <div className={`text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce ${successMessage.startsWith('Player Dropped') ? 'bg-red-600' : 'bg-green-600'}`}>
             <div className="flex items-center gap-3">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />

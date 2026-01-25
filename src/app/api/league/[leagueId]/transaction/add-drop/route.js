@@ -6,7 +6,7 @@ export async function POST(request, { params }) {
 
     try {
         const body = await request.json();
-        const { managerId, addPlayerId, dropPlayerId } = body;
+        const { managerId, addPlayerId, dropPlayerId, requestedSlot } = body;
 
         if (!managerId || !addPlayerId) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
@@ -178,8 +178,13 @@ export async function POST(request, { params }) {
         const isNaEligible = realStatus.toUpperCase() !== 'MAJOR';
 
         // Check NA Capacity
+        // Determine Slot: NA or BN
         let targetSlot = 'BN'; // Default
-        if (isNaEligible) {
+
+        if (requestedSlot && ['NA', 'BN'].includes(requestedSlot)) {
+            targetSlot = requestedSlot;
+        } else if (isNaEligible) {
+            // Check NA Capacity
             const { count: naCount } = await supabase
                 .from('league_roster_positions')
                 .select('*', { count: 'exact', head: true })
