@@ -61,6 +61,8 @@ export default function PlayersPage() {
   const [projectedAddSlot, setProjectedAddSlot] = useState('');
   const [dropCandidateID, setDropCandidateID] = useState(null);
   const [limitViolationMsg, setLimitViolationMsg] = useState('');
+  const [checkingAdd, setCheckingAdd] = useState(false); // Local loading for pre-check
+  const [violationType, setViolationType] = useState(''); // 'foreigner_limit' etc.
 
   useEffect(() => {
     const fetchData = async () => {
@@ -404,7 +406,7 @@ export default function PlayersPage() {
   const preCheckAddPlayer = async (player) => {
     // 1. Fetch Roster & Settings for precise calculation
     try {
-      setLoading(true);
+      setCheckingAdd(true);
       const [rosterRes, settingsRes] = await Promise.all([
         fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}`),
         fetch(`/api/league-settings?league_id=${leagueId}`)
@@ -442,6 +444,8 @@ export default function PlayersPage() {
 
       // 3. Check Limits
       let violation = null;
+      let vType = '';
+
       if (isForeigner) {
         const currentForeigners = myRoster.filter(p => p.identity?.toLowerCase() === 'foreigner').length;
 
@@ -449,6 +453,7 @@ export default function PlayersPage() {
 
         if (currentForeigners + 1 > onTeamLimit) {
           violation = `Foreigner On-Team Limit Exceeded (Limit: ${onTeamLimit})`;
+          vType = 'foreigner_limit';
           console.log(`[PreCheck] VIOLATION: ${violation}`);
         } else {
           console.log(`[PreCheck] Safe: ${currentForeigners + 1} <= ${onTeamLimit}`);
@@ -456,8 +461,10 @@ export default function PlayersPage() {
       } else {
         console.log('[PreCheck] Adding Local Player. No Foreigner Check required.');
       }
+
       if (violation) {
         setLimitViolationMsg(violation);
+        setViolationType(vType);
         setPendingAddPlayer(player);
         setShowAddDropModal(true); // Force Drop
       } else {
@@ -470,11 +477,9 @@ export default function PlayersPage() {
       console.error(e);
       setError('Failed to validate add.');
     } finally {
-      setLoading(false);
+      setCheckingAdd(false);
     }
   };
-
-
   // 處理新增球員到隊伍
   const handleAddPlayer = async (player, isWaiver = false) => {
     if (!myManagerId) {
@@ -1626,9 +1631,19 @@ export default function PlayersPage() {
               <button onClick={() => setShowAddDropModal(false)} className="text-slate-400 hover:text-white font-bold text-2xl">×</button>
             </div>
 
+            {/* Checking Roster Overlay */}
+            {checkingAdd && (
+              <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 animate-pulse">
+                  <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="text-blue-200 font-bold tracking-widest text-lg">CHECKING ROSTER ELIGIBILITY...</div>
+                </div>
+              </div>
+            )}
+
             <div className="p-6">
               <div className="mb-4 text-slate-300 text-sm">
-                {limitViolationMsg}. To add <span className="text-white font-bold">{pendingAddPlayer.name}</span>, you must drop a player.
+                {limitViolationMsg}. To add <span className="text-white font-bold">{pendingAddPlayer.name}</span>, you must drop <span className="text-red-400 font-bold">{violationType === 'foreigner_limit' ? 'a Foreigner' : 'a player'}</span>.
               </div>
 
               <div className="bg-slate-800/50 rounded-lg p-3 border border-purple-500/20 mb-6 flex items-center justify-between">
@@ -1642,11 +1657,19 @@ export default function PlayersPage() {
                 </div>
               </div>
 
-              <h4 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">Select Player to Drop</h4>
+              <h4 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">
+                Select {violationType === 'foreigner_limit' ? 'Foreigner' : 'Player'} to Drop
+              </h4>
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {getMyPlayers().map(p => {
                   const playerDetail = players.find(x => x.player_id === p.player_id);
                   if (!playerDetail) return null;
+
+                  // Filter logic: If violation is foreigner_limit, only show foreigners
+                  if (violationType === 'foreigner_limit') {
+                    if (playerDetail.identity?.toLowerCase() !== 'foreigner') return null;
+                  }
+
                   const isSelected = dropCandidateID === p.player_id;
                   return (
                     <div
