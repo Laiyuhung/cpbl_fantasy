@@ -557,6 +557,9 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [deletingMember, setDeletingMember] = useState(false);
   const [activeHelpKey, setActiveHelpKey] = useState(null); // State for help modal
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [scheduleError, setScheduleError] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState('');
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
 
   const handleScheduleValidation = (error) => {
