@@ -32,6 +32,8 @@ const initialSettings = {
   },
   roster: {
     'Min Innings pitched per team per week': '20',
+    'Foreigner On Team Limit': '4',
+    'Foreigner Active Limit': '3',
     'Roster Positions': {
       'C': 1,
       '1B': 1,
@@ -85,6 +87,8 @@ const settingOptions = {
   'Post Draft Waiver Time': ['1 day', '2 days', '3 days'],
   'Max Acquisitions per Week': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'No maximum'],
   'Min Innings pitched per team per week': ['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50'],
+  'Foreigner On Team Limit': ['No limit', '0', '1', '2', '3', '4', '5', '6', '7'],
+  'Foreigner Active Limit': ['No limit', '0', '1', '2', '3', '4', '5', '6', '7'],
   'Start Scoring On': ['2026.3.28', '2026.4.6', '2026.4.13', '2026.4.20'],
   'Batter Stat Categories': [
     'Games Played (GP)',
@@ -762,6 +766,23 @@ const CreateLeaguePage = () => {
     return null;
   };
 
+  const validateForeignerLimits = (teamLimit, activeLimit) => {
+    // Treat "No limit" as Infinity, numbers as integers
+    const parseLimit = (limit) => {
+      if (limit === 'No limit') return Infinity;
+      const parsed = parseInt(limit, 10);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
+    const team = parseLimit(teamLimit);
+    const active = parseLimit(activeLimit);
+
+    if (active < team) {
+      return 'Foreigner Active Limit MUST be >= Foreigner On Team Limit (or No limit)';
+    }
+    return null;
+  };
+
   // Check if all weights are valid
   const hasWeightErrors = () => {
     if (settings.general['Scoring Type'] !== 'Head-to-Head Fantasy Points') {
@@ -872,6 +893,24 @@ const CreateLeaguePage = () => {
     // Validate Min Innings pitched per team per week
     if (!settings.roster['Min Innings pitched per team per week']) {
       errors.push('❌ Min Innings pitched per team per week is required');
+    }
+
+    // Validate Foreigner Limits
+    const foreignerTeamLimit = settings.roster['Foreigner On Team Limit'];
+    const foreignerActiveLimit = settings.roster['Foreigner Active Limit'];
+
+    if (!foreignerTeamLimit) {
+      errors.push('❌ Foreigner On Team Limit is required');
+    }
+    if (!foreignerActiveLimit) {
+      errors.push('❌ Foreigner Active Limit is required');
+    }
+
+    if (foreignerTeamLimit && foreignerActiveLimit) {
+      const foreignerError = validateForeignerLimits(foreignerTeamLimit, foreignerActiveLimit);
+      if (foreignerError) {
+        errors.push(`❌ ${foreignerError}`);
+      }
     }
 
     // Validate Roster Positions

@@ -194,6 +194,10 @@ export async function POST(request) {
       // 按預定義順序排列 roster_positions
       roster_positions: sortRosterPositions(settings.roster['Roster Positions']),
 
+      // Foreigner Limits
+      foreigner_on_team_limit: settings.roster['Foreigner On Team Limit'] === 'No limit' ? null : parseInt(settings.roster['Foreigner On Team Limit']),
+      foreigner_active_limit: settings.roster['Foreigner Active Limit'] === 'No limit' ? null : parseInt(settings.roster['Foreigner Active Limit']),
+
       // Scoring
       start_scoring_on: settings.scoring['Start Scoring On'],
       // 直接塞入前端传来的数组，保持顺序
@@ -409,6 +413,10 @@ export async function PUT(request) {
       min_innings_pitched_per_week: settings.roster['Min Innings pitched per team per week'],
       // 按預定義順序排列 roster_positions
       roster_positions: sortRosterPositions(settings.roster['Roster Positions']),
+
+      // Foreigner Limits
+      foreigner_on_team_limit: settings.roster['Foreigner On Team Limit'] === 'No limit' ? null : parseInt(settings.roster['Foreigner On Team Limit']),
+      foreigner_active_limit: settings.roster['Foreigner Active Limit'] === 'No limit' ? null : parseInt(settings.roster['Foreigner Active Limit']),
 
       start_scoring_on: settings.scoring['Start Scoring On'],
       // 完全覆盖，无视原有数据，保持前端传来的顺序
