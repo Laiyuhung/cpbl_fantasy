@@ -6,7 +6,7 @@ export async function POST(request, { params }) {
 
     try {
         const body = await request.json();
-        const { managerId, playerId, targetPosition, currentPosition, gameDate } = body;
+        const { managerId, playerId, targetPosition, currentPosition, gameDate, swapWithPlayerId } = body;
 
         if (!managerId || !playerId || !targetPosition || !gameDate) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
@@ -82,9 +82,63 @@ export async function POST(request, { params }) {
         } else if (targetPosition === 'NA') {
             // Check Limit
             if (checkNaLimit && occupants.length >= naLimit) {
-                return NextResponse.json({ success: false, error: 'Minor (NA) slots are full.' }, { status: 400 });
+                // NA is Full. Try Swap.
+                let targetOccupant = null;
+
+                if (swapWithPlayerId) {
+                    targetOccupant = occupants.find(p => p.player_id === swapWithPlayerId);
+                } else if (occupants.length === 1) {
+                    // If only 1 occupant, auto-swap with them
+                    targetOccupant = occupants[0];
+                }
+
+                if (!targetOccupant) {
+                    return NextResponse.json({ success: false, error: 'Minor (NA) slots are full. Please select a player to swap.' }, { status: 400 });
+                }
+
+                // Perform Swap (Player -> NA, Target -> CurrentPos/BN)
+                // Logic shared with Standard Position Swap
+                // We reuse the logic below by temporarily setting occupants to [targetOccupant] and treating as 'Standard' swap flow?
+                // Or just copy swap logic here.
+
+                // Can targetOccupant go to currentPosition?
+                // Fetch basic info for TargetOccupant
+                const { data: occupantData } = await supabase
+                    .from('player_list')
+                    .select('*')
+                    .eq('player_id', targetOccupant.player_id)
+                    .single();
+
+                // Fetch their positions
+                let occupantPositions = [];
+                const { data: bPos } = await supabase.from('v_batter_positions').select('position_list').eq('player_id', targetOccupant.player_id).single();
+                const { data: pPos } = await supabase.from('v_pitcher_positions').select('position_list').eq('player_id', targetOccupant.player_id).single();
+
+                if (bPos) occupantPositions = bPos.position_list.split(',').map(s => s.trim());
+                if (pPos) occupantPositions = pPos.position_list.split(',').map(s => s.trim());
+
+                if (occupantData.B_or_P === 'B') {
+                    occupantPositions.push('Util');
+                    occupantPositions.push('BN');
+                }
+                if (occupantData.B_or_P === 'P') {
+                    occupantPositions.push('P');
+                    occupantPositions.push('BN');
+                }
+                occupantPositions = [...new Set(occupantPositions)];
+
+                const canSwap = occupantPositions.includes(currentPosition);
+
+                updates.push({ player_id: playerId, new_position: 'NA' }); // Move Main Player to NA
+                if (canSwap) {
+                    updates.push({ player_id: targetOccupant.player_id, new_position: currentPosition });
+                } else {
+                    updates.push({ player_id: targetOccupant.player_id, new_position: 'BN' });
+                }
+
+            } else {
+                updates.push({ player_id: playerId, new_position: 'NA' });
             }
-            updates.push({ player_id: playerId, new_position: 'NA' });
         } else {
             // Standard Position (C, 1B, SP, Util, etc.) - usually Single Slot (except OF/P maybe? User settings usually 1 per key, but if OF=3, we have multiple 'OF' slots?
             // The user settings structure { "OF": 1 } implies generic slots.

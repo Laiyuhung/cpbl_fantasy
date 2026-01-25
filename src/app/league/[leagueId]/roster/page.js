@@ -97,7 +97,7 @@ export default function RosterPage() {
         setShowMoveModal(true);
     };
 
-    const handleMovePlayer = async (targetPos) => {
+    const handleMovePlayer = async (targetPos, swapWithPlayerId) => {
         if (!playerToMove) return;
 
         setShowMoveModal(false);
@@ -116,6 +116,7 @@ export default function RosterPage() {
                     playerId: playerToMove.player_id,
                     currentPosition: playerToMove.position,
                     targetPosition: targetPos,
+                    swapWithPlayerId: swapWithPlayerId || null,
                     gameDate: date
                 })
             });
@@ -612,6 +613,7 @@ export default function RosterPage() {
                     playerStats={playerStats}
                     batterStats={batterStatCategories}
                     pitcherStats={pitcherStatCategories}
+                    rosterPositionsConfig={rosterPositionsConfig}
                     onMove={handleMovePlayer}
                 />
             </div>
