@@ -136,25 +136,55 @@ export async function POST(req, { params }) {
           }
         }
 
-        // 如果找不到 next week，fallback 使用最後一週的 end date + 1 天? 
-        // 依照需求："將week_id+1才是這裡要的賽季結束"，若找不到可能代表賽季未定義完全，暫時不生成或報錯？
-        // 這裡做個 fallback：如果找不到 week+1，就用 lastWeek.week_end
         if (!seasonEnd) {
           seasonEnd = new Date(lastWeek.week_end);
-          // 通常 end date 是包含的，所以如果要用作 exclusive upper bound，可能要 +1 天，但這裡暫且依賴 week+1 邏輯
         }
 
         // 4. 決定生成區間
-        // 取得台灣時間的今天 (去除時間部分)
         const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
         nowTaiwan.setHours(0, 0, 0, 0);
 
-        // 如果 Today < SeasonStart，從 SeasonStart 開始
-        // 如果 Today >= SeasonStart，從 Today 開始
-        // 注意：這裡的 seasonStart 應該也是 Date 物件 (UTC 00:00:00)，比較時要注意時區
-        // 為求保險，將 seasonStart 也視為當日 00:00
-
         let startDate = nowTaiwan < seasonStart ? seasonStart : nowTaiwan;
+
+        // 5. 決定目標守備位置 (default to BN)
+        let targetPos = 'BN';
+
+        // 取得相關設定
+        const { data: leagueSettings, error: settingsError } = await supabase
+          .from('league_settings')
+          .select('allow_injured_to_injury_slot, roster_positions')
+          .eq('league_id', leagueId)
+          .single();
+
+        // 6. 檢查是否可以放入 Minor
+        if (!settingsError && leagueSettings) {
+          const allowDirectToMinor = leagueSettings.allow_injured_to_injury_slot === 'Yes';
+          const minorLimit = leagueSettings.roster_positions?.['Minor'] || 0;
+
+          if (allowDirectToMinor && minorLimit > 0) {
+            // User request: 檢查 "台灣時間今天"
+            const checkDateStr = nowTaiwan.toISOString().split('T')[0];
+
+            const { count, error: countError } = await supabase
+              .from('league_roster_positions')
+              .select('*', { count: 'exact', head: true })
+              .eq('league_id', leagueId)
+              .eq('manager_id', manager_id)
+              .eq('game_date', checkDateStr)
+              .eq('position', 'NA'); // User request: use 'NA' in DB
+
+            if (!countError) {
+              // 如果未滿，則目標設為 NA
+              if (count < minorLimit) {
+                targetPos = 'NA';
+              }
+            } else {
+              console.error('Failed to count minor usage:', countError);
+            }
+          }
+        }
+
+        console.log(`Adding player ${player_id} to position: ${targetPos}`);
 
         // 生成每一天的資料
         const rosterRows = [];
@@ -169,7 +199,7 @@ export async function POST(req, { params }) {
             manager_id: manager_id,
             player_id: player_id,
             game_date: currentDate.toISOString().split('T')[0], // YYYY-MM-DD
-            position: 'BN' // 預設板凳
+            position: targetPos // 使用動態決定的位置 (BN 或 Minor)
           });
 
           // 加一天
