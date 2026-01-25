@@ -23,11 +23,13 @@ export async function POST(request, { params }) {
         const minorKey = Object.keys(rosterConfig).find(k => k.toLowerCase() === 'minor') || 'Minor';
         const naLimit = rosterConfig[minorKey] || 0;
 
+        const tradeGroupId = crypto.randomUUID();
+
         // 2. Process DROP first (to free up space/limits)
         if (dropPlayerId) {
             // Delete Ownership
             const { error: ownError } = await supabase
-                .from('league_ownerships')
+                .from('league_player_ownership')
                 .delete()
                 .eq('league_id', leagueId)
                 .eq('manager_id', managerId)
@@ -46,6 +48,15 @@ export async function POST(request, { params }) {
                 .eq('player_id', dropPlayerId);
 
             if (posError) throw posError;
+
+            // Log Drop Transaction
+            await supabase.from('transactions_2026').insert({
+                league_id: leagueId,
+                player_id: dropPlayerId,
+                manager_id: managerId,
+                transaction_type: 'DROP',
+                trade_group_id: tradeGroupId
+            });
         }
 
         // 3. Process ADD
@@ -111,7 +122,7 @@ export async function POST(request, { params }) {
                     // Ideally this check should happen BEFORE drop.
                     // But we rely on Drop to clear space.
                     // Does dropPlayerId reduce count? Yes.
-                    // So if we had 4/4, dropped 1 (now 3/4), adding 1 makes 4/4. Safe.
+                    // If we had 4/4, dropped 1 (now 3/4), adding 1 makes 4/4. Safe.
                     // If we had 4/4, dropped Local, adding Foreigner -> 5/4. Error.
                     return NextResponse.json({ success: false, error: 'Foreigner On-Team limit exceeded.' }, { status: 400 });
                 }
@@ -124,12 +135,12 @@ export async function POST(request, { params }) {
 
         // Insert Ownership
         const { error: addOwnError } = await supabase
-            .from('league_ownerships')
+            .from('league_player_ownership')
             .insert({
                 league_id: leagueId,
                 manager_id: managerId,
                 player_id: addPlayerId,
-                status: 'on team',
+                status: 'On Team',
                 acquired_date: new Date().toISOString()
             });
 
@@ -147,6 +158,15 @@ export async function POST(request, { params }) {
             });
 
         if (addPosError) throw addPosError;
+
+        // Log Add Transaction
+        await supabase.from('transactions_2026').insert({
+            league_id: leagueId,
+            player_id: addPlayerId,
+            manager_id: managerId,
+            transaction_type: 'ADD',
+            trade_group_id: tradeGroupId
+        });
 
         return NextResponse.json({ success: true, slot: targetSlot });
 

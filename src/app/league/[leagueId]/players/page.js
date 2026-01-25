@@ -1498,6 +1498,16 @@ export default function PlayersPage() {
         </div>
       )}
 
+      {/* Checking Roster Overlay */}
+      {checkingAdd && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4 animate-pulse">
+            <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-blue-200 font-bold tracking-widest text-lg">CHECKING ROSTER ELIGIBILITY...</div>
+          </div>
+        </div>
+      )}
+
       {/* Trade Success Notification */}
       {showTradeSuccessNotification && (
         <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
@@ -1631,15 +1641,7 @@ export default function PlayersPage() {
               <button onClick={() => setShowAddDropModal(false)} className="text-slate-400 hover:text-white font-bold text-2xl">×</button>
             </div>
 
-            {/* Checking Roster Overlay */}
-            {checkingAdd && (
-              <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4 animate-pulse">
-                  <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                  <div className="text-blue-200 font-bold tracking-widest text-lg">CHECKING ROSTER ELIGIBILITY...</div>
-                </div>
-              </div>
-            )}
+
 
             <div className="p-6">
               <div className="mb-4 text-slate-300 text-sm">
