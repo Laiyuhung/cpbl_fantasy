@@ -182,9 +182,9 @@ export async function POST(req, { params }) {
             const playerStatus = playerStatusData?.status || 'Active'; // Default to Active? Or UNREGISTERED
             console.log(`[AddPlayer] Player Real Life Status: ${playerStatus}`);
 
-            const eligibleStatuses = ['NA', 'DR', 'NR'];
-            const isEligibleStatus = eligibleStatuses.includes(playerStatus.toUpperCase());
-            console.log(`[AddPlayer] Is eligible status for Minor? ${isEligibleStatus}`);
+            // User request: Only 'MAJOR' is NOT applicable for NA SLOT, others are okay (UNREGISTERED, DEREGISTERED, MINOR)
+            const isEligibleStatus = playerStatus.toUpperCase() !== 'MAJOR';
+            console.log(`[AddPlayer] Is eligible status for Minor (Not MAJOR)? ${isEligibleStatus}`);
 
             if (isEligibleStatus) {
               // 查詢 startDate 當天，該經理在 Minor 位置的球員數量
