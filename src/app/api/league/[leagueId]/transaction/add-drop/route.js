@@ -122,7 +122,7 @@ export async function POST(request, { params }) {
                     .from('league_player_ownership')
                     .update({
                         status: 'Waiver',
-                        off_waiver_date: offWaiverDate.toISOString(),
+                        off_waiver: offWaiverDate.toISOString(),
                         manager_id: null // DETACH
                     })
                     .eq('league_id', leagueId)
