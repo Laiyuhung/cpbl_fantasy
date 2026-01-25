@@ -163,6 +163,16 @@ const settingOptions = {
   'Invite Permissions': ['Commissioner Only', 'Managers can invite'],
 };
 
+const getSettingDescription = (key) => {
+  if (key === 'Foreigner On Team Limit') {
+    return 'Total foreigners allowed on the roster (including Minor/NA slots)';
+  }
+  if (key === 'Foreigner Active Limit') {
+    return 'Maximum number of foreign players allowed in active slots (excluding Minor/NA slots)';
+  }
+  return null;
+};
+
 const sections = [
   { key: 'general', label: 'General Settings', icon: '⚙️' },
   { key: 'acquisitions', label: 'Acquisitions & Trading', icon: '🔄' },
@@ -777,8 +787,8 @@ const CreateLeaguePage = () => {
     const team = parseLimit(teamLimit);
     const active = parseLimit(activeLimit);
 
-    if (active < team) {
-      return 'Foreigner Active Limit MUST be >= Foreigner On Team Limit (or No limit)';
+    if (active > team) {
+      return 'Foreigner Active Limit MUST be <= Foreigner On Team Limit';
     }
     return null;
   };
@@ -1130,7 +1140,19 @@ const CreateLeaguePage = () => {
                                 } hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}
                             >
                               <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
-                                {key}
+                                <div className="flex items-center gap-2">
+                                  {key}
+                                  {getSettingDescription(key) && (
+                                    <div className="group relative">
+                                      <div className="cursor-help text-purple-400 hover:text-purple-200 bg-purple-500/20 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold border border-purple-500/50">
+                                        ?
+                                      </div>
+                                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-64 p-2 bg-slate-900 border border-purple-500/50 rounded-lg shadow-xl text-xs text-purple-200 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                        {getSettingDescription(key)}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-6 py-4 text-purple-300 w-3/5">
                                 {isMultilineField(key) ? (
