@@ -17,6 +17,14 @@ export default function MoveModal({
     // Helper: Is Position Active (Non-NA/Minor)
     const isActivePos = (pos) => !['NA', 'Minor', 'IL'].includes(pos);
 
+    // Helper: Is Valid for NA (for Swaps)
+    const isValidForNA = (p) => {
+        const s = (p.real_life_status || '').toUpperCase();
+        return s.includes('MN') || s.includes('MINOR') || s === 'NA' ||
+            s.includes('DEREGISTERED') || s === 'DR' || s === 'D' ||
+            s.includes('UNREGISTERED') || s === 'NR';
+    };
+
     // Helper: Check Foreigner Active Limit
     const validateMove = (targetPos, swapPlayerId) => {
         // Only check if we have a limit
@@ -97,6 +105,16 @@ export default function MoveModal({
 
             if (currentActiveCount + activeNetChange > activeLimit) {
                 return { isValid: false, message: `Exceeds Total Active Roster Size (${activeLimit})` };
+            }
+        }
+
+        // 3. Swap Eligibility Logic
+        if (swapPlayerId && !isActivePos(player.position)) { // Source is NA
+            // If we are swapping, the swapPlayer goes to player.position (NA)
+            // We need to check if swapPlayer is eligible for NA
+            const swapPlayer = roster.find(p => p.player_id === swapPlayerId);
+            if (swapPlayer && !isValidForNA(swapPlayer)) {
+                return { isValid: false, message: 'Player not eligible for NA slot' };
             }
         }
 
@@ -191,10 +209,25 @@ export default function MoveModal({
                         if (pos === 'NA') limitKey = 'Minor'; // Map NA to Minor key
                         const limit = rosterPositionsConfig?.[limitKey] || 0;
 
-                        const isFull = (pos !== 'BN') && (occupants.length >= limit);
+                        // Check Total Active Fullness
+                        // If moving FROM NA TO Active check global active limit
+                        let isTotalActiveFull = false;
+                        if (!isActivePos(player.position) && isActivePos(pos)) {
+                            const activeLimit = Object.entries(rosterPositionsConfig || {}).reduce((sum, [k, v]) => {
+                                return isActivePos(k) ? sum + (parseInt(v) || 0) : sum;
+                            }, 0);
+                            const currentActiveCount = roster.filter(p => isActivePos(p.position) && !p.isEmpty).length;
+                            if (currentActiveCount >= activeLimit) {
+                                isTotalActiveFull = true;
+                            }
+                        }
+
+                        const isSlotFull = occupants.length >= limit;
+                        // Force Swap Mode if slot is full OR (Total Active Limit is reached for Active moves)
+                        const showSwapMode = isSlotFull || (isActivePos(pos) && isTotalActiveFull);
 
                         // Render Logic
-                        if (isFull && pos !== 'BN') {
+                        if (showSwapMode) {
                             // Full: Show Swap Options for EACH occupant
                             return (
                                 <div key={pos} className="space-y-2">
