@@ -222,7 +222,7 @@ export default function MoveModal({
                             }
                         }
 
-                        const isSlotFull = occupants.length >= limit;
+                        const isSlotFull = (pos !== 'BN') && (occupants.length >= limit);
                         // Force Swap Mode if slot is full OR (Total Active Limit is reached for Active moves)
                         const showSwapMode = isSlotFull || (isActivePos(pos) && isTotalActiveFull);
 
