@@ -379,6 +379,15 @@ export default function DraftPage() {
         return seconds;
     };
 
+    // Helper to extract abbreviation from "Category (Abbr)"
+    const getStatAbbr = (cat) => {
+        const matches = cat.match(/\(([^)]+)\)/g);
+        if (matches && matches.length > 0) {
+            return matches[matches.length - 1].replace(/[()]/g, '');
+        }
+        return cat;
+    };
+
     const renderQueueItem = (item, index) => {
         const player = players.find(p => p.player_id === item.player_id) || item.player;
         if (!player) return null;
@@ -409,7 +418,7 @@ export default function DraftPage() {
                 <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
                     {cats.slice(0, 5).map(cat => (
                         <div key={cat} className="flex flex-col items-center min-w-[30px]">
-                            <span className="text-slate-600 mb-0.5">{cat.split('(')[1]?.replace(')', '') || cat}</span>
+                            <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
                             <span className="text-slate-300">{getPlayerStat(player.player_id, cat)}</span>
                         </div>
                     ))}
@@ -600,7 +609,7 @@ export default function DraftPage() {
                                             onClick={() => handleSort(cat)}
                                         >
                                             <div className="flex items-center justify-center gap-1">
-                                                {cat.split('(')[1]?.replace(')', '') || cat}
+                                                {getStatAbbr(cat)}
                                                 {sortConfig.key === cat && (<span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>)}
                                             </div>
                                         </th>
