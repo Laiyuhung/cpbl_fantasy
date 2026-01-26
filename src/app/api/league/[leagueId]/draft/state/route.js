@@ -203,26 +203,35 @@ export async function GET(request, { params }) {
             // Return Active State
             const { data: picks, error: picksError } = await supabase
                 .from('draft_picks')
-                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position)')
+                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher)')
                 .eq('league_id', leagueId)
                 .filter('player_id', 'not.is', null)
                 .order('pick_number', { ascending: true });
 
-            // Debug: Check ALL picks to understand the state
-            const { data: allPicksDebug } = await supabase
-                .from('draft_picks')
-                .select('pick_number, player_id, manager_id')
-                .eq('league_id', leagueId)
-                .order('pick_number', { ascending: true })
-                .limit(10);
+            // Get position_list from views for each picked player
+            if (picks && picks.length > 0) {
+                for (const pick of picks) {
+                    if (pick.player) {
+                        const isBatter = pick.player.batter_or_pitcher === 'batter';
+                        const viewName = isBatter ? 'v_batter_positions' : 'v_pitcher_positions';
+                        const { data: posData } = await supabase
+                            .from(viewName)
+                            .select('position_list')
+                            .eq('player_id', pick.player_id)
+                            .single();
+                        if (posData) {
+                            pick.player.position_list = posData.position_list;
+                        }
+                    }
+                }
+            }
 
-            console.log(`[DraftState] Completed picks found: ${picks?.length || 0}`);
-            console.log(`[DraftState] First 10 picks (all): ${JSON.stringify(allPicksDebug)}`);
+            console.log(`[DraftState] ✅ Completed picks (player_id NOT NULL): ${picks?.length || 0}`);
             if (picksError) {
                 console.error('[DraftState] Error fetching picks:', picksError);
             }
             if (picks && picks.length > 0) {
-                console.log(`[DraftState] First completed pick: ${JSON.stringify(picks[0])}`);
+                console.log(`[DraftState] Sample completed pick: ${JSON.stringify(picks[0])}`);
             }
 
             // Get Next Picks Preview (e.g., next 12)
@@ -264,10 +273,30 @@ export async function GET(request, { params }) {
 
             const { data: picks } = await supabase
                 .from('draft_picks')
-                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position)')
+                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher)')
                 .eq('league_id', leagueId)
                 .filter('player_id', 'not.is', null)
                 .order('pick_number', { ascending: true });
+
+            // Get position_list from views
+            if (picks && picks.length > 0) {
+                for (const pick of picks) {
+                    if (pick.player) {
+                        const isBatter = pick.player.batter_or_pitcher === 'batter';
+                        const viewName = isBatter ? 'v_batter_positions' : 'v_pitcher_positions';
+                        const { data: posData } = await supabase
+                            .from(viewName)
+                            .select('position_list')
+                            .eq('player_id', pick.player_id)
+                            .single();
+                        if (posData) {
+                            pick.player.position_list = posData.position_list;
+                        }
+                    }
+                }
+            }
+
+            console.log(`[DraftState] Draft completed! Total picks: ${picks?.length || 0}`);
 
             return NextResponse.json({ status: 'completed', picks: picks || [] });
         }
