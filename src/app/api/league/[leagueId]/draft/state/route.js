@@ -62,10 +62,51 @@ export async function GET(request, { params }) {
 
         const leagueStatus = statusData?.status;
 
+        // Fetch Settings (Draft Time & Pick Duration)
+        const { data: settings } = await supabase
+            .from('league_settings')
+            .select('live_draft_time, live_draft_pick_time')
+            .eq('league_id', leagueId)
+            .single();
+
+        const pickTimeSeconds = (settings?.live_draft_pick_time ? parseInt(settings.live_draft_pick_time) : 60) || 60; // Handle "1 Minute" string if needed? DB usually stores integer or string? 
+        // Frontend options: "1 Minute", "30 Seconds". DB stores string? 
+        // route.js line 173: settings.general['Live Draft Pick Time'].
+        // DB likely string "1 Minute". Parsing needed.
+        let duration = 60;
+        if (settings?.live_draft_pick_time) {
+            if (settings.live_draft_pick_time.includes('Minute')) {
+                duration = parseInt(settings.live_draft_pick_time) * 60;
+            } else if (settings.live_draft_pick_time.includes('Second')) {
+                duration = parseInt(settings.live_draft_pick_time);
+            }
+        }
+
+        // AUTO START CHECK
+        if (currentPicks && currentPicks.length > 0 && leagueStatus === 'pre-draft') {
+            const startTime = settings?.live_draft_time ? new Date(settings.live_draft_time) : null;
+            // Allow start if time reached OR no time set (manual only? No user said "When time arrives [Auto]").
+            if (startTime && now >= startTime) {
+                await supabase.from('league_statuses').update({ status: 'in_draft' }).eq('league_id', leagueId);
+                // Proceed as in_draft
+            } else {
+                return NextResponse.json({
+                    status: 'pre-draft',
+                    startTime: settings?.live_draft_time,
+                    message: 'Waiting for draft time or order generation'
+                });
+            }
+        }
+
+
         // Draft Completed?
         if (!currentPicks || currentPicks.length === 0) {
             if (leagueStatus === 'pre-draft') {
-                return NextResponse.json({ status: 'pre-draft' });
+                return NextResponse.json({
+                    status: 'pre-draft',
+                    startTime: settings?.live_draft_time,
+                    message: 'Draft order not generated yet'
+                });
             }
             if (leagueStatus === 'in_draft') {
                 // Update status to 'post-draft'
@@ -75,12 +116,12 @@ export async function GET(request, { params }) {
         }
 
         let currentPick = currentPicks[0];
-        const now = new Date();
+        // const now = new Date(); // Already defined
 
         // 2. Deadline Logic
         // If deadline is NULL, set it (Start the Clock!)
         if (!currentPick.deadline) {
-            const nextDeadline = new Date(now.getTime() + 60 * 1000); // 60 seconds
+            const nextDeadline = new Date(now.getTime() + duration * 1000);
             const { data: updated, error: updateError } = await supabase
                 .from('draft_picks')
                 .update({ deadline: nextDeadline.toISOString() })
@@ -106,11 +147,7 @@ export async function GET(request, { params }) {
                     })
                     .eq('pick_id', currentPick.pick_id);
 
-                // RECURSIVE / RE-FETCH to get the NEXT pick immediately
-                // Instead of recursing, we just tell frontend "Refresh again" or return "Processing".
-                // But better to return the *Next* pick so UI updates instantly.
-
-                // Let's just fetch the next one.
+                // Get NEXT pick
                 const { data: nextPicks } = await supabase
                     .from('draft_picks')
                     .select('*')
@@ -122,7 +159,7 @@ export async function GET(request, { params }) {
                 if (nextPicks && nextPicks.length > 0) {
                     currentPick = nextPicks[0];
                     // Initialize next deadline immediately 
-                    const nextDeadline = new Date(now.getTime() + 60 * 1000);
+                    const nextDeadline = new Date(now.getTime() + duration * 1000);
                     await supabase
                         .from('draft_picks')
                         .update({ deadline: nextDeadline.toISOString() })
@@ -133,7 +170,6 @@ export async function GET(request, { params }) {
                 }
             } else {
                 console.error('No players left to auto-pick!');
-                // Should probably finish draft
             }
         }
 

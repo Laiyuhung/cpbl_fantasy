@@ -10,15 +10,34 @@ export async function POST(request, { params }) {
     const { leagueId } = params;
 
     try {
-        // 1. Get League Settings & Members
+        const body = await request.json().catch(() => ({})); // Handle empty body
+        const { managerId } = body;
+
+        // 0. Verify Commissioner Role
+        if (managerId) {
+            const { data: member } = await supabase
+                .from('league_members')
+                .select('role')
+                .eq('league_id', leagueId)
+                .eq('manager_id', managerId)
+                .single();
+
+            if (member?.role !== 'Commissioner' && member?.role !== 'Co-Commissioner') {
+                return NextResponse.json({ success: false, error: 'Only Commissioner can initialize draft' }, { status: 403 });
+            }
+        }
+        // Note: If no managerId provided, we assume it's an internal call or fail? 
+        // User requested "Only admin can execute". So requiring managerId is safer.
+        else {
+            return NextResponse.json({ success: false, error: 'Manager ID required' }, { status: 400 });
+        }
+
+        // 1. Get League Settings & Members (Sort by random or custom order in future)
         const { data: members, error: membersError } = await supabase
             .from('league_members')
             .select('manager_id, nickname')
             .eq('league_id', leagueId)
-            // Ideally sorted by specific draft order or random. 
-            // For now, let's sort by joined_at or random.
-            // Let's assume random shuffle logic or existing order later.
-            // Here we just take them as is (sort by joined_at usually default)
+            // Ideally use `draft_order` column if exists, otherwise random/joined_at
             .order('joined_at', { ascending: true });
 
         if (membersError || !members || members.length === 0) {
@@ -36,7 +55,6 @@ export async function POST(request, { params }) {
         }
 
         // 2. Calculate Total Rounds
-        // Sum of all roster limits (C:1, 1B:1 ... BN:5, Minor:2)
         const rosterConfig = settings.roster_positions || {};
         const totalRounds = Object.values(rosterConfig).reduce((sum, count) => sum + (parseInt(count) || 0), 0);
 
@@ -46,10 +64,7 @@ export async function POST(request, { params }) {
         let globalPickCount = 1;
 
         for (let round = 1; round <= totalRounds; round++) {
-            // Odd rounds: 1 -> N
-            // Even rounds: N -> 1 (Snake)
             const isEven = round % 2 === 0;
-
             const roundPicks = [];
             for (let i = 0; i < teamCount; i++) {
                 const teamIndex = isEven ? (teamCount - 1 - i) : i;
@@ -67,22 +82,17 @@ export async function POST(request, { params }) {
             picks.push(...roundPicks);
         }
 
-        // 4. Transaction: Clear old picks -> Insert new -> Update Status
-        // A. Delete old
+        // 4. Transaction: Clear old picks -> Insert new
         await supabase.from('draft_picks').delete().eq('league_id', leagueId);
 
-        // B. Insert new
         const { error: insertError } = await supabase
             .from('draft_picks')
             .insert(picks);
 
         if (insertError) throw insertError;
 
-        // C. Update League Status to 'in_draft'
-        // And set the FIRST pick's deadline to (Now + 2 mins buffer for start)?
-        // Or let the first user polling trigger the start. 
-        // Let's set status to 'in_draft'. 
-        await supabase.from('league_statuses').update({ status: 'in_draft' }).eq('league_id', leagueId);
+        // Ensure status is 'pre-draft' (waiting for time)
+        await supabase.from('league_statuses').update({ status: 'pre-draft' }).eq('league_id', leagueId);
 
         // Also, initialize the first pick's deadline?
         // We can do it lazily or now. Let's do it now.

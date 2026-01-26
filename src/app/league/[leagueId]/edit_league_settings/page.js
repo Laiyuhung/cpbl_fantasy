@@ -1641,6 +1641,47 @@ const EditLeagueSettingsPage = ({ params }) => {
             <SchedulePreview leagueId={leagueId} settings={settings} onValidationChange={handleScheduleValidation} />
           </div>
 
+          {/* Draft Management Tools (Commissioner Only) */}
+          {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && settings.general['Draft Type'] === 'Live Draft' && (
+            <div className="mt-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+              <h2 className="text-2xl font-bold text-white mb-4">Draft Management</h2>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={async () => {
+                    if (!confirm('This will generate/reset the draft order. Continue?')) return;
+                    try {
+                      setIsSaving(true);
+                      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+                      const managerId = cookie?.split('=')[1];
+                      const res = await fetch(`/api/league/${leagueId}/draft/init`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ managerId })
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        setSaveMessage('✅ Draft Order Generated! Ready for Auto-Start.');
+                      } else {
+                        setSaveMessage('❌ Error: ' + data.error);
+                      }
+                    } catch (e) {
+                      setSaveMessage('❌ Error: ' + e.message);
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded shadow-lg"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Generating...' : 'Generate Draft Order'}
+                </button>
+                <p className="text-sm text-purple-200">
+                  Click this to create the random snake draft order. The draft will automatically start at the "Live Draft Time".
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="mt-8 flex justify-end gap-4">
             {saveMessage && (
               <div className={`px-4 py-2 rounded-md ${saveMessage.includes('✅')

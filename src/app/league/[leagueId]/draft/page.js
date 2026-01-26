@@ -42,13 +42,15 @@ export default function DraftPage() {
                 setDraftState(data);
 
                 // Update Timer
-                if (data.currentPick?.deadline) {
+                const now = new Date(data.serverTime).getTime();
+
+                if (data.status === 'pre-draft' && data.startTime) {
+                    const start = new Date(data.startTime).getTime();
+                    const diff = Math.floor((start - now) / 1000);
+                    setTimeLeft(diff > 0 ? diff : 0);
+                } else if (data.currentPick?.deadline) {
                     const deadline = new Date(data.currentPick.deadline).getTime();
-                    const now = new Date(data.serverTime).getTime(); // Use server time to sync
-                    // Improve: calculate offset vs local time? For now, use local check against deadline string
-                    // actually better to rely on local clock vs deadline timestamp
-                    const deadlineDate = new Date(data.currentPick.deadline);
-                    const diff = Math.floor((deadlineDate - new Date()) / 1000);
+                    const diff = Math.floor((deadline - now) / 1000);
                     setTimeLeft(diff > 0 ? diff : 0);
                 }
 
@@ -75,12 +77,7 @@ export default function DraftPage() {
     useEffect(() => {
         const fetchPlayers = async () => {
             setLoading(true);
-            const res = await fetch('/api/playerslist?available=true'); // Actually we need ALL players, status doesn't matter for draft?
-            // Wait, playerslist?available=true filters by ownership? 
-            // For draft, no one belongs to anyone yet, so available=true is fine or just all.
-            // But taken players in draft are "taken". 
-            // Let's fetch all and filter client side based on draft_picks if possible?
-            // Or just fetch all.
+            const res = await fetch('/api/playerslist?available=true');
             const data = await res.json();
             if (data.success) {
                 setPlayers(data.players || []);
@@ -90,29 +87,8 @@ export default function DraftPage() {
         fetchPlayers();
     }, []);
 
-    // Filter Players (Remove drafted ones)
-    // We need the list of taken players. 
-    // Ideally `draft/state` returns taken IDs or we fetch them separately.
-    // `recentPicks` only has 5. 
-    // Optimization: `draft/state` could return `takenPlayerIds` array. 
-    // Let's assume we implement that in `draft/state` or just ignore for MVP and filter if pick fails?
-    // User experience bad if showing taken players.
-    // I should update `draft/state` to return taken list.
-    // For now, I will modify the FRONTEND to filter based on `draftState.takenIds` (if I add it).
-    // I will add `takenIds` to `draft/state` in next step if needed. 
-    // OR fetch `/api/league/${leagueId}/draft/taken`?
-    // Let's stick to simple: Fetch all picks once, and poll updates?
-    // Actually, for this demo, let's just show all and rely on error message "Player taken". 
-    // Better: Maintain client side set of taken IDs from polling `recentPicks`? No, that's partial.
-
-    // I will modify `GET /state` to include `takenPlayerIds` in the next tool call.
-    // Proceeding with page assuming `draftState.takenPlayerIds` exists.
-
-    const handleInit = async () => {
-        setInitLoading(true);
-        await fetch(`/api/league/${leagueId}/draft/init`, { method: 'POST' });
-        setInitLoading(false);
-    };
+    // Filter logic removed from useEffect, but filteredPlayers is computed below.
+    // We also removed handleInit which is fine.
 
     const handlePick = async (playerId) => {
         if (picking) return;
@@ -138,31 +114,48 @@ export default function DraftPage() {
 
     if (loading) return <div className="text-white p-10">Loading Draft Room...</div>;
 
+    const formatTime = (seconds) => {
+        if (seconds > 86400) return `${Math.floor(seconds / 86400)}d`;
+        if (seconds > 3600) return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+        if (seconds > 60) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+        return seconds;
+    };
+
     return (
         <div className="min-h-screen bg-slate-900 text-white p-4">
             {/* Header / Status */}
             <div className="bg-slate-800 p-4 rounded-xl mb-4 flex justify-between items-center border border-purple-500/30">
                 <div>
                     <h1 className="text-2xl font-bold text-purple-300">Live Draft Room</h1>
-                    {draftState?.currentPick && (
+                    {draftState?.currentPick ? (
                         <div className="text-lg">
                             Round {draftState.currentPick.round_number} / Pick {draftState.currentPick.pick_number}
+                        </div>
+                    ) : (
+                        <div className="text-lg text-blue-300 animate-pulse">
+                            {draftState?.status === 'pre-draft' ? 'Draft Room Open' : 'Draft Finished'}
                         </div>
                     )}
                 </div>
 
                 <div className="text-center">
                     <div className={`text-5xl font-mono font-black ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
-                        {timeLeft}
+                        {formatTime(timeLeft)}
                     </div>
-                    <div className="text-xs text-slate-400">SECONDS LEFT</div>
+                    <div className="text-xs text-slate-400">
+                        {draftState?.status === 'pre-draft' ? 'UNTIL START' : 'SECONDS LEFT'}
+                    </div>
                 </div>
 
                 <div>
                     {!draftState?.currentPick && (
-                        <button onClick={handleInit} disabled={initLoading} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 font-bold">
-                            {initLoading ? 'Initing...' : 'Start Draft'}
-                        </button>
+                        <div className="text-right">
+                            {draftState?.status === 'pre-draft' && draftState.startTime && (
+                                <div className="text-sm text-slate-400">
+                                    Starts: {new Date(draftState.startTime).toLocaleString()}
+                                </div>
+                            )}
+                        </div>
                     )}
                     {draftState?.currentPick && (
                         <div className="text-right">

@@ -70,7 +70,23 @@ export async function POST(request, { params }) {
             .limit(1);
 
         if (nextPicks && nextPicks.length > 0) {
-            const nextDeadline = new Date(now.getTime() + 60 * 1000); // 60s
+            // Fetch Settings for duration
+            const { data: settings } = await supabase
+                .from('league_settings')
+                .select('live_draft_pick_time')
+                .eq('league_id', leagueId)
+                .single();
+
+            let duration = 60;
+            if (settings?.live_draft_pick_time) {
+                if (settings.live_draft_pick_time.includes('Minute')) {
+                    duration = parseInt(settings.live_draft_pick_time) * 60;
+                } else if (settings.live_draft_pick_time.includes('Second')) {
+                    duration = parseInt(settings.live_draft_pick_time);
+                }
+            }
+
+            const nextDeadline = new Date(now.getTime() + duration * 1000);
             await supabase
                 .from('draft_picks')
                 .update({ deadline: nextDeadline.toISOString() })
