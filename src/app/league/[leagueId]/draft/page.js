@@ -304,34 +304,59 @@ export default function DraftPage() {
         if (!draftState?.picks) return { takenIds: new Set(), recentPicks: [], myTeam: [], upcomingPicks: [] };
         const picks = draftState.picks;
         const taken = new Set(picks.map(p => p.player_id).filter(Boolean));
-        const recent = picks.filter(p => p.player_id).sort((a, b) => new Date(b.picked_at) - new Date(a.picked_at));
-        const mine = picks.filter(p => p.manager_id === myManagerId && p.player_id).map(p => ({ ...p.player, round: p.round_number, pick: p.pick_number }));
 
-        // Upcoming: Use draftState.nextPicks if available
-        const upcoming = draftState.nextPicks || [];
+        // Recent Picks: Filter those with player_id, sort by picked_at desc
+        const recent = picks.filter(p => p.player_id).sort((a, b) => new Date(b.picked_at) - new Date(a.picked_at));
+
+        // My Team: Filter by manager_id and valid player_id
+        const mine = picks.filter(p => p.manager_id === myManagerId && p.player_id).map(p => ({
+            ...p.player,
+            round: p.round_number,
+            pick: p.pick_number,
+            name: p.player?.name || 'Unknown',
+            team: p.player?.team || '',
+            position_list: p.player?.position || ''
+        }));
+
+        // Upcoming: Use draftState.nextPicks but EXCLUDE the current on-the-clock pick if present
+        let upcoming = draftState.nextPicks || [];
+        if (draftState.currentPick && upcoming.length > 0 && upcoming[0].pick_id === draftState.currentPick.pick_id) {
+            upcoming = upcoming.slice(1);
+        }
 
         return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming };
     }, [draftState, myManagerId]);
 
     const handlePick = async (playerId) => {
         if (picking) return;
-        setPicking(true);
-        const res = await fetch(`/api/league/${leagueId}/draft/pick`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ managerId: myManagerId, playerId })
-        });
-        const data = await res.json();
-        if (!data.success) {
-            alert('Pick failed: ' + data.error);
+        setPicking(true); // Disable immediately
+
+        try {
+            const res = await fetch(`/api/league/${leagueId}/draft/pick`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ managerId: myManagerId, playerId })
+            });
+            const data = await res.json();
+
+            if (!data.success) {
+                alert('Pick failed: ' + data.error);
+                setPicking(false); // Re-enable on failure
+            } else {
+                // Force state update
+                const stateRes = await fetch(`/api/league/${leagueId}/draft/state`);
+                const stateData = await stateRes.json();
+                setDraftState(stateData);
+
+                // Remove from local queue
+                const qItem = queue.find(q => q.player_id === playerId);
+                if (qItem) handleRemoveFromQueue(qItem.queue_id);
+
+                setPicking(false);
+            }
+        } catch (e) {
+            console.error(e);
             setPicking(false);
-        } else {
-            const stateRes = await fetch(`/api/league/${leagueId}/draft/state`);
-            const stateData = await stateRes.json();
-            setDraftState(stateData);
-            setPicking(false);
-            const qItem = queue.find(q => q.player_id === playerId);
-            if (qItem) handleRemoveFromQueue(qItem.queue_id);
         }
     };
 
@@ -755,8 +780,13 @@ export default function DraftPage() {
                                     {recentPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No picks yet</div>}
                                     {recentPicks.map(pick => (
                                         <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-3">
-                                            <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
-                                                #{pick.pick_number}
+                                            <div className="flex flex-col items-center min-w-[30px]">
+                                                <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
+                                                    #{pick.pick_number}
+                                                </div>
+                                                <div className="text-[9px] text-slate-500 mt-0.5 max-w-[60px] truncate" title={getMemberNickname(pick.manager_id)}>
+                                                    {getMemberNickname(pick.manager_id)}
+                                                </div>
                                             </div>
                                             <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
                                                 <img
