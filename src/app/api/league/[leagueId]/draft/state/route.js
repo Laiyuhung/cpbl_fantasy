@@ -53,10 +53,24 @@ export async function GET(request, { params }) {
 
         if (error) throw error;
 
+        // 0. Check League Status first
+        const { data: statusData } = await supabase
+            .from('league_statuses')
+            .select('status')
+            .eq('league_id', leagueId)
+            .single();
+
+        const leagueStatus = statusData?.status;
+
         // Draft Completed?
         if (!currentPicks || currentPicks.length === 0) {
-            // Update status to 'post-draft' if 'in_draft'
-            await supabase.from('league_statuses').update({ status: 'post-draft' }).eq('league_id', leagueId).eq('status', 'in_draft');
+            if (leagueStatus === 'pre-draft') {
+                return NextResponse.json({ status: 'pre-draft' });
+            }
+            if (leagueStatus === 'in_draft') {
+                // Update status to 'post-draft'
+                await supabase.from('league_statuses').update({ status: 'post-draft' }).eq('league_id', leagueId);
+            }
             return NextResponse.json({ status: 'completed' });
         }
 
