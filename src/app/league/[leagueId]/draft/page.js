@@ -303,13 +303,16 @@ export default function DraftPage() {
     const { takenIds, recentPicks, myTeam, upcomingPicks } = useMemo(() => {
         if (!draftState?.picks) return { takenIds: new Set(), recentPicks: [], myTeam: [], upcomingPicks: [] };
         const picks = draftState.picks;
-        const taken = new Set(picks.map(p => p.player_id).filter(Boolean));
 
-        // Recent Picks: User requested Sort by Pick Number (Small to Large) which means "Draft History"
+        // Coerce player_id to string to ensure safe set properties
+        const taken = new Set(picks.map(p => String(p.player_id)).filter(Boolean));
+
+        // Recent Picks: "Draft History" order (Ascending Pick Number)
         const recent = picks.filter(p => p.player_id).sort((a, b) => a.pick_number - b.pick_number);
 
-        // My Team: Filter by manager_id. Ensure IDs match type (both strings usually)
-        const mine = picks.filter(p => p.manager_id == myManagerId && p.player_id).map(p => ({
+        // My Team: Coerce manager_id to string for comparison
+        const currentManagerId = String(myManagerId);
+        const mine = picks.filter(p => String(p.manager_id) === currentManagerId && p.player_id).map(p => ({
             ...p.player,
             round: p.round_number,
             pick: p.pick_number,
@@ -320,15 +323,14 @@ export default function DraftPage() {
 
         console.log('[DraftPage Debug]', {
             totalPicks: picks.length,
+            takenCount: taken.size,
             recentCount: recent.length,
-            recentFirst: recent[0],
             myTeamCount: mine.length,
-            myTeamFirst: mine[0],
-            myManagerId,
-            firstPickManagerId: picks[0]?.manager_id
+            currentManagerId,
+            firstTakenId: [...taken][0]
         });
 
-        // Upcoming: Use draftState.nextPicks but EXCLUDE the current on-the-clock pick if present
+        // Upcoming
         let upcoming = draftState.nextPicks || [];
         if (draftState.currentPick && upcoming.length > 0 && upcoming[0].pick_id === draftState.currentPick.pick_id) {
             upcoming = upcoming.slice(1);
@@ -379,7 +381,8 @@ export default function DraftPage() {
 
     const filteredPlayers = useMemo(() => {
         let result = players.filter(p => {
-            if (takenIds.has(p.player_id)) return false;
+            // Force string comparison for reliable filtering
+            if (takenIds.has(String(p.player_id))) return false;
 
             if (searchTerm && !p.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
                 !p.team?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
