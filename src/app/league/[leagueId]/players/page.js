@@ -65,6 +65,7 @@ export default function PlayersPage() {
   const [violationType, setViolationType] = useState(''); // 'foreigner_limit' etc.
   const [currentRosterState, setCurrentRosterState] = useState([]); // Store roster for dynamic slot calc
   const [naLimitState, setNaLimitState] = useState(0); // Store NA limit
+  const [allowNaToNaSlot, setAllowNaToNaSlot] = useState(false); // Store setting for NA slot allowed
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,17 +152,17 @@ export default function PlayersPage() {
         const res = await fetch(endpoint);
         const data = await res.json();
 
-        console.log('Fetched player stats:', data);
-        console.log('Endpoint:', endpoint);
+        // console.log('Fetched player stats:', data);
+        // console.log('Endpoint:', endpoint);
 
         if (data.success && data.stats) {
           // 轉換為 player_id => stats 的對照表
           const statsMap = {};
           data.stats.forEach(stat => {
-            console.log('Player stat:', stat.player_id, stat);
+            // console.log('Player stat:', stat.player_id, stat);
             statsMap[stat.player_id] = stat;
           });
-          console.log('Stats map:', statsMap);
+          // console.log('Stats map:', statsMap);
           setPlayerStats(statsMap);
         }
       } catch (err) {
@@ -419,91 +420,108 @@ export default function PlayersPage() {
 
       const myRoster = rosterData.roster || [];
       const settings = settingsData.data || {};
-      const rosterConfig = settings.roster_positions || {}; // e.g. { Minor: 2 }
+      const rosterConfig = settings.roster_positions || {}; // e.g. { Minor: 2, C: 1, ... }
 
       // Limits
       const onTeamLimit = parseInt(settings.foreigner_on_team_limit) || 999;
       const activeLimit = parseInt(settings.foreigner_active_limit) || 999;
 
-      console.log(`[PreCheck] Limits -> On-Team: ${onTeamLimit}, Active: ${activeLimit}`);
+      // Calculate Roster Size Limits from roster_positions
+      // Total Limit = Sum of all position counts
+      const totalRosterLimit = Object.values(rosterConfig).reduce((sum, count) => sum + count, 0);
+
+      // Active Roster Limit = Sum of positions EXCLUDING 'Minor' and 'NA'
+      // Note: roster_positions key for Minor might be 'Minor' or something else, but standard is 'Minor'
+      const activeRosterLimit = Object.entries(rosterConfig)
+        .filter(([key]) => !['Minor', 'NA'].includes(key))
+        .reduce((sum, [_, count]) => sum + count, 0);
 
       // 2. Identify Player & Slot
       const isForeigner = player.identity?.toLowerCase() === 'foreigner';
       const status = (player.real_life_status || 'Active').toUpperCase();
       const isNaEligible = status !== 'MAJOR';
 
-      // Minor Capacity (Check using exact keys from settings, usually 'Minor')
-      // Find key for Minor/NA
+      // Minor Capacity
       const minorKey = Object.keys(rosterConfig).find(k => k.toLowerCase() === 'minor') || 'Minor';
       const minorLimit = rosterConfig[minorKey] || 0;
+
+      // Check if league allows moving directly to NA/Injury slot
+      // Value is usually 'Yes' or 'No'
+      const allowNa = settings.allow_injured_to_injury_slot === 'Yes';
 
       // Store for dynamic recalc
       setCurrentRosterState(myRoster);
       setNaLimitState(minorLimit);
+      setAllowNaToNaSlot(allowNa);
 
       const currentMinorCount = myRoster.filter(p => ['NA', 'Minor'].includes(p.position)).length;
 
       let targetSlot = 'BN';
-      if (isNaEligible && currentMinorCount < minorLimit) {
+      // Only set to NA if: 1. Eligible, 2. Slot available, 3. League Setting allows it
+      if (allowNa && isNaEligible && currentMinorCount < minorLimit) {
         targetSlot = 'NA';
       }
 
       setProjectedAddSlot(targetSlot);
-      console.log(`[PreCheck] Target Slot: ${targetSlot}`);
 
       // 3. Check Limits
       let violation = null;
       let vType = '';
 
+      // --- A. Foreigner Check (High Priority) ---
+      // If adding a foreigner violates foreigner limits, we MUST flag this first
+      // so the user is forced to drop a foreigner.
       if (isForeigner) {
         const currentForeigners = myRoster.filter(p => p.identity?.toLowerCase() === 'foreigner');
         const onTeamCount = currentForeigners.length;
 
-        // Calculate Active Foreigners (Only exclude NA/Minor)
-        // User clarified: Active = Everything except NA. So BN counts as Active.
-        // Usually IL also counts as Active for foreigner limits? 
-        // User said "Active只排除NA而已". So IL, BN include.
+        // Calculate Active Foreigners (active includes BN, excludes NA)
         const activeForeigners = currentForeigners.filter(p => !['NA', 'Minor'].includes(p.position));
         const activeCount = activeForeigners.length;
-
-        console.log(`[PreCheck] Adding Foreigner.`);
-        console.log(`   - Current On-Team: ${onTeamCount} / ${onTeamLimit}`);
-        console.log(`   - Current Active: ${activeCount} / ${activeLimit}`);
-        console.log(`   - New Player Slot: ${targetSlot}`);
 
         // Check On-Team Limit
         if (onTeamCount + 1 > onTeamLimit) {
           violation = `Foreigner On-Team Limit Exceeded (Limit: ${onTeamLimit})`;
           vType = 'foreigner_limit';
-          console.log(`[PreCheck] VIOLATION: ${violation}`);
-        } else {
-          console.log(`[PreCheck] On-Team Limit Safe: ${onTeamCount + 1} <= ${onTeamLimit}`);
         }
 
         // Check Active Limit (Only if adding to Active slot)
-        // Since Active includes BN, and targetSlot is often BN, this IS relevant.
         const isTargetActive = !['NA', 'Minor'].includes(targetSlot);
-        if (isTargetActive) {
+        if (!violation && isTargetActive) {
           if (activeCount + 1 > activeLimit) {
-            // Only if we were adding directly to Active
-            console.log(`[PreCheck] Active Limit Risk: ${activeCount + 1} > ${activeLimit}`);
             violation = `Foreigner Active Limit Exceeded (Limit: ${activeLimit})`;
             vType = 'foreigner_active_limit';
-            console.log(`[PreCheck] VIOLATION: ${violation}`);
-          } else {
-            console.log(`[PreCheck] Active Limit Safe: ${activeCount + 1} <= ${activeLimit}`);
           }
-        } else {
-          console.log(`[PreCheck] Active Limit Check Skipped (Target ${targetSlot} is NA/Minor).`);
         }
-      } else {
-        console.log('[PreCheck] Adding Local Player. No Foreigner Check required.');
+      }
+
+      // --- B. Total Roster Limit Check ---
+      if (!violation) {
+        const currentTotalCount = myRoster.length;
+        if (currentTotalCount + 1 > totalRosterLimit) {
+          violation = `Roster Full (${totalRosterLimit}/${totalRosterLimit})`;
+          vType = 'roster_limit';
+        }
+      }
+
+      // --- C. Active Roster Limit Check ---
+      // Only applicable if targetSlot is NOT Minor/NA
+      if (!violation) {
+        const isTargetActive = !['NA', 'Minor'].includes(targetSlot);
+        if (isTargetActive) {
+          const currentActiveCount = myRoster.filter(p => !['NA', 'Minor'].includes(p.position)).length;
+          if (currentActiveCount + 1 > activeRosterLimit) {
+            violation = `Active Roster Full (${activeRosterLimit}/${activeRosterLimit})`;
+            vType = 'active_roster_limit';
+          }
+        }
       }
 
       if (violation) {
         setLimitViolationMsg(violation);
         setViolationType(vType);
         setPendingAddPlayer(player);
+        setDropCandidateID(null); // Reset selection
         setShowAddDropModal(true); // Force Drop
       } else {
         // Safe to Add standardly
@@ -539,7 +557,7 @@ export default function PlayersPage() {
     }
 
     let targetSlot = 'BN';
-    if (isNaEligible && currentMinorCount < (naLimitState || 0)) {
+    if (allowNaToNaSlot && isNaEligible && currentMinorCount < (naLimitState || 0)) {
       targetSlot = 'NA';
     }
 
@@ -547,7 +565,7 @@ export default function PlayersPage() {
       setProjectedAddSlot(targetSlot);
     }
 
-  }, [dropCandidateID, pendingAddPlayer, currentRosterState, naLimitState]);
+  }, [dropCandidateID, pendingAddPlayer, currentRosterState, naLimitState, allowNaToNaSlot]);
   // 處理新增球員到隊伍
   const handleAddPlayer = async (player, isWaiver = false) => {
     if (!myManagerId) {
@@ -1714,7 +1732,7 @@ export default function PlayersPage() {
 
             <div className="p-6">
               <div className="mb-4 text-slate-300 text-sm">
-                {limitViolationMsg}. To add <span className="text-white font-bold">{pendingAddPlayer.name}</span>, you must drop <span className="text-red-400 font-bold">{violationType === 'foreigner_limit' ? 'a Foreigner' : 'a player'}</span>.
+                {limitViolationMsg}. To add <span className="text-white font-bold">{pendingAddPlayer.name}</span>, you must drop <span className="text-red-400 font-bold">{violationType.includes('foreigner') ? 'a Foreigner' : 'a player'}</span>.
               </div>
 
               <div className="bg-slate-800/50 rounded-lg p-3 border border-purple-500/20 mb-6 flex items-center justify-between">
@@ -1729,14 +1747,14 @@ export default function PlayersPage() {
               </div>
 
               <h4 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">
-                Select {violationType === 'foreigner_limit' ? 'Foreigner' : 'Player'} to Drop
+                Select {violationType.includes('foreigner') ? 'Foreigner' : 'Player'} to Drop
               </h4>
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {getMyPlayers().map(p => {
                   const playerDetail = players.find(x => x.player_id === p.player_id);
                   if (!playerDetail) return null;
 
-                  // Filter logic: If violation is foreigner_limit, only show foreigners
+                  // Filter logic: If violation is foreigner specific, only show foreigners
                   if (violationType === 'foreigner_limit' || violationType === 'foreigner_active_limit') {
                     if (playerDetail.identity?.toLowerCase() !== 'foreigner') return null;
                   }
@@ -1767,9 +1785,22 @@ export default function PlayersPage() {
                   const isDropActive = dropPlayerInRoster && !['NA', 'Minor'].includes(dropPlayerInRoster.position);
 
                   // Validation: 
-                  // If Active Limit exceeded, we usually need to drop Active.
-                  // BUT if the new player goes to NA (because we dropped an NA player), then Active Limit is NOT violated by the Add.
-                  const isInvalidDropForActiveLimit = violationType === 'foreigner_active_limit' && !isDropActive && projectedAddSlot !== 'NA';
+                  // If Active Limit exceeded (active_roster_limit OR foreigner_active_limit), we usually need to drop Active.
+                  // BUT if the new player goes to NA (because we dropped an NA player??? No, if we add active, we must drop active OR drop NA to move someone to NA... wait)
+                  // Simplified: If violation is Active Limit, drop candidate MUST be Active.
+                  const isViolationActiveLimit = violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
+
+                  // If violation is ActiveLimit, we generally must drop an Active player to free up a slot.
+                  // Exception: If we drop an NA player, but that allows us to move an active player to NA... the system doesn't auto-move players yet usually.
+                  // So we strictly require drop to be Active if limit is Active.
+
+
+                  // Simplified Logic:
+                  // We only have a problem if we represent a Net Increase in Active count that violates the limit.
+                  // Violation exists if: Add is Active AND Drop is NOT Active.
+                  // If Add becomes NA (projectedAddSlot 'NA'), then Add is NOT Active (0 increase), so we are safe regardless of drop.
+                  const isAddActive = !['NA', 'Minor'].includes(projectedAddSlot);
+                  const isInvalidDropForActiveLimit = isViolationActiveLimit && isAddActive && !isDropActive;
 
                   return (
                     <button
@@ -1777,7 +1808,7 @@ export default function PlayersPage() {
                       disabled={!dropCandidateID || isAdding || isInvalidDropForActiveLimit}
                       className={`px-6 py-2 rounded-xl font-bold shadow-lg transition-all ${!dropCandidateID || isAdding || isInvalidDropForActiveLimit ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:scale-105'}`}
                     >
-                      {isInvalidDropForActiveLimit ? 'Drop Active Foreigner to Fix' : (isAdding ? 'Processing...' : 'Confirm Add & Drop')}
+                      {isInvalidDropForActiveLimit ? 'Drop Active Player to Fix' : (isAdding ? 'Processing...' : 'Confirm Add & Drop')}
                     </button>
                   );
                 })()}
