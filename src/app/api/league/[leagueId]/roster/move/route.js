@@ -119,6 +119,14 @@ export async function POST(request, { params }) {
 
             // Fetch Target Occupant Extended Info (Status & Positions)
 
+            // Helper: NA Eligibility (Match Frontend)
+            const checkEligibleForNa = (status) => {
+                const s = (status || '').toUpperCase();
+                return s.includes('MN') || s.includes('MINOR') || s === 'NA' ||
+                    s.includes('DEREGISTERED') || s === 'DR' || s === 'D' ||
+                    s.includes('UNREGISTERED') || s === 'NR';
+            };
+
             // 1. Get Status
             const { data: targetStatusData } = await supabase
                 .from('real_life_player_status')
@@ -144,7 +152,7 @@ export async function POST(request, { params }) {
                 occupantPositions.push('P');
             }
             // Add NA if eligible
-            if (targetStatus.toUpperCase() !== 'MAJOR') {
+            if (checkEligibleForNa(targetStatus)) {
                 occupantPositions.push('NA');
             }
 
@@ -158,14 +166,22 @@ export async function POST(request, { params }) {
 
             updates.push({ player_id: playerId, new_position: targetPosition }); // Main Player always moves
 
-            if (canSwap) {
-                // Perfect Swap
+            if (swapWithPlayerId) {
+                // If explicit swap requested, be strict
+                if (!canSwap) {
+                    return NextResponse.json({ success: false, error: `Swap target ${targetOccupant.player.name} is not eligible for ${currentPosition}` }, { status: 400 });
+                }
                 updates.push({ player_id: targetOccupant.player_id, new_position: currentPosition });
                 console.log(`[MoveRoster] Action: SWAP performed.`);
             } else {
-                // Displacement
-                updates.push({ player_id: targetOccupant.player_id, new_position: 'BN' });
-                console.log(`[MoveRoster] Action: Target moved to BN (Incompatible with ${currentPosition}).`);
+                // Implicit displacement (Legacy/Fallback)
+                if (canSwap) {
+                    updates.push({ player_id: targetOccupant.player_id, new_position: currentPosition });
+                    console.log(`[MoveRoster] Action: Auto-SWAP performed.`);
+                } else {
+                    updates.push({ player_id: targetOccupant.player_id, new_position: 'BN' });
+                    console.log(`[MoveRoster] Action: Target moved to BN (Incompatible with ${currentPosition}).`);
+                }
             }
         }
 
