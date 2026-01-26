@@ -6,7 +6,7 @@ export async function POST(req, { params }) {
   try {
     const { leagueId } = params;
     const body = await req.json();
-    const { player_id, manager_id } = body;
+    const { player_id, manager_id, position } = body;
 
     // 驗證必要參數
     if (!leagueId || !player_id || !manager_id) {
@@ -146,78 +146,85 @@ export async function POST(req, { params }) {
 
         let startDate = nowTaiwan < seasonStart ? seasonStart : nowTaiwan;
 
-        // 5. 決定目標守備位置 (default to BN)
-        let targetPos = 'BN';
+        // 5. 決定目標守備位置
+        let targetPos = 'BN'; // Default
 
-        // 取得相關設定
-        const { data: leagueSettings, error: settingsError } = await supabase
-          .from('league_settings')
-          .select('allow_injured_to_injury_slot, roster_positions')
-          .eq('league_id', leagueId)
-          .single();
+        // Check if frontend provided a position (e.g. 'NA')
+        // Only accept Valid positions if needed, or trust frontend?
+        if (position && ['NA', 'BN'].includes(position)) {
+          targetPos = position;
+          console.log(`[AddPlayer] Using requested position: ${targetPos}`);
+        } else {
+          // Auto-calculate logic (Fallback)
 
-        // 6. 檢查是否可以放入 Minor
-        // 需滿足:
-        // 1. 聯盟設定允許 allow_injured_to_injury_slot == 'Yes'
-        // 2. 聯盟有設定 Minor 格子 (limit > 0)
-        // 3. 球員真實狀態符合 'NA', 'DR', 'NR' (User request: "NR DR NA badge")
-        // 4. 當天 Minor 格子未滿
+          // 取得相關設定
+          const { data: leagueSettings, error: settingsError } = await supabase
+            .from('league_settings')
+            .select('allow_injured_to_injury_slot, roster_positions')
+            .eq('league_id', leagueId)
+            .single();
 
-        console.log(`[AddPlayer] Checking Minor slot eligibility for player ${player_id}...`);
-        console.log(`[AddPlayer] Setting - Allow Injured to Injury Slot: ${leagueSettings?.allow_injured_to_injury_slot}`);
-        console.log(`[AddPlayer] Setting - Minor Slot Limit: ${leagueSettings?.roster_positions?.['Minor']}`);
+          // 6. 檢查是否可以放入 Minor
+          // 需滿足:
+          // 1. 聯盟設定允許 allow_injured_to_injury_slot == 'Yes'
+          // 2. 聯盟有設定 Minor 格子 (limit > 0)
+          // 3. 球員真實狀態符合 'NA', 'DR', 'NR' (User request: "NR DR NA badge")
+          // 4. 當天 Minor 格子未滿
 
-        if (!settingsError && leagueSettings) {
-          const allowDirectToMinor = leagueSettings.allow_injured_to_injury_slot === 'Yes';
-          const minorLimit = leagueSettings.roster_positions?.['Minor'] || 0;
+          console.log(`[AddPlayer] Checking Minor slot eligibility for player ${player_id}...`);
+          // console.log(`[AddPlayer] Setting - Allow Injured to Injury Slot: ${leagueSettings?.allow_injured_to_injury_slot}`);
+          // console.log(`[AddPlayer] Setting - Minor Slot Limit: ${leagueSettings?.roster_positions?.['Minor']}`);
 
-          if (allowDirectToMinor && minorLimit > 0) {
-            // Fetch player's real life status
-            const { data: playerStatusData, error: statusError } = await supabase
-              .from('real_life_player_status')
-              .select('status')
-              .eq('player_id', player_id)
-              .single();
+          if (!settingsError && leagueSettings) {
+            const allowDirectToMinor = leagueSettings.allow_injured_to_injury_slot === 'Yes';
+            const minorLimit = leagueSettings.roster_positions?.['Minor'] || 0;
 
-            const playerStatus = playerStatusData?.status || 'Active'; // Default to Active? Or UNREGISTERED
-            console.log(`[AddPlayer] Player Real Life Status: ${playerStatus}`);
+            if (allowDirectToMinor && minorLimit > 0) {
+              // Fetch player's real life status
+              const { data: playerStatusData, error: statusError } = await supabase
+                .from('real_life_player_status')
+                .select('status')
+                .eq('player_id', player_id)
+                .single();
 
-            // User request: Only 'MAJOR' is NOT applicable for NA SLOT, others are okay (UNREGISTERED, DEREGISTERED, MINOR)
-            const isEligibleStatus = playerStatus.toUpperCase() !== 'MAJOR';
-            console.log(`[AddPlayer] Is eligible status for Minor (Not MAJOR)? ${isEligibleStatus}`);
+              const playerStatus = playerStatusData?.status || 'Active';
+              // console.log(`[AddPlayer] Player Real Life Status: ${playerStatus}`);
 
-            if (isEligibleStatus) {
-              // 查詢 startDate 當天，該經理在 Minor 位置的球員數量
-              // User request: 檢查 "台灣時間今天"
-              const checkDateStr = nowTaiwan.toISOString().split('T')[0];
-              console.log(`[AddPlayer] Checking Minor usage for date: ${checkDateStr}`);
+              // User request: Only 'MAJOR' is NOT applicable for NA SLOT
+              const isEligibleStatus = playerStatus.toUpperCase() !== 'MAJOR';
+              // console.log(`[AddPlayer] Is eligible status for Minor (Not MAJOR)? ${isEligibleStatus}`);
 
-              const { count, error: countError } = await supabase
-                .from('league_roster_positions')
-                .select('*', { count: 'exact', head: true })
-                .eq('league_id', leagueId)
-                .eq('manager_id', manager_id)
-                .eq('game_date', checkDateStr)
-                .eq('position', 'NA'); // User request: use 'NA' in DB
+              if (isEligibleStatus) {
+                // 查詢 startDate 當天，該經理在 Minor 位置的球員數量
+                const checkDateStr = nowTaiwan.toISOString().split('T')[0];
+                // console.log(`[AddPlayer] Checking Minor usage for date: ${checkDateStr}`);
 
-              if (!countError) {
-                console.log(`[AddPlayer] Current Minor (NA) usage: ${count} / ${minorLimit}`);
-                // 如果未滿，則目標設為 NA
-                if (count < minorLimit) {
-                  targetPos = 'NA';
-                  console.log(`[AddPlayer] >>> DECISION: Assign to NA slot.`);
+                const { count, error: countError } = await supabase
+                  .from('league_roster_positions')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('league_id', leagueId)
+                  .eq('manager_id', manager_id)
+                  .eq('game_date', checkDateStr)
+                  .eq('position', 'NA');
+
+                if (!countError) {
+                  // console.log(`[AddPlayer] Current Minor (NA) usage: ${count} / ${minorLimit}`);
+                  if (count < minorLimit) {
+                    targetPos = 'NA';
+                    console.log(`[AddPlayer] >>> DECISION: Assign to NA slot.`);
+                  } else {
+                    console.log(`[AddPlayer] >>> DECISION: Minor slot full. Assign to BN.`);
+                  }
                 } else {
-                  console.log(`[AddPlayer] >>> DECISION: Minor slot full. Assign to BN.`);
+                  console.error('Failed to count minor usage:', countError);
                 }
               } else {
-                console.error('Failed to count minor usage:', countError);
+                console.log(`[AddPlayer] >>> DECISION: Status not eligible for Minor. Assign to BN.`);
               }
             } else {
-              console.log(`[AddPlayer] >>> DECISION: Status not eligible for Minor. Assign to BN.`);
+              if (!allowDirectToMinor) console.log(`[AddPlayer] >>> DECISION: Settings do not allow direct to Minor.`);
+              else if (minorLimit <= 0) console.log(`[AddPlayer] >>> DECISION: League has no Minor slots.`);
             }
-          } else {
-            if (!allowDirectToMinor) console.log(`[AddPlayer] >>> DECISION: Settings do not allow direct to Minor.`);
-            else if (minorLimit <= 0) console.log(`[AddPlayer] >>> DECISION: League has no Minor slots.`);
           }
         }
 
