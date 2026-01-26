@@ -37,6 +37,7 @@ export default function PlayersPage() {
   const failedImages = useRef(new Set()); // 記錄加載失敗的球員ID
   const [photoSrcMap, setPhotoSrcMap] = useState({}); // 每位球員解析後的圖片路徑快取
   const [rosterPositions, setRosterPositions] = useState({}); // 聯盟守備位置設定
+  const [leagueStatus, setLeagueStatus] = useState('unknown'); // 聯盟狀態
   const [showInfoModal, setShowInfoModal] = useState(false); // 守位資格說明視窗
   const [showLegendModal, setShowLegendModal] = useState(false); // Legend視窗
   const [timeWindow, setTimeWindow] = useState('2026 Season'); // 數據區間選擇
@@ -108,6 +109,7 @@ export default function PlayersPage() {
           setMembers(leagueData.members || []);
           setMembers(leagueData.members || []);
           setRosterPositions(leagueData.league?.roster_positions || {});
+          setLeagueStatus(leagueData.status || 'unknown');
 
           // Get trade deadline info
           setTradeEndDate(leagueData.league?.trade_end_date || null);
@@ -889,6 +891,17 @@ export default function PlayersPage() {
     const ownership = ownerships.find(
       o => o.player_id === player.player_id
     );
+
+    // Check League Status
+    const allowedStatuses = ['in_season', 'playoffs'];
+    // Normalize status just in case (e.g. In Season vs in_season) - usually DB uses lowercase specific enum
+    // If unknown, default to hide? Or show? Safe is hide.
+    // Assuming API returns raw DB value: 'pre_season', 'in_season', 'playoffs', 'post_season'
+    const currentStatus = (leagueStatus || '').toLowerCase();
+
+    if (!allowedStatuses.includes(currentStatus)) {
+      return <div className="w-8 h-8"></div>;
+    }
 
 
     // 如果沒有找到 ownership，顯示綠色 + 按鈕
