@@ -108,15 +108,15 @@ export default function LeagueLayout({ children }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Sub Navigation */}
-      {!pathname.includes('/join') && (
+      {!pathname.includes('/join') && !pathname.includes('/draft') && (
         <div className="sticky top-0 z-40 bg-gradient-to-br from-slate-900/95 via-purple-900/95 to-slate-900/95 backdrop-blur-lg border-b border-purple-500/20 shadow-lg">
           <div className="max-w-7xl mx-auto px-8 py-4">
             <div className="flex items-center gap-1">
               <a
                 href={`/league/${leagueId}`}
                 className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${isActive(`/league/${leagueId}`) && !pathname.includes('/league_settings') && !pathname.includes('/edit_league_settings') && !pathname.includes('/players') && !pathname.includes('/roster')
-                    ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
-                    : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
+                  ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
+                  : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
                   }`}
               >
                 Overview
@@ -124,8 +124,8 @@ export default function LeagueLayout({ children }) {
               <a
                 href={`/league/${leagueId}/players`}
                 className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${pathname.includes('/players')
-                    ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
-                    : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
+                  ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
+                  : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
                   }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -138,8 +138,8 @@ export default function LeagueLayout({ children }) {
               <a
                 href={`/league/${leagueId}/roster`}
                 className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${pathname.includes('/roster')
-                    ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
-                    : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
+                  ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
+                  : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
                   }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -152,8 +152,8 @@ export default function LeagueLayout({ children }) {
               <a
                 href={`/league/${leagueId}/league_settings`}
                 className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${pathname.includes('/league_settings') || pathname.includes('/edit_league_settings')
-                    ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
-                    : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
+                  ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
+                  : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
                   }`}
               >
                 <div className="flex items-center justify-center gap-2">
