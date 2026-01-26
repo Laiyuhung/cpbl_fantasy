@@ -314,11 +314,14 @@ export default function DraftPage() {
         const currentManagerId = String(myManagerId);
         const mine = picks.filter(p => String(p.manager_id) === currentManagerId && p.player_id).map(p => ({
             ...p.player,
+            player_id: p.player_id,  // Ensure player_id is available for stats lookup
             round: p.round_number,
             pick: p.pick_number,
             name: p.player?.name || 'Unknown',
             team: p.player?.team || '',
-            position_list: p.player?.position || ''
+            position_list: p.player?.position_list || '',
+            batter_or_pitcher: p.player?.batter_or_pitcher || '',
+            original_name: p.player?.original_name || ''
         }));
 
         console.log('[DraftPage Debug]', {
