@@ -26,12 +26,68 @@ export default function DraftPage() {
     const [photoSrcMap, setPhotoSrcMap] = useState({});
     const failedImages = useRef(new Set());
 
+    // Queue State
+    const [queue, setQueue] = useState([]);
+    const [activeTab, setActiveTab] = useState('team'); // 'team' or 'queue'
+
     // Fetch Manager ID
     useEffect(() => {
         const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
         const userId = cookie?.split('=')[1];
         if (userId) setMyManagerId(userId);
     }, []);
+
+    // Fetch Queue
+    useEffect(() => {
+        if (!myManagerId) return;
+        const fetchQueue = async () => {
+            const res = await fetch(`/api/league/${leagueId}/draft/queue?managerId=${myManagerId}`);
+            const data = await res.json();
+            if (data.success) {
+                setQueue(data.queue || []);
+            }
+        };
+        fetchQueue();
+    }, [leagueId, myManagerId]);
+
+    const handleAddToQueue = async (player) => {
+        // Optimistic
+        const optimItem = { queue_id: 'temp-' + Date.now(), player_id: player.player_id, player };
+        setQueue(prev => [...prev, optimItem]);
+
+        try {
+            const res = await fetch(`/api/league/${leagueId}/draft/queue`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ managerId: myManagerId, playerId: player.player_id })
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setQueue(prev => prev.filter(i => i.player_id !== player.player_id));
+                alert('Add to queue failed');
+            } else {
+                const qRes = await fetch(`/api/league/${leagueId}/draft/queue?managerId=${myManagerId}`);
+                const qData = await qRes.json();
+                if (qData.success) setQueue(qData.queue);
+            }
+        } catch (e) {
+            setQueue(prev => prev.filter(i => i.player_id !== player.player_id));
+            console.error(e);
+        }
+    };
+
+    const handleRemoveFromQueue = async (queueId) => {
+        setQueue(prev => prev.filter(i => i.queue_id !== queueId));
+        try {
+            await fetch(`/api/league/${leagueId}/draft/queue`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ queueId })
+            });
+        } catch (e) { console.error(e); }
+    };
+
+    const isQueued = (playerId) => queue.some(q => q.player_id === playerId);
 
     // Poll Draft State
     useEffect(() => {
@@ -112,7 +168,7 @@ export default function DraftPage() {
     }, [leagueId]);
 
     // ---------------------------------------------------------
-    // Helper Logic (Copied/Adapted from Players Page)
+    // Helper Logic 
     // ---------------------------------------------------------
 
     // Filter Positions based on League Settings
@@ -148,14 +204,12 @@ export default function DraftPage() {
         return paths;
     };
 
-    // Batch Resolve Photos (Performance)
+    // Batch Resolve Photos 
     useEffect(() => {
         let cancelled = false;
         const resolvePhotos = async () => {
             if (!players || players.length === 0) return;
 
-            // Only attempt to resolve if NOT already resolved? 
-            // For now, resolve all initially loaded players.
             const batchPayload = players.map(player => ({
                 id: player.player_id,
                 candidates: getPlayerPhotoPaths(player).filter(p => !p.endsWith('/defaultPlayer.png'))
@@ -173,7 +227,6 @@ export default function DraftPage() {
                 }
             } catch {
                 if (!cancelled) {
-                    // Fallback all
                     const fallback = Object.fromEntries(players.map(p => [p.player_id, '/photo/defaultPlayer.png']));
                     setPhotoSrcMap(fallback);
                 }
@@ -192,26 +245,20 @@ export default function DraftPage() {
         const paths = getPlayerPhotoPaths(player);
 
         let currentIndex = -1;
-        // Check current index
         for (let i = 0; i < paths.length; i++) {
-            // Use simple include check (robust enough for relative/absolute)
             if (currentSrc.includes(encodeURI(paths[i])) || currentSrc.includes(paths[i])) {
                 currentIndex = i;
                 break;
             }
         }
 
-        // If fail to find index (e.g. CDN mismatch), assume 0 and try next
         if (currentIndex === -1) currentIndex = 0;
 
         const nextIndex = currentIndex + 1;
         if (nextIndex < paths.length) {
-            // Try next
             e.target.src = paths[nextIndex];
         } else {
-            // Final Fallback
             e.target.src = '/photo/defaultPlayer.png';
-            // Prevent loop
             e.target.onerror = null;
         }
     };
@@ -227,13 +274,11 @@ export default function DraftPage() {
         const picks = draftState.picks;
         const taken = new Set(picks.map(p => p.player_id).filter(Boolean));
 
-        // Recent: Sort by picked_at desc, exclude nulls
         const recent = picks
             .filter(p => p.player_id && p.picked_at)
             .sort((a, b) => new Date(b.picked_at) - new Date(a.picked_at))
             .slice(0, 10); // Show last 10
 
-        // My Team
         const mine = picks
             .filter(p => p.manager_id === myManagerId && p.player_id)
             .map(p => ({
@@ -265,6 +310,12 @@ export default function DraftPage() {
             const stateData = await stateRes.json();
             setDraftState(stateData);
             setPicking(false);
+
+            // If picked from Queue, remove local
+            const qItem = queue.find(q => q.player_id === playerId);
+            if (qItem) {
+                handleRemoveFromQueue(qItem.queue_id);
+            }
         }
     };
 
@@ -450,17 +501,26 @@ export default function DraftPage() {
                                             <span className="text-sm font-mono text-cyan-300">{filterPositions(player)}</span>
                                         </td>
                                         <td className="p-3 text-right bg-slate-800/50 rounded-r-lg group-hover:bg-slate-700/50 border-y border-r border-transparent group-hover:border-slate-600">
-                                            <button
-                                                onClick={() => handlePick(player.player_id)}
-                                                disabled={picking || draftState?.currentPick?.manager_id !== myManagerId}
-                                                className={`px-4 py-1.5 rounded text-xs font-bold shadow-md transition-all
-                                                    ${draftState?.currentPick?.manager_id === myManagerId
-                                                        ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
-                                                        : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
-                                                    }`}
-                                            >
-                                                {picking && draftState?.currentPick?.manager_id === myManagerId ? '...' : 'DRAFT'}
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => isQueued(player.player_id) ? handleRemoveFromQueue(queue.find(q => q.player_id === player.player_id)?.queue_id) : handleAddToQueue(player)}
+                                                    className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${isQueued(player.player_id) ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                                                    title={isQueued(player.player_id) ? "Remove from Queue" : "Add to Queue"}
+                                                >
+                                                    {isQueued(player.player_id) ? '★' : '☆'}
+                                                </button>
+                                                <button
+                                                    onClick={() => handlePick(player.player_id)}
+                                                    disabled={picking || draftState?.currentPick?.manager_id !== myManagerId}
+                                                    className={`px-4 py-1.5 rounded text-xs font-bold shadow-md transition-all
+                                                        ${draftState?.currentPick?.manager_id === myManagerId
+                                                            ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
+                                                            : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
+                                                        }`}
+                                                >
+                                                    {picking && draftState?.currentPick?.manager_id === myManagerId ? '...' : 'DRAFT'}
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -483,7 +543,7 @@ export default function DraftPage() {
                                     </div>
                                     <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
                                         <img
-                                            src={getPlayerPhoto(pick.player || {})}
+                                            src={pick.player?.photo_url || getPlayerPhoto(pick.player || {})}
                                             onError={(e) => handleImageError(e, pick.player || {})}
                                             className="w-full h-full object-cover"
                                         />
@@ -497,25 +557,48 @@ export default function DraftPage() {
                         </div>
                     </div>
 
-                    {/* My Team */}
+                    {/* My Team & Queue Tabs */}
                     <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm">
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700/50 pb-2 flex justify-between">
-                            My Team
-                            <span className="text-slate-500">{myTeam.length}/??</span>
-                        </h2>
+                        <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
+                            <button onClick={() => setActiveTab('team')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'team' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                My Team ({myTeam.length})
+                            </button>
+                            <button onClick={() => setActiveTab('queue')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'queue' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                My Queue ({queue.length})
+                            </button>
+                        </div>
+
                         <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                            {myTeam.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Your roster is empty</div>}
-                            {myTeam.map((p, i) => (
-                                <div key={i} className="flex justify-between items-center text-sm p-2 hover:bg-slate-800/50 rounded transition-colors group">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-slate-500 font-mono w-4">{filterPositions(p).split(',')[0]}</span>
-                                        <span className="text-slate-300 font-medium group-hover:text-white">{p.name}</span>
-                                    </div>
-                                    <span className={`text-[10px] px-1.5 rounded border ${getTeamColor(p.team)}`}>
-                                        {getTeamAbbr(p.team)}
-                                    </span>
-                                </div>
-                            ))}
+                            {activeTab === 'team' ? (
+                                <>
+                                    {myTeam.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Your roster is empty</div>}
+                                    {myTeam.map((p, i) => (
+                                        <div key={i} className="flex justify-between items-center text-sm p-2 hover:bg-slate-800/50 rounded transition-colors group">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-500 font-mono w-4">{filterPositions(p).split(',')[0]}</span>
+                                                <span className="text-slate-300 font-medium group-hover:text-white">{p.name}</span>
+                                            </div>
+                                            <span className={`text-[10px] px-1.5 rounded border ${getTeamColor(p.team)}`}>
+                                                {getTeamAbbr(p.team)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </>
+                            ) : (
+                                <>
+                                    {queue.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Queue is empty</div>}
+                                    {queue.map((item, i) => (
+                                        <div key={item.queue_id} className="flex justify-between items-center text-sm p-2 hover:bg-slate-800/50 rounded transition-colors group">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-purple-400 font-mono font-bold text-xs w-4">{i + 1}</span>
+                                                <span className="text-slate-300 font-medium group-hover:text-white">{item.player.name}</span>
+                                                {takenIds.has(item.player_id) && <span className="text-[10px] text-red-400 bg-red-900/30 px-1 rounded">TAKEN</span>}
+                                            </div>
+                                            <button onClick={() => handleRemoveFromQueue(item.queue_id)} className="text-slate-500 hover:text-red-400">×</button>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -101,14 +101,25 @@ export async function GET(request, { params }) {
 
         // Draft Completed?
         if (!currentPicks || currentPicks.length === 0) {
-            if (leagueStatus === 'pre-draft') {
+            // Debug: Check if TOTAL picks > 0
+            const { count } = await supabase.from('draft_picks').select('*', { count: 'exact', head: true }).eq('league_id', leagueId);
+
+            if (count === 0) {
                 return NextResponse.json({
-                    status: 'pre-draft',
+                    status: 'pre-draft', // No picks generated yet
                     startTime: settings?.live_draft_time,
                     message: 'Draft order not generated yet'
                 });
             }
-            if (leagueStatus === 'in_draft') {
+
+            if (leagueStatus === 'pre-draft') {
+                return NextResponse.json({
+                    status: 'pre-draft',
+                    startTime: settings?.live_draft_time,
+                    message: 'Waiting for start'
+                });
+            }
+            if (leagueStatus === 'in_draft' || !leagueStatus) { // Or active
                 // Update status to 'post-draft'
                 await supabase.from('league_statuses').update({ status: 'post-draft' }).eq('league_id', leagueId);
             }
@@ -135,17 +146,57 @@ export async function GET(request, { params }) {
         else if (new Date(currentPick.deadline) < now) {
             console.log(`[Draft] Pick ${currentPick.pick_number} expired. Auto-picking...`);
 
-            const randomPlayerId = await getRandomAvailablePlayer(leagueId);
+            // 1. Check Draft Queue for this Manager
+            const { data: queueItems } = await supabase
+                .from('draft_queues')
+                .select('player_id, queue_id')
+                .eq('league_id', leagueId)
+                .eq('manager_id', currentPick.manager_id)
+                .order('rank_order', { ascending: true });
 
-            if (randomPlayerId) {
+            let pickedPlayerId = null;
+            let usedQueueId = null;
+
+            if (queueItems && queueItems.length > 0) {
+                // Check if available
+                const { data: taken } = await supabase
+                    .from('draft_picks')
+                    .select('player_id')
+                    .eq('league_id', leagueId)
+                    .not('player_id', 'is', null);
+
+                const takenSet = new Set(taken?.map(p => p.player_id) || []);
+
+                for (const item of queueItems) {
+                    if (!takenSet.has(item.player_id)) {
+                        pickedPlayerId = item.player_id;
+                        usedQueueId = item.queue_id;
+                        console.log(`[Draft] Picking from Queue: ${pickedPlayerId}`);
+                        break;
+                    }
+                }
+            }
+
+            // 2. Fallback to Random
+            if (!pickedPlayerId) {
+                pickedPlayerId = await getRandomAvailablePlayer(leagueId);
+            }
+
+            if (pickedPlayerId) {
+                // Determine 'is_auto_picked': true unless from queue? Queue is intentional but automated. Let's mark as true.
                 await supabase
                     .from('draft_picks')
                     .update({
-                        player_id: randomPlayerId,
+                        player_id: pickedPlayerId,
                         is_auto_picked: true,
                         picked_at: now.toISOString()
                     })
                     .eq('pick_id', currentPick.pick_id);
+
+                // Remove from Queue if used
+                if (usedQueueId) {
+                    await supabase.from('draft_queues').delete().eq('queue_id', usedQueueId);
+                }
 
                 // Get NEXT pick
                 const { data: nextPicks } = await supabase
@@ -166,6 +217,8 @@ export async function GET(request, { params }) {
                         .eq('pick_id', currentPick.pick_id);
                     currentPick.deadline = nextDeadline.toISOString();
                 } else {
+                    // Update Status to Post-Draft immediately
+                    await supabase.from('league_statuses').update({ status: 'post-draft' }).eq('league_id', leagueId);
                     return NextResponse.json({ status: 'completed' });
                 }
             } else {
