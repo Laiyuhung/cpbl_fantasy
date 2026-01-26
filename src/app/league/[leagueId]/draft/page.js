@@ -305,11 +305,11 @@ export default function DraftPage() {
         const picks = draftState.picks;
         const taken = new Set(picks.map(p => p.player_id).filter(Boolean));
 
-        // Recent Picks: Filter those with player_id, sort by picked_at desc
-        const recent = picks.filter(p => p.player_id).sort((a, b) => new Date(b.picked_at) - new Date(a.picked_at));
+        // Recent Picks: User requested Sort by Pick Number (Small to Large) which means "Draft History"
+        const recent = picks.filter(p => p.player_id).sort((a, b) => a.pick_number - b.pick_number);
 
-        // My Team: Filter by manager_id and valid player_id
-        const mine = picks.filter(p => p.manager_id === myManagerId && p.player_id).map(p => ({
+        // My Team: Filter by manager_id. Ensure IDs match type (both strings usually)
+        const mine = picks.filter(p => p.manager_id == myManagerId && p.player_id).map(p => ({
             ...p.player,
             round: p.round_number,
             pick: p.pick_number,
@@ -317,6 +317,16 @@ export default function DraftPage() {
             team: p.player?.team || '',
             position_list: p.player?.position || ''
         }));
+
+        console.log('[DraftPage Debug]', {
+            totalPicks: picks.length,
+            recentCount: recent.length,
+            recentFirst: recent[0],
+            myTeamCount: mine.length,
+            myTeamFirst: mine[0],
+            myManagerId,
+            firstPickManagerId: picks[0]?.manager_id
+        });
 
         // Upcoming: Use draftState.nextPicks but EXCLUDE the current on-the-clock pick if present
         let upcoming = draftState.nextPicks || [];
@@ -582,7 +592,7 @@ export default function DraftPage() {
                 {/* Draft Order Ticker */}
                 <div className="bg-slate-900/80 border border-slate-700 rounded-lg p-2 flex items-center gap-2 overflow-x-auto scrollbar-hide shadow-inner">
                     <span className="text-xs font-bold text-slate-500 uppercase px-2 shrink-0">Up Next:</span>
-                    {activeTab === 'team' && draftState?.currentPick && (
+                    {draftState?.currentPick && (
                         <div className="flex items-center gap-2 animate-pulse bg-purple-900/40 px-3 py-1.5 rounded border border-purple-500/50 shrink-0">
                             <span className="text-xs font-mono text-purple-300">Pick {draftState.currentPick.pick_number}</span>
                             <span className="text-xs text-slate-400">-</span>
