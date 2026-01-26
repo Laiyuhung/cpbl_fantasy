@@ -205,7 +205,7 @@ export async function GET(request, { params }) {
                 .from('draft_picks')
                 .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position)')
                 .eq('league_id', leagueId)
-                .not('player_id', 'is', null)
+                .filter('player_id', 'not.is', null)
                 .order('pick_number', { ascending: true });
 
             // Debug: Check ALL picks to understand the state
@@ -266,7 +266,7 @@ export async function GET(request, { params }) {
                 .from('draft_picks')
                 .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position)')
                 .eq('league_id', leagueId)
-                .not('player_id', 'is', null)
+                .filter('player_id', 'not.is', null)
                 .order('pick_number', { ascending: true });
 
             return NextResponse.json({ status: 'completed', picks: picks || [] });
