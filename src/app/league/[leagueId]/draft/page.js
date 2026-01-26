@@ -48,6 +48,11 @@ export default function DraftPage() {
         if (userId) setMyManagerId(userId);
     }, []);
 
+    // Filter Reset Logic
+    useEffect(() => {
+        setFilterPos('All');
+    }, [filterType]);
+
     // Fetch Queue
     useEffect(() => {
         if (!myManagerId) return;
@@ -268,7 +273,7 @@ export default function DraftPage() {
         const recent = picks.filter(p => p.player_id).sort((a, b) => new Date(b.picked_at) - new Date(a.picked_at)).slice(0, 10);
         const mine = picks.filter(p => p.manager_id === myManagerId && p.player_id).map(p => ({ ...p.player, round: p.round_number, pick: p.pick_number }));
 
-        // Upcoming: Use draftState.nextPicks if available, else infer
+        // Upcoming: Use draftState.nextPicks if available
         const upcoming = draftState.nextPicks || [];
 
         return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming };
@@ -315,6 +320,7 @@ export default function DraftPage() {
 
             if (filterPos !== 'All') {
                 const posList = filterPositions(p);
+                // Inclusive check for comma-separated positions (e.g. filter 'SS' matches '2B, SS')
                 if (!posList.includes(filterPos)) return false;
             }
 
@@ -378,6 +384,7 @@ export default function DraftPage() {
         if (!player) return null;
         const isBatter = player.batter_or_pitcher === 'batter';
         const cats = isBatter ? batterStatCategories : pitcherStatCategories;
+        const showOriginalName = player.original_name && player.original_name !== player.name;
 
         return (
             <div key={item.queue_id} className="flex flex-col text-sm p-3 hover:bg-slate-800/50 rounded transition-colors group border-b border-slate-700/50">
@@ -388,8 +395,13 @@ export default function DraftPage() {
                             <div className="flex items-baseline gap-2">
                                 <span className="text-slate-200 font-bold group-hover:text-white text-base">{player.name}</span>
                                 <span className="text-xs text-slate-400 font-mono">{filterPositions(player)}</span>
+                                <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(player.team)}`}>
+                                    {getTeamAbbr(player.team)}
+                                </span>
                             </div>
-                            <div className="text-[10px] text-slate-500">{getTeamAbbr(player.team)} {takenIds.has(item.player_id) && <span className="ml-1 text-red-500 bg-red-900/30 px-1 rounded">TAKEN</span>}</div>
+                            {showOriginalName && (
+                                <div className="text-[10px] text-slate-500 mt-0.5">{player.original_name}</div>
+                            )}
                         </div>
                     </div>
                     <button onClick={() => handleRemoveFromQueue(item.queue_id)} className="text-slate-500 hover:text-red-400 p-1">×</button>
@@ -424,6 +436,20 @@ export default function DraftPage() {
     );
 
     const currentStatCats = filterType === 'batter' ? batterStatCategories : pitcherStatCategories;
+
+    // Filter Positions Options
+    const getPosOptions = () => {
+        const pitcherPos = ['SP', 'RP', 'P'];
+        return Object.keys(rosterPositions)
+            .filter(k => k !== 'BN' && k !== 'IL')
+            .filter(k => {
+                if (filterType === 'pitcher') {
+                    return pitcherPos.includes(k);
+                } else {
+                    return !pitcherPos.includes(k);
+                }
+            });
+    };
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-4 font-sans">
@@ -469,7 +495,6 @@ export default function DraftPage() {
                                         ⏰ Starts: {new Date(draftState.startTime).toLocaleString()}
                                     </div>
                                 )}
-                                <button onClick={() => setShowLegend(true)} className="mt-2 text-xs text-purple-400 hover:text-purple-300 underline">View Legend</button>
                             </div>
                         ) : (
                             <div className="text-right bg-slate-800/80 p-3 rounded-lg border border-yellow-500/30 w-full">
@@ -493,6 +518,7 @@ export default function DraftPage() {
                             <span className="text-[10px] bg-purple-600 text-white px-1 rounded">NOW</span>
                         </div>
                     )}
+                    {upcomingPicks.length === 0 && <span className="text-xs text-slate-600 italic px-2">No upcoming picks</span>}
                     {upcomingPicks.map((pick, i) => (
                         <div key={pick.pick_id} className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded border border-slate-700/50 shrink-0 opacity-80 hover:opacity-100 transition-opacity">
                             <span className="text-xs font-mono text-slate-400">#{pick.pick_number}</span>
@@ -523,6 +549,14 @@ export default function DraftPage() {
                         </div>
 
                         <div className="flex flex-wrap gap-2 items-center">
+                            {/* Legend Button moved here */}
+                            <button
+                                onClick={() => setShowLegend(true)}
+                                className="bg-slate-800 border border-slate-600 text-purple-400 hover:text-white hover:bg-purple-600/50 hover:border-purple-500 px-3 py-1.5 rounded text-xs transition-all font-bold"
+                            >
+                                Legend
+                            </button>
+
                             <select
                                 className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
                                 value={filterTeam}
@@ -543,10 +577,7 @@ export default function DraftPage() {
                                 onChange={e => setFilterPos(e.target.value)}
                             >
                                 <option value="All">All Positions</option>
-                                {Object.keys(rosterPositions)
-                                    .filter(k => k !== 'BN' && k !== 'IL')
-                                    .map(k => <option key={k} value={k}>{k}</option>)
-                                }
+                                {getPosOptions().map(k => <option key={k} value={k}>{k}</option>)}
                             </select>
 
                             <input
@@ -563,9 +594,7 @@ export default function DraftPage() {
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-slate-900/95 sticky top-0 z-10 text-[10px] text-slate-400 uppercase tracking-wider font-semibold shadow-md">
                                 <tr>
-                                    <th className="p-2 border-b border-slate-700 min-w-[180px]">Player</th>
-                                    <th className="p-2 border-b border-slate-700 text-center w-12">Sts</th>
-                                    <th className="p-2 border-b border-slate-700 text-center w-20">Pos</th>
+                                    <th className="p-2 border-b border-slate-700 min-w-[250px]">Player</th>
                                     {currentStatCats.map(cat => (
                                         <th key={cat} className="p-2 border-b border-slate-700 text-center min-w-[40px] cursor-pointer hover:text-white transition-colors"
                                             onClick={() => handleSort(cat)}
@@ -583,14 +612,15 @@ export default function DraftPage() {
                                 {filteredPlayers.map(player => {
                                     const realStatus = player.real_life_status || '';
                                     const isForeigner = player.identity?.toLowerCase() === 'foreigner';
-                                    const showStatus = ['NR', 'NA', 'DR'].includes(realStatus) ? realStatus : null;
+                                    const showStatus = ['NR', ' NA', 'NA', 'DR'].includes(realStatus) ? realStatus : null;
+                                    const showOriginalName = player.original_name && player.original_name !== player.name;
 
                                     return (
                                         <tr key={player.player_id} className="group hover:bg-slate-700/40 transition-colors border-b border-slate-800/50">
-                                            {/* Player Info */}
+                                            {/* Player Info Combined */}
                                             <td className="p-2">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
                                                         <img
                                                             src={getPlayerPhoto(player)}
                                                             onError={(e) => handleImageError(e, player)}
@@ -598,34 +628,30 @@ export default function DraftPage() {
                                                             className="w-full h-full object-cover"
                                                         />
                                                     </div>
-                                                    <div>
-                                                        <div className="font-bold text-slate-200 text-sm">{player.name}</div>
-                                                        <div className="text-[10px] text-slate-500">{player.original_name}</div>
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-baseline gap-2">
+                                                            <span className="font-bold text-slate-200 text-base">{player.name}</span>
+                                                            <span className="text-slate-400 text-sm">- {filterPositions(player)}</span>
+                                                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(player.team)}`}>
+                                                                {getTeamAbbr(player.team)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            {showOriginalName && (
+                                                                <span className="text-[10px] text-slate-500">{player.original_name}</span>
+                                                            )}
+                                                            <div className="flex gap-1">
+                                                                {isForeigner && (
+                                                                    <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                )}
+                                                                {showStatus && (
+                                                                    <span className="text-[9px] font-bold bg-slate-700/60 text-slate-300 px-1.5 rounded border border-slate-500/30">
+                                                                        {showStatus}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-
-                                            {/* Status Badge (F / NR / DR / NA) */}
-                                            <td className="p-2 text-center">
-                                                <div className="flex flex-col gap-1 items-center">
-                                                    {isForeigner && (
-                                                        <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                    )}
-                                                    {showStatus && (
-                                                        <span className="text-[9px] font-bold bg-red-900/50 text-red-300 px-1 rounded border border-red-500/30">
-                                                            {showStatus}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-
-                                            {/* Position with Team Badge */}
-                                            <td className="p-2 text-center">
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <span className="text-xs font-mono text-cyan-300">{filterPositions(player)}</span>
-                                                    <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(player.team)}`}>
-                                                        {getTeamAbbr(player.team)}
-                                                    </span>
                                                 </div>
                                             </td>
 
@@ -644,14 +670,14 @@ export default function DraftPage() {
                                                 <div className="flex items-center justify-end gap-1">
                                                     <button
                                                         onClick={() => isQueued(player.player_id) ? handleRemoveFromQueue(queue.find(q => q.player_id === player.player_id)?.queue_id) : handleAddToQueue(player)}
-                                                        className={`w-7 h-7 rounded flex items-center justify-center transition-colors ${isQueued(player.player_id) ? 'bg-purple-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 hover:text-white'}`}
+                                                        className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${isQueued(player.player_id) ? 'bg-purple-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 hover:text-white'}`}
                                                     >
                                                         {isQueued(player.player_id) ? '★' : '☆'}
                                                     </button>
                                                     <button
                                                         onClick={() => handlePick(player.player_id)}
                                                         disabled={picking || draftState?.currentPick?.manager_id !== myManagerId}
-                                                        className={`px-3 py-1 rounded-[4px] text-[10px] font-bold shadow-md transition-all
+                                                        className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all
                                                             ${draftState?.currentPick?.manager_id === myManagerId
                                                                 ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
                                                                 : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'

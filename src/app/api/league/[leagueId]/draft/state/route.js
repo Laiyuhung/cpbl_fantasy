@@ -208,10 +208,20 @@ export async function GET(request, { params }) {
                 .not('player_id', 'is', null)
                 .order('pick_number', { ascending: true });
 
+            // Get Next Picks Preview (e.g., next 12)
+            const { data: nextPicks } = await supabase
+                .from('draft_picks')
+                .select('pick_id, pick_number, round_number, manager_id')
+                .eq('league_id', leagueId)
+                .is('player_id', null)
+                .order('pick_number', { ascending: true })
+                .limit(12);
+
             return NextResponse.json({
                 status: 'active',
                 currentPick,
                 picks: picks || [],
+                nextPicks: nextPicks || [],
                 serverTime: now.toISOString()
             });
         }
