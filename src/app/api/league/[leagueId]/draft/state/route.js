@@ -201,12 +201,29 @@ export async function GET(request, { params }) {
             }
 
             // Return Active State
-            const { data: picks } = await supabase
+            const { data: picks, error: picksError } = await supabase
                 .from('draft_picks')
                 .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position)')
                 .eq('league_id', leagueId)
                 .not('player_id', 'is', null)
                 .order('pick_number', { ascending: true });
+
+            // Debug: Check ALL picks to understand the state
+            const { data: allPicksDebug } = await supabase
+                .from('draft_picks')
+                .select('pick_number, player_id, manager_id')
+                .eq('league_id', leagueId)
+                .order('pick_number', { ascending: true })
+                .limit(10);
+
+            console.log(`[DraftState] Completed picks found: ${picks?.length || 0}`);
+            console.log(`[DraftState] First 10 picks (all): ${JSON.stringify(allPicksDebug)}`);
+            if (picksError) {
+                console.error('[DraftState] Error fetching picks:', picksError);
+            }
+            if (picks && picks.length > 0) {
+                console.log(`[DraftState] First completed pick: ${JSON.stringify(picks[0])}`);
+            }
 
             // Get Next Picks Preview (e.g., next 12)
             const { data: nextPicks, error: nextPicksError } = await supabase
