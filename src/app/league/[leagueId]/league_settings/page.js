@@ -733,13 +733,13 @@ export default function LeagueSettingsPage() {
                 <span className="text-white font-semibold capitalize">{leagueSettings.invite_permissions?.replace('_', ' ')}</span>
               </div>
               <div className="flex justify-between items-center py-3">
-                <span className="text-purple-300/70 font-medium">League Status</span>
                 <span className={`font-bold px-3 py-1 rounded-full text-sm ${leagueStatus === 'pre-draft' ? 'bg-blue-500/30 text-blue-300' :
-                  leagueStatus === 'drafting' ? 'bg-yellow-500/30 text-yellow-300' :
+                  leagueStatus === 'drafting now' ? 'bg-yellow-500/30 text-yellow-300' :
                     leagueStatus === 'in-season' ? 'bg-green-500/30 text-green-300' :
-                      'bg-gray-500/30 text-gray-300'
+                      leagueStatus === 'post-draft & pre-season' ? 'bg-purple-500/30 text-purple-300' :
+                        'bg-gray-500/30 text-gray-300'
                   }`}>
-                  {leagueStatus.toUpperCase()}
+                  {leagueStatus?.toUpperCase()}
                 </span>
               </div>
             </div>
