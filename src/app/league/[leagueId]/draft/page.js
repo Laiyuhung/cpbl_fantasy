@@ -485,7 +485,7 @@ export default function DraftPage() {
                     <button onClick={() => handleRemoveFromQueue(item.queue_id)} className="text-slate-500 hover:text-red-400 p-1">×</button>
                 </div>
                 <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
-                    {cats.slice(0, 5).map(cat => (
+                    {cats.map(cat => (
                         <div key={cat} className="flex flex-col items-center min-w-[30px]">
                             <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
                             <span className="text-slate-300">{getPlayerStat(player.player_id, cat)}</span>
@@ -792,7 +792,7 @@ export default function DraftPage() {
                                 <>
                                     {recentPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No picks yet</div>}
                                     {recentPicks.map(pick => (
-                                        <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-3">
+                                        <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-2">
                                             <div className="flex flex-col items-center min-w-[30px]">
                                                 <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
                                                     #{pick.pick_number}
@@ -810,8 +810,11 @@ export default function DraftPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
-                                                <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})} • {getTeamAbbr(pick.player?.team)}</div>
+                                                <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})}</div>
                                             </div>
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getTeamColor(pick.player?.team)} shrink-0`}>
+                                                {getTeamAbbr(pick.player?.team)}
+                                            </span>
                                         </div>
                                     ))}
                                 </>
@@ -851,17 +854,48 @@ export default function DraftPage() {
                             {activeTab === 'team' ? (
                                 <>
                                     {myTeam.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Your roster is empty</div>}
-                                    {myTeam.map((p, i) => (
-                                        <div key={i} className="flex justify-between items-center text-sm p-2 hover:bg-slate-800/50 rounded transition-colors group">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-slate-500 font-mono w-4">{filterPositions(p).split(',')[0]}</span>
-                                                <span className="text-slate-300 font-medium group-hover:text-white">{p.name}</span>
+                                    {myTeam.map((p, i) => {
+                                        const isBatter = p.batter_or_pitcher === 'batter';
+                                        const cats = isBatter ? batterStatCategories : pitcherStatCategories;
+                                        const showOriginalName = p.original_name && p.original_name !== p.name;
+
+                                        return (
+                                            <div key={i} className="flex flex-col text-sm p-3 hover:bg-slate-800/50 rounded transition-colors group border-b border-slate-700/50">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
+                                                            <img
+                                                                src={getPlayerPhoto(p)}
+                                                                onError={(e) => handleImageError(e, p)}
+                                                                alt={p.name}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className="text-slate-200 font-bold group-hover:text-white text-base">{p.name}</span>
+                                                                <span className="text-xs text-slate-400 font-mono">{filterPositions(p)}</span>
+                                                                <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(p.team)}`}>
+                                                                    {getTeamAbbr(p.team)}
+                                                                </span>
+                                                            </div>
+                                                            {showOriginalName && (
+                                                                <div className="text-[10px] text-slate-500 mt-0.5">{p.original_name}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
+                                                    {cats.map(cat => (
+                                                        <div key={cat} className="flex flex-col items-center min-w-[30px]">
+                                                            <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
+                                                            <span className="text-slate-300">{getPlayerStat(p.player_id, cat)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                            <span className={`text-[10px] px-1.5 rounded border ${getTeamColor(p.team)}`}>
-                                                {getTeamAbbr(p.team)}
-                                            </span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </>
                             ) : (
                                 <>
