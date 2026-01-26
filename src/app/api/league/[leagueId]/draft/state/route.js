@@ -203,19 +203,32 @@ export async function GET(request, { params }) {
             // Return Active State
             const { data: picks } = await supabase
                 .from('draft_picks')
-                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position, photo_url)')
+                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position)')
                 .eq('league_id', leagueId)
                 .not('player_id', 'is', null)
                 .order('pick_number', { ascending: true });
 
             // Get Next Picks Preview (e.g., next 12)
-            const { data: nextPicks } = await supabase
+            const { data: nextPicks, error: nextPicksError } = await supabase
                 .from('draft_picks')
                 .select('pick_id, pick_number, round_number, manager_id')
                 .eq('league_id', leagueId)
                 .is('player_id', null)
                 .order('pick_number', { ascending: true })
                 .limit(12);
+
+            if (nextPicksError) {
+                console.error('[DraftState] Error fetching nextPicks:', nextPicksError);
+            } else {
+                console.log(`[DraftState] Next Picks found: ${nextPicks?.length}`);
+                if (nextPicks?.length > 0) {
+                    console.log(`First Next Pick: ${JSON.stringify(nextPicks[0])}`);
+                } else {
+                    // Debug: Why empty? Check total picks again
+                    const { count } = await supabase.from('draft_picks').select('*', { count: 'exact', head: true }).eq('league_id', leagueId).is('player_id', null);
+                    console.log(`[DraftState] Double check remaining count: ${count}`);
+                }
+            }
 
             return NextResponse.json({
                 status: 'active',
@@ -235,7 +248,7 @@ export async function GET(request, { params }) {
 
             const { data: picks } = await supabase
                 .from('draft_picks')
-                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position, photo_url)')
+                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position)')
                 .eq('league_id', leagueId)
                 .not('player_id', 'is', null)
                 .order('pick_number', { ascending: true });
