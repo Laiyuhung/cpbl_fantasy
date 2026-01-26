@@ -566,7 +566,7 @@ export default function DraftPage() {
                         </div>
                     )}
                     {upcomingPicks.length === 0 && <span className="text-xs text-slate-600 italic px-2">No upcoming picks detected</span>}
-                    {upcomingPicks.map((pick, i) => (
+                    {upcomingPicks.slice(0, 20).map((pick, i) => (
                         <div key={pick.pick_id} className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded border border-slate-700/50 shrink-0 opacity-80 hover:opacity-100 transition-opacity">
                             <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
                             <span className="text-xs text-slate-500">-</span>

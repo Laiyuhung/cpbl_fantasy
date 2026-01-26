@@ -214,8 +214,7 @@ export async function GET(request, { params }) {
                 .select('pick_id, pick_number, round_number, manager_id')
                 .eq('league_id', leagueId)
                 .is('player_id', null)
-                .order('pick_number', { ascending: true })
-                .limit(12);
+                .order('pick_number', { ascending: true });
 
             if (nextPicksError) {
                 console.error('[DraftState] Error fetching nextPicks:', nextPicksError);
