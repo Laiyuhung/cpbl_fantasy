@@ -735,7 +735,13 @@ const CreateLeaguePage = () => {
   };
 
   const handleRosterPositionChange = (position, value) => {
-    const numValue = parseInt(value) || 0;
+    let numValue = parseInt(value) || 0;
+
+    // Enforce limits: Minor max 5, others max 10
+    const limit = position === 'Minor' ? 5 : 10;
+    if (numValue > limit) numValue = limit;
+    if (numValue < 0) numValue = 0;
+
     setSettings((prev) => ({
       ...prev,
       roster: {

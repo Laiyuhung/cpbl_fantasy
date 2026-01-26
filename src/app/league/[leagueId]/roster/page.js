@@ -24,6 +24,7 @@ export default function RosterPage() {
 
     // Settings State
     const [rosterPositionsConfig, setRosterPositionsConfig] = useState({});
+    const [foreignerActiveLimit, setForeignerActiveLimit] = useState(null);
 
     // Modals
     const [showInfoModal, setShowInfoModal] = useState(false);
@@ -183,7 +184,10 @@ export default function RosterPage() {
             if (settingsData.success && settingsData.data) {
                 setBatterStatCategories(settingsData.data.batter_stat_categories || []);
                 setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
+                setBatterStatCategories(settingsData.data.batter_stat_categories || []);
+                setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
                 setRosterPositionsConfig(settingsData.data.roster_positions || {});
+                setForeignerActiveLimit(settingsData.data.foreigner_active_limit);
             }
         };
         fetchSettings();
@@ -677,6 +681,7 @@ export default function RosterPage() {
                     batterStats={batterStatCategories}
                     pitcherStats={pitcherStatCategories}
                     rosterPositionsConfig={rosterPositionsConfig}
+                    foreignerActiveLimit={foreignerActiveLimit}
                     onMove={handleMovePlayer}
                 />
             </div>
