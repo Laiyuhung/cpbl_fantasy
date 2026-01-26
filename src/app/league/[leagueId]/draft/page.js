@@ -10,7 +10,6 @@ export default function DraftPage() {
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
-    const [initLoading, setInitLoading] = useState(false);
     const [draftState, setDraftState] = useState(null);
     const [players, setPlayers] = useState([]);
     const [myManagerId, setMyManagerId] = useState(null);
@@ -21,6 +20,11 @@ export default function DraftPage() {
     // UI States
     const [showLegend, setShowLegend] = useState(false);
     const [filterPos, setFilterPos] = useState('All');
+
+    // New States for Logic Parity with Players Page
+    const [rosterPositions, setRosterPositions] = useState({});
+    const [photoSrcMap, setPhotoSrcMap] = useState({});
+    const failedImages = useRef(new Set());
 
     // Fetch Manager ID
     useEffect(() => {
@@ -39,16 +43,13 @@ export default function DraftPage() {
                 const data = await res.json();
 
                 if (data.status === 'completed') {
-                    // Show modal or alert before redirect?
-                    // For now, simple alert
-                    // alert('Draft Completed!');
-                    // router.push(`/league/${leagueId}`);
-                    // return;
+                    // console.log('Draft Completed');
                 }
 
                 setDraftState(data);
 
                 // Update Timer
+                // Use Server Time to sync
                 const now = new Date(data.serverTime).getTime();
 
                 if (data.status === 'pre-draft' && data.startTime) {
@@ -72,7 +73,7 @@ export default function DraftPage() {
         return () => clearInterval(interval);
     }, [leagueId, router]);
 
-    // Count down timer locally smooth
+    // Count down timer locally smooth (every 1s)
     useEffect(() => {
         const timer = setInterval(() => {
             setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
@@ -80,19 +81,144 @@ export default function DraftPage() {
         return () => clearInterval(timer);
     }, []);
 
-    // Initial Load Players
+    // Initial Load Players & Settings (Run Once)
     useEffect(() => {
-        const fetchPlayers = async () => {
+        const fetchData = async () => {
             setLoading(true);
-            const res = await fetch('/api/playerslist?available=true');
-            const data = await res.json();
-            if (data.success) {
-                setPlayers(data.players || []);
+            try {
+                const [playersRes, settingsRes] = await Promise.all([
+                    fetch('/api/playerslist?available=true'),
+                    fetch(`/api/league-settings?league_id=${leagueId}`)
+                ]);
+
+                const playersData = await playersRes.json();
+                const settingsData = await settingsRes.json();
+
+                if (playersData.success) {
+                    setPlayers(playersData.players || []);
+                }
+
+                if (settingsData.success && settingsData.data) {
+                    setRosterPositions(settingsData.data.roster_positions || {});
+                }
+
+            } catch (e) {
+                console.error('Failed to load draft resources', e);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
-        fetchPlayers();
-    }, []);
+        fetchData();
+    }, [leagueId]);
+
+    // ---------------------------------------------------------
+    // Helper Logic (Copied/Adapted from Players Page)
+    // ---------------------------------------------------------
+
+    // Filter Positions based on League Settings
+    const filterPositions = (player) => {
+        let positionList = player.position_list;
+
+        // Default if missing
+        if (!positionList) {
+            positionList = player.batter_or_pitcher === 'batter' ? 'Util' : 'P';
+        }
+
+        const positions = positionList.split(',').map(p => p.trim());
+
+        // Filter out positions not in roster settings
+        const validPositions = positions.filter(pos => {
+            return rosterPositions[pos] && rosterPositions[pos] > 0;
+        });
+
+        return validPositions.length > 0 ? validPositions.join(', ') : 'NA';
+    };
+
+    const getPlayerPhotoPaths = (player) => {
+        const paths = [];
+        if (player.name) paths.push(`/photo/${player.name}.png`);
+        if (player.original_name) {
+            const aliases = player.original_name.split(',').map(alias => alias.trim());
+            aliases.forEach(alias => {
+                if (alias) paths.push(`/photo/${alias}.png`);
+            });
+        }
+        if (player.player_id) paths.push(`/photo/${player.player_id}.png`);
+        paths.push('/photo/defaultPlayer.png'); // Fallback
+        return paths;
+    };
+
+    // Batch Resolve Photos (Performance)
+    useEffect(() => {
+        let cancelled = false;
+        const resolvePhotos = async () => {
+            if (!players || players.length === 0) return;
+
+            // Only attempt to resolve if NOT already resolved? 
+            // For now, resolve all initially loaded players.
+            const batchPayload = players.map(player => ({
+                id: player.player_id,
+                candidates: getPlayerPhotoPaths(player).filter(p => !p.endsWith('/defaultPlayer.png'))
+            }));
+
+            try {
+                const res = await fetch('/api/photo/resolve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ players: batchPayload })
+                });
+                const data = await res.json();
+                if (!cancelled && data.results) {
+                    setPhotoSrcMap(data.results);
+                }
+            } catch {
+                if (!cancelled) {
+                    // Fallback all
+                    const fallback = Object.fromEntries(players.map(p => [p.player_id, '/photo/defaultPlayer.png']));
+                    setPhotoSrcMap(fallback);
+                }
+            }
+        };
+        resolvePhotos();
+        return () => { cancelled = true; };
+    }, [players]);
+
+    const getPlayerPhoto = (player) => {
+        return photoSrcMap[player.player_id] || '/photo/defaultPlayer.png';
+    };
+
+    const handleImageError = (e, player) => {
+        const currentSrc = e.target.src;
+        const paths = getPlayerPhotoPaths(player);
+
+        let currentIndex = -1;
+        // Check current index
+        for (let i = 0; i < paths.length; i++) {
+            // Use simple include check (robust enough for relative/absolute)
+            if (currentSrc.includes(encodeURI(paths[i])) || currentSrc.includes(paths[i])) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        // If fail to find index (e.g. CDN mismatch), assume 0 and try next
+        if (currentIndex === -1) currentIndex = 0;
+
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < paths.length) {
+            // Try next
+            e.target.src = paths[nextIndex];
+        } else {
+            // Final Fallback
+            e.target.src = '/photo/defaultPlayer.png';
+            // Prevent loop
+            e.target.onerror = null;
+        }
+    };
+
+    // ---------------------------------------------------------
+    // Draft Logic
+    // ---------------------------------------------------------
 
     // Derived State
     const { takenIds, recentPicks, myTeam } = useMemo(() => {
@@ -105,7 +231,7 @@ export default function DraftPage() {
         const recent = picks
             .filter(p => p.player_id && p.picked_at)
             .sort((a, b) => new Date(b.picked_at) - new Date(a.picked_at))
-            .slice(0, 10); // Show last 10?
+            .slice(0, 10); // Show last 10
 
         // My Team
         const mine = picks
@@ -158,7 +284,7 @@ export default function DraftPage() {
         }).slice(0, 100);
     }, [players, takenIds, searchTerm, filterPos]);
 
-    // Helpers
+    // Helpers (Values)
     const getTeamAbbr = (team) => {
         switch (team) {
             case '統一獅': return 'UL';
@@ -301,10 +427,10 @@ export default function DraftPage() {
                                     <tr key={player.player_id} className="group hover:bg-slate-700/40 transition-colors">
                                         <td className="p-3 bg-slate-800/50 rounded-l-lg group-hover:bg-slate-700/50 border-y border-l border-transparent group-hover:border-slate-600">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative">
+                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
                                                     <img
-                                                        src={`/photo/${player.player_id}.png`}
-                                                        onError={(e) => e.target.src = '/photo/defaultPlayer.png'}
+                                                        src={getPlayerPhoto(player)}
+                                                        onError={(e) => handleImageError(e, player)}
                                                         alt={player.name}
                                                         className="w-full h-full object-cover"
                                                     />
@@ -321,7 +447,7 @@ export default function DraftPage() {
                                             </span>
                                         </td>
                                         <td className="p-3 text-center bg-slate-800/50 group-hover:bg-slate-700/50 border-y border-transparent group-hover:border-slate-600">
-                                            <span className="text-sm font-mono text-cyan-300">{player.position}</span>
+                                            <span className="text-sm font-mono text-cyan-300">{filterPositions(player)}</span>
                                         </td>
                                         <td className="p-3 text-right bg-slate-800/50 rounded-r-lg group-hover:bg-slate-700/50 border-y border-r border-transparent group-hover:border-slate-600">
                                             <button
@@ -357,14 +483,14 @@ export default function DraftPage() {
                                     </div>
                                     <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
                                         <img
-                                            src={pick.player?.photo_url || `/photo/${pick.player?.player_id}.png`}
-                                            onError={(e) => e.target.src = '/photo/defaultPlayer.png'}
+                                            src={getPlayerPhoto(pick.player || {})}
+                                            onError={(e) => handleImageError(e, pick.player || {})}
                                             className="w-full h-full object-cover"
                                         />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
-                                        <div className="text-[10px] text-slate-500">{pick.player?.position} • {getTeamAbbr(pick.player?.team)}</div>
+                                        <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})} • {getTeamAbbr(pick.player?.team)}</div>
                                     </div>
                                 </div>
                             ))}
@@ -382,7 +508,7 @@ export default function DraftPage() {
                             {myTeam.map((p, i) => (
                                 <div key={i} className="flex justify-between items-center text-sm p-2 hover:bg-slate-800/50 rounded transition-colors group">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-slate-500 font-mono w-4">{p.position.split(',')[0]}</span>
+                                        <span className="text-xs text-slate-500 font-mono w-4">{filterPositions(p).split(',')[0]}</span>
                                         <span className="text-slate-300 font-medium group-hover:text-white">{p.name}</span>
                                     </div>
                                     <span className={`text-[10px] px-1.5 rounded border ${getTeamColor(p.team)}`}>
