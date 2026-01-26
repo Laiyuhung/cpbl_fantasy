@@ -39,7 +39,8 @@ export default function DraftPage() {
 
     // Queue State
     const [queue, setQueue] = useState([]);
-    const [activeTab, setActiveTab] = useState('team');
+    const [activeTab, setActiveTab] = useState('team'); // 'team', 'queue'
+    const [sidebarTab, setSidebarTab] = useState('history'); // 'history' (recent), 'future' (upcoming)
 
     // Fetch Manager ID
     useEffect(() => {
@@ -64,10 +65,12 @@ export default function DraftPage() {
             }
         };
         fetchQueue();
+        const interval = setInterval(fetchQueue, 5000); // Poll queue to clean up taken players
+        return () => clearInterval(interval);
     }, [leagueId, myManagerId]);
 
     const handleAddToQueue = async (player) => {
-        const optimItem = { queue_id: 'temp-' + Date.now(), player_id: player.player_id, player };
+        const optimItem = { queue_id: 'temp-' + Date.now(), player_id: player.player_id, player, rank_order: queue.length + 1 };
         setQueue(prev => [...prev, optimItem]);
         try {
             const res = await fetch(`/api/league/${leagueId}/draft/queue`, {
@@ -99,6 +102,28 @@ export default function DraftPage() {
                 body: JSON.stringify({ queueId })
             });
         } catch (e) { console.error(e); }
+    };
+
+    const handleReorderQueue = async (index, direction) => {
+        if (direction === 'up' && index === 0) return;
+        if (direction === 'down' && index === queue.length - 1) return;
+
+        const newQueue = [...queue];
+        const swapIndex = direction === 'up' ? index - 1 : index + 1;
+        [newQueue[index], newQueue[swapIndex]] = [newQueue[swapIndex], newQueue[index]];
+
+        // Update Ranks locally
+        const updatedRanking = newQueue.map((item, i) => ({ ...item, rank_order: i + 1 }));
+        setQueue(updatedRanking);
+
+        try {
+            const payload = updatedRanking.map(item => ({ queue_id: item.queue_id, rank_order: item.rank_order }));
+            await fetch(`/api/league/${leagueId}/draft/queue`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: payload })
+            });
+        } catch (e) { console.error('Reorder failed', e); }
     };
 
     const isQueued = (playerId) => queue.some(q => q.player_id === playerId);
@@ -190,6 +215,7 @@ export default function DraftPage() {
     // ---------------------------------------------------------
 
     const getMemberNickname = (managerId) => {
+        if (!managerId) return '-';
         const m = members.find(m => m.manager_id === managerId);
         return m?.nickname || 'Unknown';
     };
@@ -210,6 +236,14 @@ export default function DraftPage() {
         const matches = statKey.match(/\(([^)]+)\)/g);
         if (matches) fieldName = matches[matches.length - 1].replace(/[()]/g, '');
         return stats[fieldName.toLowerCase()] || '-';
+    };
+
+    const getStatAbbr = (cat) => {
+        const matches = cat.match(/\(([^)]+)\)/g);
+        if (matches && matches.length > 0) {
+            return matches[matches.length - 1].replace(/[()]/g, '');
+        }
+        return cat;
     };
 
     const getPlayerStatRaw = (playerId, statKey) => {
@@ -270,7 +304,7 @@ export default function DraftPage() {
         if (!draftState?.picks) return { takenIds: new Set(), recentPicks: [], myTeam: [], upcomingPicks: [] };
         const picks = draftState.picks;
         const taken = new Set(picks.map(p => p.player_id).filter(Boolean));
-        const recent = picks.filter(p => p.player_id).sort((a, b) => new Date(b.picked_at) - new Date(a.picked_at)).slice(0, 10);
+        const recent = picks.filter(p => p.player_id).sort((a, b) => new Date(b.picked_at) - new Date(a.picked_at));
         const mine = picks.filter(p => p.manager_id === myManagerId && p.player_id).map(p => ({ ...p.player, round: p.round_number, pick: p.pick_number }));
 
         // Upcoming: Use draftState.nextPicks if available
@@ -379,15 +413,6 @@ export default function DraftPage() {
         return seconds;
     };
 
-    // Helper to extract abbreviation from "Category (Abbr)"
-    const getStatAbbr = (cat) => {
-        const matches = cat.match(/\(([^)]+)\)/g);
-        if (matches && matches.length > 0) {
-            return matches[matches.length - 1].replace(/[()]/g, '');
-        }
-        return cat;
-    };
-
     const renderQueueItem = (item, index) => {
         const player = players.find(p => p.player_id === item.player_id) || item.player;
         if (!player) return null;
@@ -399,7 +424,13 @@ export default function DraftPage() {
             <div key={item.queue_id} className="flex flex-col text-sm p-3 hover:bg-slate-800/50 rounded transition-colors group border-b border-slate-700/50">
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2">
-                        <span className="text-purple-400 font-mono font-bold text-xs w-4">{index + 1}</span>
+                        <div className="flex flex-col items-center">
+                            <span className="text-purple-400 font-mono font-bold text-xs">{index + 1}</span>
+                            <div className="flex flex-col gap-0.5 mt-1">
+                                <button onClick={() => handleReorderQueue(index, 'up')} className="text-slate-500 hover:text-white px-1 leading-none text-xs">▲</button>
+                                <button onClick={() => handleReorderQueue(index, 'down')} className="text-slate-500 hover:text-white px-1 leading-none text-xs">▼</button>
+                            </div>
+                        </div>
                         <div>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-slate-200 font-bold group-hover:text-white text-base">{player.name}</span>
@@ -450,7 +481,8 @@ export default function DraftPage() {
     const getPosOptions = () => {
         const pitcherPos = ['SP', 'RP', 'P'];
         return Object.keys(rosterPositions)
-            .filter(k => k !== 'BN' && k !== 'IL')
+            .filter(k => k !== 'BN' && k !== 'IL') // Exclude Bench and IL if needed
+            .filter(k => !k.includes('Minor')) // Exclude Minor explicitly as requested
             .filter(k => {
                 if (filterType === 'pitcher') {
                     return pitcherPos.includes(k);
@@ -462,7 +494,12 @@ export default function DraftPage() {
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-4 font-sans">
-            <LegendModal isOpen={showLegend} onClose={() => setShowLegend(false)} />
+            <LegendModal
+                isOpen={showLegend}
+                onClose={() => setShowLegend(false)}
+                batterStats={batterStatCategories}
+                pitcherStats={pitcherStatCategories}
+            />
 
             {/* Header Area */}
             <div className="flex flex-col gap-2 mb-4">
@@ -522,15 +559,17 @@ export default function DraftPage() {
                     <span className="text-xs font-bold text-slate-500 uppercase px-2 shrink-0">Up Next:</span>
                     {activeTab === 'team' && draftState?.currentPick && (
                         <div className="flex items-center gap-2 animate-pulse bg-purple-900/40 px-3 py-1.5 rounded border border-purple-500/50 shrink-0">
-                            <span className="text-xs font-mono text-purple-300">#{draftState.currentPick.pick_number}</span>
+                            <span className="text-xs font-mono text-purple-300">Pick {draftState.currentPick.pick_number}</span>
+                            <span className="text-xs text-slate-400">-</span>
                             <span className="text-xs font-bold text-white">{getMemberNickname(draftState.currentPick.manager_id)}</span>
                             <span className="text-[10px] bg-purple-600 text-white px-1 rounded">NOW</span>
                         </div>
                     )}
-                    {upcomingPicks.length === 0 && <span className="text-xs text-slate-600 italic px-2">No upcoming picks</span>}
+                    {upcomingPicks.length === 0 && <span className="text-xs text-slate-600 italic px-2">No upcoming picks detected</span>}
                     {upcomingPicks.map((pick, i) => (
                         <div key={pick.pick_id} className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded border border-slate-700/50 shrink-0 opacity-80 hover:opacity-100 transition-opacity">
-                            <span className="text-xs font-mono text-slate-400">#{pick.pick_number}</span>
+                            <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
+                            <span className="text-xs text-slate-500">-</span>
                             <span className="text-xs font-bold text-slate-300">{getMemberNickname(pick.manager_id)}</span>
                             {pick.manager_id === myManagerId && <span className="w-2 h-2 rounded-full bg-green-500"></span>}
                         </div>
@@ -619,9 +658,7 @@ export default function DraftPage() {
                             </thead>
                             <tbody>
                                 {filteredPlayers.map(player => {
-                                    const realStatus = player.real_life_status || '';
                                     const isForeigner = player.identity?.toLowerCase() === 'foreigner';
-                                    const showStatus = ['NR', ' NA', 'NA', 'DR'].includes(realStatus) ? realStatus : null;
                                     const showOriginalName = player.original_name && player.original_name !== player.name;
 
                                     return (
@@ -641,7 +678,7 @@ export default function DraftPage() {
                                                         <div className="flex items-baseline gap-2">
                                                             <span className="font-bold text-slate-200 text-base">{player.name}</span>
                                                             <span className="text-slate-400 text-sm">- {filterPositions(player)}</span>
-                                                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(player.team)}`}>
+                                                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(player.team)}`}>
                                                                 {getTeamAbbr(player.team)}
                                                             </span>
                                                         </div>
@@ -652,11 +689,6 @@ export default function DraftPage() {
                                                             <div className="flex gap-1">
                                                                 {isForeigner && (
                                                                     <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                )}
-                                                                {showStatus && (
-                                                                    <span className="text-[9px] font-bold bg-slate-700/60 text-slate-300 px-1.5 rounded border border-slate-500/30">
-                                                                        {showStatus}
-                                                                    </span>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -706,29 +738,58 @@ export default function DraftPage() {
 
                 {/* Right: Info Panels */}
                 <div className="flex-1 flex flex-col gap-4 min-w-[300px] lg:max-w-[350px]">
-                    {/* Recent Picks */}
+                    {/* Draft History / Future Sidebar */}
                     <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700/50 pb-2">Recent Picks</h2>
-                        <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                            {recentPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No picks yet</div>}
-                            {recentPicks.map(pick => (
-                                <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-3">
-                                    <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
-                                        #{pick.pick_number}
-                                    </div>
-                                    <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
-                                        <img
-                                            src={pick.player?.photo_url || getPlayerPhoto(pick.player || {})}
-                                            onError={(e) => handleImageError(e, pick.player || {})}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
-                                        <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})} • {getTeamAbbr(pick.player?.team)}</div>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
+                            <button onClick={() => setSidebarTab('history')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'history' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                Recent
+                            </button>
+                            <button onClick={() => setSidebarTab('future')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'future' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                Upcoming
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                            {sidebarTab === 'history' ? (
+                                <>
+                                    {recentPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No picks yet</div>}
+                                    {recentPicks.map(pick => (
+                                        <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-3">
+                                            <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
+                                                #{pick.pick_number}
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
+                                                <img
+                                                    src={pick.player?.photo_url || getPlayerPhoto(pick.player || {})}
+                                                    onError={(e) => handleImageError(e, pick.player || {})}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
+                                                <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})} • {getTeamAbbr(pick.player?.team)}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            ) : (
+                                <>
+                                    {upcomingPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No remaining picks</div>}
+                                    {upcomingPicks.map(pick => (
+                                        <div key={pick.pick_id} className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
+                                                {pick.manager_id === myManagerId ? (
+                                                    <span className="text-sm font-bold text-green-400">You</span>
+                                                ) : (
+                                                    <span className="text-sm font-bold text-slate-300">{getMemberNickname(pick.manager_id)}</span>
+                                                )}
+                                            </div>
+                                            <div className="text-[10px] text-slate-500">Rd {pick.round_number}</div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -761,7 +822,10 @@ export default function DraftPage() {
                                 </>
                             ) : (
                                 <>
-                                    {queue.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Queue is empty</div>}
+                                    {queue.length === 0 && <div className="text-slate-500 text-sm text-center py-4 text-xs italic">
+                                        Players in queue will be auto-drafted if time expires.<br />
+                                        Drag & drop or use arrows to reorder.
+                                    </div>}
                                     {queue.map((item, i) => renderQueueItem(item, i))}
                                 </>
                             )}
