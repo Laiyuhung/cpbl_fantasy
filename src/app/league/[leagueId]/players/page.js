@@ -456,11 +456,17 @@ export default function PlayersPage() {
 
       const currentMinorCount = myRoster.filter(p => ['NA', 'Minor'].includes(p.position)).length;
 
+      console.log('--- NA Slot Calculation ---');
+      console.log('Eligible:', isNaEligible);
+      console.log('AllowDirectNA:', allowNa);
+      console.log('CurrentUsage:', currentMinorCount, '/', minorLimit);
+
       let targetSlot = 'BN';
       // Only set to NA if: 1. Eligible, 2. Slot available, 3. League Setting allows it
       if (allowNa && isNaEligible && currentMinorCount < minorLimit) {
         targetSlot = 'NA';
       }
+      console.log('Decided Target Slot:', targetSlot);
 
       setProjectedAddSlot(targetSlot);
 
@@ -1316,7 +1322,12 @@ export default function PlayersPage() {
                   </select>
                 </>
               ) : (
-                <>Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?</>
+                <>
+                  Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?
+                  <div className="mt-2 text-sm text-purple-300">
+                    Target Slot: <span className={`font-bold uppercase px-1.5 py-0.5 rounded ${projectedAddSlot === 'NA' ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-slate-700 text-slate-300 border border-slate-600'}`}>{projectedAddSlot}</span>
+                  </div>
+                </>
               )}
             </p>
 
