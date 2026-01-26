@@ -446,8 +446,8 @@ export default function PlayersPage() {
       const minorLimit = rosterConfig[minorKey] || 0;
 
       // Check if league allows moving directly to NA/Injury slot
-      // Value is usually 'Yes' or 'No'
-      const allowNa = settings.allow_injured_to_injury_slot === 'Yes';
+      // Value is usually 'Yes' or 'No', make case insensitive
+      const allowNa = (settings.allow_injured_to_injury_slot || '').toLowerCase() === 'yes';
 
       // Store for dynamic recalc
       setCurrentRosterState(myRoster);
@@ -683,7 +683,8 @@ export default function PlayersPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             player_id: playerToAdd.player_id,
-            manager_id: myManagerId
+            manager_id: myManagerId,
+            position: projectedAddSlot // Ensure we request the specific slot we showed the user
           })
         });
         data = await res.json();
