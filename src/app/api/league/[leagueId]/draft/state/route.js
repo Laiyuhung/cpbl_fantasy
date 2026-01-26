@@ -173,29 +173,18 @@ export async function GET(request, { params }) {
             }
         }
 
-        // 3. Get Recent Picks (History)
-        const { data: recent } = await supabase
+        // 3. Get All Picks (for Board, Taken, My Team)
+        const { data: picks } = await supabase
             .from('draft_picks')
-            .select('pick_number, round_number, player_id, manager_id, player:player_list(name, team, position)')
+            .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, position, photo_url)')
             .eq('league_id', leagueId)
             .not('player_id', 'is', null)
-            .order('pick_number', { ascending: false })
-            .limit(5);
-
-        // 4. Get ALL Taken Player IDs for filtering
-        const { data: allTaken } = await supabase
-            .from('draft_picks')
-            .select('player_id')
-            .eq('league_id', leagueId)
-            .not('player_id', 'is', null);
-
-        const takenIds = allTaken ? allTaken.map(p => p.player_id) : [];
+            .order('pick_number', { ascending: true }); // Order by pick number
 
         return NextResponse.json({
             status: 'active',
             currentPick: currentPick,
-            recentPicks: recent || [],
-            takenPlayerIds: takenIds,
+            picks: picks || [],
             serverTime: now.toISOString()
         });
 

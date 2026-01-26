@@ -1676,7 +1676,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                   {isSaving ? 'Generating...' : 'Generate Draft Order'}
                 </button>
                 <p className="text-sm text-purple-200">
-                  Click this to create the random snake draft order. The draft will automatically start at the "Live Draft Time".
+                  Click this to create the random snake draft order. The draft will automatically start at the &quot;Live Draft Time&quot;.
                 </p>
               </div>
             </div>
