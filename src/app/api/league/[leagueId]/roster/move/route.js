@@ -88,12 +88,12 @@ export async function POST(request, { params }) {
             isFull = occupants.length >= targetLimit;
         }
 
-        if (!isFull) {
-            // Case A: Not Full -> Direct Move
+        if (!isFull && !swapWithPlayerId) {
+            // Case A: Not Full AND No Explicit Swap -> Direct Move
             console.log(`[MoveRoster] Slot ${targetPosition} is not full. Direct Move.`);
             updates.push({ player_id: playerId, new_position: targetPosition });
         } else {
-            // Case B: Full -> Swap or Displacement
+            // Case B: Full OR Explicit Swap -> Swap or Displacement
             console.log(`[MoveRoster] Slot ${targetPosition} is full. Attempting Swap/Displacement.`);
 
             // Resolve Target Occupant
