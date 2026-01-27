@@ -16,6 +16,7 @@ export default function DraftPage() {
     const [timeLeft, setTimeLeft] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [picking, setPicking] = useState(false);
+    const [assigning, setAssigning] = useState(false);
 
     // UI States
     const [showLegend, setShowLegend] = useState(false);
@@ -152,6 +153,7 @@ export default function DraftPage() {
 
     // Roster Assignment Handlers
     const handleAssignToSlot = async (playerId, rosterSlot) => {
+        setAssigning(true);
         try {
             const res = await fetch(`/api/league/${leagueId}/draft/roster`, {
                 method: 'POST',
@@ -171,10 +173,13 @@ export default function DraftPage() {
             }
         } catch (e) {
             console.error('Assignment error:', e);
+        } finally {
+            setAssigning(false);
         }
     };
 
     const handleRemoveAssignment = async (assignmentId) => {
+        setAssigning(true);
         try {
             await fetch(`/api/league/${leagueId}/draft/roster`, {
                 method: 'DELETE',
@@ -189,6 +194,8 @@ export default function DraftPage() {
             }
         } catch (e) {
             console.error('Remove assignment error:', e);
+        } finally {
+            setAssigning(false);
         }
     };
 
@@ -659,39 +666,48 @@ export default function DraftPage() {
 
             {/* Assignment Modal */}
             {assignModalPlayer && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setAssignModalPlayer(null)}>
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => !assigning && setAssignModalPlayer(null)}>
                     <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full border border-purple-500/30" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-xl font-bold mb-4 text-purple-300">Assign {assignModalPlayer.name} to Slot</h3>
-                        <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
-                            {getAvailableSlotsForPlayer(assignModalPlayer).map(slotInfo => {
-                                const assignment = getAssignedPlayer(slotInfo.key);
-                                return (
-                                    <button
-                                        key={slotInfo.key}
-                                        onClick={() => {
-                                            handleAssignToSlot(assignModalPlayer.player_id, slotInfo.key);
-                                            setAssignModalPlayer(null);
-                                        }}
-                                        disabled={!!assignment}
-                                        className={`w-full p-3 rounded border text-left transition-colors ${assignment
-                                            ? 'bg-slate-700/50 border-slate-600 text-slate-500 cursor-not-allowed'
-                                            : 'bg-slate-700 border-slate-600 hover:border-purple-500 hover:bg-purple-900/30'
-                                            }`}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-mono font-bold text-purple-400">{slotInfo.display}</span>
-                                            {assignment && <span className="text-xs text-slate-500">Occupied by {assignment.name}</span>}
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <button
-                            onClick={() => setAssignModalPlayer(null)}
-                            className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded transition-colors"
-                        >
-                            Cancel
-                        </button>
+                        {assigning ? (
+                            <div className="flex flex-col items-center justify-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
+                                <div className="text-slate-400">Assigning...</div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                                    {getAvailableSlotsForPlayer(assignModalPlayer).map(slotInfo => {
+                                        const assignment = getAssignedPlayer(slotInfo.key);
+                                        return (
+                                            <button
+                                                key={slotInfo.key}
+                                                onClick={() => {
+                                                    handleAssignToSlot(assignModalPlayer.player_id, slotInfo.key);
+                                                    setAssignModalPlayer(null);
+                                                }}
+                                                disabled={!!assignment}
+                                                className={`w-full p-3 rounded border text-left transition-colors ${assignment
+                                                    ? 'bg-slate-700/50 border-slate-600 text-slate-500 cursor-not-allowed'
+                                                    : 'bg-slate-700 border-slate-600 hover:border-purple-500 hover:bg-purple-900/30'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-mono font-bold text-purple-400">{slotInfo.display}</span>
+                                                    {assignment && <span className="text-xs text-slate-500">Occupied by {assignment.name}</span>}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <button
+                                    onClick={() => setAssignModalPlayer(null)}
+                                    className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -996,13 +1012,14 @@ export default function DraftPage() {
                                                         <button
                                                             onClick={() => handlePick(player.player_id)}
                                                             disabled={picking || draftState?.currentPick?.manager_id !== myManagerId}
-                                                            className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all
-                                                            ${draftState?.currentPick?.manager_id === myManagerId
+                                                            className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all flex items-center gap-2
+                                                            ${draftState?.currentPick?.manager_id === myManagerId && !picking
                                                                     ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
                                                                     : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'
                                                                 }`}
                                                         >
-                                                            DRAFT
+                                                            {picking && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>}
+                                                            {picking ? 'DRAFTING...' : 'DRAFT'}
                                                         </button>
                                                     </div>
                                                 </td>
@@ -1203,62 +1220,55 @@ export default function DraftPage() {
 
             {mainTab === 'roster' && (
                 <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 350px)' }}>
-                    <h2 className="text-2xl font-bold mb-6 text-purple-300">Roster Assignment</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {Object.keys(rosterPositions)
-                            .filter(slot => !slot.includes('Minor'))
-                            .map(slot => {
-                                const count = rosterPositions[slot];
-                                return Array.from({ length: count }).map((_, idx) => {
-                                    const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
-                                    const assignment = getAssignedPlayer(slotKey);
+                    <h2 className="text-xl font-bold mb-2 text-purple-300">Roster Assignment</h2>
+                    <p className="text-xs text-slate-400 mb-4">Click on a player to assign them to a roster position</p>
 
-                                    return (
-                                        <div
-                                            key={slotKey}
-                                            onClick={() => !assignment && setAssignModalSlot(slotKey)}
-                                            className={`bg-slate-900/80 p-4 rounded-lg border border-slate-700/50 transition-all ${!assignment ? 'cursor-pointer hover:border-purple-500/50 hover:bg-slate-800/80' : ''
-                                                }`}
-                                        >
-                                            <div className="flex items-center justify-between mb-3">
-                                                <span className="text-base font-mono text-purple-400 font-bold">{slot}</span>
-                                                {assignment && (
-                                                    <button
-                                                        onClick={() => handleRemoveAssignment(assignment.assignment_id)}
-                                                        className="text-slate-500 hover:text-red-400 text-sm px-2 py-1 rounded hover:bg-red-900/20 transition-colors"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                )}
+                    {myTeam.length === 0 ? (
+                        <div className="text-center py-12 text-slate-500">
+                            <div className="text-lg mb-2">No players drafted yet</div>
+                            <div className="text-sm">Draft players first, then assign them to roster positions</div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                            {myTeam.map((player) => {
+                                const assignment = draftRosterAssignments.find(a => a.player_id === player.player_id);
+                                const assignedSlot = assignment ? assignment.roster_slot.replace(/\d+$/, '') : null;
+
+                                return (
+                                    <div
+                                        key={player.player_id}
+                                        onClick={() => setAssignModalPlayer(player)}
+                                        className="bg-slate-900/80 p-3 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all cursor-pointer hover:bg-slate-800/80"
+                                    >
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="w-12 h-12 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                <img
+                                                    src={getPlayerPhoto(player)}
+                                                    onError={(e) => handleImageError(e, player)}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
-                                            {assignment ? (
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-14 h-14 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
-                                                        <img
-                                                            src={getPlayerPhoto(assignment)}
-                                                            onError={(e) => handleImageError(e, assignment)}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="text-base font-bold text-slate-200 truncate">{assignment.name}</div>
-                                                        <div className="text-xs text-slate-500 mt-0.5">{assignment.position_list}</div>
-                                                        <div className={`text-xs px-2 py-0.5 rounded border inline-block mt-1 ${getTeamColor(assignment.team)}`}>
-                                                            {getTeamAbbr(assignment.team)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="text-center py-10 text-slate-600 italic">
-                                                    <div className="text-sm">Empty Slot</div>
-                                                    <div className="text-xs mt-1">Assign from Team tab</div>
-                                                </div>
-                                            )}
+                                            <div className="text-center w-full">
+                                                <div className="text-sm font-bold text-slate-200 truncate">{player.name}</div>
+                                                <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                            </div>
                                         </div>
-                                    );
-                                });
+
+                                        {assignedSlot ? (
+                                            <div className="mt-2 bg-purple-900/30 border border-purple-500/50 rounded px-2 py-1 text-center">
+                                                <div className="text-[10px] text-purple-300 mb-0.5">✓ Assigned</div>
+                                                <div className="font-mono font-bold text-purple-400 text-xs">{assignedSlot}</div>
+                                            </div>
+                                        ) : (
+                                            <div className="mt-2 text-center py-1 text-slate-600 text-[10px] italic border border-slate-700 rounded">
+                                                Not assigned
+                                            </div>
+                                        )}
+                                    </div>
+                                );
                             })}
-                    </div>
+                        </div>
+                    )}
                 </div>
             )}
 
