@@ -42,13 +42,20 @@ export default function DraftPage() {
     // Queue State
     const [queue, setQueue] = useState([]);
     const [activeTab, setActiveTab] = useState('team'); // 'team', 'queue', 'roster'
-    const [sidebarTab, setSidebarTab] = useState('history'); // 'history' (recent), 'future' (upcoming)
 
-    // Draft Roster Assignments State
+    // Sidebar State
+    const [sidebarTab, setSidebarTab] = useState('history'); // 'history' (recent), 'future' (upcoming)
+    const [isSidebarHistoryOpen, setSidebarHistoryOpen] = useState(true);
+    const [isSidebarTeamOpen, setSidebarTeamOpen] = useState(true);
+
+    // League Rosters State (Opponent View)
     const [draftRosterAssignments, setDraftRosterAssignments] = useState([]);
     const [assignModalPlayer, setAssignModalPlayer] = useState(null);
     const [assignModalSlot, setAssignModalSlot] = useState(null);
     const [mainTab, setMainTab] = useState('players');
+
+    const [viewingManagerId, setViewingManagerId] = useState(null);
+    const [viewingRosterAssignments, setViewingRosterAssignments] = useState([]);
 
     // Fetch Manager ID
     useEffect(() => {
@@ -91,6 +98,27 @@ export default function DraftPage() {
         const interval = setInterval(fetchAssignments, 5000);
         return () => clearInterval(interval);
     }, [leagueId, myManagerId]);
+
+    // Fetch Viewing Roster Assignments
+    useEffect(() => {
+        if (!viewingManagerId && members.length > 0 && myManagerId) {
+            // Default to first member who is NOT me, or just first member
+            const other = members.find(m => m.manager_id !== myManagerId);
+            if (other) setViewingManagerId(other.manager_id);
+            else if (members.length > 0) setViewingManagerId(members[0].manager_id);
+        }
+
+        if (!viewingManagerId) return;
+        const fetchAssignments = async () => {
+            const res = await fetch(`/api/league/${leagueId}/draft/roster?manager_id=${viewingManagerId}`);
+            const data = await res.json();
+            if (data.success) {
+                setViewingRosterAssignments(data.assignments || []);
+            }
+        };
+        fetchAssignments();
+        // No polling needed for opponent view strictly, but maybe good to have? Let's skip polling for now to save resources unless user asks.
+    }, [leagueId, viewingManagerId, members, myManagerId]);
 
     const handleAddToQueue = async (player) => {
         const optimItem = { queue_id: 'temp-' + Date.now(), player_id: player.player_id, player, rank_order: queue.length + 1 };
@@ -440,6 +468,23 @@ export default function DraftPage() {
             original_name: p.player?.original_name || ''
         }));
 
+        // Viewing Team (Opponent View)
+        let viewingTeam = [];
+        if (viewingManagerId) {
+            const targetManagerId = String(viewingManagerId);
+            viewingTeam = picks.filter(p => String(p.manager_id) === targetManagerId && p.player_id).map(p => ({
+                ...p.player,
+                player_id: p.player_id,
+                round: p.round_number,
+                pick: p.pick_number,
+                name: p.player?.name || 'Unknown',
+                team: p.player?.team || '',
+                position_list: p.player?.position_list || '',
+                batter_or_pitcher: p.player?.batter_or_pitcher || '',
+                original_name: p.player?.original_name || ''
+            }));
+        }
+
         console.log('[DraftPage Debug]', {
             totalPicks: picks.length,
             takenCount: taken.size,
@@ -455,8 +500,8 @@ export default function DraftPage() {
             upcoming = upcoming.slice(1);
         }
 
-        return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming };
-    }, [draftState, myManagerId]);
+        return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming, viewingTeam };
+    }, [draftState, myManagerId, viewingManagerId]);
 
     const handlePick = async (playerId) => {
         if (picking) return;
@@ -856,7 +901,16 @@ export default function DraftPage() {
                         : 'text-slate-500 hover:text-slate-300'
                         }`}
                 >
-                    Roster Assignment ({draftRosterAssignments.length})
+                    My Roster ({draftRosterAssignments.length})
+                </button>
+                <button
+                    onClick={() => setMainTab('league_rosters')}
+                    className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'league_rosters'
+                        ? 'text-white border-b-4 border-purple-500 -mb-0.5'
+                        : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                >
+                    League Rosters
                 </button>
             </div>
 
@@ -1034,185 +1088,206 @@ export default function DraftPage() {
                     {/* Right: Info Panels */}
                     <div className="flex-1 flex flex-col gap-4 min-w-[300px] lg:max-w-[350px]">
                         {/* Draft History / Future Sidebar */}
-                        <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
-                            <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
-                                <button onClick={() => setSidebarTab('history')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'history' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                    Recent
-                                </button>
-                                <button onClick={() => setSidebarTab('future')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'future' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                    Upcoming
+                        <div className={`bg-slate-800/40 rounded-xl border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl transition-all duration-300 overflow-hidden ${isSidebarHistoryOpen ? (isSidebarTeamOpen ? 'h-1/2' : 'flex-1') : 'h-auto shrink-0 flex-none'
+                            }`}>
+                            <div className="flex justify-between items-center px-4 pt-3 pb-2 border-b border-slate-700/50">
+                                <div className="flex gap-4">
+                                    <button onClick={() => setSidebarTab('history')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'history' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                        Recent
+                                    </button>
+                                    <button onClick={() => setSidebarTab('future')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'future' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                        Upcoming
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={() => setSidebarHistoryOpen(!isSidebarHistoryOpen)}
+                                    className="text-slate-500 hover:text-slate-300 transition-colors p-1"
+                                >
+                                    {isSidebarHistoryOpen ? '▼' : '◀'}
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                {sidebarTab === 'history' ? (
-                                    <>
-                                        {recentPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No picks yet</div>}
-                                        {recentPicks.map(pick => (
-                                            <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-2">
-                                                <div className="flex flex-col items-center min-w-[30px]">
-                                                    <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
-                                                        #{pick.pick_number}
+                            {isSidebarHistoryOpen && (
+                                <div className="flex-1 overflow-y-auto space-y-1 p-4 pt-2 pr-1 custom-scrollbar">
+                                    {sidebarTab === 'history' ? (
+                                        <>
+                                            {recentPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No picks yet</div>}
+                                            {recentPicks.map(pick => (
+                                                <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-2">
+                                                    <div className="flex flex-col items-center min-w-[30px]">
+                                                        <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
+                                                            #{pick.pick_number}
+                                                        </div>
+                                                        <div className="text-[9px] text-slate-500 mt-0.5 max-w-[60px] truncate" title={getMemberNickname(pick.manager_id)}>
+                                                            {getMemberNickname(pick.manager_id)}
+                                                        </div>
                                                     </div>
-                                                    <div className="text-[9px] text-slate-500 mt-0.5 max-w-[60px] truncate" title={getMemberNickname(pick.manager_id)}>
-                                                        {getMemberNickname(pick.manager_id)}
+                                                    <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
+                                                        <img
+                                                            src={pick.player?.photo_url || getPlayerPhoto(pick.player || {})}
+                                                            onError={(e) => handleImageError(e, pick.player || {})}
+                                                            className="w-full h-full object-cover"
+                                                        />
                                                     </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
+                                                        <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})}</div>
+                                                    </div>
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getTeamColor(pick.player?.team)} shrink-0`}>
+                                                        {getTeamAbbr(pick.player?.team)}
+                                                    </span>
                                                 </div>
-                                                <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
-                                                    <img
-                                                        src={pick.player?.photo_url || getPlayerPhoto(pick.player || {})}
-                                                        onError={(e) => handleImageError(e, pick.player || {})}
-                                                        className="w-full h-full object-cover"
-                                                    />
+                                            ))}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {upcomingPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No remaining picks</div>}
+                                            {upcomingPicks.map(pick => (
+                                                <div key={pick.pick_id} className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex justify-between items-center">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
+                                                        {pick.manager_id === myManagerId ? (
+                                                            <span className="text-sm font-bold text-green-400">You</span>
+                                                        ) : (
+                                                            <span className="text-sm font-bold text-slate-300">{getMemberNickname(pick.manager_id)}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-500">Rd {pick.round_number}</div>
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
-                                                    <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})}</div>
-                                                </div>
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getTeamColor(pick.player?.team)} shrink-0`}>
-                                                    {getTeamAbbr(pick.player?.team)}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </>
-                                ) : (
-                                    <>
-                                        {upcomingPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No remaining picks</div>}
-                                        {upcomingPicks.map(pick => (
-                                            <div key={pick.pick_id} className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
-                                                    {pick.manager_id === myManagerId ? (
-                                                        <span className="text-sm font-bold text-green-400">You</span>
-                                                    ) : (
-                                                        <span className="text-sm font-bold text-slate-300">{getMemberNickname(pick.manager_id)}</span>
-                                                    )}
-                                                </div>
-                                                <div className="text-[10px] text-slate-500">Rd {pick.round_number}</div>
-                                            </div>
-                                        ))}
-                                    </>
-                                )}
-                            </div>
+                                            ))}
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* My Team & Queue & Roster Tabs */}
-                        <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
-                            <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
-                                <button onClick={() => setActiveTab('team')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'team' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                    Team ({myTeam.length})
-                                </button>
-                                <button onClick={() => setActiveTab('queue')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'queue' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                    Queue ({queue.length})
-                                </button>
-                                <button onClick={() => setActiveTab('roster')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'roster' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                    Roster ({draftRosterAssignments.length})
+                        <div className={`bg-slate-800/40 rounded-xl border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl transition-all duration-300 overflow-hidden ${isSidebarTeamOpen ? (isSidebarHistoryOpen ? 'h-1/2' : 'flex-1') : 'h-auto shrink-0 flex-none'
+                            }`}>
+                            <div className="flex justify-between items-center px-4 pt-3 pb-2 border-b border-slate-700/50">
+                                <div className="flex gap-4">
+                                    <button onClick={() => setActiveTab('team')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'team' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                        Team ({myTeam.length})
+                                    </button>
+                                    <button onClick={() => setActiveTab('queue')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'queue' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                        Queue ({queue.length})
+                                    </button>
+                                    <button onClick={() => setActiveTab('roster')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'roster' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                        Roster ({draftRosterAssignments.length})
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={() => setSidebarTeamOpen(!isSidebarTeamOpen)}
+                                    className="text-slate-500 hover:text-slate-300 transition-colors p-1"
+                                >
+                                    {isSidebarTeamOpen ? '▼' : '◀'}
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                {activeTab === 'team' ? (
-                                    <>
-                                        {myTeam.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Your roster is empty</div>}
-                                        {myTeam.map((p, i) => {
-                                            const isBatter = p.batter_or_pitcher === 'batter';
-                                            const cats = isBatter ? batterStatCategories : pitcherStatCategories;
-                                            const showOriginalName = p.original_name && p.original_name !== p.name;
-
-                                            return (
-                                                <div key={i} className="flex flex-col text-sm p-3 hover:bg-slate-800/50 rounded transition-colors group border-b border-slate-700/50">
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
-                                                                <img
-                                                                    src={getPlayerPhoto(p)}
-                                                                    onError={(e) => handleImageError(e, p)}
-                                                                    alt={p.name}
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <div className="flex items-baseline gap-2">
-                                                                    <span className="text-slate-200 font-bold group-hover:text-white text-base">{p.name}</span>
-                                                                    <span className="text-xs text-slate-400 font-mono">{filterPositions(p)}</span>
-                                                                    <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(p.team)}`}>
-                                                                        {getTeamAbbr(p.team)}
-                                                                    </span>
+                            {isSidebarTeamOpen && (
+                                <div className="flex-1 overflow-y-auto space-y-1 p-4 pt-2 pr-1 custom-scrollbar">
+                                    {activeTab === 'team' ? (
+                                        <>
+                                            {myTeam.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Your roster is empty</div>}
+                                            {myTeam.map((p, i) => {
+                                                const isBatter = p.batter_or_pitcher === 'batter';
+                                                const cats = isBatter ? batterStatCategories : pitcherStatCategories;
+                                                const showOriginalName = p.original_name && p.original_name !== p.name;
+                                                return (
+                                                    <div key={i} className="flex flex-col text-sm p-3 hover:bg-slate-800/50 rounded transition-colors group border-b border-slate-700/50">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
+                                                                    <img
+                                                                        src={getPlayerPhoto(p)}
+                                                                        onError={(e) => handleImageError(e, p)}
+                                                                        alt={p.name}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
                                                                 </div>
-                                                                {showOriginalName && (
-                                                                    <div className="text-[10px] text-slate-500 mt-0.5">{p.original_name}</div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
-                                                        {cats.map(cat => (
-                                                            <div key={cat} className="flex flex-col items-center min-w-[30px]">
-                                                                <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
-                                                                <span className="text-slate-300">{getPlayerStat(p.player_id, cat)}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </>
-                                ) : activeTab === 'queue' ? (
-                                    <>
-                                        {queue.length === 0 && <div className="text-slate-500 text-sm text-center py-4 text-xs italic">
-                                            Players in queue will be auto-drafted if time expires.<br />
-                                            Drag & drop or use arrows to reorder.
-                                        </div>}
-                                        {queue.map((item, i) => renderQueueItem(item, i))}
-                                    </>
-                                ) : (
-                                    <>
-                                        {/* Roster Grid */}
-                                        <div className="space-y-2">
-                                            {Object.keys(rosterPositions)
-                                                .filter(slot => !slot.includes('Minor'))
-                                                .map(slot => {
-                                                    const count = rosterPositions[slot];
-                                                    return Array.from({ length: count }).map((_, idx) => {
-                                                        const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
-                                                        const assignment = getAssignedPlayer(slotKey);
-
-                                                        return (
-                                                            <div key={slotKey} className="bg-slate-900/80 p-2 rounded border border-slate-700/50 flex items-center justify-between">
-                                                                <div className="flex items-center gap-2 flex-1">
-                                                                    <span className="text-xs font-mono text-purple-400 font-bold min-w-[40px]">{slot}</span>
-                                                                    {assignment ? (
-                                                                        <>
-                                                                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
-                                                                                <img
-                                                                                    src={getPlayerPhoto(assignment)}
-                                                                                    onError={(e) => handleImageError(e, assignment)}
-                                                                                    className="w-full h-full object-cover"
-                                                                                />
-                                                                            </div>
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
-                                                                                <div className="text-[10px] text-slate-500">{assignment.position_list}</div>
-                                                                            </div>
-                                                                            <button
-                                                                                onClick={() => handleRemoveAssignment(assignment.assignment_id)}
-                                                                                className="text-slate-500 hover:text-red-400 text-xs px-2"
-                                                                            >
-                                                                                ×
-                                                                            </button>
-                                                                        </>
-                                                                    ) : (
-                                                                        <div className="text-slate-600 text-xs italic">Empty</div>
+                                                                <div>
+                                                                    <div className="flex items-baseline gap-2">
+                                                                        <span className="text-slate-200 font-bold group-hover:text-white text-base">{p.name}</span>
+                                                                        <span className="text-xs text-slate-400 font-mono">{filterPositions(p)}</span>
+                                                                        <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(p.team)}`}>
+                                                                            {getTeamAbbr(p.team)}
+                                                                        </span>
+                                                                    </div>
+                                                                    {showOriginalName && (
+                                                                        <div className="text-[10px] text-slate-500 mt-0.5">{p.original_name}</div>
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                        );
-                                                    });
-                                                })}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
+                                                            {cats.map(cat => (
+                                                                <div key={cat} className="flex flex-col items-center min-w-[30px]">
+                                                                    <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
+                                                                    <span className="text-slate-300">{getPlayerStat(p.player_id, cat)}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </>
+                                    ) : activeTab === 'queue' ? (
+                                        <>
+                                            {queue.length === 0 && <div className="text-slate-500 text-sm text-center py-4 text-xs italic">
+                                                Players in queue will be auto-drafted if time expires.<br />
+                                                Drag & drop or use arrows to reorder.
+                                            </div>}
+                                            {queue.map((item, i) => renderQueueItem(item, i))}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* Roster Grid */}
+                                            <div className="space-y-2">
+                                                {Object.keys(rosterPositions)
+                                                    .filter(slot => !slot.includes('Minor'))
+                                                    .map(slot => {
+                                                        const count = rosterPositions[slot];
+                                                        return Array.from({ length: count }).map((_, idx) => {
+                                                            const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
+                                                            const assignment = getAssignedPlayer(slotKey);
+
+                                                            return (
+                                                                <div key={slotKey} className="bg-slate-900/80 p-2 rounded border border-slate-700/50 flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2 flex-1">
+                                                                        <span className="text-xs font-mono text-purple-400 font-bold min-w-[40px]">{slot}</span>
+                                                                        {assignment ? (
+                                                                            <>
+                                                                                <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                                    <img
+                                                                                        src={getPlayerPhoto(assignment)}
+                                                                                        onError={(e) => handleImageError(e, assignment)}
+                                                                                        className="w-full h-full object-cover"
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                                                    <div className="text-[10px] text-slate-500">{assignment.position_list}</div>
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={() => handleRemoveAssignment(assignment.assignment_id)}
+                                                                                    className="text-slate-500 hover:text-red-400 text-xs px-2"
+                                                                                >
+                                                                                    ×
+                                                                                </button>
+                                                                            </>
+                                                                        ) : (
+                                                                            <div className="text-slate-600 text-xs italic">Empty</div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        });
+                                                    })}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1223,7 +1298,7 @@ export default function DraftPage() {
                     <h2 className="text-xl font-bold mb-2 text-purple-300">Roster Assignment ({draftRosterAssignments.length})</h2>
                     <p className="text-xs text-slate-400 mb-4">Click on empty slots to assign players</p>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 mb-6">
                         {Object.keys(rosterPositions)
                             .filter(slot => !slot.includes('Minor'))
                             .map(slot => {
@@ -1237,8 +1312,8 @@ export default function DraftPage() {
                                             key={slotKey}
                                             onClick={() => !assignment && setAssignModalSlot(slotKey)}
                                             className={`flex items-center justify-between p-3 rounded-lg border transition-all ${assignment
-                                                    ? 'bg-slate-900/80 border-slate-700/50'
-                                                    : 'bg-slate-900/50 border-slate-700/30 cursor-pointer hover:border-purple-500/50 hover:bg-slate-800/80'
+                                                ? 'bg-slate-900/80 border-slate-700/50'
+                                                : 'bg-slate-900/50 border-slate-700/30 cursor-pointer hover:border-purple-500/50 hover:bg-slate-800/80'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3 flex-1">
@@ -1284,8 +1359,144 @@ export default function DraftPage() {
                                 });
                             })}
                     </div>
+
+                    {/* Unassigned Players Section */}
+                    {myTeam.filter(p => !isPlayerAssigned(p.player_id)).length > 0 && (
+                        <>
+                            <div className="border-t border-slate-700 pt-4 mt-4">
+                                <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({myTeam.filter(p => !isPlayerAssigned(p.player_id)).length})</h3>
+                                <p className="text-xs text-slate-400 mb-3">Click on a player to assign them to a position</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                                    {myTeam.filter(p => !isPlayerAssigned(p.player_id)).map((player) => (
+                                        <div
+                                            key={player.player_id}
+                                            onClick={() => setAssignModalPlayer(player)}
+                                            className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all cursor-pointer hover:bg-slate-800/80"
+                                        >
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                    <img
+                                                        src={getPlayerPhoto(player)}
+                                                        onError={(e) => handleImageError(e, player)}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="text-center w-full">
+                                                    <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
+                                                    <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
+
+            {
+                mainTab === 'league_rosters' && (
+                    <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 350px)' }}>
+                        <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center gap-4">
+                                <h2 className="text-xl font-bold text-purple-300">League Rosters</h2>
+                                <div className="text-xs text-slate-400">View other managers' assignments</div>
+                            </div>
+                            <select
+                                className="bg-slate-700 text-white p-2 rounded border border-slate-600 outline-none focus:border-purple-500 min-w-[200px]"
+                                value={viewingManagerId || ''}
+                                onChange={(e) => setViewingManagerId(e.target.value)}
+                            >
+                                {members.map(m => (
+                                    <option key={m.manager_id} value={m.manager_id}>
+                                        {m.nickname} {m.manager_id === myManagerId ? '(You)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-2 mb-6">
+                            {Object.keys(rosterPositions)
+                                .filter(slot => !slot.includes('Minor'))
+                                .map(slot => {
+                                    const count = rosterPositions[slot];
+                                    return Array.from({ length: count }).map((_, idx) => {
+                                        const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
+                                        const assignment = viewingRosterAssignments.find(a => a.roster_slot === slotKey);
+
+                                        return (
+                                            <div
+                                                key={slotKey}
+                                                className={`flex items-center justify-between p-3 rounded-lg border transition-all ${assignment
+                                                    ? 'bg-slate-900/80 border-slate-700/50'
+                                                    : 'bg-slate-900/50 border-slate-700/30'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <div className="w-16 text-center">
+                                                        <span className="font-mono font-bold text-slate-400 text-sm">{slot}</span>
+                                                    </div>
+
+                                                    {assignment ? (
+                                                        <>
+                                                            <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                                <img
+                                                                    src={getPlayerPhoto(assignment)}
+                                                                    onError={(e) => handleImageError(e, assignment)}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                                <div className="text-xs text-slate-500">{assignment.position_list}</div>
+                                                            </div>
+                                                            <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(assignment.team)}`}>
+                                                                {getTeamAbbr(assignment.team)}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex-1 text-slate-600 italic text-sm">
+                                                            Empty
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })}
+                        </div>
+
+                        {/* Viewing Unassigned Players */}
+                        {viewingTeam && viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length > 0 && (
+                            <div className="border-t border-slate-700 pt-4 mt-4">
+                                <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length})</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                                    {viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).map((player) => (
+                                        <div
+                                            key={player.player_id}
+                                            className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50"
+                                        >
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                    <img
+                                                        src={getPlayerPhoto(player)}
+                                                        onError={(e) => handleImageError(e, player)}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="text-center w-full">
+                                                    <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
+                                                    <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar {
@@ -1309,6 +1520,6 @@ export default function DraftPage() {
                     scrollbar-width: none;
                 }
             `}</style>
-        </div>
+        </div >
     );
 }
