@@ -328,11 +328,15 @@ export default function DraftPage() {
                 if (data.status === 'pre-draft' && data.startTime) {
                     const start = new Date(data.startTime).getTime();
                     const diff = Math.floor((start - now) / 1000);
+                    console.log('Timer Calcs (Pre):', { serverTime: data.serverTime, startTime: data.startTime, diff });
                     setTimeLeft(diff > 0 ? diff : 0);
                 } else if (data.currentPick?.deadline) {
                     const deadline = new Date(data.currentPick.deadline).getTime();
                     const diff = Math.floor((deadline - now) / 1000);
+                    console.log('Timer Calcs (Active):', { serverTime: data.serverTime, deadline: data.currentPick.deadline, diff });
                     setTimeLeft(diff > 0 ? diff : 0);
+                } else {
+                    console.log('Timer Calcs: No active timer', { status: data.status, hasPick: !!data.currentPick });
                 }
             } catch (e) {
                 console.error(e);
@@ -463,8 +467,15 @@ export default function DraftPage() {
     useEffect(() => {
         let cancelled = false;
         const resolvePhotos = async () => {
-            if (!players.length) return;
-            const batchPayload = players.map(p => ({
+            const pickedPlayers = draftState?.picks?.map(p => p.player).filter(Boolean) || [];
+            const allPlayers = [...players, ...pickedPlayers];
+
+            // Deduplicate by player_id
+            const uniquePlayers = Array.from(new Map(allPlayers.map(p => [p.player_id, p])).values());
+
+            if (!uniquePlayers.length) return;
+
+            const batchPayload = uniquePlayers.map(p => ({
                 id: p.player_id,
                 candidates: getPlayerPhotoPaths(p).filter(path => !path.endsWith('/defaultPlayer.png'))
             }));
@@ -476,14 +487,18 @@ export default function DraftPage() {
                     body: JSON.stringify({ players: batchPayload })
                 });
                 const data = await res.json();
-                if (!cancelled && data.results) setPhotoSrcMap(data.results);
+                if (!cancelled && data.results) {
+                    setPhotoSrcMap(prev => ({ ...prev, ...data.results }));
+                }
             } catch {
-                if (!cancelled) setPhotoSrcMap(Object.fromEntries(players.map(p => [p.player_id, '/photo/defaultPlayer.png'])));
+                if (!cancelled) {
+                    // Fallback handled by individual image error
+                }
             }
         };
         resolvePhotos();
         return () => { cancelled = true; };
-    }, [players]);
+    }, [players, draftState?.picks]);
 
     const getPlayerPhoto = (player) => photoSrcMap[player.player_id] || getPlayerPhotoPaths(player)[0];
 
