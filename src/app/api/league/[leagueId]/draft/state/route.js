@@ -129,7 +129,40 @@ export async function GET(request, { params }) {
 
             // Init Deadline if needed
             if (!currentPick.deadline) {
-                const nextDeadline = new Date(now.getTime() + duration * 1000);
+                // Calculate deadline from previous pick's picked_at time
+                let baseTime = now;
+
+                // Find the most recent completed pick
+                const { data: lastPick } = await supabase
+                    .from('draft_picks')
+                    .select('picked_at, pick_number, player_id')
+                    .eq('league_id', leagueId)
+                    .not('player_id', 'is', null)
+                    .order('pick_number', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (lastPick?.picked_at) {
+                    baseTime = new Date(lastPick.picked_at).getTime();
+                    console.log('[Deadline Calc] Previous Pick:', {
+                        pickNumber: lastPick.pick_number,
+                        pickedAt: lastPick.picked_at,
+                        baseTime: new Date(baseTime).toISOString()
+                    });
+                } else {
+                    console.log('[Deadline Calc] No previous pick found, using server time');
+                }
+
+                const nextDeadline = new Date(baseTime + duration * 1000);
+                const diff = Math.floor((nextDeadline.getTime() - now) / 1000);
+
+                console.log('[Deadline Calc] Calculation:', {
+                    previousPickTime: lastPick?.picked_at || 'N/A',
+                    nowTime: new Date(now).toISOString(),
+                    duration: `${duration}s`,
+                    calculatedDeadline: nextDeadline.toISOString(),
+                    diff: `${diff}s`
+                });
                 const { data: updated, error: updateError } = await supabase
                     .from('draft_picks')
                     .update({ deadline: nextDeadline.toISOString() })

@@ -354,13 +354,17 @@ export default function DraftPage() {
                     } else if (data.currentPick?.deadline) {
                         const deadline = new Date(data.currentPick.deadline).getTime();
                         diff = Math.floor((deadline - now) / 1000);
+
                         if (logCalc || !prevPickIdRef.current) { // Log on change or if just starting
+                            // Find previous pick time from picks array
+                            const previousPick = data.picks?.length > 0 ? data.picks[data.picks.length - 1] : null;
+
                             console.log('%c[Timer Calc] Active Pick', 'color: lime; font-weight: bold;', {
                                 pickInfo: `Pick ${data.currentPick.pick_number} (Rd ${data.currentPick.round_number})`,
-                                serverTime: data.serverTime,
+                                previousPickTime: previousPick?.picked_at || 'N/A',
+                                nowTime: data.serverTime,
                                 deadline: data.currentPick.deadline,
-                                calculation: `Deadline(${new Date(data.currentPick.deadline).getTime()}) - Server(${now}) = ${deadline - now}ms`,
-                                secondsRemaining: diff
+                                diff: `${diff}s`
                             });
                         }
                         setTimeLeft(diff > 0 ? diff : 0);
