@@ -46,6 +46,7 @@ export default function DraftPage() {
     // Draft Roster Assignments State
     const [draftRosterAssignments, setDraftRosterAssignments] = useState([]);
     const [assignModalPlayer, setAssignModalPlayer] = useState(null);
+    const [mainTab, setMainTab] = useState('players');
 
     // Fetch Manager ID
     useEffect(() => {
@@ -754,367 +755,446 @@ export default function DraftPage() {
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-250px)]">
-                {/* Center: Player Pool */}
-                <div className="flex-[3] bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
-                    {/* Filter Bar */}
-                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-700 mb-4 flex flex-wrap gap-4 items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="text-white font-bold text-lg mr-2">Players</span>
-                            <div className="flex bg-slate-800 rounded p-1 border border-slate-700">
+            {/* Main Tab Selector */}
+            <div className="flex gap-4 mb-4 border-b-2 border-slate-700">
+                <button
+                    onClick={() => setMainTab('players')}
+                    className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'players'
+                            ? 'text-white border-b-4 border-purple-500 -mb-0.5'
+                            : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                >
+                    Players
+                </button>
+                <button
+                    onClick={() => setMainTab('roster')}
+                    className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'roster'
+                            ? 'text-white border-b-4 border-purple-500 -mb-0.5'
+                            : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                >
+                    Roster Assignment ({draftRosterAssignments.length})
+                </button>
+            </div>
+
+            {mainTab === 'players' && (
+                <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-350px)]">
+                    {/* Center: Player Pool */}
+                    <div className="flex-[3] bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
+                        {/* Filter Bar */}
+                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-700 mb-4 flex flex-wrap gap-4 items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="text-white font-bold text-lg mr-2">Players</span>
+                                <div className="flex bg-slate-800 rounded p-1 border border-slate-700">
+                                    <button
+                                        className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                        onClick={() => setFilterType('batter')}
+                                    >Batter</button>
+                                    <button
+                                        className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'pitcher' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                        onClick={() => setFilterType('pitcher')}
+                                    >Pitcher</button>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 items-center">
+                                {/* Legend Button moved here */}
                                 <button
-                                    className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                                    onClick={() => setFilterType('batter')}
-                                >Batter</button>
-                                <button
-                                    className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'pitcher' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                                    onClick={() => setFilterType('pitcher')}
-                                >Pitcher</button>
+                                    onClick={() => setShowLegend(true)}
+                                    className="bg-slate-800 border border-slate-600 text-purple-400 hover:text-white hover:bg-purple-600/50 hover:border-purple-500 px-3 py-1.5 rounded text-xs transition-all font-bold"
+                                >
+                                    Legend
+                                </button>
+
+                                <select
+                                    className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
+                                    value={filterTeam}
+                                    onChange={e => setFilterTeam(e.target.value)}
+                                >
+                                    <option value="All">All Teams</option>
+                                    <option value="中信兄弟">Brothers</option>
+                                    <option value="統一獅">Lions</option>
+                                    <option value="樂天桃猿">Monkeys</option>
+                                    <option value="富邦悍將">Guardians</option>
+                                    <option value="味全龍">Dragons</option>
+                                    <option value="台鋼雄鷹">Hawks</option>
+                                </select>
+
+                                <select
+                                    className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
+                                    value={filterPos}
+                                    onChange={e => setFilterPos(e.target.value)}
+                                >
+                                    <option value="All">All Positions</option>
+                                    {getPosOptions().map(k => <option key={k} value={k}>{k}</option>)}
+                                </select>
+
+                                <select
+                                    className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
+                                    value={filterIdentity}
+                                    onChange={e => setFilterIdentity(e.target.value)}
+                                >
+                                    <option value="All">All</option>
+                                    <option value="Local">Local</option>
+                                    <option value="Foreign">Foreign</option>
+                                </select>
+
+                                <input
+                                    className="bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-slate-200 w-32 focus:w-48 transition-all outline-none focus:border-purple-500"
+                                    placeholder="Search Name..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                />
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 items-center">
-                            {/* Legend Button moved here */}
-                            <button
-                                onClick={() => setShowLegend(true)}
-                                className="bg-slate-800 border border-slate-600 text-purple-400 hover:text-white hover:bg-purple-600/50 hover:border-purple-500 px-3 py-1.5 rounded text-xs transition-all font-bold"
-                            >
-                                Legend
-                            </button>
-
-                            <select
-                                className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
-                                value={filterTeam}
-                                onChange={e => setFilterTeam(e.target.value)}
-                            >
-                                <option value="All">All Teams</option>
-                                <option value="中信兄弟">Brothers</option>
-                                <option value="統一獅">Lions</option>
-                                <option value="樂天桃猿">Monkeys</option>
-                                <option value="富邦悍將">Guardians</option>
-                                <option value="味全龍">Dragons</option>
-                                <option value="台鋼雄鷹">Hawks</option>
-                            </select>
-
-                            <select
-                                className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
-                                value={filterPos}
-                                onChange={e => setFilterPos(e.target.value)}
-                            >
-                                <option value="All">All Positions</option>
-                                {getPosOptions().map(k => <option key={k} value={k}>{k}</option>)}
-                            </select>
-
-                            <select
-                                className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
-                                value={filterIdentity}
-                                onChange={e => setFilterIdentity(e.target.value)}
-                            >
-                                <option value="All">All</option>
-                                <option value="Local">Local</option>
-                                <option value="Foreign">Foreign</option>
-                            </select>
-
-                            <input
-                                className="bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-slate-200 w-32 focus:w-48 transition-all outline-none focus:border-purple-500"
-                                placeholder="Search Name..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Table */}
-                    <div className="flex-1 overflow-auto rounded-lg border border-slate-700 bg-slate-900/50 custom-scrollbar relative">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-900/95 sticky top-0 z-10 text-[10px] text-slate-400 uppercase tracking-wider font-semibold shadow-md">
-                                <tr>
-                                    <th className="p-2 border-b border-slate-700 min-w-[250px]">Player</th>
-                                    {currentStatCats.map(cat => (
-                                        <th key={cat} className="p-2 border-b border-slate-700 text-center min-w-[40px] cursor-pointer hover:text-white transition-colors"
-                                            onClick={() => handleSort(cat)}
-                                        >
-                                            <div className="flex items-center justify-center gap-1">
-                                                {getStatAbbr(cat)}
-                                                {sortConfig.key === cat && (<span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>)}
-                                            </div>
-                                        </th>
-                                    ))}
-                                    <th className="p-2 border-b border-slate-700 text-right sticky right-0 bg-slate-900 shadow-l">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredPlayers.map(player => {
-                                    const isForeigner = player.identity?.toLowerCase() === 'foreigner';
-                                    const showOriginalName = player.original_name && player.original_name !== player.name;
-
-                                    return (
-                                        <tr key={player.player_id} className="group hover:bg-slate-700/40 transition-colors border-b border-slate-800/50">
-                                            {/* Player Info Combined */}
-                                            <td className="p-2">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
-                                                        <img
-                                                            src={getPlayerPhoto(player)}
-                                                            onError={(e) => handleImageError(e, player)}
-                                                            alt={player.name}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <div className="flex items-baseline gap-2">
-                                                            <span className="font-bold text-slate-200 text-base">{player.name}</span>
-                                                            <span className="text-slate-400 text-sm">- {filterPositions(player)}</span>
-                                                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(player.team)}`}>
-                                                                {getTeamAbbr(player.team)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            {showOriginalName && (
-                                                                <span className="text-[10px] text-slate-500">{player.original_name}</span>
-                                                            )}
-                                                            <div className="flex gap-1">
-                                                                {isForeigner && (
-                                                                    <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                        {/* Table */}
+                        <div className="flex-1 overflow-auto rounded-lg border border-slate-700 bg-slate-900/50 custom-scrollbar relative">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-900/95 sticky top-0 z-10 text-[10px] text-slate-400 uppercase tracking-wider font-semibold shadow-md">
+                                    <tr>
+                                        <th className="p-2 border-b border-slate-700 min-w-[250px]">Player</th>
+                                        {currentStatCats.map(cat => (
+                                            <th key={cat} className="p-2 border-b border-slate-700 text-center min-w-[40px] cursor-pointer hover:text-white transition-colors"
+                                                onClick={() => handleSort(cat)}
+                                            >
+                                                <div className="flex items-center justify-center gap-1">
+                                                    {getStatAbbr(cat)}
+                                                    {sortConfig.key === cat && (<span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>)}
                                                 </div>
-                                            </td>
-
-                                            {/* Stats */}
-                                            {currentStatCats.map(cat => {
-                                                const val = getPlayerStat(player.player_id, cat);
-                                                return (
-                                                    <td key={cat} className="p-2 text-center text-xs text-slate-300 font-mono">
-                                                        {val}
-                                                    </td>
-                                                );
-                                            })}
-
-                                            {/* Action */}
-                                            <td className="p-2 text-right sticky right-0 bg-slate-900/0 group-hover:bg-slate-800/0">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <button
-                                                        onClick={() => setAssignModalPlayer(player)}
-                                                        className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${isPlayerAssigned(player.player_id) ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 hover:text-white'}`}
-                                                        title="Assign to roster slot"
-                                                    >
-                                                        📋
-                                                    </button>
-                                                    <button
-                                                        onClick={() => isQueued(player.player_id) ? handleRemoveFromQueue(queue.find(q => q.player_id === player.player_id)?.queue_id) : handleAddToQueue(player)}
-                                                        className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${isQueued(player.player_id) ? 'bg-purple-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 hover:text-white'}`}
-                                                    >
-                                                        {isQueued(player.player_id) ? '★' : '☆'}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handlePick(player.player_id)}
-                                                        disabled={picking || draftState?.currentPick?.manager_id !== myManagerId}
-                                                        className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all
-                                                            ${draftState?.currentPick?.manager_id === myManagerId
-                                                                ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
-                                                                : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'
-                                                            }`}
-                                                    >
-                                                        DRAFT
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Right: Info Panels */}
-                <div className="flex-1 flex flex-col gap-4 min-w-[300px] lg:max-w-[350px]">
-                    {/* Draft History / Future Sidebar */}
-                    <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
-                        <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
-                            <button onClick={() => setSidebarTab('history')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'history' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                Recent
-                            </button>
-                            <button onClick={() => setSidebarTab('future')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'future' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                Upcoming
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                            {sidebarTab === 'history' ? (
-                                <>
-                                    {recentPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No picks yet</div>}
-                                    {recentPicks.map(pick => (
-                                        <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-2">
-                                            <div className="flex flex-col items-center min-w-[30px]">
-                                                <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
-                                                    #{pick.pick_number}
-                                                </div>
-                                                <div className="text-[9px] text-slate-500 mt-0.5 max-w-[60px] truncate" title={getMemberNickname(pick.manager_id)}>
-                                                    {getMemberNickname(pick.manager_id)}
-                                                </div>
-                                            </div>
-                                            <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
-                                                <img
-                                                    src={pick.player?.photo_url || getPlayerPhoto(pick.player || {})}
-                                                    onError={(e) => handleImageError(e, pick.player || {})}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
-                                                <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})}</div>
-                                            </div>
-                                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getTeamColor(pick.player?.team)} shrink-0`}>
-                                                {getTeamAbbr(pick.player?.team)}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </>
-                            ) : (
-                                <>
-                                    {upcomingPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No remaining picks</div>}
-                                    {upcomingPicks.map(pick => (
-                                        <div key={pick.pick_id} className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex justify-between items-center">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
-                                                {pick.manager_id === myManagerId ? (
-                                                    <span className="text-sm font-bold text-green-400">You</span>
-                                                ) : (
-                                                    <span className="text-sm font-bold text-slate-300">{getMemberNickname(pick.manager_id)}</span>
-                                                )}
-                                            </div>
-                                            <div className="text-[10px] text-slate-500">Rd {pick.round_number}</div>
-                                        </div>
-                                    ))}
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* My Team & Queue & Roster Tabs */}
-                    <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
-                        <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
-                            <button onClick={() => setActiveTab('team')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'team' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                Team ({myTeam.length})
-                            </button>
-                            <button onClick={() => setActiveTab('queue')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'queue' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                Queue ({queue.length})
-                            </button>
-                            <button onClick={() => setActiveTab('roster')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'roster' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                Roster ({draftRosterAssignments.length})
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                            {activeTab === 'team' ? (
-                                <>
-                                    {myTeam.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Your roster is empty</div>}
-                                    {myTeam.map((p, i) => {
-                                        const isBatter = p.batter_or_pitcher === 'batter';
-                                        const cats = isBatter ? batterStatCategories : pitcherStatCategories;
-                                        const showOriginalName = p.original_name && p.original_name !== p.name;
+                                            </th>
+                                        ))}
+                                        <th className="p-2 border-b border-slate-700 text-right sticky right-0 bg-slate-900 shadow-l">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredPlayers.map(player => {
+                                        const isForeigner = player.identity?.toLowerCase() === 'foreigner';
+                                        const showOriginalName = player.original_name && player.original_name !== player.name;
 
                                         return (
-                                            <div key={i} className="flex flex-col text-sm p-3 hover:bg-slate-800/50 rounded transition-colors group border-b border-slate-700/50">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
+                                            <tr key={player.player_id} className="group hover:bg-slate-700/40 transition-colors border-b border-slate-800/50">
+                                                {/* Player Info Combined */}
+                                                <td className="p-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
                                                             <img
-                                                                src={getPlayerPhoto(p)}
-                                                                onError={(e) => handleImageError(e, p)}
-                                                                alt={p.name}
+                                                                src={getPlayerPhoto(player)}
+                                                                onError={(e) => handleImageError(e, player)}
+                                                                alt={player.name}
                                                                 className="w-full h-full object-cover"
                                                             />
                                                         </div>
-                                                        <div>
+                                                        <div className="flex flex-col">
                                                             <div className="flex items-baseline gap-2">
-                                                                <span className="text-slate-200 font-bold group-hover:text-white text-base">{p.name}</span>
-                                                                <span className="text-xs text-slate-400 font-mono">{filterPositions(p)}</span>
-                                                                <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(p.team)}`}>
-                                                                    {getTeamAbbr(p.team)}
+                                                                <span className="font-bold text-slate-200 text-base">{player.name}</span>
+                                                                <span className="text-slate-400 text-sm">- {filterPositions(player)}</span>
+                                                                <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(player.team)}`}>
+                                                                    {getTeamAbbr(player.team)}
                                                                 </span>
                                                             </div>
-                                                            {showOriginalName && (
-                                                                <div className="text-[10px] text-slate-500 mt-0.5">{p.original_name}</div>
-                                                            )}
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                {showOriginalName && (
+                                                                    <span className="text-[10px] text-slate-500">{player.original_name}</span>
+                                                                )}
+                                                                <div className="flex gap-1">
+                                                                    {isForeigner && (
+                                                                        <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
-                                                    {cats.map(cat => (
-                                                        <div key={cat} className="flex flex-col items-center min-w-[30px]">
-                                                            <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
-                                                            <span className="text-slate-300">{getPlayerStat(p.player_id, cat)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                                </td>
+
+                                                {/* Stats */}
+                                                {currentStatCats.map(cat => {
+                                                    const val = getPlayerStat(player.player_id, cat);
+                                                    return (
+                                                        <td key={cat} className="p-2 text-center text-xs text-slate-300 font-mono">
+                                                            {val}
+                                                        </td>
+                                                    );
+                                                })}
+
+                                                {/* Action */}
+                                                <td className="p-2 text-right sticky right-0 bg-slate-900/0 group-hover:bg-slate-800/0">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <button
+                                                            onClick={() => isQueued(player.player_id) ? handleRemoveFromQueue(queue.find(q => q.player_id === player.player_id)?.queue_id) : handleAddToQueue(player)}
+                                                            className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${isQueued(player.player_id) ? 'bg-purple-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 hover:text-white'}`}
+                                                        >
+                                                            {isQueued(player.player_id) ? '★' : '☆'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handlePick(player.player_id)}
+                                                            disabled={picking || draftState?.currentPick?.manager_id !== myManagerId}
+                                                            className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all
+                                                            ${draftState?.currentPick?.manager_id === myManagerId
+                                                                    ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
+                                                                    : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'
+                                                                }`}
+                                                        >
+                                                            DRAFT
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                         );
                                     })}
-                                </>
-                            ) : activeTab === 'queue' ? (
-                                <>
-                                    {queue.length === 0 && <div className="text-slate-500 text-sm text-center py-4 text-xs italic">
-                                        Players in queue will be auto-drafted if time expires.<br />
-                                        Drag & drop or use arrows to reorder.
-                                    </div>}
-                                    {queue.map((item, i) => renderQueueItem(item, i))}
-                                </>
-                            ) : (
-                                <>
-                                    {/* Roster Grid */}
-                                    <div className="space-y-2">
-                                        {Object.keys(rosterPositions)
-                                            .filter(slot => !slot.includes('Minor'))
-                                            .map(slot => {
-                                                const count = rosterPositions[slot];
-                                                return Array.from({ length: count }).map((_, idx) => {
-                                                    const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
-                                                    const assignment = getAssignedPlayer(slotKey);
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                                                    return (
-                                                        <div key={slotKey} className="bg-slate-900/80 p-2 rounded border border-slate-700/50 flex items-center justify-between">
-                                                            <div className="flex items-center gap-2 flex-1">
-                                                                <span className="text-xs font-mono text-purple-400 font-bold min-w-[40px]">{slotKey}</span>
-                                                                {assignment ? (
-                                                                    <>
-                                                                        <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
-                                                                            <img
-                                                                                src={getPlayerPhoto(assignment)}
-                                                                                onError={(e) => handleImageError(e, assignment)}
-                                                                                className="w-full h-full object-cover"
-                                                                            />
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
-                                                                            <div className="text-[10px] text-slate-500">{assignment.position_list}</div>
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={() => handleRemoveAssignment(assignment.assignment_id)}
-                                                                            className="text-slate-500 hover:text-red-400 text-xs px-2"
-                                                                        >
-                                                                            ×
-                                                                        </button>
-                                                                    </>
-                                                                ) : (
-                                                                    <div className="text-slate-600 text-xs italic">Empty</div>
+                    {/* Right: Info Panels */}
+                    <div className="flex-1 flex flex-col gap-4 min-w-[300px] lg:max-w-[350px]">
+                        {/* Draft History / Future Sidebar */}
+                        <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
+                            <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
+                                <button onClick={() => setSidebarTab('history')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'history' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                    Recent
+                                </button>
+                                <button onClick={() => setSidebarTab('future')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${sidebarTab === 'future' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                    Upcoming
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                {sidebarTab === 'history' ? (
+                                    <>
+                                        {recentPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No picks yet</div>}
+                                        {recentPicks.map(pick => (
+                                            <div key={pick.pick_id} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-2">
+                                                <div className="flex flex-col items-center min-w-[30px]">
+                                                    <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
+                                                        #{pick.pick_number}
+                                                    </div>
+                                                    <div className="text-[9px] text-slate-500 mt-0.5 max-w-[60px] truncate" title={getMemberNickname(pick.manager_id)}>
+                                                        {getMemberNickname(pick.manager_id)}
+                                                    </div>
+                                                </div>
+                                                <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
+                                                    <img
+                                                        src={pick.player?.photo_url || getPlayerPhoto(pick.player || {})}
+                                                        onError={(e) => handleImageError(e, pick.player || {})}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
+                                                    <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})}</div>
+                                                </div>
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getTeamColor(pick.player?.team)} shrink-0`}>
+                                                    {getTeamAbbr(pick.player?.team)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <>
+                                        {upcomingPicks.length === 0 && <div className="text-slate-500 text-sm text-center py-4">No remaining picks</div>}
+                                        {upcomingPicks.map(pick => (
+                                            <div key={pick.pick_id} className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
+                                                    {pick.manager_id === myManagerId ? (
+                                                        <span className="text-sm font-bold text-green-400">You</span>
+                                                    ) : (
+                                                        <span className="text-sm font-bold text-slate-300">{getMemberNickname(pick.manager_id)}</span>
+                                                    )}
+                                                </div>
+                                                <div className="text-[10px] text-slate-500">Rd {pick.round_number}</div>
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* My Team & Queue & Roster Tabs */}
+                        <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
+                            <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
+                                <button onClick={() => setActiveTab('team')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'team' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                    Team ({myTeam.length})
+                                </button>
+                                <button onClick={() => setActiveTab('queue')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'queue' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                    Queue ({queue.length})
+                                </button>
+                                <button onClick={() => setActiveTab('roster')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'roster' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                    Roster ({draftRosterAssignments.length})
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                {activeTab === 'team' ? (
+                                    <>
+                                        {myTeam.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Your roster is empty</div>}
+                                        {myTeam.map((p, i) => {
+                                            const isBatter = p.batter_or_pitcher === 'batter';
+                                            const cats = isBatter ? batterStatCategories : pitcherStatCategories;
+                                            const showOriginalName = p.original_name && p.original_name !== p.name;
+
+                                            return (
+                                                <div key={i} className="flex flex-col text-sm p-3 hover:bg-slate-800/50 rounded transition-colors group border-b border-slate-700/50">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
+                                                                <img
+                                                                    src={getPlayerPhoto(p)}
+                                                                    onError={(e) => handleImageError(e, p)}
+                                                                    alt={p.name}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex items-baseline gap-2">
+                                                                    <span className="text-slate-200 font-bold group-hover:text-white text-base">{p.name}</span>
+                                                                    <span className="text-xs text-slate-400 font-mono">{filterPositions(p)}</span>
+                                                                    <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(p.team)}`}>
+                                                                        {getTeamAbbr(p.team)}
+                                                                    </span>
+                                                                </div>
+                                                                {showOriginalName && (
+                                                                    <div className="text-[10px] text-slate-500 mt-0.5">{p.original_name}</div>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                    );
-                                                });
-                                            })}
-                                    </div>
-                                </>
-                            )}
+                                                    </div>
+                                                    <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
+                                                        {cats.map(cat => (
+                                                            <div key={cat} className="flex flex-col items-center min-w-[30px]">
+                                                                <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
+                                                                <span className="text-slate-300">{getPlayerStat(p.player_id, cat)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setAssignModalPlayer(p)}
+                                                        className="mt-2 w-full py-1 rounded text-xs font-bold transition-all bg-blue-600 hover:bg-blue-500 text-white shadow-lg"
+                                                    >
+                                                        📋 Assign to Roster
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                ) : activeTab === 'queue' ? (
+                                    <>
+                                        {queue.length === 0 && <div className="text-slate-500 text-sm text-center py-4 text-xs italic">
+                                            Players in queue will be auto-drafted if time expires.<br />
+                                            Drag & drop or use arrows to reorder.
+                                        </div>}
+                                        {queue.map((item, i) => renderQueueItem(item, i))}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Roster Grid */}
+                                        <div className="space-y-2">
+                                            {Object.keys(rosterPositions)
+                                                .filter(slot => !slot.includes('Minor'))
+                                                .map(slot => {
+                                                    const count = rosterPositions[slot];
+                                                    return Array.from({ length: count }).map((_, idx) => {
+                                                        const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
+                                                        const assignment = getAssignedPlayer(slotKey);
+
+                                                        return (
+                                                            <div key={slotKey} className="bg-slate-900/80 p-2 rounded border border-slate-700/50 flex items-center justify-between">
+                                                                <div className="flex items-center gap-2 flex-1">
+                                                                    <span className="text-xs font-mono text-purple-400 font-bold min-w-[40px]">{slot}</span>
+                                                                    {assignment ? (
+                                                                        <>
+                                                                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                                <img
+                                                                                    src={getPlayerPhoto(assignment)}
+                                                                                    onError={(e) => handleImageError(e, assignment)}
+                                                                                    className="w-full h-full object-cover"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                                                <div className="text-[10px] text-slate-500">{assignment.position_list}</div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => handleRemoveAssignment(assignment.assignment_id)}
+                                                                                className="text-slate-500 hover:text-red-400 text-xs px-2"
+                                                                            >
+                                                                                ×
+                                                                            </button>
+                                                                        </>
+                                                                    ) : (
+                                                                        <div className="text-slate-600 text-xs italic">Empty</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    });
+                                                })}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {mainTab === 'roster' && (
+                <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 350px)' }}>
+                    <h2 className="text-2xl font-bold mb-6 text-purple-300">Roster Assignment</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {Object.keys(rosterPositions)
+                            .filter(slot => !slot.includes('Minor'))
+                            .map(slot => {
+                                const count = rosterPositions[slot];
+                                return Array.from({ length: count }).map((_, idx) => {
+                                    const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
+                                    const assignment = getAssignedPlayer(slotKey);
+
+                                    return (
+                                        <div key={slotKey} className="bg-slate-900/80 p-4 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className="text-base font-mono text-purple-400 font-bold">{slot}</span>
+                                                {assignment && (
+                                                    <button
+                                                        onClick={() => handleRemoveAssignment(assignment.assignment_id)}
+                                                        className="text-slate-500 hover:text-red-400 text-sm px-2 py-1 rounded hover:bg-red-900/20 transition-colors"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {assignment ? (
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-14 h-14 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                        <img
+                                                            src={getPlayerPhoto(assignment)}
+                                                            onError={(e) => handleImageError(e, assignment)}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-base font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                        <div className="text-xs text-slate-500 mt-0.5">{assignment.position_list}</div>
+                                                        <div className={`text-xs px-2 py-0.5 rounded border inline-block mt-1 ${getTeamColor(assignment.team)}`}>
+                                                            {getTeamAbbr(assignment.team)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-10 text-slate-600 italic">
+                                                    <div className="text-sm">Empty Slot</div>
+                                                    <div className="text-xs mt-1">Assign from Team tab</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                });
+                            })}
+                    </div>
+                </div>
+            )}
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar {
