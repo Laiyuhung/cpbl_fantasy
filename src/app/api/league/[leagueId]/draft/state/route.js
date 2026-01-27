@@ -115,25 +115,38 @@ export async function GET(request, { params }) {
             }
 
             // Get Pick Duration
-            let duration = 60;
+            let duration = 60; // Default
             if (settings?.live_draft_pick_time) {
-                if (settings.live_draft_pick_time.includes('Minute')) {
-                    duration = parseInt(settings.live_draft_pick_time) * 60;
-                } else if (settings.live_draft_pick_time.includes('Second')) {
-                    duration = parseInt(settings.live_draft_pick_time);
+                const timeStr = settings.live_draft_pick_time.toLowerCase();
+                if (timeStr.includes('minute')) {
+                    // "1 Minute", "2 Minutes", "3 Minutes" -> 1, 2, 3 * 60
+                    duration = parseInt(timeStr) * 60;
+                } else if (timeStr.includes('second')) {
+                    // "30 Seconds" -> 30
+                    duration = parseInt(timeStr);
                 }
             }
 
             // Init Deadline if needed
             if (!currentPick.deadline) {
                 const nextDeadline = new Date(now.getTime() + duration * 1000);
-                const { data: updated } = await supabase
+                const { data: updated, error: updateError } = await supabase
                     .from('draft_picks')
                     .update({ deadline: nextDeadline.toISOString() })
                     .eq('pick_id', currentPick.pick_id)
                     .select()
                     .single();
-                if (updated) currentPick = updated;
+
+                if (updateError) {
+                    console.error('[Draft] Failed to update deadline:', updateError);
+                }
+
+                if (updated) {
+                    currentPick = updated;
+                } else {
+                    // Fallback: Force local update so UI receives the deadline even if DB read-back failed
+                    currentPick.deadline = nextDeadline.toISOString();
+                }
             }
             // Expired -> AUTO PICK
             else if (new Date(currentPick.deadline) < now) {
@@ -189,8 +202,20 @@ export async function GET(request, { params }) {
                     if (nextPicks && nextPicks.length > 0) {
                         currentPick = nextPicks[0];
                         const nextDeadline = new Date(now.getTime() + duration * 1000);
-                        await supabase.from('draft_picks').update({ deadline: nextDeadline.toISOString() }).eq('pick_id', currentPick.pick_id);
-                        currentPick.deadline = nextDeadline.toISOString();
+                        const { data: nextUpdated, error: nextUpError } = await supabase
+                            .from('draft_picks')
+                            .update({ deadline: nextDeadline.toISOString() })
+                            .eq('pick_id', currentPick.pick_id)
+                            .select()
+                            .single();
+
+                        if (nextUpError) console.error('AutoPick Deadline Error:', nextUpError);
+
+                        if (nextUpdated) {
+                            currentPick = nextUpdated;
+                        } else {
+                            currentPick.deadline = nextDeadline.toISOString();
+                        }
                     } else {
                         // Finished just now
                         console.log('[DraftState] Last pick made. Finished.');

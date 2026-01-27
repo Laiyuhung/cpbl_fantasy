@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
 
@@ -324,19 +324,47 @@ export default function DraftPage() {
                 const data = await res.json();
                 setDraftState(data);
 
-                const now = new Date(data.serverTime).getTime();
-                if (data.status === 'pre-draft' && data.startTime) {
-                    const start = new Date(data.startTime).getTime();
-                    const diff = Math.floor((start - now) / 1000);
-                    console.log('Timer Calcs (Pre):', { serverTime: data.serverTime, startTime: data.startTime, diff });
-                    setTimeLeft(diff > 0 ? diff : 0);
-                } else if (data.currentPick?.deadline) {
-                    const deadline = new Date(data.currentPick.deadline).getTime();
-                    const diff = Math.floor((deadline - now) / 1000);
-                    console.log('Timer Calcs (Active):', { serverTime: data.serverTime, deadline: data.currentPick.deadline, diff });
-                    setTimeLeft(diff > 0 ? diff : 0);
-                } else {
-                    console.log('Timer Calcs: No active timer', { status: data.status, hasPick: !!data.currentPick });
+                // Sync Time
+                if (data.serverTime) {
+                    const now = new Date(data.serverTime).getTime();
+                    let diff = 0;
+                    let logCalc = false;
+
+                    // Check if pick changed or first load
+                    const currentId = data.currentPick?.pick_id;
+                    if (currentId !== prevPickIdRef.current) {
+                        logCalc = true;
+                        prevPickIdRef.current = currentId;
+                    }
+
+                    if (data.status === 'pre-draft' && data.startTime) {
+                        const start = new Date(data.startTime).getTime();
+                        diff = Math.floor((start - now) / 1000);
+                        if (logCalc) {
+                            console.log('%c[Timer Calc] Pre-Draft', 'color: cyan; font-weight: bold;', {
+                                serverTime: data.serverTime,
+                                startTime: data.startTime,
+                                calculation: `${new Date(data.startTime).toLocaleTimeString()} - ${new Date(data.serverTime).toLocaleTimeString()}`,
+                                secondsRemaining: diff
+                            });
+                        }
+                        setTimeLeft(diff > 0 ? diff : 0);
+                    } else if (data.currentPick?.deadline) {
+                        const deadline = new Date(data.currentPick.deadline).getTime();
+                        diff = Math.floor((deadline - now) / 1000);
+                        if (logCalc || !prevPickIdRef.current) { // Log on change or if just starting
+                            console.log('%c[Timer Calc] Active Pick', 'color: lime; font-weight: bold;', {
+                                pickInfo: `Pick ${data.currentPick.pick_number} (Rd ${data.currentPick.round_number})`,
+                                serverTime: data.serverTime,
+                                deadline: data.currentPick.deadline,
+                                calculation: `Deadline(${new Date(data.currentPick.deadline).getTime()}) - Server(${now}) = ${deadline - now}ms`,
+                                secondsRemaining: diff
+                            });
+                        }
+                        setTimeLeft(diff > 0 ? diff : 0);
+                    } else {
+                        if (logCalc) console.log('[Timer Calc] No active timer', { status: data.status });
+                    }
                 }
             } catch (e) {
                 console.error(e);
@@ -467,6 +495,7 @@ export default function DraftPage() {
     useEffect(() => {
         let cancelled = false;
         const resolvePhotos = async () => {
+            // Combine available players and picked players
             const pickedPlayers = draftState?.picks?.map(p => p.player).filter(Boolean) || [];
             const allPlayers = [...players, ...pickedPlayers];
 
@@ -490,9 +519,12 @@ export default function DraftPage() {
                 if (!cancelled && data.results) {
                     setPhotoSrcMap(prev => ({ ...prev, ...data.results }));
                 }
-            } catch {
+            } catch (e) {
+                console.error("Photo resolve failed", e);
                 if (!cancelled) {
-                    // Fallback handled by individual image error
+                    // Fallback to default to avoid 404 spam
+                    const fallback = Object.fromEntries(uniquePlayers.map(p => [p.player_id, '/photo/defaultPlayer.png']));
+                    setPhotoSrcMap(prev => ({ ...prev, ...fallback }));
                 }
             }
         };

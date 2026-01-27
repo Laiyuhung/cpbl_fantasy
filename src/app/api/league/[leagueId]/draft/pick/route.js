@@ -77,12 +77,15 @@ export async function POST(request, { params }) {
                 .eq('league_id', leagueId)
                 .single();
 
-            let duration = 60;
+            let duration = 60; // Default
             if (settings?.live_draft_pick_time) {
-                if (settings.live_draft_pick_time.includes('Minute')) {
-                    duration = parseInt(settings.live_draft_pick_time) * 60;
-                } else if (settings.live_draft_pick_time.includes('Second')) {
-                    duration = parseInt(settings.live_draft_pick_time);
+                const timeStr = settings.live_draft_pick_time.toLowerCase();
+                if (timeStr.includes('minute')) {
+                    // "1 Minute", "2 Minutes", "3 Minutes" -> 1, 2, 3 * 60
+                    duration = parseInt(timeStr) * 60;
+                } else if (timeStr.includes('second')) {
+                    // "30 Seconds" -> 30
+                    duration = parseInt(timeStr);
                 }
             }
 
