@@ -561,10 +561,25 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [currentUserRole, setCurrentUserRole] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
+  const [hasDraftOrder, setHasDraftOrder] = useState(false);
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
   };
+
+  // Check if draft order has been generated
+  useEffect(() => {
+    const checkDraftOrder = async () => {
+      if (!leagueId) return;
+      const { data } = await supabase
+        .from('draft_picks')
+        .select('pick_id')
+        .eq('league_id', leagueId)
+        .limit(1);
+      setHasDraftOrder(data && data.length > 0);
+    };
+    checkDraftOrder();
+  }, [leagueId]);
 
   const handleSettingChange = (section, key, value) => {
     setSettings((prev) => {
@@ -756,6 +771,11 @@ const EditLeagueSettingsPage = ({ params }) => {
     // League Name can always be edited
     if (key === 'League Name') {
       return false;
+    }
+
+    // Lock Live Draft Pick Time if draft order has been generated
+    if (key === 'Live Draft Pick Time' && hasDraftOrder) {
+      return true;
     }
 
     // pre-draft: no restrictions

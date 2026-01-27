@@ -32,6 +32,20 @@ export async function POST(request, { params }) {
             return NextResponse.json({ success: false, error: 'Manager ID required' }, { status: 400 });
         }
 
+        // 0.5. Check if league is finalized
+        const { data: leagueStatus } = await supabase
+            .from('league_statuses')
+            .select('finalized')
+            .eq('league_id', leagueId)
+            .single();
+
+        if (!leagueStatus?.finalized) {
+            return NextResponse.json({
+                success: false,
+                error: 'League must be finalized before generating draft order'
+            }, { status: 400 });
+        }
+
         // 1. Get League Settings & Members (Sort by random or custom order in future)
         const { data: members, error: membersError } = await supabase
             .from('league_members')
@@ -46,7 +60,7 @@ export async function POST(request, { params }) {
 
         const { data: settings } = await supabase
             .from('league_settings')
-            .select('roster_positions')
+            .select('roster_positions, live_draft_time')
             .eq('league_id', leagueId)
             .single();
 
@@ -94,19 +108,16 @@ export async function POST(request, { params }) {
         // Ensure status is 'pre-draft' (waiting for time)
         await supabase.from('league_statuses').update({ status: 'pre-draft' }).eq('league_id', leagueId);
 
-        // Also, initialize the first pick's deadline?
-        // We can do it lazily or now. Let's do it now.
-        // Query the first pick
-        const startTimeResult = new Date();
-        startTimeResult.setSeconds(startTimeResult.getSeconds() + 10); // Start in 10 secs
+        // Set deadline for pick 1 if live_draft_time is configured
+        if (settings.live_draft_time) {
+            await supabase
+                .from('draft_picks')
+                .update({ deadline: settings.live_draft_time })
+                .eq('league_id', leagueId)
+                .eq('pick_number', 1);
 
-        // Update first pick deadline = Start + 60s (Live Draft Pick Time)
-        // We need to fetch the pick_time from settings. Assuming 60s for now or fetch it.
-        // For simplicity, default to 60s. API should fetch it properly.
-
-        // Actually, let's just leave deadline NULL. 
-        // The GET /state endpoint will detect "Current pick has no deadline? Set it to Now + 60s".
-        // This handles the "Start Draft" button press smoothly.
+            console.log(`[Draft Init] Set pick 1 deadline to ${settings.live_draft_time}`);
+        }
 
         return NextResponse.json({
             success: true,

@@ -1,0 +1,27 @@
+// Add this useEffect after the other state declarations in EditLeagueSettingsPage component
+// Around line 565, after the state declarations
+
+useEffect(() => {
+  const checkDraftOrder = async () => {
+    if (!leagueId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('draft_picks')
+        .select('pick_id')
+        .eq('league_id', leagueId)
+        .limit(1);
+      
+      if (error) {
+        console.error('Error checking draft order:', error);
+        return;
+      }
+      
+      setHasDraftOrder(data && data.length > 0);
+    } catch (err) {
+      console.error('Error in checkDraftOrder:', err);
+    }
+  };
+  
+  checkDraftOrder();
+}, [leagueId]);
