@@ -1220,55 +1220,70 @@ export default function DraftPage() {
 
             {mainTab === 'roster' && (
                 <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 350px)' }}>
-                    <h2 className="text-xl font-bold mb-2 text-purple-300">Roster Assignment</h2>
-                    <p className="text-xs text-slate-400 mb-4">Click on a player to assign them to a roster position</p>
+                    <h2 className="text-xl font-bold mb-2 text-purple-300">Roster Assignment ({draftRosterAssignments.length})</h2>
+                    <p className="text-xs text-slate-400 mb-4">Click on empty slots to assign players</p>
 
-                    {myTeam.length === 0 ? (
-                        <div className="text-center py-12 text-slate-500">
-                            <div className="text-lg mb-2">No players drafted yet</div>
-                            <div className="text-sm">Draft players first, then assign them to roster positions</div>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                            {myTeam.map((player) => {
-                                const assignment = draftRosterAssignments.find(a => a.player_id === player.player_id);
-                                const assignedSlot = assignment ? assignment.roster_slot.replace(/\d+$/, '') : null;
+                    <div className="space-y-2">
+                        {Object.keys(rosterPositions)
+                            .filter(slot => !slot.includes('Minor'))
+                            .map(slot => {
+                                const count = rosterPositions[slot];
+                                return Array.from({ length: count }).map((_, idx) => {
+                                    const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
+                                    const assignment = getAssignedPlayer(slotKey);
 
-                                return (
-                                    <div
-                                        key={player.player_id}
-                                        onClick={() => setAssignModalPlayer(player)}
-                                        className="bg-slate-900/80 p-3 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all cursor-pointer hover:bg-slate-800/80"
-                                    >
-                                        <div className="flex flex-col items-center gap-2">
-                                            <div className="w-12 h-12 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
-                                                <img
-                                                    src={getPlayerPhoto(player)}
-                                                    onError={(e) => handleImageError(e, player)}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                            <div className="text-center w-full">
-                                                <div className="text-sm font-bold text-slate-200 truncate">{player.name}</div>
-                                                <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                    return (
+                                        <div
+                                            key={slotKey}
+                                            onClick={() => !assignment && setAssignModalSlot(slotKey)}
+                                            className={`flex items-center justify-between p-3 rounded-lg border transition-all ${assignment
+                                                    ? 'bg-slate-900/80 border-slate-700/50'
+                                                    : 'bg-slate-900/50 border-slate-700/30 cursor-pointer hover:border-purple-500/50 hover:bg-slate-800/80'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3 flex-1">
+                                                <div className="w-16 text-center">
+                                                    <span className="font-mono font-bold text-purple-400 text-sm">{slot}</span>
+                                                </div>
+
+                                                {assignment ? (
+                                                    <>
+                                                        <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                            <img
+                                                                src={getPlayerPhoto(assignment)}
+                                                                onError={(e) => handleImageError(e, assignment)}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                            <div className="text-xs text-slate-500">{assignment.position_list}</div>
+                                                        </div>
+                                                        <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(assignment.team)}`}>
+                                                            {getTeamAbbr(assignment.team)}
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRemoveAssignment(assignment.assignment_id);
+                                                            }}
+                                                            disabled={assigning}
+                                                            className="text-slate-500 hover:text-red-400 text-xs px-3 py-1 rounded hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex-1 text-slate-600 italic text-sm">
+                                                        Empty - Click to assign player
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-
-                                        {assignedSlot ? (
-                                            <div className="mt-2 bg-purple-900/30 border border-purple-500/50 rounded px-2 py-1 text-center">
-                                                <div className="text-[10px] text-purple-300 mb-0.5">✓ Assigned</div>
-                                                <div className="font-mono font-bold text-purple-400 text-xs">{assignedSlot}</div>
-                                            </div>
-                                        ) : (
-                                            <div className="mt-2 text-center py-1 text-slate-600 text-[10px] italic border border-slate-700 rounded">
-                                                Not assigned
-                                            </div>
-                                        )}
-                                    </div>
-                                );
+                                    );
+                                });
                             })}
-                        </div>
-                    )}
+                    </div>
                 </div>
             )}
 
