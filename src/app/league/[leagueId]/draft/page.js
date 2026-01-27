@@ -33,6 +33,8 @@ export default function DraftPage() {
     const [rosterPositions, setRosterPositions] = useState({});
     const [photoSrcMap, setPhotoSrcMap] = useState({});
     const failedImages = useRef(new Set());
+    const prevPickIdRef = useRef(null);
+    const resolvedIds = useRef(new Set());
     const [members, setMembers] = useState([]);
 
     // Stats State
@@ -499,15 +501,20 @@ export default function DraftPage() {
             const pickedPlayers = draftState?.picks?.map(p => p.player).filter(Boolean) || [];
             const allPlayers = [...players, ...pickedPlayers];
 
-            // Deduplicate by player_id
-            const uniquePlayers = Array.from(new Map(allPlayers.map(p => [p.player_id, p])).values());
+            // Filter out players already resolved or known failed
+            const unprocessed = allPlayers.filter(p => !resolvedIds.current.has(p.player_id));
+            if (unprocessed.length === 0) return;
 
-            if (!uniquePlayers.length) return;
+            // Deduplicate new batch
+            const uniquePlayers = Array.from(new Map(unprocessed.map(p => [p.player_id, p])).values());
 
             const batchPayload = uniquePlayers.map(p => ({
                 id: p.player_id,
                 candidates: getPlayerPhotoPaths(p).filter(path => !path.endsWith('/defaultPlayer.png'))
             }));
+
+            // Mark as processing immediately to avoid re-entry
+            uniquePlayers.forEach(p => resolvedIds.current.add(p.player_id));
 
             try {
                 const res = await fetch('/api/photo/resolve', {
@@ -522,7 +529,7 @@ export default function DraftPage() {
             } catch (e) {
                 console.error("Photo resolve failed", e);
                 if (!cancelled) {
-                    // Fallback to default to avoid 404 spam
+                    // Fallback locally
                     const fallback = Object.fromEntries(uniquePlayers.map(p => [p.player_id, '/photo/defaultPlayer.png']));
                     setPhotoSrcMap(prev => ({ ...prev, ...fallback }));
                 }
@@ -537,10 +544,28 @@ export default function DraftPage() {
     const handleImageError = (e, player) => {
         const currentSrc = e.target.src;
         const paths = getPlayerPhotoPaths(player);
-        let idx = paths.findIndex(p => currentSrc.includes(encodeURI(p)) || currentSrc.includes(p));
-        if (idx === -1) idx = 0;
-        e.target.src = paths[idx + 1] || '/photo/defaultPlayer.png';
-        if (idx + 1 >= paths.length) e.target.onerror = null;
+
+        let currentIndex = -1;
+        for (let i = 0; i < paths.length; i++) {
+            if (currentSrc.includes(paths[i])) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < paths.length) {
+            const nextPath = paths[nextIndex];
+            if (nextPath.startsWith('http')) {
+                e.target.src = nextPath;
+            } else {
+                e.target.src = window.location.origin + nextPath;
+            }
+        } else {
+            failedImages.current.add(player.player_id);
+            e.target.onerror = null;
+            e.target.src = window.location.origin + '/photo/defaultPlayer.png';
+        }
     };
 
     // ---------------------------------------------------------
