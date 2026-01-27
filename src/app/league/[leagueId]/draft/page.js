@@ -429,7 +429,7 @@ export default function DraftPage() {
         return () => { cancelled = true; };
     }, [players]);
 
-    const getPlayerPhoto = (player) => photoSrcMap[player.player_id] || '/photo/defaultPlayer.png';
+    const getPlayerPhoto = (player) => photoSrcMap[player.player_id] || getPlayerPhotoPaths(player)[0];
 
     const handleImageError = (e, player) => {
         const currentSrc = e.target.src;
@@ -444,7 +444,7 @@ export default function DraftPage() {
     // Draft & Filtering Logic
     // ---------------------------------------------------------
 
-    const { takenIds, recentPicks, myTeam, upcomingPicks } = useMemo(() => {
+    const { takenIds, recentPicks, myTeam, upcomingPicks, viewingTeam } = useMemo(() => {
         if (!draftState?.picks) return { takenIds: new Set(), recentPicks: [], myTeam: [], upcomingPicks: [] };
         const picks = draftState.picks;
 
@@ -1302,6 +1302,40 @@ export default function DraftPage() {
                     <h2 className="text-xl font-bold mb-2 text-purple-300">Roster Assignment ({draftRosterAssignments.length})</h2>
                     <p className="text-xs text-slate-400 mb-4">Click on empty slots to assign players</p>
 
+                    {/* Unassigned Players Section (Moved to Top) */}
+                    {myTeam.filter(p => !isPlayerAssigned(p.player_id)).length > 0 && (
+                        <>
+                            <div className="border-b border-slate-700 pb-4 mb-4">
+                                <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({myTeam.filter(p => !isPlayerAssigned(p.player_id)).length})</h3>
+                                <p className="text-xs text-slate-400 mb-3">Click on a player to assign them to a position</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                                    {myTeam.filter(p => !isPlayerAssigned(p.player_id)).map((player) => (
+                                        <div
+                                            key={player.player_id}
+                                            onClick={() => setAssignModalPlayer(player)}
+                                            className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all cursor-pointer hover:bg-slate-800/80"
+                                        >
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img
+                                                        src={getPlayerPhoto(player)}
+                                                        onError={(e) => handleImageError(e, player)}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="text-center w-full">
+                                                    <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
+                                                    <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                     <div className="space-y-2 mb-6">
                         {Object.keys(rosterPositions)
                             .filter(slot => !slot.includes('Minor'))
@@ -1365,39 +1399,7 @@ export default function DraftPage() {
                             })}
                     </div>
 
-                    {/* Unassigned Players Section */}
-                    {myTeam.filter(p => !isPlayerAssigned(p.player_id)).length > 0 && (
-                        <>
-                            <div className="border-t border-slate-700 pt-4 mt-4">
-                                <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({myTeam.filter(p => !isPlayerAssigned(p.player_id)).length})</h3>
-                                <p className="text-xs text-slate-400 mb-3">Click on a player to assign them to a position</p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                                    {myTeam.filter(p => !isPlayerAssigned(p.player_id)).map((player) => (
-                                        <div
-                                            key={player.player_id}
-                                            onClick={() => setAssignModalPlayer(player)}
-                                            className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all cursor-pointer hover:bg-slate-800/80"
-                                        >
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img
-                                                        src={getPlayerPhoto(player)}
-                                                        onError={(e) => handleImageError(e, player)}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="text-center w-full">
-                                                    <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
-                                                    <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </>
-                    )}
+
                 </div>
             )}
 
@@ -1421,6 +1423,36 @@ export default function DraftPage() {
                                 ))}
                             </select>
                         </div>
+
+                        {/* Viewing Unassigned Players (Moved to Top) */}
+                        {viewingTeam && viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length > 0 && (
+                            <div className="border-b border-slate-700 pb-4 mb-4">
+                                <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length})</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                                    {viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).map((player) => (
+                                        <div
+                                            key={player.player_id}
+                                            className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50"
+                                        >
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img
+                                                        src={getPlayerPhoto(player)}
+                                                        onError={(e) => handleImageError(e, player)}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="text-center w-full">
+                                                    <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
+                                                    <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="space-y-2 mb-6">
                             {Object.keys(rosterPositions)
@@ -1473,35 +1505,7 @@ export default function DraftPage() {
                                 })}
                         </div>
 
-                        {/* Viewing Unassigned Players */}
-                        {viewingTeam && viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length > 0 && (
-                            <div className="border-t border-slate-700 pt-4 mt-4">
-                                <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length})</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                                    {viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).map((player) => (
-                                        <div
-                                            key={player.player_id}
-                                            className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50"
-                                        >
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img
-                                                        src={getPlayerPhoto(player)}
-                                                        onError={(e) => handleImageError(e, player)}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="text-center w-full">
-                                                    <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
-                                                    <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+
                     </div>
                 )}
 
