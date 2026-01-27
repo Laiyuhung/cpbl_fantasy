@@ -352,16 +352,13 @@ export default function DraftPage() {
                         }
                         setTimeLeft(diff > 0 ? diff : 0);
                     } else if (data.currentPick?.deadline) {
+                        // Simply: deadline - now
                         const deadline = new Date(data.currentPick.deadline).getTime();
                         diff = Math.floor((deadline - now) / 1000);
 
-                        if (logCalc || !prevPickIdRef.current) { // Log on change or if just starting
-                            // Find previous pick time from picks array
-                            const previousPick = data.picks?.length > 0 ? data.picks[data.picks.length - 1] : null;
-
+                        if (logCalc || !prevPickIdRef.current) {
                             console.log('%c[Timer Calc] Active Pick', 'color: lime; font-weight: bold;', {
                                 pickInfo: `Pick ${data.currentPick.pick_number} (Rd ${data.currentPick.round_number})`,
-                                previousPickTime: previousPick?.picked_at || 'N/A',
                                 nowTime: data.serverTime,
                                 deadline: data.currentPick.deadline,
                                 diff: `${diff}s`
