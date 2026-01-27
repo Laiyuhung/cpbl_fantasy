@@ -353,7 +353,11 @@ export default function DraftPage() {
     // Timer Tick
     useEffect(() => {
         const timer = setInterval(() => {
-            setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
+            setTimeLeft(prev => {
+                const newVal = prev > 0 ? prev - 1 : 0;
+                console.log('Timer Tick:', newVal);
+                return newVal;
+            });
         }, 1000);
         return () => clearInterval(timer);
     }, []);
@@ -503,8 +507,8 @@ export default function DraftPage() {
         // Coerce player_id to string to ensure safe set properties
         const taken = new Set(picks.map(p => String(p.player_id)).filter(Boolean));
 
-        // Recent Picks: "Draft History" order (Ascending Pick Number)
-        const recent = picks.filter(p => p.player_id).sort((a, b) => a.pick_number - b.pick_number);
+        // Recent Picks: "Draft History" order (Descending Pick Number - Newest First)
+        const recent = picks.filter(p => p.player_id).sort((a, b) => b.pick_number - a.pick_number);
 
         // My Team: Coerce manager_id to string for comparison
         const currentManagerId = String(myManagerId);
@@ -536,15 +540,6 @@ export default function DraftPage() {
                 original_name: p.player?.original_name || ''
             }));
         }
-
-        console.log('[DraftPage Debug]', {
-            totalPicks: picks.length,
-            takenCount: taken.size,
-            recentCount: recent.length,
-            myTeamCount: mine.length,
-            currentManagerId,
-            firstTakenId: [...taken][0]
-        });
 
         // Upcoming
         let upcoming = draftState.nextPicks || [];
@@ -934,26 +929,65 @@ export default function DraftPage() {
                     </div>
                 </div>
 
-                {/* Draft Order Ticker */}
-                <div className="bg-slate-900/80 border border-slate-700 rounded-lg p-2 flex items-center gap-2 overflow-x-auto scrollbar-hide shadow-inner">
-                    <span className="text-xs font-bold text-slate-500 uppercase px-2 shrink-0">Up Next:</span>
-                    {draftState?.currentPick && (
-                        <div className="flex items-center gap-2 animate-pulse bg-purple-900/40 px-3 py-1.5 rounded border border-purple-500/50 shrink-0">
-                            <span className="text-xs font-mono text-purple-300">Pick {draftState.currentPick.pick_number}</span>
-                            <span className="text-xs text-slate-400">-</span>
-                            <span className="text-xs font-bold text-white">{getMemberNickname(draftState.currentPick.manager_id)}</span>
-                            <span className="text-[10px] bg-purple-600 text-white px-1 rounded">NOW</span>
-                        </div>
-                    )}
-                    {upcomingPicks.length === 0 && <span className="text-xs text-slate-600 italic px-2">No upcoming picks detected</span>}
-                    {upcomingPicks.slice(0, 20).map((pick, i) => (
-                        <div key={pick.pick_id} className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded border border-slate-700/50 shrink-0 opacity-80 hover:opacity-100 transition-opacity">
-                            <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
-                            <span className="text-xs text-slate-500">-</span>
-                            <span className="text-xs font-bold text-slate-300">{getMemberNickname(pick.manager_id)}</span>
-                            {pick.manager_id === myManagerId && <span className="w-2 h-2 rounded-full bg-green-500"></span>}
-                        </div>
-                    ))}
+                {/* Draft Order Ticker - Split View */}
+                <div className="flex gap-2">
+                    {/* Left: Previous Pick */}
+                    <div className="flex-1 bg-slate-900/80 border border-slate-700 rounded-lg p-2 flex items-center gap-2 overflow-hidden shadow-inner min-w-0">
+                        <span className="text-xs font-bold text-slate-500 uppercase px-2 shrink-0 border-r border-slate-700 mr-2">Previous:</span>
+                        {recentPicks.length > 0 ? (
+                            (() => {
+                                const lastPick = recentPicks[0];
+                                return (
+                                    <div className="flex items-center gap-3 min-w-0 animate-fade-in">
+                                        <div className="flex flex-col leading-none shrink-0">
+                                            <span className="text-xs font-mono text-slate-400">Pick {lastPick.pick_number}</span>
+                                            <span className="text-[10px] text-slate-600">Rd {lastPick.round_number}</span>
+                                        </div>
+                                        <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={getPlayerPhoto(lastPick.player || {})}
+                                                onError={(e) => handleImageError(e, lastPick.player || {})}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-sm font-bold text-slate-200 truncate">{lastPick.player?.name}</span>
+                                                <span className="text-xs text-slate-400 font-mono">{filterPositions(lastPick.player || {})}</span>
+                                            </div>
+                                            <div className="text-[10px] text-slate-500 truncate">
+                                                Picked by <span className="text-slate-300 font-semibold">{getMemberNickname(lastPick.manager_id)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()
+                        ) : (
+                            <span className="text-xs text-slate-600 italic px-2">No picks yet</span>
+                        )}
+                    </div>
+
+                    {/* Right: Up Next */}
+                    <div className="flex-1 bg-slate-900/80 border border-slate-700 rounded-lg p-2 flex items-center gap-2 overflow-x-auto scrollbar-hide shadow-inner min-w-0">
+                        <span className="text-xs font-bold text-slate-500 uppercase px-2 shrink-0 border-r border-slate-700 mr-2">Up Next:</span>
+                        {draftState?.currentPick && (
+                            <div className="flex items-center gap-2 animate-pulse bg-purple-900/40 px-3 py-1.5 rounded border border-purple-500/50 shrink-0">
+                                <span className="text-xs font-mono text-purple-300">Pick {draftState.currentPick.pick_number}</span>
+                                <span className="text-xs text-slate-400">-</span>
+                                <span className="text-xs font-bold text-white">{getMemberNickname(draftState.currentPick.manager_id)}</span>
+                                <span className="text-[10px] bg-purple-600 text-white px-1 rounded">NOW</span>
+                            </div>
+                        )}
+                        {upcomingPicks.slice(0, 10).map((pick, i) => (
+                            <div key={pick.pick_id} className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded border border-slate-700/50 shrink-0 opacity-80 hover:opacity-100 transition-opacity">
+                                <span className="text-xs font-mono text-slate-400">Pick {pick.pick_number}</span>
+                                <span className="text-xs text-slate-500">-</span>
+                                <span className="text-xs font-bold text-slate-300">{getMemberNickname(pick.manager_id)}</span>
+                                {pick.manager_id === myManagerId && <span className="w-2 h-2 rounded-full bg-green-500"></span>}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
