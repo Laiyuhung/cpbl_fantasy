@@ -361,7 +361,7 @@ export default function DraftPage() {
                                 pickInfo: `Pick ${data.currentPick.pick_number} (Rd ${data.currentPick.round_number})`,
                                 nowTime: data.serverTime,
                                 deadline: data.currentPick.deadline,
-                                diff: `${diff}s`
+                                diff: `${diff} s`
                             });
                         }
                         setTimeLeft(diff > 0 ? diff : 0);
