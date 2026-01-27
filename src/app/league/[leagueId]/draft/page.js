@@ -1407,7 +1407,7 @@ export default function DraftPage() {
                         <div className="flex justify-between items-center mb-4">
                             <div className="flex items-center gap-4">
                                 <h2 className="text-xl font-bold text-purple-300">League Rosters</h2>
-                                <div className="text-xs text-slate-400">View other managers' assignments</div>
+                                <div className="text-xs text-slate-400">View other managers&apos; assignments</div>
                             </div>
                             <select
                                 className="bg-slate-700 text-white p-2 rounded border border-slate-600 outline-none focus:border-purple-500 min-w-[200px]"
