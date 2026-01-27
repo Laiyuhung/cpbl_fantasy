@@ -15,7 +15,7 @@ export default function DraftPage() {
     const [myManagerId, setMyManagerId] = useState(null);
     const [timeLeft, setTimeLeft] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
-    const [picking, setPicking] = useState(false);
+    const [pickingId, setPickingId] = useState(null);
     const [assigning, setAssigning] = useState(false);
     const [assigningId, setAssigningId] = useState(null); // Track specific ID being assigned/removed
 
@@ -72,35 +72,43 @@ export default function DraftPage() {
         setFilterPos('All');
     }, [filterType]);
 
-    // Fetch Queue
+    // Fetch Queue (No Polling - Event Based)
     useEffect(() => {
         if (!myManagerId) return;
+
         const fetchQueue = async () => {
-            const res = await fetch(`/api/league/${leagueId}/draft/queue?managerId=${myManagerId}`);
-            const data = await res.json();
-            if (data.success) {
-                setQueue(data.queue || []);
+            try {
+                const res = await fetch(`/api/league/${leagueId}/draft/queue?managerId=${myManagerId}`);
+                const data = await res.json();
+                if (data.success) {
+                    setQueue(data.queue || []);
+                }
+            } catch (e) {
+                console.error(e);
             }
         };
+
         fetchQueue();
-        const interval = setInterval(fetchQueue, 5000); // Poll queue to clean up taken players
-        return () => clearInterval(interval);
     }, [leagueId, myManagerId]);
 
-    // Fetch Draft Roster Assignments
+    // Fetch Draft Roster Assignments (On Load & Pick Change)
     useEffect(() => {
         if (!myManagerId) return;
+
         const fetchAssignments = async () => {
-            const res = await fetch(`/api/league/${leagueId}/draft/roster?manager_id=${myManagerId}`);
-            const data = await res.json();
-            if (data.success) {
-                setDraftRosterAssignments(data.assignments || []);
+            try {
+                const res = await fetch(`/api/league/${leagueId}/draft/roster?manager_id=${myManagerId}`);
+                const data = await res.json();
+                if (data.success) {
+                    setDraftRosterAssignments(data.assignments || []);
+                }
+            } catch (e) {
+                console.error(e);
             }
         };
+
         fetchAssignments();
-        const interval = setInterval(fetchAssignments, 5000);
-        return () => clearInterval(interval);
-    }, [leagueId, myManagerId]);
+    }, [leagueId, myManagerId, draftState?.picks?.length]);
 
     // Fetch Viewing Roster Assignments
     useEffect(() => {
@@ -303,12 +311,16 @@ export default function DraftPage() {
         });
     };
 
-    // Poll Draft State
+    // Poll Draft State (Smart Polling)
     useEffect(() => {
-        let interval;
+        let active = true;
+        let timeoutId;
+
         const fetchState = async () => {
             try {
                 const res = await fetch(`/api/league/${leagueId}/draft/state`);
+                if (!active) return; // Ignore if unmounted during fetch
+
                 const data = await res.json();
                 setDraftState(data);
 
@@ -322,11 +334,20 @@ export default function DraftPage() {
                     const diff = Math.floor((deadline - now) / 1000);
                     setTimeLeft(diff > 0 ? diff : 0);
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                if (active) {
+                    timeoutId = setTimeout(fetchState, 2000);
+                }
+            }
         };
+
         fetchState();
-        interval = setInterval(fetchState, 2000);
-        return () => clearInterval(interval);
+        return () => {
+            active = false;
+            clearTimeout(timeoutId);
+        };
     }, [leagueId, router]);
 
     // Timer Tick
@@ -535,8 +556,8 @@ export default function DraftPage() {
     }, [draftState, myManagerId, viewingManagerId]);
 
     const handlePick = async (playerId) => {
-        if (picking) return;
-        setPicking(true); // Disable immediately
+        if (pickingId) return;
+        setPickingId(playerId); // Disable and show spinner for this ID
 
         try {
             const res = await fetch(`/api/league/${leagueId}/draft/pick`, {
@@ -548,7 +569,7 @@ export default function DraftPage() {
 
             if (!data.success) {
                 alert('Pick failed: ' + data.error);
-                setPicking(false); // Re-enable on failure
+                setPickingId(null); // Re-enable on failure
             } else {
                 // Force state update
                 const stateRes = await fetch(`/api/league/${leagueId}/draft/state`);
@@ -559,11 +580,11 @@ export default function DraftPage() {
                 const qItem = queue.find(q => q.player_id === playerId);
                 if (qItem) handleRemoveFromQueue(qItem.queue_id);
 
-                setPicking(false);
+                setPickingId(null);
             }
         } catch (e) {
             console.error(e);
-            setPicking(false);
+            setPickingId(null);
         }
     };
 
@@ -699,17 +720,17 @@ export default function DraftPage() {
                 </div>
                 <button
                     onClick={() => handlePick(player.player_id)}
-                    disabled={picking || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(player.player_id)}
+                    disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(player.player_id)}
                     className={`mt-2 w-full py-1 rounded text-xs font-bold transition-all flex items-center justify-center gap-2
                         ${draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id)
                             ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg'
                             : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
                         }`}
                 >
-                    {picking && draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id) && (
+                    {pickingId === player.player_id && (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                     )}
-                    {picking && draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id) ? 'Drafting...' : 'Draft'}
+                    {pickingId === player.player_id ? 'Drafting...' : 'Draft'}
                 </button>
             </div>
         );
@@ -1123,17 +1144,17 @@ export default function DraftPage() {
                                                         </button>
                                                         <button
                                                             onClick={() => handlePick(player.player_id)}
-                                                            disabled={picking || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id))}
+                                                            disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id))}
                                                             className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all flex items-center gap-2
-                                                            ${draftState?.currentPick?.manager_id === myManagerId && !picking
+                                                            ${draftState?.currentPick?.manager_id === myManagerId && !pickingId
                                                                     ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
                                                                     : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'
                                                                 }`}
                                                         >
-                                                            {picking && draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(String(player.player_id)) && (
+                                                            {pickingId === player.player_id && (
                                                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                                                             )}
-                                                            {picking ? 'DRAFTING...' : 'DRAFT'}
+                                                            {pickingId === player.player_id ? 'DRAFTING...' : 'DRAFT'}
                                                         </button>
                                                     </div>
                                                 </td>

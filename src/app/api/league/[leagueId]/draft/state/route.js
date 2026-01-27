@@ -208,20 +208,23 @@ export async function GET(request, { params }) {
                 .filter('player_id', 'not.is', null)
                 .order('pick_number', { ascending: true });
 
-            // Get position_list from views for each picked player
+            // Optimize: Batch fetch positions
             if (picks && picks.length > 0) {
+                const playerIds = picks.map(p => p.player_id).filter(Boolean);
+
+                // Fetch all relevant positions in parallel
+                const [{ data: batterPos }, { data: pitcherPos }] = await Promise.all([
+                    supabase.from('v_batter_positions').select('player_id, position_list').in('player_id', playerIds),
+                    supabase.from('v_pitcher_positions').select('player_id, position_list').in('player_id', playerIds)
+                ]);
+
+                const posMap = {};
+                if (batterPos) batterPos.forEach(b => posMap[b.player_id] = b.position_list);
+                if (pitcherPos) pitcherPos.forEach(p => posMap[p.player_id] = p.position_list);
+
                 for (const pick of picks) {
-                    if (pick.player) {
-                        const isBatter = pick.player.batter_or_pitcher === 'batter';
-                        const viewName = isBatter ? 'v_batter_positions' : 'v_pitcher_positions';
-                        const { data: posData } = await supabase
-                            .from(viewName)
-                            .select('position_list')
-                            .eq('player_id', pick.player_id)
-                            .single();
-                        if (posData) {
-                            pick.player.position_list = posData.position_list;
-                        }
+                    if (pick.player && posMap[pick.player_id]) {
+                        pick.player.position_list = posMap[pick.player_id];
                     }
                 }
             }
@@ -278,20 +281,23 @@ export async function GET(request, { params }) {
                 .filter('player_id', 'not.is', null)
                 .order('pick_number', { ascending: true });
 
-            // Get position_list from views
+            // Optimize: Batch fetch positions
             if (picks && picks.length > 0) {
+                const playerIds = picks.map(p => p.player_id).filter(Boolean);
+
+                // Fetch all relevant positions in parallel
+                const [{ data: batterPos }, { data: pitcherPos }] = await Promise.all([
+                    supabase.from('v_batter_positions').select('player_id, position_list').in('player_id', playerIds),
+                    supabase.from('v_pitcher_positions').select('player_id, position_list').in('player_id', playerIds)
+                ]);
+
+                const posMap = {};
+                if (batterPos) batterPos.forEach(b => posMap[b.player_id] = b.position_list);
+                if (pitcherPos) pitcherPos.forEach(p => posMap[p.player_id] = p.position_list);
+
                 for (const pick of picks) {
-                    if (pick.player) {
-                        const isBatter = pick.player.batter_or_pitcher === 'batter';
-                        const viewName = isBatter ? 'v_batter_positions' : 'v_pitcher_positions';
-                        const { data: posData } = await supabase
-                            .from(viewName)
-                            .select('position_list')
-                            .eq('player_id', pick.player_id)
-                            .single();
-                        if (posData) {
-                            pick.player.position_list = posData.position_list;
-                        }
+                    if (pick.player && posMap[pick.player_id]) {
+                        pick.player.position_list = posMap[pick.player_id];
                     }
                 }
             }
