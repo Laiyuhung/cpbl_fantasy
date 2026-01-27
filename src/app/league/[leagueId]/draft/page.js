@@ -46,6 +46,7 @@ export default function DraftPage() {
     // Draft Roster Assignments State
     const [draftRosterAssignments, setDraftRosterAssignments] = useState([]);
     const [assignModalPlayer, setAssignModalPlayer] = useState(null);
+    const [assignModalSlot, setAssignModalSlot] = useState(null);
     const [mainTab, setMainTab] = useState('players');
 
     // Fetch Manager ID
@@ -213,11 +214,27 @@ export default function DraftPage() {
                     // Check if slot is compatible with player positions
                     if (playerPositions.includes(slot) || slot === 'Util' || slot === 'BN' ||
                         (player.batter_or_pitcher === 'pitcher' && slot === 'P')) {
-                        availableSlots.push(slotKey);
+                        availableSlots.push({ key: slotKey, display: slot });
                     }
                 }
             });
         return availableSlots;
+    };
+
+    const getAvailablePlayersForSlot = (slotKey) => {
+        const baseSlot = slotKey.replace(/\d+$/, '');
+
+        return myTeam.filter(player => {
+            if (isPlayerAssigned(player.player_id)) return false;
+
+            const playerPositions = filterPositions(player).split(', ');
+
+            if (baseSlot === 'Util' || baseSlot === 'BN') return true;
+            if (baseSlot === 'P' && player.batter_or_pitcher === 'pitcher') return true;
+            if (playerPositions.includes(baseSlot)) return true;
+
+            return false;
+        });
     };
 
     // Poll Draft State
@@ -646,13 +663,13 @@ export default function DraftPage() {
                     <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full border border-purple-500/30" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-xl font-bold mb-4 text-purple-300">Assign {assignModalPlayer.name} to Slot</h3>
                         <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
-                            {getAvailableSlotsForPlayer(assignModalPlayer).map(slotKey => {
-                                const assignment = getAssignedPlayer(slotKey);
+                            {getAvailableSlotsForPlayer(assignModalPlayer).map(slotInfo => {
+                                const assignment = getAssignedPlayer(slotInfo.key);
                                 return (
                                     <button
-                                        key={slotKey}
+                                        key={slotInfo.key}
                                         onClick={() => {
-                                            handleAssignToSlot(assignModalPlayer.player_id, slotKey);
+                                            handleAssignToSlot(assignModalPlayer.player_id, slotInfo.key);
                                             setAssignModalPlayer(null);
                                         }}
                                         disabled={!!assignment}
@@ -662,7 +679,7 @@ export default function DraftPage() {
                                             }`}
                                     >
                                         <div className="flex items-center justify-between">
-                                            <span className="font-mono font-bold text-purple-400">{slotKey}</span>
+                                            <span className="font-mono font-bold text-purple-400">{slotInfo.display}</span>
                                             {assignment && <span className="text-xs text-slate-500">Occupied by {assignment.name}</span>}
                                         </div>
                                     </button>
@@ -671,6 +688,56 @@ export default function DraftPage() {
                         </div>
                         <button
                             onClick={() => setAssignModalPlayer(null)}
+                            className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Assignment Modal - Select Player for Slot */}
+            {assignModalSlot && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setAssignModalSlot(null)}>
+                    <div className="bg-slate-800 rounded-xl p-6 max-w-2xl w-full border border-purple-500/30 max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold mb-4 text-purple-300">Select Player for {assignModalSlot.replace(/\d+$/, '')}</h3>
+                        <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1">
+                            {getAvailablePlayersForSlot(assignModalSlot).length === 0 ? (
+                                <div className="text-center py-8 text-slate-500">
+                                    No available players for this position
+                                </div>
+                            ) : (
+                                getAvailablePlayersForSlot(assignModalSlot).map(player => (
+                                    <button
+                                        key={player.player_id}
+                                        onClick={() => {
+                                            handleAssignToSlot(player.player_id, assignModalSlot);
+                                            setAssignModalSlot(null);
+                                        }}
+                                        className="w-full p-3 rounded border bg-slate-700 border-slate-600 hover:border-purple-500 hover:bg-purple-900/30 text-left transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-slate-600 overflow-hidden border border-slate-500 shrink-0">
+                                                <img
+                                                    src={getPlayerPhoto(player)}
+                                                    onError={(e) => handleImageError(e, player)}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="font-bold text-slate-200">{player.name}</div>
+                                                <div className="text-xs text-slate-500">{filterPositions(player)}</div>
+                                            </div>
+                                            <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(player.team)}`}>
+                                                {getTeamAbbr(player.team)}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setAssignModalSlot(null)}
                             className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded transition-colors"
                         >
                             Cancel
@@ -760,8 +827,8 @@ export default function DraftPage() {
                 <button
                     onClick={() => setMainTab('players')}
                     className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'players'
-                            ? 'text-white border-b-4 border-purple-500 -mb-0.5'
-                            : 'text-slate-500 hover:text-slate-300'
+                        ? 'text-white border-b-4 border-purple-500 -mb-0.5'
+                        : 'text-slate-500 hover:text-slate-300'
                         }`}
                 >
                     Players
@@ -769,8 +836,8 @@ export default function DraftPage() {
                 <button
                     onClick={() => setMainTab('roster')}
                     className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'roster'
-                            ? 'text-white border-b-4 border-purple-500 -mb-0.5'
-                            : 'text-slate-500 hover:text-slate-300'
+                        ? 'text-white border-b-4 border-purple-500 -mb-0.5'
+                        : 'text-slate-500 hover:text-slate-300'
                         }`}
                 >
                     Roster Assignment ({draftRosterAssignments.length})
@@ -1069,12 +1136,6 @@ export default function DraftPage() {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                    <button
-                                                        onClick={() => setAssignModalPlayer(p)}
-                                                        className="mt-2 w-full py-1 rounded text-xs font-bold transition-all bg-blue-600 hover:bg-blue-500 text-white shadow-lg"
-                                                    >
-                                                        📋 Assign to Roster
-                                                    </button>
                                                 </div>
                                             );
                                         })}
@@ -1153,7 +1214,12 @@ export default function DraftPage() {
                                     const assignment = getAssignedPlayer(slotKey);
 
                                     return (
-                                        <div key={slotKey} className="bg-slate-900/80 p-4 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all">
+                                        <div
+                                            key={slotKey}
+                                            onClick={() => !assignment && setAssignModalSlot(slotKey)}
+                                            className={`bg-slate-900/80 p-4 rounded-lg border border-slate-700/50 transition-all ${!assignment ? 'cursor-pointer hover:border-purple-500/50 hover:bg-slate-800/80' : ''
+                                                }`}
+                                        >
                                             <div className="flex items-center justify-between mb-3">
                                                 <span className="text-base font-mono text-purple-400 font-bold">{slot}</span>
                                                 {assignment && (
