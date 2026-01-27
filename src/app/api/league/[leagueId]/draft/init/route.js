@@ -32,14 +32,14 @@ export async function POST(request, { params }) {
             return NextResponse.json({ success: false, error: 'Manager ID required' }, { status: 400 });
         }
 
-        // 0.5. Check if league is finalized
-        const { data: leagueStatus } = await supabase
-            .from('league_statuses')
-            .select('finalized')
+        // 0.5. Check if league is finalized (exists in league_finalized_status table)
+        const { data: finalizedStatus } = await supabase
+            .from('league_finalized_status')
+            .select('id')
             .eq('league_id', leagueId)
             .single();
 
-        if (!leagueStatus?.finalized) {
+        if (!finalizedStatus) {
             return NextResponse.json({
                 success: false,
                 error: 'League must be finalized before generating draft order'
