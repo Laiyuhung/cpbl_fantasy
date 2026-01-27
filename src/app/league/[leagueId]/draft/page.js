@@ -17,6 +17,7 @@ export default function DraftPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [picking, setPicking] = useState(false);
     const [assigning, setAssigning] = useState(false);
+    const [assigningId, setAssigningId] = useState(null); // Track specific ID being assigned/removed
 
     // UI States
     const [showLegend, setShowLegend] = useState(false);
@@ -41,6 +42,7 @@ export default function DraftPage() {
 
     // Queue State
     const [queue, setQueue] = useState([]);
+    const [queuingIds, setQueuingIds] = useState(new Set()); // Track IDs being added/removed
     const [activeTab, setActiveTab] = useState('team'); // 'team', 'queue', 'roster'
 
     // Sidebar State
@@ -56,6 +58,7 @@ export default function DraftPage() {
 
     const [viewingManagerId, setViewingManagerId] = useState(null);
     const [viewingRosterAssignments, setViewingRosterAssignments] = useState([]);
+    const [viewingLoading, setViewingLoading] = useState(false);
 
     // Fetch Manager ID
     useEffect(() => {
@@ -109,20 +112,27 @@ export default function DraftPage() {
         }
 
         if (!viewingManagerId) return;
+
         const fetchAssignments = async () => {
-            const res = await fetch(`/api/league/${leagueId}/draft/roster?manager_id=${viewingManagerId}`);
-            const data = await res.json();
-            if (data.success) {
-                setViewingRosterAssignments(data.assignments || []);
+            setViewingLoading(true);
+            setViewingRosterAssignments([]); // Clear previous data
+            try {
+                const res = await fetch(`/api/league/${leagueId}/draft/roster?manager_id=${viewingManagerId}`);
+                const data = await res.json();
+                if (data.success) {
+                    setViewingRosterAssignments(data.assignments || []);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setViewingLoading(false);
             }
         };
         fetchAssignments();
-        // No polling needed for opponent view strictly, but maybe good to have? Let's skip polling for now to save resources unless user asks.
     }, [leagueId, viewingManagerId, members, myManagerId]);
 
     const handleAddToQueue = async (player) => {
-        const optimItem = { queue_id: 'temp-' + Date.now(), player_id: player.player_id, player, rank_order: queue.length + 1 };
-        setQueue(prev => [...prev, optimItem]);
+        setQueuingIds(prev => new Set(prev).add(player.player_id));
         try {
             const res = await fetch(`/api/league/${leagueId}/draft/queue`, {
                 method: 'POST',
@@ -130,29 +140,45 @@ export default function DraftPage() {
                 body: JSON.stringify({ managerId: myManagerId, playerId: player.player_id })
             });
             const data = await res.json();
-            if (!data.success) {
-                setQueue(prev => prev.filter(i => i.player_id !== player.player_id));
-                alert('Add to queue failed');
-            } else {
+            if (data.success) {
                 const qRes = await fetch(`/api/league/${leagueId}/draft/queue?managerId=${myManagerId}`);
                 const qData = await qRes.json();
                 if (qData.success) setQueue(qData.queue);
+            } else {
+                alert('Add to queue failed');
             }
         } catch (e) {
-            setQueue(prev => prev.filter(i => i.player_id !== player.player_id));
             console.error(e);
+        } finally {
+            setQueuingIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(player.player_id);
+                return newSet;
+            });
         }
     };
 
     const handleRemoveFromQueue = async (queueId) => {
-        setQueue(prev => prev.filter(i => i.queue_id !== queueId));
+        const item = queue.find(q => q.queue_id === queueId);
+        const pid = item?.player_id;
+        if (pid) setQueuingIds(prev => new Set(prev).add(pid));
+
         try {
             await fetch(`/api/league/${leagueId}/draft/queue`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ queueId })
             });
-        } catch (e) { console.error(e); }
+            setQueue(prev => prev.filter(i => i.queue_id !== queueId));
+        } catch (e) {
+            console.error(e);
+        } finally {
+            if (pid) setQueuingIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(pid);
+                return newSet;
+            });
+        }
     };
 
     const handleReorderQueue = async (index, direction) => {
@@ -196,11 +222,14 @@ export default function DraftPage() {
                 if (refreshData.success) {
                     setDraftRosterAssignments(refreshData.assignments || []);
                 }
+                return true;
             } else {
                 alert('Assignment failed: ' + data.error);
+                return false;
             }
         } catch (e) {
             console.error('Assignment error:', e);
+            return false;
         } finally {
             setAssigning(false);
         }
@@ -208,6 +237,7 @@ export default function DraftPage() {
 
     const handleRemoveAssignment = async (assignmentId) => {
         setAssigning(true);
+        setAssigningId(assignmentId);
         try {
             await fetch(`/api/league/${leagueId}/draft/roster`, {
                 method: 'DELETE',
@@ -224,6 +254,7 @@ export default function DraftPage() {
             console.error('Remove assignment error:', e);
         } finally {
             setAssigning(false);
+            setAssigningId(null);
         }
     };
 
@@ -652,7 +683,11 @@ export default function DraftPage() {
                             )}
                         </div>
                     </div>
-                    <button onClick={() => handleRemoveFromQueue(item.queue_id)} className="text-slate-500 hover:text-red-400 p-1">×</button>
+                    <button disabled={queuingIds.has(item.player_id)} onClick={() => handleRemoveFromQueue(item.queue_id)} className="text-slate-500 hover:text-red-400 p-1 flex items-center justify-center w-6 h-6">
+                        {queuingIds.has(item.player_id) ? (
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-500"></div>
+                        ) : '×'}
+                    </button>
                 </div>
                 <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
                     {cats.map(cat => (
@@ -665,13 +700,16 @@ export default function DraftPage() {
                 <button
                     onClick={() => handlePick(player.player_id)}
                     disabled={picking || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(player.player_id)}
-                    className={`mt-2 w-full py-1 rounded text-xs font-bold transition-all
+                    className={`mt-2 w-full py-1 rounded text-xs font-bold transition-all flex items-center justify-center gap-2
                         ${draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id)
                             ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg'
                             : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
                         }`}
                 >
-                    Draft
+                    {picking && draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id) && (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    )}
+                    {picking && draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id) ? 'Drafting...' : 'Draft'}
                 </button>
             </div>
         );
@@ -727,16 +765,23 @@ export default function DraftPage() {
                                         return (
                                             <button
                                                 key={slotInfo.key}
-                                                onClick={() => {
-                                                    handleAssignToSlot(assignModalPlayer.player_id, slotInfo.key);
-                                                    setAssignModalPlayer(null);
+                                                onClick={async () => {
+                                                    setAssigningId(slotInfo.key);
+                                                    const success = await handleAssignToSlot(assignModalPlayer.player_id, slotInfo.key);
+                                                    setAssigningId(null);
+                                                    if (success) setAssignModalPlayer(null);
                                                 }}
-                                                disabled={!!assignment}
-                                                className={`w-full p-3 rounded border text-left transition-colors ${assignment
+                                                disabled={!!assignment || assigning}
+                                                className={`w-full p-3 rounded border text-left transition-colors relative ${assignment
                                                     ? 'bg-slate-700/50 border-slate-600 text-slate-500 cursor-not-allowed'
                                                     : 'bg-slate-700 border-slate-600 hover:border-purple-500 hover:bg-purple-900/30'
                                                     }`}
                                             >
+                                                {assigning && assigningId === slotInfo.key && (
+                                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded">
+                                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                                    </div>
+                                                )}
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-mono font-bold text-purple-400">{slotInfo.display}</span>
                                                     {assignment && <span className="text-xs text-slate-500">Occupied by {assignment.name}</span>}
@@ -771,15 +816,22 @@ export default function DraftPage() {
                                 getAvailablePlayersForSlot(assignModalSlot).map(player => (
                                     <button
                                         key={player.player_id}
-                                        onClick={() => {
-                                            handleAssignToSlot(player.player_id, assignModalSlot);
-                                            setAssignModalSlot(null);
+                                        onClick={async () => {
+                                            setAssigningId(player.player_id);
+                                            const success = await handleAssignToSlot(player.player_id, assignModalSlot);
+                                            setAssigningId(null);
+                                            if (success) setAssignModalSlot(null);
                                         }}
-                                        className="w-full p-3 rounded border bg-slate-700 border-slate-600 hover:border-purple-500 hover:bg-purple-900/30 text-left transition-colors"
+                                        disabled={assigning || assigningId === player.player_id}
+                                        className={`w-full p-3 rounded border bg-slate-700 border-slate-600 hover:border-purple-500 hover:bg-purple-900/30 text-left transition-colors ${assigning || assigningId === player.player_id ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-slate-600 overflow-hidden border border-slate-500 shrink-0">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <div className="w-10 h-10 rounded-full bg-slate-600 overflow-hidden border border-slate-500 shrink-0 relative">
+                                                {assigning && assigningId === player.player_id && (
+                                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                    </div>
+                                                )}                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                                 <img
                                                     src={getPlayerPhoto(player)}
                                                     onError={(e) => handleImageError(e, player)}
@@ -1060,20 +1112,27 @@ export default function DraftPage() {
                                                     <div className="flex items-center justify-end gap-1">
                                                         <button
                                                             onClick={() => isQueued(player.player_id) ? handleRemoveFromQueue(queue.find(q => q.player_id === player.player_id)?.queue_id) : handleAddToQueue(player)}
+                                                            disabled={queuingIds.has(player.player_id)}
                                                             className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${isQueued(player.player_id) ? 'bg-purple-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 hover:text-white'}`}
                                                         >
-                                                            {isQueued(player.player_id) ? '★' : '☆'}
+                                                            {queuingIds.has(player.player_id) ? (
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                            ) : (
+                                                                isQueued(player.player_id) ? '★' : '☆'
+                                                            )}
                                                         </button>
                                                         <button
                                                             onClick={() => handlePick(player.player_id)}
-                                                            disabled={picking || draftState?.currentPick?.manager_id !== myManagerId}
+                                                            disabled={picking || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id))}
                                                             className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all flex items-center gap-2
                                                             ${draftState?.currentPick?.manager_id === myManagerId && !picking
                                                                     ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
                                                                     : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'
                                                                 }`}
                                                         >
-                                                            {picking && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>}
+                                                            {picking && draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(String(player.player_id)) && (
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                            )}
                                                             {picking ? 'DRAFTING...' : 'DRAFT'}
                                                         </button>
                                                     </div>
@@ -1275,9 +1334,12 @@ export default function DraftPage() {
                                                                             </div>
                                                                             <button
                                                                                 onClick={() => handleRemoveAssignment(assignment.assignment_id)}
-                                                                                className="text-slate-500 hover:text-red-400 text-xs px-2"
+                                                                                disabled={assigning}
+                                                                                className="text-slate-500 hover:text-red-400 text-xs px-2 disabled:opacity-50"
                                                                             >
-                                                                                ×
+                                                                                {assigning && assigningId === assignment.assignment_id ? (
+                                                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
+                                                                                ) : '×'}
                                                                             </button>
                                                                         </>
                                                                     ) : (
@@ -1382,9 +1444,11 @@ export default function DraftPage() {
                                                                 handleRemoveAssignment(assignment.assignment_id);
                                                             }}
                                                             disabled={assigning}
-                                                            className="text-slate-500 hover:text-red-400 text-xs px-3 py-1 rounded hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                                            className={`text-slate-500 hover:text-red-400 text-xs px-3 py-1 rounded hover:bg-red-900/20 transition-colors disabled:opacity-50 ${assigning && assigningId === assignment.assignment_id ? 'cursor-not-allowed' : ''}`}
                                                         >
-                                                            Remove
+                                                            {assigning && assigningId === assignment.assignment_id ? (
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
+                                                            ) : 'Remove'}
                                                         </button>
                                                     </>
                                                 ) : (
@@ -1424,88 +1488,95 @@ export default function DraftPage() {
                             </select>
                         </div>
 
-                        {/* Viewing Unassigned Players (Moved to Top) */}
-                        {viewingTeam && viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length > 0 && (
-                            <div className="border-b border-slate-700 pb-4 mb-4">
-                                <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length})</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                                    {viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).map((player) => (
-                                        <div
-                                            key={player.player_id}
-                                            className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50"
-                                        >
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img
-                                                        src={getPlayerPhoto(player)}
-                                                        onError={(e) => handleImageError(e, player)}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="text-center w-full">
-                                                    <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
-                                                    <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                        {viewingLoading ? (
+                            <div className="flex flex-col items-center justify-center h-64">
+                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
+                                <div className="text-slate-400 font-mono animate-pulse">Loading roster...</div>
                             </div>
-                        )}
-
-                        <div className="space-y-2 mb-6">
-                            {Object.keys(rosterPositions)
-                                .filter(slot => !slot.includes('Minor'))
-                                .map(slot => {
-                                    const count = rosterPositions[slot];
-                                    return Array.from({ length: count }).map((_, idx) => {
-                                        const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
-                                        const assignment = viewingRosterAssignments.find(a => a.roster_slot === slotKey);
-
-                                        return (
-                                            <div
-                                                key={slotKey}
-                                                className={`flex items-center justify-between p-3 rounded-lg border transition-all ${assignment
-                                                    ? 'bg-slate-900/80 border-slate-700/50'
-                                                    : 'bg-slate-900/50 border-slate-700/30'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-3 flex-1">
-                                                    <div className="w-16 text-center">
-                                                        <span className="font-mono font-bold text-slate-400 text-sm">{slot}</span>
-                                                    </div>
-
-                                                    {assignment ? (
-                                                        <>
-                                                            <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
-                                                                <img
-                                                                    src={getPlayerPhoto(assignment)}
-                                                                    onError={(e) => handleImageError(e, assignment)}
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
-                                                                <div className="text-xs text-slate-500">{assignment.position_list}</div>
-                                                            </div>
-                                                            <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                {getTeamAbbr(assignment.team)}
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="flex-1 text-slate-600 italic text-sm">
-                                                            Empty
+                        ) : (
+                            <>
+                                {/* Viewing Unassigned Players (Moved to Top) */}
+                                {viewingTeam && viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length > 0 && (
+                                    <div className="border-b border-slate-700 pb-4 mb-4">
+                                        <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length})</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                                            {viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).map((player) => (
+                                                <div
+                                                    key={player.player_id}
+                                                    className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50"
+                                                >
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                            <img
+                                                                src={getPlayerPhoto(player)}
+                                                                onError={(e) => handleImageError(e, player)}
+                                                                className="w-full h-full object-cover"
+                                                            />
                                                         </div>
-                                                    )}
+                                                        <div className="text-center w-full">
+                                                            <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
+                                                            <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    });
-                                })}
-                        </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
+                                <div className="space-y-2 mb-6">
+                                    {Object.keys(rosterPositions)
+                                        .filter(slot => !slot.includes('Minor'))
+                                        .map(slot => {
+                                            const count = rosterPositions[slot];
+                                            return Array.from({ length: count }).map((_, idx) => {
+                                                const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
+                                                const assignment = viewingRosterAssignments.find(a => a.roster_slot === slotKey);
 
+                                                return (
+                                                    <div
+                                                        key={slotKey}
+                                                        className={`flex items-center justify-between p-3 rounded-lg border transition-all ${assignment
+                                                            ? 'bg-slate-900/80 border-slate-700/50'
+                                                            : 'bg-slate-900/50 border-slate-700/30'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-3 flex-1">
+                                                            <div className="w-16 text-center">
+                                                                <span className="font-mono font-bold text-slate-400 text-sm">{slot}</span>
+                                                            </div>
+
+                                                            {assignment ? (
+                                                                <>
+                                                                    <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                                        <img
+                                                                            src={getPlayerPhoto(assignment)}
+                                                                            onError={(e) => handleImageError(e, assignment)}
+                                                                            className="w-full h-full object-cover"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                                        <div className="text-xs text-slate-500">{assignment.position_list}</div>
+                                                                    </div>
+                                                                    <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(assignment.team)}`}>
+                                                                        {getTeamAbbr(assignment.team)}
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex-1 text-slate-600 italic text-sm">
+                                                                    Empty
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            });
+                                        })}
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
 
