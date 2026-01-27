@@ -779,6 +779,7 @@ export default function DraftPage() {
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-slate-600 overflow-hidden border border-slate-500 shrink-0">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                                 <img
                                                     src={getPlayerPhoto(player)}
                                                     onError={(e) => handleImageError(e, player)}
@@ -1252,33 +1253,36 @@ export default function DraftPage() {
                                                             const assignment = getAssignedPlayer(slotKey);
 
                                                             return (
-                                                                <div key={slotKey} className="bg-slate-900/80 p-2 rounded border border-slate-700/50 flex items-center justify-between">
-                                                                    <div className="flex items-center gap-2 flex-1">
-                                                                        <span className="text-xs font-mono text-purple-400 font-bold min-w-[40px]">{slot}</span>
-                                                                        {assignment ? (
-                                                                            <>
-                                                                                <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
-                                                                                    <img
-                                                                                        src={getPlayerPhoto(assignment)}
-                                                                                        onError={(e) => handleImageError(e, assignment)}
-                                                                                        className="w-full h-full object-cover"
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
-                                                                                    <div className="text-[10px] text-slate-500">{assignment.position_list}</div>
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => handleRemoveAssignment(assignment.assignment_id)}
-                                                                                    className="text-slate-500 hover:text-red-400 text-xs px-2"
-                                                                                >
-                                                                                    ×
-                                                                                </button>
-                                                                            </>
-                                                                        ) : (
-                                                                            <div className="text-slate-600 text-xs italic">Empty</div>
-                                                                        )}
+                                                                <div key={slotKey} className="bg-slate-900/80 p-2 rounded-lg border border-slate-700 flex items-center gap-2">
+                                                                    <div className="flex flex-col items-center min-w-[30px]">
+                                                                        <div className="text-xs font-mono text-purple-400 font-bold bg-purple-900/20 px-1.5 py-0.5 rounded">
+                                                                            {slot}
+                                                                        </div>
                                                                     </div>
+                                                                    {assignment ? (
+                                                                        <>
+                                                                            <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
+                                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                                <img
+                                                                                    src={getPlayerPhoto(assignment)}
+                                                                                    onError={(e) => handleImageError(e, assignment)}
+                                                                                    className="w-full h-full object-cover"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                                                <div className="text-[10px] text-slate-500">{filterPositions(assignment)}</div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => handleRemoveAssignment(assignment.assignment_id)}
+                                                                                className="text-slate-500 hover:text-red-400 text-xs px-2"
+                                                                            >
+                                                                                ×
+                                                                            </button>
+                                                                        </>
+                                                                    ) : (
+                                                                        <div className="text-slate-600 text-xs italic">Empty</div>
+                                                                    )}
                                                                 </div>
                                                             );
                                                         });
@@ -1324,6 +1328,7 @@ export default function DraftPage() {
                                                 {assignment ? (
                                                     <>
                                                         <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                                             <img
                                                                 src={getPlayerPhoto(assignment)}
                                                                 onError={(e) => handleImageError(e, assignment)}
@@ -1375,6 +1380,7 @@ export default function DraftPage() {
                                         >
                                             <div className="flex flex-col items-center gap-1">
                                                 <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     <img
                                                         src={getPlayerPhoto(player)}
                                                         onError={(e) => handleImageError(e, player)}
@@ -1479,6 +1485,7 @@ export default function DraftPage() {
                                         >
                                             <div className="flex flex-col items-center gap-1">
                                                 <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     <img
                                                         src={getPlayerPhoto(player)}
                                                         onError={(e) => handleImageError(e, player)}

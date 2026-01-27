@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   AlertDialog,
@@ -232,7 +232,7 @@ export default function RosterPage() {
 
   useEffect(() => {
     applyDateRange(range)
-  }, [range])
+  }, [range, applyDateRange])
 
   useEffect(() => {
     setRosterReady(false)
@@ -243,16 +243,17 @@ export default function RosterPage() {
       console.log('📊 觸發 fetchStatsSummary (roster ready & date):', selectedDate)
       fetchStatsSummary()
     }
-  }, [rosterReady, selectedDate])
+  }, [rosterReady, selectedDate, fetchStatsSummary])
 
 
   useEffect(() => {
     if (range === 'Today') {
       applyDateRange('Today')
     }
-  }, [selectedDate])
+  }, [selectedDate, range, applyDateRange])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     if (userId) fetchData()
   }, [userId, fromDate, toDate])
 
@@ -260,6 +261,7 @@ export default function RosterPage() {
     if (userId) {
       fetchWaiverPriority()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
 
@@ -472,6 +474,7 @@ export default function RosterPage() {
     const activePlayers = players.filter(p => !['NA', 'NA(備用)'].includes(assignedPositions[p.Name]))
     setActiveCount(activePlayers.length)
 
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [players, assignedPositions])
 
 
@@ -527,7 +530,7 @@ export default function RosterPage() {
 
 
 
-  const fetchStatsSummary = async () => {
+  const fetchStatsSummary = useCallback(async () => {
     const batterNames = players
       .filter(p => p.B_or_P === 'Batter' && !['BN', 'NA', 'NA(備用)'].includes(assignedPositions[p.Name]))
       .map(p => p.Name)
@@ -568,12 +571,12 @@ export default function RosterPage() {
     } catch (err) {
       console.error('❌ 加總 stats summary 錯誤:', err)
     }
-  }
+  }, [players, assignedPositions, selectedDate])
 
   const formatDateInput = (date) => date.toISOString().slice(0, 10)
 
 
-  const applyDateRange = (range) => {
+  const applyDateRange = useCallback((range) => {
     const now = new Date()  // ⚠️ 改這裡，保證每次呼叫都抓系統當前時間
     let from = '', to = ''
 
@@ -619,7 +622,8 @@ export default function RosterPage() {
 
     setFromDate(from)
     setToDate(to)
-  }
+  }, [selectedDate])
+
 
 
   const renderAssignedPositionSelect = (p) => {
@@ -1204,6 +1208,7 @@ export default function RosterPage() {
           >
             <div className="flex items-center gap-2 font-bold text-[#0155A0] text-base">
               {renderAssignedPositionSelect(p)}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`/photo/${p.Name}.png`}
                 alt={p.Name}
@@ -1731,8 +1736,10 @@ export default function RosterPage() {
                         >
                           <div className="flex flex-col items-start gap-0.5">
                             <div className="flex items-center gap-2">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={`/photo/${p.Name}.png`}
+                                alt={p.Name}
                                 className="w-9 h-9 rounded-full"
                                 onError={(e) => (e.target.src = '/photo/defaultPlayer.png')}
                               />
@@ -2238,6 +2245,7 @@ export default function RosterPage() {
                   </div>
 
                   {/* 右側圖片 */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/photo/${selectedPlayerDetail?.Name}.png`}
                     alt={selectedPlayerDetail?.Name}

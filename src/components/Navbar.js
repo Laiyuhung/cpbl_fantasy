@@ -2,7 +2,7 @@
 'use client'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 export default function Navbar() {
   const router = useRouter()
@@ -36,7 +36,7 @@ export default function Navbar() {
   }, []);
 
   // Fetch user's leagues
-  const fetchLeagues = (uid) => {
+  const fetchLeagues = useCallback((uid) => {
     console.log('=== Navbar: Fetching leagues ===')
     console.log('Manager ID (user_id):', uid)
 
@@ -54,7 +54,7 @@ export default function Navbar() {
         }
       })
       .catch(err => console.error('Failed to fetch leagues:', err))
-  }
+  }, [])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function Navbar() {
         }
       })
       .catch(() => router.push('/login'))
-  }, [])
+  }, [router, fetchLeagues])
 
   // 監聽全局 auth 改變事件，讓 Navbar 可以在登入/登出時立即更新
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function Navbar() {
 
     window.addEventListener('leagues-changed', handler)
     return () => window.removeEventListener('leagues-changed', handler)
-  }, [userId])
+  }, [userId, fetchLeagues])
 
   // 監測當前路徑，如果在 league/[leagueId] 底下，設定當前聯盟
   useEffect(() => {
