@@ -387,11 +387,7 @@ export default function DraftPage() {
     // Timer Tick
     useEffect(() => {
         const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                const newVal = prev > 0 ? prev - 1 : 0;
-                console.log('Timer Tick:', newVal);
-                return newVal;
-            });
+            setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
         }, 1000);
         return () => clearInterval(timer);
     }, []);
@@ -537,7 +533,7 @@ export default function DraftPage() {
         };
         resolvePhotos();
         return () => { cancelled = true; };
-    }, [players, draftState?.picks, photoSrcMap]);
+    }, [players, draftState?.picks]);
 
     const getPlayerPhoto = (player) => {
         // 使用預解析的路徑，沒有就回退為預設
