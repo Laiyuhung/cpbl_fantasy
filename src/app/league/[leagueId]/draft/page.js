@@ -501,8 +501,8 @@ export default function DraftPage() {
             const pickedPlayers = draftState?.picks?.map(p => p.player).filter(Boolean) || [];
             const allPlayers = [...players, ...pickedPlayers];
 
-            // Filter out players already resolved or known failed
-            const unprocessed = allPlayers.filter(p => !resolvedIds.current.has(p.player_id));
+            // Filter out players already in photoSrcMap or resolvedIds
+            const unprocessed = allPlayers.filter(p => !photoSrcMap[p.player_id] && !resolvedIds.current.has(p.player_id));
             if (unprocessed.length === 0) return;
 
             // Deduplicate new batch
@@ -537,9 +537,12 @@ export default function DraftPage() {
         };
         resolvePhotos();
         return () => { cancelled = true; };
-    }, [players, draftState?.picks]);
+    }, [players, draftState?.picks, photoSrcMap]);
 
-    const getPlayerPhoto = (player) => photoSrcMap[player.player_id] || getPlayerPhotoPaths(player)[0];
+    const getPlayerPhoto = (player) => {
+        // 使用預解析的路徑，沒有就回退為預設
+        return photoSrcMap[player.player_id] || '/photo/defaultPlayer.png';
+    };
 
     const handleImageError = (e, player) => {
         const currentSrc = e.target.src;
