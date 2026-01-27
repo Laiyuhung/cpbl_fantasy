@@ -24,6 +24,7 @@ export default function DraftPage() {
     const [filterType, setFilterType] = useState('batter');
     const [filterPos, setFilterPos] = useState('All');
     const [filterTeam, setFilterTeam] = useState('All');
+    const [filterIdentity, setFilterIdentity] = useState('All');
     const [sortConfig, setSortConfig] = useState({ key: 'rank', direction: 'asc' });
 
     // Data Resources
@@ -39,8 +40,12 @@ export default function DraftPage() {
 
     // Queue State
     const [queue, setQueue] = useState([]);
-    const [activeTab, setActiveTab] = useState('team'); // 'team', 'queue'
+    const [activeTab, setActiveTab] = useState('team'); // 'team', 'queue', 'roster'
     const [sidebarTab, setSidebarTab] = useState('history'); // 'history' (recent), 'future' (upcoming)
+
+    // Draft Roster Assignments State
+    const [draftRosterAssignments, setDraftRosterAssignments] = useState([]);
+    const [assignModalPlayer, setAssignModalPlayer] = useState(null);
 
     // Fetch Manager ID
     useEffect(() => {
@@ -66,6 +71,21 @@ export default function DraftPage() {
         };
         fetchQueue();
         const interval = setInterval(fetchQueue, 5000); // Poll queue to clean up taken players
+        return () => clearInterval(interval);
+    }, [leagueId, myManagerId]);
+
+    // Fetch Draft Roster Assignments
+    useEffect(() => {
+        if (!myManagerId) return;
+        const fetchAssignments = async () => {
+            const res = await fetch(`/api/league/${leagueId}/draft/roster?manager_id=${myManagerId}`);
+            const data = await res.json();
+            if (data.success) {
+                setDraftRosterAssignments(data.assignments || []);
+            }
+        };
+        fetchAssignments();
+        const interval = setInterval(fetchAssignments, 5000);
         return () => clearInterval(interval);
     }, [leagueId, myManagerId]);
 
@@ -127,6 +147,77 @@ export default function DraftPage() {
     };
 
     const isQueued = (playerId) => queue.some(q => q.player_id === playerId);
+
+    // Roster Assignment Handlers
+    const handleAssignToSlot = async (playerId, rosterSlot) => {
+        try {
+            const res = await fetch(`/api/league/${leagueId}/draft/roster`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ managerId: myManagerId, playerId, rosterSlot })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Refresh assignments
+                const refreshRes = await fetch(`/api/league/${leagueId}/draft/roster?manager_id=${myManagerId}`);
+                const refreshData = await refreshRes.json();
+                if (refreshData.success) {
+                    setDraftRosterAssignments(refreshData.assignments || []);
+                }
+            } else {
+                alert('Assignment failed: ' + data.error);
+            }
+        } catch (e) {
+            console.error('Assignment error:', e);
+        }
+    };
+
+    const handleRemoveAssignment = async (assignmentId) => {
+        try {
+            await fetch(`/api/league/${leagueId}/draft/roster`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assignmentId })
+            });
+            // Refresh assignments
+            const refreshRes = await fetch(`/api/league/${leagueId}/draft/roster?manager_id=${myManagerId}`);
+            const refreshData = await refreshRes.json();
+            if (refreshData.success) {
+                setDraftRosterAssignments(refreshData.assignments || []);
+            }
+        } catch (e) {
+            console.error('Remove assignment error:', e);
+        }
+    };
+
+    const getAssignedPlayer = (slot) => {
+        return draftRosterAssignments.find(a => a.roster_slot === slot);
+    };
+
+    const isPlayerAssigned = (playerId) => {
+        return draftRosterAssignments.some(a => a.player_id === playerId);
+    };
+
+    const getAvailableSlotsForPlayer = (player) => {
+        if (!player) return [];
+        const playerPositions = filterPositions(player).split(', ');
+        const availableSlots = [];
+
+        Object.keys(rosterPositions)
+            .filter(slot => !slot.includes('Minor'))
+            .forEach(slot => {
+                const count = rosterPositions[slot];
+                for (let idx = 0; idx < count; idx++) {
+                    const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
+                    // Check if slot is compatible with player positions
+                    if (playerPositions.includes(slot) || slot === 'Util' || slot === 'BN' ||
+                        (player.batter_or_pitcher === 'pitcher' && slot === 'P')) {
+                        availableSlots.push(slotKey);
+                    }
+                }
+            });
+        return availableSlots;
+    };
 
     // Poll Draft State
     useEffect(() => {
@@ -401,6 +492,12 @@ export default function DraftPage() {
 
             if (filterTeam !== 'All' && p.team !== filterTeam) return false;
 
+            if (filterIdentity !== 'All') {
+                const isForeigner = p.identity?.toLowerCase() === 'foreigner';
+                if (filterIdentity === 'Foreign' && !isForeigner) return false;
+                if (filterIdentity === 'Local' && isForeigner) return false;
+            }
+
             return true;
         });
 
@@ -420,7 +517,7 @@ export default function DraftPage() {
             });
         }
         return result.slice(0, 100);
-    }, [players, takenIds, searchTerm, filterType, filterPos, filterTeam, sortConfig, playerStats]);
+    }, [players, takenIds, searchTerm, filterType, filterPos, filterTeam, filterIdentity, sortConfig, playerStats]);
 
     // Helpers
     const getTeamAbbr = (team) => {
@@ -541,6 +638,45 @@ export default function DraftPage() {
                 batterStats={batterStatCategories}
                 pitcherStats={pitcherStatCategories}
             />
+
+            {/* Assignment Modal */}
+            {assignModalPlayer && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setAssignModalPlayer(null)}>
+                    <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full border border-purple-500/30" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold mb-4 text-purple-300">Assign {assignModalPlayer.name} to Slot</h3>
+                        <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                            {getAvailableSlotsForPlayer(assignModalPlayer).map(slotKey => {
+                                const assignment = getAssignedPlayer(slotKey);
+                                return (
+                                    <button
+                                        key={slotKey}
+                                        onClick={() => {
+                                            handleAssignToSlot(assignModalPlayer.player_id, slotKey);
+                                            setAssignModalPlayer(null);
+                                        }}
+                                        disabled={!!assignment}
+                                        className={`w-full p-3 rounded border text-left transition-colors ${assignment
+                                            ? 'bg-slate-700/50 border-slate-600 text-slate-500 cursor-not-allowed'
+                                            : 'bg-slate-700 border-slate-600 hover:border-purple-500 hover:bg-purple-900/30'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-mono font-bold text-purple-400">{slotKey}</span>
+                                            {assignment && <span className="text-xs text-slate-500">Occupied by {assignment.name}</span>}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <button
+                            onClick={() => setAssignModalPlayer(null)}
+                            className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Header Area */}
             <div className="flex flex-col gap-2 mb-4">
@@ -669,6 +805,16 @@ export default function DraftPage() {
                                 {getPosOptions().map(k => <option key={k} value={k}>{k}</option>)}
                             </select>
 
+                            <select
+                                className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
+                                value={filterIdentity}
+                                onChange={e => setFilterIdentity(e.target.value)}
+                            >
+                                <option value="All">All</option>
+                                <option value="Local">Local</option>
+                                <option value="Foreign">Foreign</option>
+                            </select>
+
                             <input
                                 className="bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-slate-200 w-32 focus:w-48 transition-all outline-none focus:border-purple-500"
                                 placeholder="Search Name..."
@@ -750,6 +896,13 @@ export default function DraftPage() {
                                             {/* Action */}
                                             <td className="p-2 text-right sticky right-0 bg-slate-900/0 group-hover:bg-slate-800/0">
                                                 <div className="flex items-center justify-end gap-1">
+                                                    <button
+                                                        onClick={() => setAssignModalPlayer(player)}
+                                                        className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${isPlayerAssigned(player.player_id) ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 hover:text-white'}`}
+                                                        title="Assign to roster slot"
+                                                    >
+                                                        📋
+                                                    </button>
                                                     <button
                                                         onClick={() => isQueued(player.player_id) ? handleRemoveFromQueue(queue.find(q => q.player_id === player.player_id)?.queue_id) : handleAddToQueue(player)}
                                                         className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${isQueued(player.player_id) ? 'bg-purple-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 hover:text-white'}`}
@@ -842,7 +995,7 @@ export default function DraftPage() {
                         </div>
                     </div>
 
-                    {/* My Team & Queue Tabs */}
+                    {/* My Team & Queue & Roster Tabs */}
                     <div className="h-1/2 bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
                         <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-2">
                             <button onClick={() => setActiveTab('team')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'team' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
@@ -850,6 +1003,9 @@ export default function DraftPage() {
                             </button>
                             <button onClick={() => setActiveTab('queue')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'queue' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
                                 Queue ({queue.length})
+                            </button>
+                            <button onClick={() => setActiveTab('roster')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'roster' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                                Roster ({draftRosterAssignments.length})
                             </button>
                         </div>
 
@@ -900,13 +1056,59 @@ export default function DraftPage() {
                                         );
                                     })}
                                 </>
-                            ) : (
+                            ) : activeTab === 'queue' ? (
                                 <>
                                     {queue.length === 0 && <div className="text-slate-500 text-sm text-center py-4 text-xs italic">
                                         Players in queue will be auto-drafted if time expires.<br />
                                         Drag & drop or use arrows to reorder.
                                     </div>}
                                     {queue.map((item, i) => renderQueueItem(item, i))}
+                                </>
+                            ) : (
+                                <>
+                                    {/* Roster Grid */}
+                                    <div className="space-y-2">
+                                        {Object.keys(rosterPositions)
+                                            .filter(slot => !slot.includes('Minor'))
+                                            .map(slot => {
+                                                const count = rosterPositions[slot];
+                                                return Array.from({ length: count }).map((_, idx) => {
+                                                    const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
+                                                    const assignment = getAssignedPlayer(slotKey);
+
+                                                    return (
+                                                        <div key={slotKey} className="bg-slate-900/80 p-2 rounded border border-slate-700/50 flex items-center justify-between">
+                                                            <div className="flex items-center gap-2 flex-1">
+                                                                <span className="text-xs font-mono text-purple-400 font-bold min-w-[40px]">{slotKey}</span>
+                                                                {assignment ? (
+                                                                    <>
+                                                                        <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                            <img
+                                                                                src={getPlayerPhoto(assignment)}
+                                                                                onError={(e) => handleImageError(e, assignment)}
+                                                                                className="w-full h-full object-cover"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                                            <div className="text-[10px] text-slate-500">{assignment.position_list}</div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => handleRemoveAssignment(assignment.assignment_id)}
+                                                                            className="text-slate-500 hover:text-red-400 text-xs px-2"
+                                                                        >
+                                                                            ×
+                                                                        </button>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="text-slate-600 text-xs italic">Empty</div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })}
+                                    </div>
                                 </>
                             )}
                         </div>
