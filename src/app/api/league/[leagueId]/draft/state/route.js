@@ -271,10 +271,13 @@ export async function GET(request, { params }) {
                 const playerIds = picks.map(p => p.player_id).filter(Boolean);
 
                 // Fetch all relevant positions in parallel
-                const [{ data: batterPos }, { data: pitcherPos }] = await Promise.all([
+                const [batterPosRes, pitcherPosRes] = await Promise.all([
                     supabase.from('v_batter_positions').select('player_id, position_list').in('player_id', playerIds),
                     supabase.from('v_pitcher_positions').select('player_id, position_list').in('player_id', playerIds)
                 ]);
+
+                const batterPos = batterPosRes?.data;
+                const pitcherPos = pitcherPosRes?.data;
 
                 const posMap = {};
                 if (batterPos) batterPos.forEach(b => posMap[b.player_id] = b.position_list);
