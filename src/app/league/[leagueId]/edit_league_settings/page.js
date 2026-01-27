@@ -773,8 +773,8 @@ const EditLeagueSettingsPage = ({ params }) => {
       return false;
     }
 
-    // Lock Live Draft Pick Time if draft order has been generated
-    if (key === 'Live Draft Pick Time' && hasDraftOrder) {
+    // Lock Live Draft Pick Time and Live Draft Time if draft order has been generated
+    if ((key === 'Live Draft Pick Time' || key === 'Live Draft Time') && hasDraftOrder) {
       return true;
     }
 

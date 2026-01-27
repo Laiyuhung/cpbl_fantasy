@@ -60,7 +60,7 @@ export async function POST(request, { params }) {
 
         const { data: settings } = await supabase
             .from('league_settings')
-            .select('roster_positions, live_draft_time')
+            .select('roster_positions, live_draft_time, live_draft_pick_time')
             .eq('league_id', leagueId)
             .single();
 
@@ -109,14 +109,28 @@ export async function POST(request, { params }) {
         await supabase.from('league_statuses').update({ status: 'pre-draft' }).eq('league_id', leagueId);
 
         // Set deadline for pick 1 if live_draft_time is configured
-        if (settings.live_draft_time) {
+        if (settings.live_draft_time && settings.live_draft_pick_time) {
+            // Parse live_draft_pick_time (e.g., "1 Minute", "30 Seconds")
+            const pickTimeStr = settings.live_draft_pick_time.toLowerCase();
+            let durationSeconds = 60; // Default 1 minute
+
+            if (pickTimeStr.includes('second')) {
+                durationSeconds = parseInt(pickTimeStr) || 30;
+            } else if (pickTimeStr.includes('minute')) {
+                durationSeconds = (parseInt(pickTimeStr) || 1) * 60;
+            }
+
+            // Calculate deadline = live_draft_time + pick_time
+            const startTime = new Date(settings.live_draft_time);
+            const deadline = new Date(startTime.getTime() + durationSeconds * 1000);
+
             await supabase
                 .from('draft_picks')
-                .update({ deadline: settings.live_draft_time })
+                .update({ deadline: deadline.toISOString() })
                 .eq('league_id', leagueId)
                 .eq('pick_number', 1);
 
-            console.log(`[Draft Init] Set pick 1 deadline to ${settings.live_draft_time}`);
+            console.log(`[Draft Init] Set pick 1 deadline to ${deadline.toISOString()} (start: ${settings.live_draft_time} + ${durationSeconds}s)`);
         }
 
         return NextResponse.json({
