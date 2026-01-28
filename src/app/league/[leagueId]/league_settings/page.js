@@ -41,13 +41,13 @@ export default function LeagueSettingsPage() {
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
   const [showGenerateConfirmModal, setShowGenerateConfirmModal] = useState(false); // Confirm modal state
 
-  // Check if draft order has been generated and fetch it
-  useEffect(() => {
-    const checkDraftOrder = async () => {
-      if (!leagueId) return;
+  // Extracted fetch function to reuse
+  const fetchDraftOrder = async () => {
+    if (!leagueId) return;
 
-      // Fetch picks to see if draft order exists
-      const { data: picks } = await supabase
+    try {
+      // Fetch picks with nested managers relation
+      const { data: picks, error } = await supabase
         .from('draft_picks')
         .select(`
           pick_number, 
@@ -55,21 +55,40 @@ export default function LeagueSettingsPage() {
           manager_id,
           player_id,
           picked_at,
-          member_profile:manager_id (nickname),
+          managers (
+            member_profile (nickname)
+          ),
           player:player_list (name, team, batter_or_pitcher)
         `)
         .eq('league_id', leagueId)
         .order('pick_number', { ascending: true });
 
+      if (error) {
+        console.error("Error fetching draft picks:", error);
+      }
+
       if (picks && picks.length > 0) {
         setHasDraftOrder(true);
-        setDraftOrder(picks);
+        // Map to flatten structure for compatibility with existing JSX
+        const formattedPicks = picks.map(p => ({
+          ...p,
+          member_profile: {
+            nickname: p.managers?.member_profile?.nickname || 'Unknown Manager'
+          }
+        }));
+        setDraftOrder(formattedPicks);
       } else {
         setHasDraftOrder(false);
         setDraftOrder([]);
       }
-    };
-    checkDraftOrder();
+    } catch (err) {
+      console.error("Unexpected error fetching draft order:", err);
+    }
+  };
+
+  // Check if draft order has been generated on mount
+  useEffect(() => {
+    fetchDraftOrder();
   }, [leagueId]);
 
   const handleGenerateDraftOrder = async () => {
@@ -89,9 +108,10 @@ export default function LeagueSettingsPage() {
       if (data.success) {
         setSuccessMessage({ title: 'Success!', description: 'Draft Order Generated! Ready for Auto-Start.' });
         setShowSuccessNotification(true);
+        setTimeout(() => setShowSuccessNotification(false), 3000);
 
-        setHasDraftOrder(true);
-        setTimeout(() => window.location.reload(), 1500);
+        // Fetch new order immediately without reload
+        await fetchDraftOrder();
       } else {
         setSuccessMessage({ title: 'Error', description: data.error, isError: true });
         setShowSuccessNotification(true);
