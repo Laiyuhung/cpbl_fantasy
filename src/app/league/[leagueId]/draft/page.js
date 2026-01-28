@@ -1018,8 +1018,9 @@ export default function DraftPage() {
                                         <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img
-                                                src={getPlayerPhoto(lastPick.player || {})}
-                                                onError={(e) => handleImageError(e, lastPick.player || {})}
+                                                src={getPlayerPhoto({ ...lastPick.player, player_id: lastPick.player_id })}
+                                                onError={(e) => handleImageError(e, { ...lastPick.player, player_id: lastPick.player_id })}
+                                                alt={lastPick.player?.name || 'Player'}
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
@@ -1310,9 +1311,11 @@ export default function DraftPage() {
                                                         </div>
                                                     </div>
                                                     <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                                         <img
-                                                            src={pick.player?.photo_url || getPlayerPhoto(pick.player || {})}
-                                                            onError={(e) => handleImageError(e, pick.player || {})}
+                                                            src={getPlayerPhoto({ ...pick.player, player_id: pick.player_id })}
+                                                            onError={(e) => handleImageError(e, { ...pick.player, player_id: pick.player_id })}
+                                                            alt={pick.player?.name || 'Player'}
                                                             className="w-full h-full object-cover"
                                                         />
                                                     </div>
