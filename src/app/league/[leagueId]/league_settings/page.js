@@ -1579,50 +1579,24 @@ export default function LeagueSettingsPage() {
         );
       })()}
 
-      {/* Draft Management Tools (Commissioner Only) */}
-      {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && leagueSettings.draft_type === 'Live Draft' && (
+      {/* Draft Management / Results */}
+      {(hasDraftOrder || (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner')) && leagueSettings.draft_type === 'Live Draft' && (
         <div className="mt-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
           <h2 className="text-2xl font-bold text-white mb-4">Draft Management</h2>
           <div className="flex flex-col gap-4 w-full">
             {!hasDraftOrder ? (
               <div className="flex items-center gap-4">
                 <button
-                  onClick={async () => {
-                    if (!confirm('This will generate/reset the draft order. Continue?')) return;
-                    try {
-                      setSuccessMessage({ title: 'Generating Draft Order...', description: 'Please wait...' });
-                      setShowSuccessNotification(true);
-
-                      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
-                      const managerId = cookie?.split('=')[1];
-                      const res = await fetch(`/api/league/${leagueId}/draft/init`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ managerId })
-                      });
-                      const data = await res.json();
-                      if (data.success) {
-                        setSuccessMessage({ title: 'Success!', description: 'Draft Order Generated! Ready for Auto-Start.' });
-                        setShowSuccessNotification(true);
-
-                        // Set hasDraftOrder to true and refresh check
-                        setHasDraftOrder(true);
-                        setTimeout(() => window.location.reload(), 1500); // Reload to fetch order
-                      } else {
-                        setSuccessMessage({ title: 'Error', description: data.error, isError: true });
-                        setShowSuccessNotification(true);
-                      }
-                    } catch (e) {
-                      setSuccessMessage({ title: 'Error', description: e.message, isError: true });
-                      setShowSuccessNotification(true);
-                    }
-                  }}
-                  className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded shadow-lg"
+                  onClick={() => setShowGenerateConfirmModal(true)}
+                  className="px-6 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white font-bold rounded-lg shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2"
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                  </svg>
                   Generate Draft Order
                 </button>
                 <p className="text-sm text-purple-200">
-                  Click this to create the random snake draft order. The draft will automatically start at the &quot;Live Draft Time&quot;.
+                  Click to create the random snake draft order. The draft will automatically start at the &quot;Live Draft Time&quot;.
                 </p>
               </div>
             ) : (
@@ -1638,8 +1612,12 @@ export default function LeagueSettingsPage() {
                       </svg>
                     </div>
                     <div>
-                      <span className="text-white font-bold text-lg">Draft Order (First Round)</span>
-                      <p className="text-purple-300/60 text-xs">Generated Randomly</p>
+                      <span className="text-white font-bold text-lg">
+                        {draftOrder.some(p => p.player_id) ? 'Draft Results' : 'Draft Order (First Round)'}
+                      </span>
+                      <p className="text-purple-300/60 text-xs">
+                        {draftOrder.some(p => p.player_id) ? 'View picked players' : 'Generated Randomly - Round 1 Preview'}
+                      </p>
                     </div>
                   </div>
                   <svg
@@ -1653,28 +1631,93 @@ export default function LeagueSettingsPage() {
                 </button>
 
                 {isDraftOrderOpen && (
-                  <div className="mt-2 bg-slate-900/40 border border-purple-500/20 rounded-lg overflow-hidden animate-fadeIn">
+                  <div className="mt-2 bg-slate-900/40 border border-purple-500/20 rounded-lg overflow-hidden animate-fadeIn max-h-[600px] overflow-y-auto">
                     <div className="p-2 space-y-1">
-                      {draftOrder.map((item, index) => (
-                        <div key={item.manager_id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-md transition-colors">
-                          <div className="flex items-center gap-3">
-                            <span className="w-8 h-8 flex items-center justify-center bg-purple-500/20 text-purple-300 font-bold rounded-full border border-purple-500/30">
-                              {item.pick_number}
-                            </span>
-                            <span className="text-white font-medium">{item.nickname}</span>
-                          </div>
-                          {index === 0 && (
-                            <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30">
-                              1st Overall
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                      {draftOrder
+                        // If no picks made, show only first round to avoid spam. If picking started, show all.
+                        .filter(item => draftOrder.some(p => p.player_id) ? true : item.round_number === 1)
+                        .map((item, index) => {
+                          const isPicked = !!item.player_id;
+                          return (
+                            <div key={`${item.round_number}-${item.pick_number}`} className={`flex items-center justify-between p-3 rounded-md transition-colors ${isPicked ? 'bg-purple-900/20 border border-purple-500/10' : 'hover:bg-white/5'}`}>
+                              <div className="flex items-center gap-3">
+                                <div className="flex flex-col items-center justify-center w-10">
+                                  <span className="text-xs text-purple-400 font-mono">R{item.round_number}</span>
+                                  <span className={`w-8 h-8 flex items-center justify-center font-bold rounded-full border ${isPicked ? 'bg-purple-500 text-white border-purple-400' : 'bg-purple-500/20 text-purple-300 border-purple-500/30'}`}>
+                                    {item.pick_number}
+                                  </span>
+                                </div>
+                                <div className="flex flex-col">
+                                  {isPicked ? (
+                                    <>
+                                      <span className="text-white font-bold text-lg">{item.player?.name}</span>
+                                      <span className="text-purple-300 text-xs">{item.player?.team} • {item.player?.batter_or_pitcher}</span>
+                                      <span className="text-purple-400/60 text-xs mt-0.5">Manager: {item.member_profile?.nickname}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-white font-medium">{item.member_profile?.nickname}</span>
+                                      <span className="text-purple-400/50 text-xs">On the clock soon</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              {item.pick_number === 1 && item.round_number === 1 && (
+                                <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30">
+                                  1st Overall
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Generate Draft Order Confirm Modal */}
+      {showGenerateConfirmModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-yellow-500/30 rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-scaleIn">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-gradient-to-br from-yellow-500 to-orange-500 p-3 rounded-xl shadow-lg shadow-yellow-500/20">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Generate Draft Order?</h2>
+                <p className="text-yellow-300/80 text-sm font-medium">This action cannot be undone easily</p>
+              </div>
+            </div>
+
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-5 mb-8">
+              <p className="text-yellow-100 leading-relaxed">
+                This will randomly assign draft positions to all teams and prepare the draft board. Once generated, the draft will be ready to start at the scheduled time.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowGenerateConfirmModal(false)}
+                className="flex-1 px-5 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleGenerateDraftOrder}
+                className="flex-1 px-5 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center justify-center gap-2"
+              >
+                <span>Yes, Generate It!</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       )}
