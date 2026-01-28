@@ -17,8 +17,8 @@ async function getRandomAvailablePlayer(leagueId) {
     const takenIds = taken ? taken.map(p => p.player_id) : [];
 
     const { data: allPlayers } = await supabase
-        .select('player_id')
-        .from('player_list');
+        .from('player_list')
+        .select('player_id');
 
     const validPlayers = allPlayers.filter(p => !takenIds.includes(p.player_id));
 
