@@ -46,7 +46,7 @@ export default function LeagueSettingsPage() {
     if (!leagueId) return;
 
     try {
-      // Fetch picks with nested managers relation
+      // Fetch picks with managers relation
       const { data: picks, error } = await supabase
         .from('draft_picks')
         .select(`
@@ -56,7 +56,7 @@ export default function LeagueSettingsPage() {
           player_id,
           picked_at,
           managers (
-            member_profile (nickname)
+            nickname
           ),
           player:player_list (name, team, batter_or_pitcher)
         `)
@@ -73,7 +73,7 @@ export default function LeagueSettingsPage() {
         const formattedPicks = picks.map(p => ({
           ...p,
           member_profile: {
-            nickname: p.managers?.member_profile?.nickname || 'Unknown Manager'
+            nickname: p.managers?.nickname || 'Unknown Manager'
           }
         }));
         setDraftOrder(formattedPicks);
