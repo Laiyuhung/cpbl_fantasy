@@ -68,9 +68,11 @@ export async function POST(request, { params }) {
             return NextResponse.json({ success: false, error: 'Settings not found' }, { status: 400 });
         }
 
-        // 2. Calculate Total Rounds
+        // 2. Calculate Total Rounds (exclude Minor positions)
         const rosterConfig = settings.roster_positions || {};
-        const totalRounds = Object.values(rosterConfig).reduce((sum, count) => sum + (parseInt(count) || 0), 0);
+        const totalRounds = Object.entries(rosterConfig)
+            .filter(([position]) => !position.includes('Minor'))  // Exclude Minor positions
+            .reduce((sum, [, count]) => sum + (parseInt(count) || 0), 0);
 
         // 3. Generate Picks (Snake Draft)
         const picks = [];

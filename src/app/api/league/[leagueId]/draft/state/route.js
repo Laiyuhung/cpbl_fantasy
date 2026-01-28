@@ -218,43 +218,72 @@ export async function GET(request, { params }) {
                 if (!pickedPlayerId) pickedPlayerId = await getRandomAvailablePlayer(leagueId);
 
                 if (pickedPlayerId) {
-                    await supabase.from('draft_picks')
-                        .update({ player_id: pickedPlayerId, is_auto_picked: true, picked_at: now.toISOString() })
-                        .eq('pick_id', currentPick.pick_id);
-
-                    if (usedQueueId) await supabase.from('draft_queues').delete().eq('queue_id', usedQueueId);
-
-                    // Fetch next immediately to update return
-                    const { data: nextPicks } = await supabase
+                    // Use optimistic locking: only update if player_id is still NULL
+                    // This prevents race conditions when multiple requests try to auto-pick
+                    const { data: updateResult, error: updateError } = await supabase
                         .from('draft_picks')
-                        .select('*')
-                        .eq('league_id', leagueId)
-                        .is('player_id', null)
-                        .order('pick_number', { ascending: true })
-                        .limit(1);
+                        .update({
+                            player_id: pickedPlayerId,
+                            is_auto_picked: true,
+                            picked_at: now.toISOString()
+                        })
+                        .eq('pick_id', currentPick.pick_id)
+                        .is('player_id', null)  // Critical: only update if still NULL
+                        .select();
 
-                    if (nextPicks && nextPicks.length > 0) {
-                        currentPick = nextPicks[0];
-                        const nextDeadline = new Date(now.getTime() + duration * 1000);
-                        const { data: nextUpdated, error: nextUpError } = await supabase
+                    // Check if update was successful (row was actually updated)
+                    if (updateError || !updateResult || updateResult.length === 0) {
+                        console.log(`[Draft] Pick ${currentPick.pick_number} already picked by another request. Skipping.`);
+                        // Another request already handled this pick, just continue
+                        // Re-fetch current state
+                        const { data: refreshPicks } = await supabase
                             .from('draft_picks')
-                            .update({ deadline: nextDeadline.toISOString() })
-                            .eq('pick_id', currentPick.pick_id)
-                            .select()
-                            .single();
+                            .select('*')
+                            .eq('league_id', leagueId)
+                            .is('player_id', null)
+                            .order('pick_number', { ascending: true })
+                            .limit(1);
 
-                        if (nextUpError) console.error('AutoPick Deadline Error:', nextUpError);
-
-                        if (nextUpdated) {
-                            currentPick = nextUpdated;
-                        } else {
-                            currentPick.deadline = nextDeadline.toISOString();
+                        if (refreshPicks && refreshPicks.length > 0) {
+                            currentPick = refreshPicks[0];
                         }
                     } else {
-                        // Finished just now
-                        console.log('[DraftState] Last pick made. Finished.');
-                        await supabase.from('league_statuses').update({ status: 'post-draft & pre-season' }).eq('league_id', leagueId);
-                        return NextResponse.json({ status: 'completed' });
+                        console.log(`[Draft] Successfully auto-picked player ${pickedPlayerId} for pick ${currentPick.pick_number}`);
+
+                        if (usedQueueId) await supabase.from('draft_queues').delete().eq('queue_id', usedQueueId);
+
+                        // Fetch next immediately to update return
+                        const { data: nextPicks } = await supabase
+                            .from('draft_picks')
+                            .select('*')
+                            .eq('league_id', leagueId)
+                            .is('player_id', null)
+                            .order('pick_number', { ascending: true })
+                            .limit(1);
+
+                        if (nextPicks && nextPicks.length > 0) {
+                            currentPick = nextPicks[0];
+                            const nextDeadline = new Date(now.getTime() + duration * 1000);
+                            const { data: nextUpdated, error: nextUpError } = await supabase
+                                .from('draft_picks')
+                                .update({ deadline: nextDeadline.toISOString() })
+                                .eq('pick_id', currentPick.pick_id)
+                                .select()
+                                .single();
+
+                            if (nextUpError) console.error('AutoPick Deadline Error:', nextUpError);
+
+                            if (nextUpdated) {
+                                currentPick = nextUpdated;
+                            } else {
+                                currentPick.deadline = nextDeadline.toISOString();
+                            }
+                        } else {
+                            // Finished just now
+                            console.log('[DraftState] Last pick made. Finished.');
+                            await supabase.from('league_statuses').update({ status: 'post-draft & pre-season' }).eq('league_id', leagueId);
+                            return NextResponse.json({ status: 'completed' });
+                        }
                     }
                 }
             }
