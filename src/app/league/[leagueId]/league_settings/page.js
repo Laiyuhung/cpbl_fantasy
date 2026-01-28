@@ -46,7 +46,7 @@ export default function LeagueSettingsPage() {
     if (!leagueId) return;
 
     try {
-      // Fetch picks with managers relation
+      // Fetch picks WITHOUT joining managers (we map client-side)
       const { data: picks, error } = await supabase
         .from('draft_picks')
         .select(`
@@ -55,9 +55,6 @@ export default function LeagueSettingsPage() {
           manager_id,
           player_id,
           picked_at,
-          managers (
-            nickname
-          ),
           player:player_list (name, team, batter_or_pitcher)
         `)
         .eq('league_id', leagueId)
@@ -70,12 +67,16 @@ export default function LeagueSettingsPage() {
       if (picks && picks.length > 0) {
         setHasDraftOrder(true);
         // Map to flatten structure for compatibility with existing JSX
-        const formattedPicks = picks.map(p => ({
-          ...p,
-          member_profile: {
-            nickname: p.managers?.nickname || 'Unknown Manager'
-          }
-        }));
+        // Use 'members' state to find nickname by manager_id
+        const formattedPicks = picks.map(p => {
+          const member = members.find(m => m.manager_id === p.manager_id);
+          return {
+            ...p,
+            member_profile: {
+              nickname: member?.nickname || 'Unknown Manager'
+            }
+          };
+        });
         setDraftOrder(formattedPicks);
       } else {
         setHasDraftOrder(false);
@@ -86,10 +87,10 @@ export default function LeagueSettingsPage() {
     }
   };
 
-  // Check if draft order has been generated on mount
+  // Check if draft order has been generated on mount or when members load
   useEffect(() => {
     fetchDraftOrder();
-  }, [leagueId]);
+  }, [leagueId, members]);
 
   const handleGenerateDraftOrder = async () => {
     setShowGenerateConfirmModal(false);
