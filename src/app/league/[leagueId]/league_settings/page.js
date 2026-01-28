@@ -727,7 +727,7 @@ export default function LeagueSettingsPage() {
                   </svg>
                   Manage Permissions
                 </button>
-                {leagueStatus === 'pre-draft' && (
+                {leagueStatus === 'pre-draft' && !hasDraftOrder && (
                   <button
                     onClick={handleFinalizedClick}
                     className={`font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 ${isFinalized

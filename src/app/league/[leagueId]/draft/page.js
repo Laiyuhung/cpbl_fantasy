@@ -350,7 +350,14 @@ export default function DraftPage() {
                                 secondsRemaining: diff
                             });
                         }
-                        setTimeLeft(diff > 0 ? diff : 0);
+                        // Smooth Update
+                        setTimeLeft(prev => {
+                            // Always force update if pick changed or remaining time is large/new
+                            // But if just ticking down, avoid jitter
+                            const newTime = diff > 0 ? diff : 0;
+                            if (Math.abs(prev - newTime) <= 2 && prev > 0) return prev;
+                            return newTime;
+                        });
                     } else if (data.currentPick?.deadline) {
                         // Simply: deadline - now
                         const deadline = new Date(data.currentPick.deadline).getTime();
@@ -364,7 +371,23 @@ export default function DraftPage() {
                                 diff: `${diff} s`
                             });
                         }
-                        setTimeLeft(diff > 0 ? diff : 0);
+
+                        // Smooth Update logic
+                        // If the server says time is up (0 or less), pass 0.
+                        // But if we are locally at -1 (showing Auto Picking), keep it at -1 unless server resets.
+                        // Actually, if pickId changed (handled by effect dependency or data), we reset.
+                        // Here we just handle the periodic sync.
+                        setTimeLeft(prev => {
+                            const newTime = diff > 0 ? diff : 0;
+                            // If we are showing Auto Picking (-1) and server says 0, stay at -1
+                            if (prev === -1 && newTime === 0) return -1;
+
+                            // If difference is small, trust local timer
+                            if (Math.abs(prev - newTime) <= 2 && prev > 0) return prev;
+
+                            return newTime;
+                        });
+
                     } else {
                         if (logCalc) console.log('[Timer Calc] No active timer', { status: data.status });
                     }
@@ -388,7 +411,8 @@ export default function DraftPage() {
     // Timer Tick
     useEffect(() => {
         const timer = setInterval(() => {
-            setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
+            // Allow ticking to -1 to trigger "Auto picking..." state after showing 0
+            setTimeLeft(prev => prev > -1 ? prev - 1 : -1);
         }, 1000);
         return () => clearInterval(timer);
     }, []);
@@ -762,6 +786,9 @@ export default function DraftPage() {
                             <div className="flex items-baseline gap-2">
                                 <span className="text-slate-200 font-bold group-hover:text-white text-base">{player.name}</span>
                                 <span className="text-xs text-slate-400 font-mono">{filterPositions(player)}</span>
+                                {player.identity?.toLowerCase() === 'foreigner' && (
+                                    <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                )}
                                 <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(player.team)}`}>
                                     {getTeamAbbr(player.team)}
                                 </span>
@@ -973,7 +1000,11 @@ export default function DraftPage() {
 
                     <div className="flex flex-col items-center">
                         <div className={`text-6xl font-mono font-black tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(0,0,0,0.5)] ${timeLeft < 10 && draftState?.status !== 'pre-draft' ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
-                            {formatTime(timeLeft)}
+                            {timeLeft < 0 && draftState?.status !== 'pre-draft' ? (
+                                <span className="text-4xl text-red-500 animate-pulse whitespace-nowrap">Auto picking...</span>
+                            ) : (
+                                formatTime(timeLeft < 0 ? 0 : timeLeft)
+                            )}
                         </div>
                         <div className="text-xs uppercase tracking-widest text-slate-500 font-semibold mt-1">
                             {draftState?.status === 'pre-draft' ? 'Until Start' : 'Time Remaining'}
@@ -1028,6 +1059,9 @@ export default function DraftPage() {
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-sm font-bold text-slate-200 truncate">{lastPick.player?.name}</span>
                                                 <span className="text-xs text-slate-400 font-mono">{filterPositions(lastPick.player || {})}</span>
+                                                {lastPick.player?.identity?.toLowerCase() === 'foreigner' && (
+                                                    <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30 ml-1">F</span>
+                                                )}
                                             </div>
                                             <div className="text-[10px] text-slate-500 truncate">
                                                 Picked by <span className="text-slate-300 font-semibold">{getMemberNickname(lastPick.manager_id)}</span>
@@ -1320,7 +1354,12 @@ export default function DraftPage() {
                                                         />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="text-sm font-bold text-slate-200 truncate">{pick.player?.name}</div>
+                                                        <div className="text-sm font-bold text-slate-200 truncate flex items-center gap-1">
+                                                            {pick.player?.name}
+                                                            {pick.player?.identity?.toLowerCase() === 'foreigner' && (
+                                                                <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                            )}
+                                                        </div>
                                                         <div className="text-[10px] text-slate-500">{filterPositions(pick.player || {})}</div>
                                                     </div>
                                                     <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getTeamColor(pick.player?.team)} shrink-0`}>
@@ -1399,6 +1438,9 @@ export default function DraftPage() {
                                                                     <div className="flex items-baseline gap-2">
                                                                         <span className="text-slate-200 font-bold group-hover:text-white text-base">{p.name}</span>
                                                                         <span className="text-xs text-slate-400 font-mono">{filterPositions(p)}</span>
+                                                                        {p.identity?.toLowerCase() === 'foreigner' && (
+                                                                            <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                        )}
                                                                         <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(p.team)}`}>
                                                                             {getTeamAbbr(p.team)}
                                                                         </span>
@@ -1459,7 +1501,12 @@ export default function DraftPage() {
                                                                                 />
                                                                             </div>
                                                                             <div className="flex-1 min-w-0">
-                                                                                <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                                                <div className="text-sm font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                                    {assignment.name}
+                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                                        <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                                    )}
+                                                                                </div>
                                                                                 <div className="text-[10px] text-slate-500">{filterPositions(assignment)}</div>
                                                                             </div>
                                                                             <button
@@ -1562,7 +1609,12 @@ export default function DraftPage() {
                                                             />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                            <div className="text-sm font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                {assignment.name}
+                                                                {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                    <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                )}
+                                                            </div>
                                                             <div className="text-xs text-slate-500">{assignment.position_list}</div>
                                                         </div>
                                                         <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(assignment.team)}`}>
@@ -1687,7 +1739,12 @@ export default function DraftPage() {
                                                                         />
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
-                                                                        <div className="text-sm font-bold text-slate-200 truncate">{assignment.name}</div>
+                                                                        <div className="text-sm font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                            {assignment.name}
+                                                                            {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                                <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                            )}
+                                                                        </div>
                                                                         <div className="text-xs text-slate-500">{assignment.position_list}</div>
                                                                     </div>
                                                                     <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(assignment.team)}`}>

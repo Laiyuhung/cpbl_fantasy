@@ -74,7 +74,7 @@ const initialSettings = {
 
 const settingOptions = {
   'League Name': [],
-  'Draft Type': ['Live Draft', 'Offline Draft'],
+  'Draft Type': ['Live Draft'],
   'Live Draft Pick Time': ['30 Seconds', '1 Minute', '2 Minutes', '3 Minutes'],
   'Max Teams': ['4', '6', '8', '10'],
   'Scoring Type': ['Head-to-Head', 'Head-to-Head One Win', 'Head-to-Head Fantasy Points'],

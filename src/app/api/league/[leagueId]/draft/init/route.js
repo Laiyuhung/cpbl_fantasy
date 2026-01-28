@@ -32,6 +32,20 @@ export async function POST(request, { params }) {
             return NextResponse.json({ success: false, error: 'Manager ID required' }, { status: 400 });
         }
 
+        // 0.3 Check if draft already generated
+        const { count: pickCount } = await supabase
+            .from('draft_picks')
+            .select('*', { count: 'exact', head: true })
+            .eq('league_id', leagueId);
+
+        if (pickCount > 0) {
+            return NextResponse.json({
+                success: false,
+                error: 'Draft order already generated',
+                code: 'DRAFT_EXISTS'
+            }, { status: 400 });
+        }
+
         // 0.5. Check if league is finalized (exists in league_finalized_status table)
         const { data: finalizedStatus } = await supabase
             .from('league_finalized_status')
