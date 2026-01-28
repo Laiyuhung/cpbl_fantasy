@@ -88,11 +88,49 @@ export async function GET(request, { params }) {
             } else {
                 // Time NOT arrived yet.
                 if (leagueStatus === 'pre-draft') {
+                    // Fetch "taken" picks (usually empty in pre-draft, but robust to check)
+                    const { data: picks, error: picksError } = await supabase
+                        .from('draft_picks')
+                        .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher)')
+                        .eq('league_id', leagueId)
+                        .filter('player_id', 'not.is', null)
+                        .order('pick_number', { ascending: true });
+
+                    // Optimize: Batch fetch positions for taken picks
+                    if (picks && picks.length > 0) {
+                        const playerIds = picks.map(p => p.player_id).filter(Boolean);
+
+                        const [batterPosRes, pitcherPosRes] = await Promise.all([
+                            supabase.from('v_batter_positions').select('player_id, position_list').in('player_id', playerIds),
+                            supabase.from('v_pitcher_positions').select('player_id, position_list').in('player_id', playerIds)
+                        ]);
+
+                        const posMap = {};
+                        if (batterPosRes.data) batterPosRes.data.forEach(b => posMap[b.player_id] = b.position_list);
+                        if (pitcherPosRes.data) pitcherPosRes.data.forEach(p => posMap[p.player_id] = p.position_list);
+
+                        for (const pick of picks) {
+                            if (pick.player && posMap[pick.player_id]) {
+                                pick.player.position_list = posMap[pick.player_id];
+                            }
+                        }
+                    }
+
+                    // Fetch "next" picks (all remaining picks)
+                    const { data: nextPicks, error: nextPicksError } = await supabase
+                        .from('draft_picks')
+                        .select('pick_id, pick_number, round_number, manager_id')
+                        .eq('league_id', leagueId)
+                        .is('player_id', null)
+                        .order('pick_number', { ascending: true });
+
                     return NextResponse.json({
                         status: 'pre-draft',
                         startTime: settings?.live_draft_time,
                         serverTime: now.toISOString(),
-                        remainingPicks
+                        remainingPicks,
+                        picks: picks || [],
+                        nextPicks: nextPicks || []
                     });
                 }
             }

@@ -562,21 +562,42 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
+  const [draftOrder, setDraftOrder] = useState([]);
+  const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
   };
 
-  // Check if draft order has been generated
+  // Check if draft order has been generated and fetch it
   useEffect(() => {
     const checkDraftOrder = async () => {
       if (!leagueId) return;
-      const { data } = await supabase
+
+      // Fetch picks to see if draft order exists
+      const { data: picks } = await supabase
         .from('draft_picks')
-        .select('pick_id')
+        .select(`
+          pick_number, 
+          manager_id,
+          member_profile:manager_id (nickname)
+        `)
         .eq('league_id', leagueId)
-        .limit(1);
-      setHasDraftOrder(data && data.length > 0);
+        .eq('round_number', 1)
+        .order('pick_number', { ascending: true });
+
+      if (picks && picks.length > 0) {
+        setHasDraftOrder(true);
+        // Extract unique managers in draft order
+        const uniqueManagers = picks.map(p => ({
+          pick_number: p.pick_number,
+          manager_id: p.manager_id,
+          nickname: p.member_profile?.nickname || 'Unknown Manager'
+        }));
+        setDraftOrder(uniqueManagers);
+      } else {
+        setHasDraftOrder(false);
+      }
     };
     checkDraftOrder();
   }, [leagueId]);

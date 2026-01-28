@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import supabase from '@/lib/supabase';
 
 export default function LeagueSettingsPage() {
   const params = useParams();
@@ -35,6 +36,42 @@ export default function LeagueSettingsPage() {
   const [showDeleteMemberModal, setShowDeleteMemberModal] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState(null);
   const [deletingMember, setDeletingMember] = useState(false);
+  const [draftOrder, setDraftOrder] = useState([]);
+  const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
+  const [hasDraftOrder, setHasDraftOrder] = useState(false);
+
+  // Check if draft order has been generated and fetch it
+  useEffect(() => {
+    const checkDraftOrder = async () => {
+      if (!leagueId) return;
+
+      // Fetch picks to see if draft order exists
+      const { data: picks } = await supabase
+        .from('draft_picks')
+        .select(`
+          pick_number, 
+          manager_id,
+          member_profile:manager_id (nickname)
+        `)
+        .eq('league_id', leagueId)
+        .eq('round_number', 1)
+        .order('pick_number', { ascending: true });
+
+      if (picks && picks.length > 0) {
+        setHasDraftOrder(true);
+        // Extract unique managers in draft order
+        const uniqueManagers = picks.map(p => ({
+          pick_number: p.pick_number,
+          manager_id: p.manager_id,
+          nickname: p.member_profile?.nickname || 'Unknown Manager'
+        }));
+        setDraftOrder(uniqueManagers);
+      } else {
+        setHasDraftOrder(false);
+      }
+    };
+    checkDraftOrder();
+  }, [leagueId]);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -1517,42 +1554,98 @@ export default function LeagueSettingsPage() {
       {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && leagueSettings.draft_type === 'Live Draft' && (
         <div className="mt-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
           <h2 className="text-2xl font-bold text-white mb-4">Draft Management</h2>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={async () => {
-                if (!confirm('This will generate/reset the draft order. Continue?')) return;
-                try {
-                  setSuccessMessage({ title: 'Generating Draft Order...', description: 'Please wait...' });
-                  setShowSuccessNotification(true);
+          <div className="flex flex-col gap-4 w-full">
+            {!hasDraftOrder ? (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={async () => {
+                    if (!confirm('This will generate/reset the draft order. Continue?')) return;
+                    try {
+                      setSuccessMessage({ title: 'Generating Draft Order...', description: 'Please wait...' });
+                      setShowSuccessNotification(true);
 
-                  const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
-                  const managerId = cookie?.split('=')[1];
-                  const res = await fetch(`/api/league/${leagueId}/draft/init`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ managerId })
-                  });
-                  const data = await res.json();
-                  if (data.success) {
-                    setSuccessMessage({ title: 'Success!', description: 'Draft Order Generated! Ready for Auto-Start.' });
-                    setShowSuccessNotification(true);
-                    setTimeout(() => setShowSuccessNotification(false), 3000);
-                  } else {
-                    setSuccessMessage({ title: 'Error', description: data.error, isError: true });
-                    setShowSuccessNotification(true);
-                  }
-                } catch (e) {
-                  setSuccessMessage({ title: 'Error', description: e.message, isError: true });
-                  setShowSuccessNotification(true);
-                }
-              }}
-              className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded shadow-lg"
-            >
-              Generate Draft Order
-            </button>
-            <p className="text-sm text-purple-200">
-              Click this to create the random snake draft order. The draft will automatically start at the &quot;Live Draft Time&quot;.
-            </p>
+                      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+                      const managerId = cookie?.split('=')[1];
+                      const res = await fetch(`/api/league/${leagueId}/draft/init`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ managerId })
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        setSuccessMessage({ title: 'Success!', description: 'Draft Order Generated! Ready for Auto-Start.' });
+                        setShowSuccessNotification(true);
+
+                        // Set hasDraftOrder to true and refresh check
+                        setHasDraftOrder(true);
+                        setTimeout(() => window.location.reload(), 1500); // Reload to fetch order
+                      } else {
+                        setSuccessMessage({ title: 'Error', description: data.error, isError: true });
+                        setShowSuccessNotification(true);
+                      }
+                    } catch (e) {
+                      setSuccessMessage({ title: 'Error', description: e.message, isError: true });
+                      setShowSuccessNotification(true);
+                    }
+                  }}
+                  className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded shadow-lg"
+                >
+                  Generate Draft Order
+                </button>
+                <p className="text-sm text-purple-200">
+                  Click this to create the random snake draft order. The draft will automatically start at the &quot;Live Draft Time&quot;.
+                </p>
+              </div>
+            ) : (
+              <div className="w-full">
+                <button
+                  onClick={() => setIsDraftOrderOpen(!isDraftOrderOpen)}
+                  className="w-full flex items-center justify-between text-left bg-slate-800/50 hover:bg-slate-700/50 p-4 rounded-lg border border-purple-500/30 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-2 rounded-lg">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-white font-bold text-lg">Draft Order (First Round)</span>
+                      <p className="text-purple-300/60 text-xs">Generated Randomly</p>
+                    </div>
+                  </div>
+                  <svg
+                    className={`w-6 h-6 text-purple-400 transition-transform ${isDraftOrderOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isDraftOrderOpen && (
+                  <div className="mt-2 bg-slate-900/40 border border-purple-500/20 rounded-lg overflow-hidden animate-fadeIn">
+                    <div className="p-2 space-y-1">
+                      {draftOrder.map((item, index) => (
+                        <div key={item.manager_id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-md transition-colors">
+                          <div className="flex items-center gap-3">
+                            <span className="w-8 h-8 flex items-center justify-center bg-purple-500/20 text-purple-300 font-bold rounded-full border border-purple-500/30">
+                              {item.pick_number}
+                            </span>
+                            <span className="text-white font-medium">{item.nickname}</span>
+                          </div>
+                          {index === 0 && (
+                            <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30">
+                              1st Overall
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
