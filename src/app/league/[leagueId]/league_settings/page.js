@@ -700,8 +700,8 @@ export default function LeagueSettingsPage() {
     );
   }
 
-  const totalRounds = leagueSettings?.roster?.['Roster Positions']
-    ? Object.values(leagueSettings.roster['Roster Positions']).reduce((acc, val) => acc + (typeof val === 'number' ? val : 0), 0)
+  const totalRounds = draftOrder.length > 0
+    ? Math.max(...draftOrder.map(p => p.round_number))
     : 0;
 
   return (
