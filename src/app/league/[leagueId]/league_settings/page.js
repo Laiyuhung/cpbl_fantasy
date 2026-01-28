@@ -39,6 +39,7 @@ export default function LeagueSettingsPage() {
   const [draftOrder, setDraftOrder] = useState([]);
   const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
+  const [showGenerateConfirmModal, setShowGenerateConfirmModal] = useState(false); // Confirm modal state
 
   // Check if draft order has been generated and fetch it
   useEffect(() => {
@@ -50,28 +51,56 @@ export default function LeagueSettingsPage() {
         .from('draft_picks')
         .select(`
           pick_number, 
+          round_number,
           manager_id,
-          member_profile:manager_id (nickname)
+          player_id,
+          picked_at,
+          member_profile:manager_id (nickname),
+          player:player_list (name, team, batter_or_pitcher)
         `)
         .eq('league_id', leagueId)
-        .eq('round_number', 1)
         .order('pick_number', { ascending: true });
 
       if (picks && picks.length > 0) {
         setHasDraftOrder(true);
-        // Extract unique managers in draft order
-        const uniqueManagers = picks.map(p => ({
-          pick_number: p.pick_number,
-          manager_id: p.manager_id,
-          nickname: p.member_profile?.nickname || 'Unknown Manager'
-        }));
-        setDraftOrder(uniqueManagers);
+        setDraftOrder(picks);
       } else {
         setHasDraftOrder(false);
+        setDraftOrder([]);
       }
     };
     checkDraftOrder();
   }, [leagueId]);
+
+  const handleGenerateDraftOrder = async () => {
+    setShowGenerateConfirmModal(false);
+    try {
+      setSuccessMessage({ title: 'Generating Draft Order...', description: 'Please wait...' });
+      setShowSuccessNotification(true);
+
+      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+      const managerId = cookie?.split('=')[1];
+      const res = await fetch(`/api/league/${leagueId}/draft/init`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ managerId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage({ title: 'Success!', description: 'Draft Order Generated! Ready for Auto-Start.' });
+        setShowSuccessNotification(true);
+
+        setHasDraftOrder(true);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setSuccessMessage({ title: 'Error', description: data.error, isError: true });
+        setShowSuccessNotification(true);
+      }
+    } catch (e) {
+      setSuccessMessage({ title: 'Error', description: e.message, isError: true });
+      setShowSuccessNotification(true);
+    }
+  };
 
   useEffect(() => {
     if (!leagueId) return;
