@@ -700,6 +700,10 @@ export default function LeagueSettingsPage() {
     );
   }
 
+  const totalRounds = leagueSettings?.roster?.['Roster Positions']
+    ? Object.values(leagueSettings.roster['Roster Positions']).reduce((acc, val) => acc + (typeof val === 'number' ? val : 0), 0)
+    : 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -1603,7 +1607,17 @@ export default function LeagueSettingsPage() {
       {/* Draft Management / Results */}
       {(hasDraftOrder || (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner')) && leagueSettings.draft_type === 'Live Draft' && (
         <div className="mt-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
-          <h2 className="text-2xl font-bold text-white mb-4">Draft Management</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Draft Management</h2>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-lg text-sm font-bold border border-purple-500/30 shadow-sm">
+                {leagueSettings.draft_type === 'Live Draft' ? 'Snake Draft' : leagueSettings.draft_type}
+              </span>
+              <span className="px-3 py-1.5 bg-blue-500/20 text-blue-300 rounded-lg text-sm font-bold border border-blue-500/30 shadow-sm">
+                {totalRounds} Rounds
+              </span>
+            </div>
+          </div>
           <div className="flex flex-col gap-4 w-full">
             {!hasDraftOrder ? (
               <div className="flex items-center gap-4">
@@ -1696,6 +1710,21 @@ export default function LeagueSettingsPage() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Viewing Only Alert */}
+      {currentUserRole !== 'Commissioner' && currentUserRole !== 'Co-Commissioner' && (
+        <div className="mt-8 p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center gap-4 animate-fadeIn">
+          <div className="bg-yellow-500/20 p-3 rounded-xl flex-shrink-0">
+            <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-yellow-200 font-bold text-lg">Viewing Only</p>
+            <p className="text-yellow-200/70">Only the Commissioner and Co-Commissioner can edit league settings.</p>
           </div>
         </div>
       )}
