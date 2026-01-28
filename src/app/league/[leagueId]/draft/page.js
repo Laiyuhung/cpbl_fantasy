@@ -604,6 +604,8 @@ export default function DraftPage() {
         const taken = new Set(picks.map(p => String(p.player_id)).filter(Boolean));
 
         // Recent Picks: "Draft History" order (Descending Pick Number - Newest First)
+        // Recent Picks: "Draft History" order (Descending Pick Number - Newest First)
+        // Ensure player object has identity accessible if it's nested or direct
         const recent = picks.filter(p => p.player_id).sort((a, b) => b.pick_number - a.pick_number);
 
         // My Team: Coerce manager_id to string for comparison
@@ -617,7 +619,10 @@ export default function DraftPage() {
             team: p.player?.team || '',
             position_list: p.player?.position_list || '',
             batter_or_pitcher: p.player?.batter_or_pitcher || '',
-            original_name: p.player?.original_name || ''
+            position_list: p.player?.position_list || '',
+            batter_or_pitcher: p.player?.batter_or_pitcher || '',
+            original_name: p.player?.original_name || '',
+            identity: p.player?.identity || ''
         }));
 
         // Viewing Team (Opponent View)
@@ -633,7 +638,10 @@ export default function DraftPage() {
                 team: p.player?.team || '',
                 position_list: p.player?.position_list || '',
                 batter_or_pitcher: p.player?.batter_or_pitcher || '',
-                original_name: p.player?.original_name || ''
+                position_list: p.player?.position_list || '',
+                batter_or_pitcher: p.player?.batter_or_pitcher || '',
+                original_name: p.player?.original_name || '',
+                identity: p.player?.identity || ''
             }));
         }
 
@@ -1059,7 +1067,11 @@ export default function DraftPage() {
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-sm font-bold text-slate-200 truncate">{lastPick.player?.name}</span>
                                                 <span className="text-xs text-slate-400 font-mono">{filterPositions(lastPick.player || {})}</span>
-                                                {lastPick.player?.identity?.toLowerCase() === 'foreigner' && (
+                                                <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(lastPick.player?.team)} ml-1`}>
+                                                    {getTeamAbbr(lastPick.player?.team)}
+                                                </span>
+                                                {/* Ensure we access identity from nested player object if available, or top level if constructed manually */}
+                                                {(lastPick.player?.identity || lastPick.identity)?.toLowerCase() === 'foreigner' && (
                                                     <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30 ml-1">F</span>
                                                 )}
                                             </div>
@@ -1356,7 +1368,7 @@ export default function DraftPage() {
                                                     <div className="flex-1 min-w-0">
                                                         <div className="text-sm font-bold text-slate-200 truncate flex items-center gap-1">
                                                             {pick.player?.name}
-                                                            {pick.player?.identity?.toLowerCase() === 'foreigner' && (
+                                                            {(pick.player?.identity || pick.identity)?.toLowerCase() === 'foreigner' && (
                                                                 <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
                                                             )}
                                                         </div>

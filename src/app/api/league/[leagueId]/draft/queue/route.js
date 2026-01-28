@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
                 queue_id,
                 player_id,
                 rank_order,
-                player:player_list(name, team)
+                player:player_list(name, team, identity)
             `)
             .eq('league_id', leagueId)
             .eq('manager_id', managerId)
