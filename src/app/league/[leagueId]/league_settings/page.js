@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
@@ -40,6 +40,12 @@ export default function LeagueSettingsPage() {
   const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
   const [showGenerateConfirmModal, setShowGenerateConfirmModal] = useState(false); // Confirm modal state
+
+
+  // Photo Resolution State
+  const [photoSrcMap, setPhotoSrcMap] = useState({});
+  const failedImages = useRef(new Set());
+  const resolvedIds = useRef(new Set());
 
   // Helper: Filter positions based on league settings
   const filterPositions = (player) => {
@@ -134,6 +140,81 @@ export default function LeagueSettingsPage() {
   useEffect(() => {
     fetchDraftOrder();
   }, [leagueId, members]);
+
+  // ------------------------------------------------------------------
+  // Photo Resolution Logic (Copied from Draft Page)
+  // ------------------------------------------------------------------
+
+  const getPlayerPhotoPaths = (player) => {
+    const paths = [];
+    if (player.name) paths.push(`/photo/${player.name}.png`);
+    if (player.original_name) player.original_name.split(',').forEach(a => a.trim() && paths.push(`/photo/${a.trim()}.png`));
+    if (player.player_id) paths.push(`/photo/${player.player_id}.png`);
+    paths.push('/photo/defaultPlayer.png');
+    return paths;
+  };
+
+  const getPlayerPhoto = (player) => {
+    if (!player) return '/photo/defaultPlayer.png';
+    return photoSrcMap[player.player_id] || '/photo/defaultPlayer.png';
+  };
+
+  const handleImageError = (e) => {
+    // Basic fallback if helper fails or is simpler here
+    // But we should try to match draft page logic if possible.
+    // However, the JSX calls handleImageError without player arg sometimes if not carefully bound.
+    // In DraftPage: onError={handleImageError} (implicitly passes event), but logic uses player.
+    // In the JSX provided in view_file: onError={handleImageError}
+    // We need to implement a robust version.
+    e.target.src = '/photo/defaultPlayer.png';
+  };
+
+  // Batch Resolve Photos for Draft Order Players
+  useEffect(() => {
+    if (!draftOrder || draftOrder.length === 0) return;
+
+    let cancelled = false;
+    const resolvePhotos = async () => {
+      // Extract players from draft order
+      const players = draftOrder.map(p => p.player).filter(Boolean);
+
+      // Filter out players already in photoSrcMap or resolvedIds
+      const unprocessed = players.filter(p => !photoSrcMap[p.player_id] && !resolvedIds.current.has(p.player_id));
+      if (unprocessed.length === 0) return;
+
+      // Deduplicate
+      const uniquePlayers = Array.from(new Map(unprocessed.map(p => [p.player_id, p])).values());
+
+      const batchPayload = uniquePlayers.map(p => ({
+        id: p.player_id,
+        candidates: getPlayerPhotoPaths(p).filter(path => !path.endsWith('/defaultPlayer.png'))
+      }));
+
+      // Mark as processing
+      uniquePlayers.forEach(p => resolvedIds.current.add(p.player_id));
+
+      try {
+        const res = await fetch('/api/photo/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ players: batchPayload })
+        });
+        const data = await res.json();
+        if (!cancelled && data.results) {
+          setPhotoSrcMap(prev => ({ ...prev, ...data.results }));
+        }
+      } catch (e) {
+        console.error("Photo resolve failed", e);
+        if (!cancelled) {
+          // Fallback locally
+          const fallback = Object.fromEntries(uniquePlayers.map(p => [p.player_id, '/photo/defaultPlayer.png']));
+          setPhotoSrcMap(prev => ({ ...prev, ...fallback }));
+        }
+      }
+    };
+    resolvePhotos();
+    return () => { cancelled = true; };
+  }, [draftOrder]);
 
   const handleGenerateDraftOrder = async () => {
     setShowGenerateConfirmModal(false);
