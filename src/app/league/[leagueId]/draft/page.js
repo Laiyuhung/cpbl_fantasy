@@ -58,6 +58,9 @@ export default function DraftPage() {
     const [assignModalSlot, setAssignModalSlot] = useState(null);
     const [mainTab, setMainTab] = useState('players');
 
+    // Foreigner Limit
+    const [foreignerLimit, setForeignerLimit] = useState(null);
+
     const [viewingManagerId, setViewingManagerId] = useState(null);
     const [viewingRosterAssignments, setViewingRosterAssignments] = useState([]);
     const [viewingLoading, setViewingLoading] = useState(false);
@@ -435,6 +438,7 @@ export default function DraftPage() {
                 if (playersData.success) setPlayers(playersData.players || []);
                 if (settingsData.success && settingsData.data) {
                     setRosterPositions(settingsData.data.roster_positions || {});
+                    setForeignerLimit(settingsData.data.foreigner_active_limit !== undefined ? settingsData.data.foreigner_active_limit : null);
                     setBatterStatCategories(settingsData.data.batter_stat_categories || []);
                     setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
                 }
@@ -653,12 +657,19 @@ export default function DraftPage() {
 
         // Calculate Foreigner Count
         let foreignerCount = 0;
-        if (draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined) {
-            foreignerCount = mine.filter(p => p.identity?.toLowerCase() === 'foreigner' || p.identity?.toLowerCase() === 'f').length;
+        const limitToUse = foreignerLimit !== null ? foreignerLimit : (draftState?.foreignerActiveLimit);
+
+        if (limitToUse !== null && limitToUse !== undefined) {
+            // Count foreigners in my team
+            // Use local 'mine' array which solves identity mapping
+            foreignerCount = mine.filter(p => {
+                const id = (p.identity || '').toLowerCase();
+                return id === 'foreigner' || id === 'f';
+            }).length;
         }
 
         return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming, viewingTeam, foreignerCount };
-    }, [draftState, myManagerId, viewingManagerId]);
+    }, [draftState, myManagerId, viewingManagerId, foreignerLimit]);
 
     const handlePick = async (playerId) => {
         if (pickingId) return;
@@ -1149,13 +1160,13 @@ export default function DraftPage() {
                 </div>
 
                 {/* Foreigner Limit Hint */}
-                {draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && (
+                {foreignerLimit !== null && (
                     <div className="bg-slate-800/80 px-4 py-2 rounded-t-lg border-t border-x border-slate-600 mb-0 text-sm font-bold text-slate-300 flex items-center gap-2">
                         <span>Foreigners:</span>
-                        <span className={`text-base ${foreignerCount >= draftState.foreignerActiveLimit ? "text-red-400" : "text-white"}`}>{foreignerCount}</span>
+                        <span className={`text-base ${foreignerLimit !== null && foreignerCount >= foreignerLimit ? "text-red-400" : "text-white"}`}>{foreignerCount}</span>
                         <span className="text-slate-500">/</span>
-                        <span className="text-white">{draftState.foreignerActiveLimit}</span>
-                        {foreignerCount >= draftState.foreignerActiveLimit && (
+                        <span className="text-white">{foreignerLimit}</span>
+                        {foreignerLimit !== null && foreignerCount >= foreignerLimit && (
                             <span className="ml-2 text-red-400 text-xs font-black uppercase tracking-wider animate-pulse border border-red-500/50 px-1 rounded bg-red-900/30">
                                 Limit Reached
                             </span>
@@ -1320,9 +1331,9 @@ export default function DraftPage() {
                                                         </button>
                                                         <button
                                                             onClick={() => handlePick(player.player_id)}
-                                                            disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id)) || (isForeigner && draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && foreignerCount >= draftState.foreignerActiveLimit)}
+                                                            disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id)) || (isForeigner && foreignerLimit !== null && foreignerCount >= foreignerLimit)}
                                                             className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all flex items-center gap-2
-                                                            ${draftState?.currentPick?.manager_id === myManagerId && !pickingId && !(isForeigner && draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && foreignerCount >= draftState.foreignerActiveLimit)
+                                                            ${draftState?.currentPick?.manager_id === myManagerId && !pickingId && !(isForeigner && foreignerLimit !== null && foreignerCount >= foreignerLimit)
                                                                     ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
                                                                     : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'
                                                                 }`}
@@ -1331,7 +1342,7 @@ export default function DraftPage() {
                                                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                                                             )}
                                                             {pickingId === player.player_id ? 'DRAFTING...'
-                                                                : (isForeigner && draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && foreignerCount >= draftState.foreignerActiveLimit)
+                                                                : (isForeigner && foreignerLimit !== null && foreignerCount >= foreignerLimit)
                                                                     ? 'LIMIT'
                                                                     : 'DRAFT'
                                                             }

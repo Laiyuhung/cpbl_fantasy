@@ -130,7 +130,8 @@ export async function GET(request, { params }) {
                         serverTime: now.toISOString(),
                         remainingPicks,
                         picks: picks || [],
-                        nextPicks: nextPicks || []
+                        nextPicks: nextPicks || [],
+                        foreignerActiveLimit: settings?.foreigner_active_limit
                     });
                 }
             }
@@ -434,7 +435,8 @@ export async function GET(request, { params }) {
 
             console.log(`[DraftState] Draft completed! Total picks: ${picks?.length || 0}`);
 
-            return NextResponse.json({ status: 'completed', picks: picks || [] });
+            console.log(`[DraftState] Draft completed! Total picks: ${picks?.length || 0}`);
+            return NextResponse.json({ status: 'completed', picks: picks || [], foreignerActiveLimit: settings?.foreigner_active_limit });
         }
 
         return NextResponse.json({ status: 'unknown', message: 'Unknown State' });
