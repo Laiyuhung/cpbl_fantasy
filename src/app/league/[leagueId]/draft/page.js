@@ -1862,8 +1862,8 @@ export default function DraftPage() {
                                                             </div>
 
                                                             {/* Inline Stats for Bench */}
-                                                            <div className="flex ml-2 gap-2 text-[10px] text-slate-400 max-w-[200px] overflow-hidden">
-                                                                {playerStatCats.slice(0, 4).map(cat => (
+                                                            <div className="flex ml-2 gap-2 text-[10px] text-slate-400 overflow-x-auto hide-scrollbar max-w-[400px]">
+                                                                {playerStatCats.map(cat => (
                                                                     <div key={cat} className="flex flex-col items-center min-w-[24px]">
                                                                         <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
                                                                         <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
