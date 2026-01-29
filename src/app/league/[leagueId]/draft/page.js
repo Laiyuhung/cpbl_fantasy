@@ -1678,182 +1678,203 @@ export default function DraftPage() {
                         </>
                     )}
 
-                    {/* Roster Sections */}
+                    {/* Roster Tables Helper */}
                     {(() => {
                         const BATTER_POSITIONS = ['C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util'];
                         const PITCHER_POSITIONS = ['SP', 'RP', 'P'];
-                        // Bench positions might vary, usually BN, IL, NA. We check if not in above.
 
-                        const renderRosterSection = (title, positions, isPitcher = false) => {
-                            const sectionSlots = Object.keys(rosterPositions).filter(slot => positions.includes(slot));
-                            if (sectionSlots.length === 0) return null;
-
-                            // Sort logic can be added if needed, but rosterPositions keys order might be sufficient or we map based on predefined order
-                            // For draft page, keys come from settings which might be ordered
-
+                        // Helper to render a table for a group of positions
+                        const renderTable = (title, slots, isPitcher) => {
+                            if (!slots || slots.length === 0) return null;
                             const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
 
                             return (
-                                <div className="mb-6">
+                                <div className="mb-6" key={title}>
                                     <h3 className="text-md font-bold text-purple-300 mb-2 border-l-4 border-purple-500 pl-2">{title}</h3>
                                     <div className="bg-slate-900/40 rounded-lg border border-slate-700/50 overflow-hidden">
+                                        {/* Header Row */}
                                         <div className="flex bg-slate-800/60 p-2 text-xs font-bold text-slate-400 border-b border-slate-700">
                                             <div className="w-12 text-center">Slot</div>
                                             <div className="flex-1 pl-2">Player</div>
                                             <div className="w-10 text-center">Team</div>
                                             <div className="flex ml-2 gap-2">
-                                                {statCats.map(cat => (
-                                                    <div key={cat} className="w-[30px] text-center" title={getStatAbbr(cat)}>{getStatAbbr(cat)}</div>
-                                                ))}
-                                                <div className="w-8"></div> {/* Remove Btn */}
+                                                {statCats && statCats.length > 0 ? statCats.map(cat => (
+                                                    <div key={cat} className="w-[30px] text-center" title={cat}>{getStatAbbr(cat)}</div>
+                                                )) : (
+                                                    <div className="text-slate-600 text-[10px] italic">Stats</div>
+                                                )}
+                                                {/* Remove Button Placeholder for alignment if needed, though usually fixed width */}
+                                                <div className="w-8"></div>
                                             </div>
                                         </div>
 
-                                        {sectionSlots.flatMap(slot => {
-                                            const count = rosterPositions[slot];
-                                            return Array.from({ length: count }).map((_, idx) => {
-                                                const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
-                                                const assignment = getAssignedPlayer(slotKey);
+                                        {/* Rows */}
+                                        {slots.map((slotKey, idx) => {
+                                            // Handle slotKey vs slot label
+                                            // slotKey might be 'Of1', 'Of2' etc. or just 'C'
+                                            // We need to parse valid slot label for display
+                                            // Actually inputs here are specific slot KEYS (unique)
+                                            const slotLabel = slotKey.replace(/\d+$/, '');
 
-                                                return (
-                                                    <div
-                                                        key={slotKey}
-                                                        onClick={() => !assignment && setAssignModalSlot(slotKey)}
-                                                        className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
-                                                            ? 'bg-slate-900/80'
-                                                            : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
-                                                            }`}
-                                                    >
-                                                        <div className="w-12 text-center shrink-0">
-                                                            <span className="font-mono font-bold text-purple-400 text-xs">{slot}</span>
-                                                        </div>
+                                            // Determine assignment
+                                            // For My Roster: getAssignedPlayer(slotKey)
+                                            // For League Rosters: viewingRosterAssignments.find...
+                                            // We need to pass the context or assignment list
+                                            // Let's rely on a getter passed in or check context
 
-                                                        {assignment ? (
-                                                            <>
-                                                                <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
-                                                                    <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
-                                                                        <img
-                                                                            src={getPlayerPhoto(assignment)}
-                                                                            onError={(e) => handleImageError(e, assignment)}
-                                                                            className="w-full h-full object-cover"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="min-w-0">
-                                                                        <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
-                                                                            {assignment.name}
-                                                                            {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                                <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
-                                                                    </div>
-                                                                </div>
+                                            const isLeagueView = mainTab === 'league_rosters';
+                                            const assignment = isLeagueView
+                                                ? viewingRosterAssignments.find(a => a.roster_slot === slotKey)
+                                                : getAssignedPlayer(slotKey);
 
-                                                                <div className="w-10 text-center shrink-0">
-                                                                    <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                        {getTeamAbbr(assignment.team)}
-                                                                    </span>
-                                                                </div>
-
-                                                                <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
-                                                                    {statCats.map(cat => (
-                                                                        <div key={cat} className="w-[30px] text-center">
-                                                                            {formatStat(getPlayerStat(assignment.player_id, cat))}
-                                                                        </div>
-                                                                    ))}
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleRemoveAssignment(assignment.assignment_id);
-                                                                        }}
-                                                                        disabled={assigning}
-                                                                        className="w-8 text-slate-500 hover:text-red-400 disabled:opacity-50 text-center"
-                                                                    >
-                                                                        {assigning && assigningId === assignment.assignment_id ? (
-                                                                            <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
-                                                                        ) : '×'}
-                                                                    </button>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <div className="flex-1 pl-2 text-slate-600 italic text-xs">
-                                                                Empty
-                                                            </div>
-                                                        )}
+                                            return (
+                                                <div
+                                                    key={slotKey}
+                                                    onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
+                                                    className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                        ? 'bg-slate-900/80'
+                                                        : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
+                                                        }`}
+                                                >
+                                                    <div className="w-12 text-center shrink-0">
+                                                        <span className="font-mono font-bold text-stone-500 text-xs">{slotLabel}</span>
                                                     </div>
-                                                );
-                                            });
+
+                                                    {assignment ? (
+                                                        <>
+                                                            <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
+                                                                <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                    <img
+                                                                        src={getPlayerPhoto(assignment)}
+                                                                        onError={(e) => handleImageError(e, assignment)}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                        {assignment.name}
+                                                                        {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                            <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="w-10 text-center shrink-0">
+                                                                <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
+                                                                    {getTeamAbbr(assignment.team)}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
+                                                                {statCats.map(cat => (
+                                                                    <div key={cat} className="w-[30px] text-center">
+                                                                        {formatStat(getPlayerStat(assignment.player_id, cat))}
+                                                                    </div>
+                                                                ))}
+
+                                                                <div className="w-8 flex justify-center">
+                                                                    {!isLeagueView && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleRemoveAssignment(assignment.assignment_id);
+                                                                            }}
+                                                                            disabled={assigning}
+                                                                            className="text-slate-500 hover:text-red-400 disabled:opacity-50"
+                                                                        >
+                                                                            {assigning && assigningId === assignment.assignment_id ? (
+                                                                                <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
+                                                                            ) : '×'}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex-1 pl-2 text-slate-600 italic text-xs">
+                                                            Empty
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
                                         })}
                                     </div>
                                 </div>
                             );
                         };
 
-                        const renderBenchSection = () => {
-                            const benchSlots = Object.keys(rosterPositions).filter(slot => !BATTER_POSITIONS.includes(slot) && !PITCHER_POSITIONS.includes(slot) && !slot.includes('Minor'));
-                            if (benchSlots.length === 0) return null;
-
+                        const renderBenchTable = (slots) => {
+                            if (!slots || slots.length === 0) return null;
                             return (
-                                <div className="mb-6">
+                                <div className="mb-6" key="Bench">
                                     <h3 className="text-md font-bold text-slate-400 mb-2 border-l-4 border-slate-500 pl-2">Bench</h3>
                                     <div className="bg-slate-900/40 rounded-lg border border-slate-700/50 overflow-hidden">
-                                        {benchSlots.flatMap(slot => {
-                                            const count = rosterPositions[slot];
-                                            return Array.from({ length: count }).map((_, idx) => {
-                                                const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
-                                                const assignment = getAssignedPlayer(slotKey);
+                                        {slots.map((slotKey) => {
+                                            const slotLabel = slotKey.replace(/\d+$/, '');
+                                            const isLeagueView = mainTab === 'league_rosters';
+                                            const assignment = isLeagueView
+                                                ? viewingRosterAssignments.find(a => a.roster_slot === slotKey)
+                                                : getAssignedPlayer(slotKey);
 
-                                                return (
-                                                    <div
-                                                        key={slotKey}
-                                                        onClick={() => !assignment && setAssignModalSlot(slotKey)}
-                                                        className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
-                                                            ? 'bg-slate-900/80'
-                                                            : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
-                                                            }`}
-                                                    >
-                                                        <div className="w-12 text-center shrink-0">
-                                                            <span className="font-mono font-bold text-slate-500 text-xs">{slot}</span>
-                                                        </div>
+                                            // Determine which stats to show for Bench (Batter or Pitcher logic based on player)
+                                            // If empty, no stats.
 
-                                                        {assignment ? (
-                                                            <>
-                                                                <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
-                                                                    <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
-                                                                        <img
-                                                                            src={getPlayerPhoto(assignment)}
-                                                                            onError={(e) => handleImageError(e, assignment)}
-                                                                            className="w-full h-full object-cover"
-                                                                        />
+                                            const playerStatCats = assignment?.batter_or_pitcher === 'pitcher' ? pitcherStatCategories : batterStatCategories;
+
+                                            return (
+                                                <div
+                                                    key={slotKey}
+                                                    onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
+                                                    className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                        ? 'bg-slate-900/80'
+                                                        : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
+                                                        }`}
+                                                >
+                                                    <div className="w-12 text-center shrink-0">
+                                                        <span className="font-mono font-bold text-slate-500 text-xs">{slotLabel}</span>
+                                                    </div>
+
+                                                    {assignment ? (
+                                                        <>
+                                                            <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
+                                                                <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                    <img
+                                                                        src={getPlayerPhoto(assignment)}
+                                                                        onError={(e) => handleImageError(e, assignment)}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                        {assignment.name}
+                                                                        {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                            <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="min-w-0">
-                                                                        <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
-                                                                            {assignment.name}
-                                                                            {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                                <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
+                                                                    <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="w-10 text-center shrink-0">
+                                                                <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
+                                                                    {getTeamAbbr(assignment.team)}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Inline Stats for Bench */}
+                                                            <div className="flex ml-2 gap-2 text-[10px] text-slate-400 max-w-[200px] overflow-hidden">
+                                                                {playerStatCats.slice(0, 4).map(cat => (
+                                                                    <div key={cat} className="flex flex-col items-center min-w-[24px]">
+                                                                        <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
+                                                                        <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
                                                                     </div>
-                                                                </div>
+                                                                ))}
+                                                            </div>
 
-                                                                <div className="w-10 text-center shrink-0">
-                                                                    <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                        {getTeamAbbr(assignment.team)}
-                                                                    </span>
-                                                                </div>
-
-                                                                {/* Bench Stats - simplified or adapting to player type */}
-                                                                <div className="flex ml-2 gap-2 text-[10px] text-slate-400 max-w-[200px] overflow-hidden">
-                                                                    {(assignment.batter_or_pitcher === 'batter' ? batterStatCategories : pitcherStatCategories).slice(0, 4).map(cat => (
-                                                                        <div key={cat} className="flex flex-col items-center min-w-[24px]">
-                                                                            <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
-                                                                            <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-
-                                                                <div className="w-8 flex justify-center">
+                                                            <div className="w-8 flex justify-center">
+                                                                {!isLeagueView && (
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
@@ -1866,27 +1887,48 @@ export default function DraftPage() {
                                                                             <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
                                                                         ) : '×'}
                                                                     </button>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <div className="flex-1 pl-2 text-slate-600 italic text-xs">
-                                                                Empty
+                                                                )}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            });
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex-1 pl-2 text-slate-600 italic text-xs">
+                                                            Empty
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
                                         })}
                                     </div>
                                 </div>
                             );
                         }
 
+                        // Flatten slots logic
+                        // Need to expand counts: { C: 1, OF: 3 } -> [C, OF, OF, OF] -> [C, OF1, OF2, OF3]
+                        const allSlots = Object.keys(rosterPositions).flatMap(slot => {
+                            const count = rosterPositions[slot];
+                            return Array.from({ length: count }).map((_, idx) => {
+                                return count > 1 ? `${slot}${idx + 1}` : slot;
+                            });
+                        });
+
+                        // Categorize
+                        const batterSlots = [];
+                        const pitcherSlots = [];
+                        const benchSlots = [];
+
+                        allSlots.forEach(slotKey => {
+                            const label = slotKey.replace(/\d+$/, '');
+                            if (BATTER_POSITIONS.includes(label)) batterSlots.push(slotKey);
+                            else if (PITCHER_POSITIONS.includes(label)) pitcherSlots.push(slotKey);
+                            else if (!label.includes('Minor')) benchSlots.push(slotKey); // Exclude Minor League slots from main bench
+                        });
+
                         return (
                             <>
-                                {renderRosterSection('Batters', BATTER_POSITIONS, false)}
-                                {renderRosterSection('Pitchers', PITCHER_POSITIONS, true)}
-                                {renderBenchSection()}
+                                {renderTable('Batters', batterSlots, false)}
+                                {renderTable('Pitchers', pitcherSlots, true)}
+                                {renderBenchTable(benchSlots)}
                             </>
                         );
                     })()}
@@ -1970,178 +2012,240 @@ export default function DraftPage() {
                                 )}
 
                                 {(() => {
-                                    const BATTER_POSITIONS = ['C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util'];
+                                    const BATTER_POSITIONS = ['C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util', 'DH'];
                                     const PITCHER_POSITIONS = ['SP', 'RP', 'P'];
 
-                                    const renderRosterSection = (title, positions, isPitcher = false) => {
-                                        const sectionSlots = Object.keys(rosterPositions).filter(slot => positions.includes(slot));
-                                        if (sectionSlots.length === 0) return null;
-
+                                    // Helper to render a table for a group of positions
+                                    const renderTable = (title, slots, isPitcher) => {
+                                        if (!slots || slots.length === 0) return null;
                                         const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
 
                                         return (
-                                            <div className="mb-6">
+                                            <div className="mb-6" key={title}>
                                                 <h3 className="text-md font-bold text-purple-300 mb-2 border-l-4 border-purple-500 pl-2">{title}</h3>
                                                 <div className="bg-slate-900/40 rounded-lg border border-slate-700/50 overflow-hidden">
+                                                    {/* Header Row */}
                                                     <div className="flex bg-slate-800/60 p-2 text-xs font-bold text-slate-400 border-b border-slate-700">
                                                         <div className="w-12 text-center">Slot</div>
                                                         <div className="flex-1 pl-2">Player</div>
                                                         <div className="w-10 text-center">Team</div>
                                                         <div className="flex ml-2 gap-2">
-                                                            {statCats.map(cat => (
-                                                                <div key={cat} className="w-[30px] text-center" title={getStatAbbr(cat)}>{getStatAbbr(cat)}</div>
-                                                            ))}
+                                                            {statCats && statCats.length > 0 ? statCats.map(cat => (
+                                                                <div key={cat} className="w-[30px] text-center" title={cat}>{getStatAbbr(cat)}</div>
+                                                            )) : (
+                                                                <div className="text-slate-600 text-[10px] italic">Stats</div>
+                                                            )}
+                                                            <div className="w-8"></div>
                                                         </div>
                                                     </div>
 
-                                                    {sectionSlots.flatMap(slot => {
-                                                        const count = rosterPositions[slot];
-                                                        return Array.from({ length: count }).map((_, idx) => {
-                                                            const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
-                                                            const assignment = viewingRosterAssignments.find(a => a.roster_slot === slotKey);
+                                                    {/* Rows */}
+                                                    {slots.map((slotKey, idx) => {
+                                                        const slotLabel = slotKey.replace(/\d+$/, '');
+                                                        const isLeagueView = mainTab === 'league_rosters';
+                                                        const assignment = isLeagueView
+                                                            ? viewingRosterAssignments.find(a => a.roster_slot === slotKey)
+                                                            : getAssignedPlayer(slotKey);
 
-                                                            return (
-                                                                <div
-                                                                    key={slotKey}
-                                                                    className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
-                                                                        ? 'bg-slate-900/80'
-                                                                        : 'bg-slate-900/20'
-                                                                        }`}
-                                                                >
-                                                                    <div className="w-12 text-center shrink-0">
-                                                                        <span className="font-mono font-bold text-slate-500 text-xs">{slot}</span>
-                                                                    </div>
-
-                                                                    {assignment ? (
-                                                                        <>
-                                                                            <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
-                                                                                <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
-                                                                                    <img
-                                                                                        src={getPlayerPhoto(assignment)}
-                                                                                        onError={(e) => handleImageError(e, assignment)}
-                                                                                        className="w-full h-full object-cover"
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="min-w-0">
-                                                                                    <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
-                                                                                        {assignment.name}
-                                                                                        {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                                            <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            <div className="w-10 text-center shrink-0">
-                                                                                <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                                    {getTeamAbbr(assignment.team)}
-                                                                                </span>
-                                                                            </div>
-
-                                                                            <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
-                                                                                {statCats.map(cat => (
-                                                                                    <div key={cat} className="w-[30px] text-center">
-                                                                                        {formatStat(getPlayerStat(assignment.player_id, cat))}
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </>
-                                                                    ) : (
-                                                                        <div className="flex-1 pl-2 text-slate-600 italic text-xs">
-                                                                            Empty
-                                                                        </div>
-                                                                    )}
+                                                        return (
+                                                            <div
+                                                                key={slotKey}
+                                                                onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
+                                                                className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                                    ? 'bg-slate-900/80'
+                                                                    : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
+                                                                    }`}
+                                                            >
+                                                                <div className="w-12 text-center shrink-0">
+                                                                    <span className="font-mono font-bold text-stone-500 text-xs">{slotLabel}</span>
                                                                 </div>
-                                                            );
-                                                        });
+
+                                                                {assignment ? (
+                                                                    <>
+                                                                        <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
+                                                                            <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                                <img
+                                                                                    src={getPlayerPhoto(assignment)}
+                                                                                    onError={(e) => handleImageError(e, assignment)}
+                                                                                    className="w-full h-full object-cover"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="min-w-0">
+                                                                                <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                                    {assignment.name}
+                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                                        <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="w-10 text-center shrink-0">
+                                                                            <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
+                                                                                {getTeamAbbr(assignment.team)}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
+                                                                            {statCats.map(cat => (
+                                                                                <div key={cat} className="w-[30px] text-center">
+                                                                                    {formatStat(getPlayerStat(assignment.player_id, cat))}
+                                                                                </div>
+                                                                            ))}
+
+                                                                            <div className="w-8 flex justify-center">
+                                                                                {!isLeagueView && (
+                                                                                    <button
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            handleRemoveAssignment(assignment.assignment_id);
+                                                                                        }}
+                                                                                        disabled={assigning}
+                                                                                        className="text-slate-500 hover:text-red-400 disabled:opacity-50"
+                                                                                    >
+                                                                                        {assigning && assigningId === assignment.assignment_id ? (
+                                                                                            <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
+                                                                                        ) : '×'}
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="flex-1 pl-2 text-slate-600 italic text-xs">
+                                                                        Empty
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
                                                     })}
                                                 </div>
                                             </div>
                                         );
                                     };
 
-                                    const renderBenchSection = () => {
-                                        const benchSlots = Object.keys(rosterPositions).filter(slot => !BATTER_POSITIONS.includes(slot) && !PITCHER_POSITIONS.includes(slot) && !slot.includes('Minor'));
-                                        if (benchSlots.length === 0) return null;
-
+                                    const renderBenchTable = (slots) => {
+                                        if (!slots || slots.length === 0) return null;
                                         return (
-                                            <div className="mb-6">
+                                            <div className="mb-6" key="Bench">
                                                 <h3 className="text-md font-bold text-slate-400 mb-2 border-l-4 border-slate-500 pl-2">Bench</h3>
                                                 <div className="bg-slate-900/40 rounded-lg border border-slate-700/50 overflow-hidden">
-                                                    {benchSlots.flatMap(slot => {
-                                                        const count = rosterPositions[slot];
-                                                        return Array.from({ length: count }).map((_, idx) => {
-                                                            const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
-                                                            const assignment = viewingRosterAssignments.find(a => a.roster_slot === slotKey);
+                                                    {slots.map((slotKey) => {
+                                                        const slotLabel = slotKey.replace(/\d+$/, '');
+                                                        const isLeagueView = mainTab === 'league_rosters';
+                                                        const assignment = isLeagueView
+                                                            ? viewingRosterAssignments.find(a => a.roster_slot === slotKey)
+                                                            : getAssignedPlayer(slotKey);
 
-                                                            return (
-                                                                <div
-                                                                    key={slotKey}
-                                                                    className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
-                                                                        ? 'bg-slate-900/80'
-                                                                        : 'bg-slate-900/20'
-                                                                        }`}
-                                                                >
-                                                                    <div className="w-12 text-center shrink-0">
-                                                                        <span className="font-mono font-bold text-slate-500 text-xs">{slot}</span>
-                                                                    </div>
+                                                        const playerStatCats = assignment?.batter_or_pitcher === 'pitcher' ? pitcherStatCategories : batterStatCategories;
 
-                                                                    {assignment ? (
-                                                                        <>
-                                                                            <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
-                                                                                <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
-                                                                                    <img
-                                                                                        src={getPlayerPhoto(assignment)}
-                                                                                        onError={(e) => handleImageError(e, assignment)}
-                                                                                        className="w-full h-full object-cover"
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="min-w-0">
-                                                                                    <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
-                                                                                        {assignment.name}
-                                                                                        {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                                            <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            <div className="w-10 text-center shrink-0">
-                                                                                <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                                    {getTeamAbbr(assignment.team)}
-                                                                                </span>
-                                                                            </div>
-
-                                                                            <div className="flex ml-2 gap-2 text-[10px] text-slate-400 max-w-[200px] overflow-hidden">
-                                                                                {(assignment.batter_or_pitcher === 'batter' ? batterStatCategories : pitcherStatCategories).slice(0, 4).map(cat => (
-                                                                                    <div key={cat} className="flex flex-col items-center min-w-[24px]">
-                                                                                        <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
-                                                                                        <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </>
-                                                                    ) : (
-                                                                        <div className="flex-1 pl-2 text-slate-600 italic text-xs">
-                                                                            Empty
-                                                                        </div>
-                                                                    )}
+                                                        return (
+                                                            <div
+                                                                key={slotKey}
+                                                                onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
+                                                                className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                                    ? 'bg-slate-900/80'
+                                                                    : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
+                                                                    }`}
+                                                            >
+                                                                <div className="w-12 text-center shrink-0">
+                                                                    <span className="font-mono font-bold text-slate-500 text-xs">{slotLabel}</span>
                                                                 </div>
-                                                            );
-                                                        });
+
+                                                                {assignment ? (
+                                                                    <>
+                                                                        <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
+                                                                            <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                                <img
+                                                                                    src={getPlayerPhoto(assignment)}
+                                                                                    onError={(e) => handleImageError(e, assignment)}
+                                                                                    className="w-full h-full object-cover"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="min-w-0">
+                                                                                <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                                    {assignment.name}
+                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                                        <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="w-10 text-center shrink-0">
+                                                                            <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
+                                                                                {getTeamAbbr(assignment.team)}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        {/* Inline Stats for Bench */}
+                                                                        <div className="flex ml-2 gap-2 text-[10px] text-slate-400 max-w-[200px] overflow-hidden">
+                                                                            {playerStatCats.slice(0, 4).map(cat => (
+                                                                                <div key={cat} className="flex flex-col items-center min-w-[24px]">
+                                                                                    <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
+                                                                                    <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+
+                                                                        <div className="w-8 flex justify-center">
+                                                                            {!isLeagueView && (
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleRemoveAssignment(assignment.assignment_id);
+                                                                                    }}
+                                                                                    disabled={assigning}
+                                                                                    className="text-slate-500 hover:text-red-400 disabled:opacity-50"
+                                                                                >
+                                                                                    {assigning && assigningId === assignment.assignment_id ? (
+                                                                                        <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
+                                                                                    ) : '×'}
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="flex-1 pl-2 text-slate-600 italic text-xs">
+                                                                        Empty
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
                                                     })}
                                                 </div>
                                             </div>
                                         );
                                     }
 
+                                    // Flatten slots logic
+                                    // Need to expand counts: { C: 1, OF: 3 } -> [C, OF, OF, OF] -> [C, OF1, OF2, OF3]
+                                    const allSlots = Object.keys(rosterPositions).flatMap(slot => {
+                                        const count = rosterPositions[slot];
+                                        return Array.from({ length: count }).map((_, idx) => {
+                                            return count > 1 ? `${slot}${idx + 1}` : slot;
+                                        });
+                                    });
+
+                                    // Categorize
+                                    const batterSlots = [];
+                                    const pitcherSlots = [];
+                                    const benchSlots = [];
+
+                                    allSlots.forEach(slotKey => {
+                                        const label = slotKey.replace(/\d+$/, '');
+                                        if (BATTER_POSITIONS.includes(label)) batterSlots.push(slotKey);
+                                        else if (PITCHER_POSITIONS.includes(label)) pitcherSlots.push(slotKey);
+                                        else if (!label.includes('Minor')) benchSlots.push(slotKey);
+                                    });
+
                                     return (
                                         <>
-                                            {renderRosterSection('Batters', BATTER_POSITIONS, false)}
-                                            {renderRosterSection('Pitchers', PITCHER_POSITIONS, true)}
-                                            {renderBenchSection()}
+                                            {renderTable('Batters', batterSlots, false)}
+                                            {renderTable('Pitchers', pitcherSlots, true)}
+                                            {renderBenchTable(benchSlots)}
                                         </>
                                     );
                                 })()}
