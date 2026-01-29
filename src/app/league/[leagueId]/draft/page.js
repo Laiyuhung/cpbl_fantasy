@@ -218,6 +218,32 @@ export default function DraftPage() {
 
     const isQueued = (playerId) => queue.some(q => q.player_id === playerId);
 
+    // Auto-remove taken players from Queue
+    useEffect(() => {
+        if (!queue.length || !draftState?.picks) return;
+
+        const takenSet = new Set(draftState.picks.map(p => p.player_id).filter(Boolean));
+        // Find queue items that are now taken
+        const toRemove = queue.filter(q => takenSet.has(q.player_id));
+
+        if (toRemove.length > 0) {
+            // Optimistic update locally to remove them immediately from UI
+            const newQueue = queue.filter(q => !takenSet.has(q.player_id));
+            setQueue(newQueue);
+
+            // API cleanup (silent, no blocking)
+            // We use a separate async operation for each because the API is designed for single delete usually
+            // but we could also implement bulk delete if needed. For now simple loop is fine.
+            toRemove.forEach(item => {
+                fetch(`/api/league/${leagueId}/draft/queue`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ queueId: item.queue_id })
+                }).catch(e => console.error('Silent queue cleanup failed', e));
+            });
+        }
+    }, [draftState?.picks, queue, leagueId]);
+
     // Roster Assignment Handlers
     const handleAssignToSlot = async (playerId, rosterSlot) => {
         setAssigning(true);

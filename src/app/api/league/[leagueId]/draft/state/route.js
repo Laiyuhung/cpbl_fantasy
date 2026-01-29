@@ -7,7 +7,8 @@ const supabase = createClient(
 );
 
 // Helper: Pick Random Player
-async function getRandomAvailablePlayer(leagueId) {
+// Helper: Pick Random Player
+async function getRandomAvailablePlayer(leagueId, excludePlayerIds = []) {
     const { data: taken } = await supabase
         .from('draft_picks')
         .select('player_id')
@@ -15,13 +16,14 @@ async function getRandomAvailablePlayer(leagueId) {
         .not('player_id', 'is', null);
 
     const takenIds = taken ? taken.map(p => p.player_id) : [];
+    const allExcluded = [...takenIds, ...excludePlayerIds];
 
     const { data: allPlayers } = await supabase
         .from('player_list')
         .select('player_id')
         .eq('available', true);  // Only select available players
 
-    const validPlayers = allPlayers?.filter(p => !takenIds.includes(p.player_id)) || [];
+    const validPlayers = allPlayers?.filter(p => !allExcluded.includes(p.player_id)) || [];
 
     if (validPlayers.length === 0) return null;
 
@@ -225,10 +227,45 @@ export async function GET(request, { params }) {
             else if (new Date(currentPick.deadline) < now) {
                 console.log(`[Draft] Pick ${currentPick.pick_number} expired. Auto-picking...`);
 
+                // 0. Check Foreigner Limit Status for this Manager
+                const foreignerLimit = settings?.foreigner_active_limit;
+                let excludeForeigners = false;
+                let foreignIds = new Set();
+
+                if (foreignerLimit !== null && foreignerLimit !== undefined) {
+                    // Count current foreigners for this manager
+                    const { data: myPicks } = await supabase
+                        .from('draft_picks')
+                        .select('player_id, player:player_list(identity)')
+                        .eq('league_id', leagueId)
+                        .eq('manager_id', currentPick.manager_id)
+                        .not('player_id', 'is', null);
+
+                    const myForeignerCount = myPicks?.filter(p => {
+                        const id = (p.player?.identity || '').toLowerCase();
+                        return id === 'foreigner' || id === 'f';
+                    }).length || 0;
+
+                    if (myForeignerCount >= foreignerLimit) {
+                        excludeForeigners = true;
+                        // Fetch all foreign player IDs to exclude
+                        // Or just filter checks dynamically.
+                        // For random fallback we need IDs if we want to update the helper efficiently,
+                        // or better: update helper to filter by property too? 
+                        // Actually, easiest is to fetch all foreign IDs once if needed.
+                        const { data: fPlayers } = await supabase
+                            .from('player_list')
+                            .select('player_id')
+                            .or('identity.ilike.foreigner,identity.ilike.f');
+
+                        fPlayers?.forEach(fp => foreignIds.add(fp.player_id));
+                    }
+                }
+
                 // 1. Check Draft Queue
                 const { data: queueItems } = await supabase
                     .from('draft_queues')
-                    .select('player_id, queue_id')
+                    .select('player_id, queue_id, player:player_list(identity)')
                     .eq('league_id', leagueId)
                     .eq('manager_id', currentPick.manager_id)
                     .order('rank_order', { ascending: true });
@@ -243,18 +280,32 @@ export async function GET(request, { params }) {
                         .eq('league_id', leagueId)
                         .not('player_id', 'is', null);
                     const takenSet = new Set(taken?.map(p => p.player_id) || []);
+
                     for (const item of queueItems) {
-                        if (!takenSet.has(item.player_id)) {
-                            pickedPlayerId = item.player_id;
-                            usedQueueId = item.queue_id;
-                            console.log(`[Draft] Picking from Queue: ${pickedPlayerId}`);
-                            break;
+                        // Skip if taken
+                        if (takenSet.has(item.player_id)) continue;
+
+                        // Skip if foreigner limit reached and player is foreigner
+                        if (excludeForeigners) {
+                            const pIdentity = (item.player?.identity || '').toLowerCase();
+                            if (pIdentity === 'foreigner' || pIdentity === 'f') {
+                                console.log(`[Draft] Skipping queued foreigner ${item.player_id} due to limit.`);
+                                continue;
+                            }
                         }
+
+                        pickedPlayerId = item.player_id;
+                        usedQueueId = item.queue_id;
+                        console.log(`[Draft] Picking from Queue: ${pickedPlayerId}`);
+                        break;
                     }
                 }
 
                 // 2. Random Fallback
-                if (!pickedPlayerId) pickedPlayerId = await getRandomAvailablePlayer(leagueId);
+                if (!pickedPlayerId) {
+                    const exclusions = excludeForeigners ? Array.from(foreignIds) : [];
+                    pickedPlayerId = await getRandomAvailablePlayer(leagueId, exclusions);
+                }
 
                 if (pickedPlayerId) {
                     // Use optimistic locking: only update if player_id is still NULL
