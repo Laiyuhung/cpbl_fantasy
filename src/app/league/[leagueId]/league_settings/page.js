@@ -41,12 +41,30 @@ export default function LeagueSettingsPage() {
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
   const [showGenerateConfirmModal, setShowGenerateConfirmModal] = useState(false); // Confirm modal state
 
+  // Helper: Filter positions based on league settings
+  const filterPositions = (player) => {
+    if (!player) return 'N/A';
+    let positionList = player.position_list;
+    // Fallback if no position list
+    if (!positionList) positionList = player.batter_or_pitcher === 'batter' ? 'Util' : 'P';
+
+    const positions = positionList.split(',').map(p => p.trim());
+    const validPositions = positions.filter(pos => {
+      // If we have league settings with roster positions, check validity
+      if (leagueSettings?.roster_positions) {
+        return leagueSettings.roster_positions[pos] && leagueSettings.roster_positions[pos] > 0;
+      }
+      return true; // If no settings loaded yet, show all
+    });
+    return validPositions.length > 0 ? validPositions.join(', ') : positionList || 'N/A';
+  };
+
   // Extracted fetch function to reuse
   const fetchDraftOrder = async () => {
     if (!leagueId) return;
 
     try {
-      // Fetch picks WITHOUT joining managers (we map client-side)
+      // 1. Fetch picks
       const { data: picks, error } = await supabase
         .from('draft_picks')
         .select(`
@@ -55,7 +73,7 @@ export default function LeagueSettingsPage() {
           manager_id,
           player_id,
           picked_at,
-          player:player_list (name, team, batter_or_pitcher, identity, original_name, primary_position)
+          player:player_list (player_id, name, team, batter_or_pitcher, identity, original_name)
         `)
         .eq('league_id', leagueId)
         .order('pick_number', { ascending: true });
@@ -66,12 +84,37 @@ export default function LeagueSettingsPage() {
 
       if (picks && picks.length > 0) {
         setHasDraftOrder(true);
+
+        // 2. Fetch Position Data (Client-side join workaround)
+        // Fetch batter positions
+        const { data: batterPos } = await supabase
+          .from('v_batter_positions')
+          .select('player_id, position_list');
+
+        // Fetch pitcher positions
+        const { data: pitcherPos } = await supabase
+          .from('v_pitcher_positions')
+          .select('player_id, position_list');
+
+        // Create Position Map
+        const posMap = {};
+        if (batterPos) batterPos.forEach(p => posMap[p.player_id] = p.position_list);
+        if (pitcherPos) pitcherPos.forEach(p => posMap[p.player_id] = p.position_list);
+
+        // 3. Merge Data
         // Map to flatten structure for compatibility with existing JSX
         // Use 'members' state to find nickname by manager_id
         const formattedPicks = picks.map(p => {
           const member = members.find(m => m.manager_id === p.manager_id);
+          // Merge position list into player object
+          const playerWithPos = p.player ? {
+            ...p.player,
+            position_list: posMap[p.player.player_id] || null
+          } : null;
+
           return {
             ...p,
+            player: playerWithPos,
             member_profile: {
               nickname: member?.nickname || 'Unknown Manager'
             }
@@ -1701,7 +1744,7 @@ export default function LeagueSettingsPage() {
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-white font-bold text-lg">{item.player?.name}</span>
                                         <span className="text-purple-300/70 text-sm font-normal">
-                                          - {item.player?.primary_position || 'N/A'}
+                                          - {filterPositions(item.player)}
                                         </span>
                                         <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(item.player?.team)}`}>
                                           {getTeamAbbr(item.player?.team)}
