@@ -55,7 +55,7 @@ export default function LeagueSettingsPage() {
           manager_id,
           player_id,
           picked_at,
-          player:player_list (name, team, batter_or_pitcher, identity, position_list, original_name)
+          player:player_list (name, team, batter_or_pitcher, identity, original_name, primary_position)
         `)
         .eq('league_id', leagueId)
         .order('pick_number', { ascending: true });
@@ -113,6 +113,7 @@ export default function LeagueSettingsPage() {
 
         // Fetch new order immediately without reload
         await fetchDraftOrder();
+        setIsDraftOrderOpen(true);
       } else {
         setSuccessMessage({ title: 'Error', description: data.error, isError: true });
         setShowSuccessNotification(true);
@@ -199,8 +200,8 @@ export default function LeagueSettingsPage() {
   }, [leagueId]);
 
   const canEdit = () => {
-    const hasPicks = draftOrder.some(p => p.player_id);
-    return (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && leagueStatus === 'pre-draft' && !hasPicks;
+    // Hide edit button if draft order has been generated (even if no players picked yet)
+    return (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && leagueStatus === 'pre-draft' && !hasDraftOrder;
   };
 
   const handleEditClick = () => {
@@ -1700,7 +1701,7 @@ export default function LeagueSettingsPage() {
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-white font-bold text-lg">{item.player?.name}</span>
                                         <span className="text-purple-300/70 text-sm font-normal">
-                                          - {filterPositions(item.player)}
+                                          - {item.player?.primary_position || 'N/A'}
                                         </span>
                                         <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(item.player?.team)}`}>
                                           {getTeamAbbr(item.player?.team)}
