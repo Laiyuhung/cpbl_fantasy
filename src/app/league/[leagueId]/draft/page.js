@@ -536,6 +536,12 @@ export default function DraftPage() {
         return val === '-' ? -999 : Number(val) || 0;
     };
 
+    const formatStat = (value) => {
+        if (value === '-' || value === null || value === undefined) return '-';
+        if (Number(value) === 0) return <span className="text-slate-500 font-bold">0</span>;
+        return value;
+    };
+
     const getPlayerPhotoPaths = (player) => {
         const paths = [];
         if (player.name) paths.push(`/photo/${player.name}.png`);
@@ -859,7 +865,7 @@ export default function DraftPage() {
                     {cats.map(cat => (
                         <div key={cat} className="flex flex-col items-center min-w-[30px]">
                             <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
-                            <span className="text-slate-300">{getPlayerStat(player.player_id, cat)}</span>
+                            <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, cat))}</span>
                         </div>
                     ))}
                 </div>
@@ -1336,7 +1342,7 @@ export default function DraftPage() {
                                                     const val = getPlayerStat(player.player_id, cat);
                                                     return (
                                                         <td key={cat} className="p-2 text-center text-xs text-slate-300 font-mono">
-                                                            {val}
+                                                            {formatStat(val)}
                                                         </td>
                                                     );
                                                 })}
@@ -1532,7 +1538,7 @@ export default function DraftPage() {
                                                             {cats.map(cat => (
                                                                 <div key={cat} className="flex flex-col items-center min-w-[30px]">
                                                                     <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
-                                                                    <span className="text-slate-300">{getPlayerStat(p.player_id, cat)}</span>
+                                                                    <span className="text-slate-300">{formatStat(getPlayerStat(p.player_id, cat))}</span>
                                                                 </div>
                                                             ))}
                                                         </div>

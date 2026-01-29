@@ -178,6 +178,8 @@ export default function PlayersPage() {
   // 格式化統計數據顯示
   const formatStatValue = (value, statKey) => {
     if (value === null || value === undefined) return '-';
+    // Format 0 as gray
+    if (Number(value) === 0) return <span className="text-slate-500 font-bold">0</span>;
 
     // 直接返回後端傳過來的數字
     return value;

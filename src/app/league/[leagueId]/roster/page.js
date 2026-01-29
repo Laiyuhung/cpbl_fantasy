@@ -224,6 +224,12 @@ export default function RosterPage() {
         return value !== undefined && value !== null ? value : '-';
     };
 
+    const formatStat = (value) => {
+        if (value === '-' || value === null || value === undefined) return '-';
+        if (Number(value) === 0) return <span className="text-slate-500 font-bold">0</span>;
+        return value;
+    };
+
     // Photos
     useEffect(() => {
         let cancelled = false;
@@ -483,7 +489,7 @@ export default function RosterPage() {
                                         </td>
                                         {batterStatCategories.map(stat => (
                                             <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
-                                                {getPlayerStat(player.player_id, stat)}
+                                                {formatStat(getPlayerStat(player.player_id, stat))}
                                             </td>
                                         ))}
                                     </tr>
@@ -550,7 +556,7 @@ export default function RosterPage() {
                                         </td>
                                         {pitcherStatCategories.map(stat => (
                                             <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
-                                                {getPlayerStat(player.player_id, stat)}
+                                                {formatStat(getPlayerStat(player.player_id, stat))}
                                             </td>
                                         ))}
                                     </tr>
