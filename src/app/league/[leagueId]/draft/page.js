@@ -1828,50 +1828,50 @@ export default function DraftPage() {
                                                 <div
                                                     key={slotKey}
                                                     onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
-                                                    className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                    className={`flex items-center justify-between p-3 border-b border-slate-700/30 last:border-0 transition-all ${assignment
                                                         ? 'bg-slate-900/80'
                                                         : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
                                                         }`}
                                                 >
-                                                    <div className="w-12 text-center shrink-0">
-                                                        <span className="font-mono font-bold text-slate-500 text-xs">{slotLabel}</span>
+                                                    <div className="w-14 text-center shrink-0">
+                                                        <span className="font-mono font-bold text-slate-500 text-sm uppercase">{slotLabel}</span>
                                                     </div>
 
                                                     {assignment ? (
                                                         <>
-                                                            <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
-                                                                <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                            <div className="flex-1 min-w-0 flex items-center gap-3 pl-2">
+                                                                <div className="w-12 h-12 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0 shadow-lg">
                                                                     <img
                                                                         src={getPlayerPhoto(assignment)}
                                                                         onError={(e) => handleImageError(e, assignment)}
                                                                         className="w-full h-full object-cover"
                                                                     />
                                                                 </div>
-                                                                <div className="min-w-0">
-                                                                    <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="text-base font-bold text-slate-200 truncate flex items-center gap-2">
                                                                         {assignment.name}
                                                                         {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                            <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                            <span className="text-[10px] font-bold bg-purple-900/50 text-purple-300 px-1.5 rounded border border-purple-500/30">F</span>
                                                                         )}
-                                                                        <span className={`px-1 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
+                                                                        <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
                                                                             {getTeamAbbr(assignment.team)}
                                                                         </span>
                                                                     </div>
-                                                                    <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
+                                                                    <div className="text-xs text-slate-500 truncate mt-0.5">{assignment.position_list}</div>
                                                                 </div>
                                                             </div>
 
                                                             {/* Inline Stats for Bench */}
-                                                            <div className="flex ml-2 gap-2 text-[10px] text-slate-400 overflow-x-auto hide-scrollbar max-w-[400px]">
+                                                            <div className="flex ml-4 gap-3 text-[11px] text-slate-400 overflow-x-auto hide-scrollbar max-w-[500px]">
                                                                 {playerStatCats.map(cat => (
-                                                                    <div key={cat} className="flex flex-col items-center min-w-[24px]">
-                                                                        <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
-                                                                        <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                    <div key={cat} className="flex flex-col items-center min-w-[32px]">
+                                                                        <span className="text-slate-600 mb-0.5 text-[9px] font-bold">{getStatAbbr(cat)}</span>
+                                                                        <span className="text-slate-200 font-mono">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
 
-                                                            <div className="w-16 flex justify-center">
+                                                            <div className="w-20 flex justify-center shrink-0 ml-4">
                                                                 {!isLeagueView && (
                                                                     <button
                                                                         onClick={(e) => {
@@ -1879,7 +1879,7 @@ export default function DraftPage() {
                                                                             handleRemoveAssignment(assignment.assignment_id);
                                                                         }}
                                                                         disabled={assigning}
-                                                                        className="text-slate-500 hover:text-red-400 disabled:opacity-50 text-xs"
+                                                                        className="bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500/50 px-2 py-1 rounded text-[10px] font-bold transition-all disabled:opacity-50"
                                                                     >
                                                                         {assigning && assigningId === assignment.assignment_id ? (
                                                                             <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
@@ -1889,8 +1889,8 @@ export default function DraftPage() {
                                                             </div>
                                                         </>
                                                     ) : (
-                                                        <div className="flex-1 pl-2 text-slate-600 italic text-xs">
-                                                            Empty
+                                                        <div className="flex-1 pl-2 text-slate-600 italic text-sm">
+                                                            Empty Slot
                                                         </div>
                                                     )}
                                                 </div>
@@ -2142,53 +2142,50 @@ export default function DraftPage() {
                                                             <div
                                                                 key={slotKey}
                                                                 onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
-                                                                className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                                className={`flex items-center justify-between p-3 border-b border-slate-700/30 last:border-0 transition-all ${assignment
                                                                     ? 'bg-slate-900/80'
                                                                     : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
                                                                     }`}
                                                             >
-                                                                <div className="w-12 text-center shrink-0">
-                                                                    <span className="font-mono font-bold text-slate-500 text-xs">{slotLabel}</span>
+                                                                <div className="w-14 text-center shrink-0">
+                                                                    <span className="font-mono font-bold text-slate-500 text-sm uppercase">{slotLabel}</span>
                                                                 </div>
 
                                                                 {assignment ? (
                                                                     <>
-                                                                        <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
-                                                                            <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                        <div className="flex-1 min-w-0 flex items-center gap-3 pl-2">
+                                                                            <div className="w-12 h-12 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0 shadow-lg">
                                                                                 <img
                                                                                     src={getPlayerPhoto(assignment)}
                                                                                     onError={(e) => handleImageError(e, assignment)}
                                                                                     className="w-full h-full object-cover"
                                                                                 />
                                                                             </div>
-                                                                            <div className="min-w-0">
-                                                                                <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <div className="text-base font-bold text-slate-200 truncate flex items-center gap-2">
                                                                                     {assignment.name}
                                                                                     {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                                        <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                                        <span className="text-[10px] font-bold bg-purple-900/50 text-purple-300 px-1.5 rounded border border-purple-500/30">F</span>
                                                                                     )}
+                                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border font-bold ${getTeamColor(assignment.team)}`}>
+                                                                                        {getTeamAbbr(assignment.team)}
+                                                                                    </span>
                                                                                 </div>
-                                                                                <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
+                                                                                <div className="text-xs text-slate-500 truncate mt-0.5">{assignment.position_list}</div>
                                                                             </div>
                                                                         </div>
 
-                                                                        <div className="w-10 text-center shrink-0">
-                                                                            <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                                {getTeamAbbr(assignment.team)}
-                                                                            </span>
-                                                                        </div>
-
                                                                         {/* Inline Stats for Bench */}
-                                                                        <div className="flex ml-2 gap-2 text-[10px] text-slate-400 max-w-[200px] overflow-hidden">
-                                                                            {playerStatCats.slice(0, 4).map(cat => (
-                                                                                <div key={cat} className="flex flex-col items-center min-w-[24px]">
-                                                                                    <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
-                                                                                    <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                        <div className="flex ml-4 gap-3 text-[11px] text-slate-400 overflow-x-auto hide-scrollbar max-w-[500px]">
+                                                                            {playerStatCats.map(cat => (
+                                                                                <div key={cat} className="flex flex-col items-center min-w-[32px]">
+                                                                                    <span className="text-slate-600 mb-0.5 text-[9px] font-bold">{getStatAbbr(cat)}</span>
+                                                                                    <span className="text-slate-200 font-mono">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
                                                                                 </div>
                                                                             ))}
                                                                         </div>
 
-                                                                        <div className="w-8 flex justify-center">
+                                                                        <div className="w-10 flex justify-center shrink-0 ml-4">
                                                                             {!isLeagueView && (
                                                                                 <button
                                                                                     onClick={(e) => {
@@ -2206,8 +2203,8 @@ export default function DraftPage() {
                                                                         </div>
                                                                     </>
                                                                 ) : (
-                                                                    <div className="flex-1 pl-2 text-slate-600 italic text-xs">
-                                                                        Empty
+                                                                    <div className="flex-1 pl-2 text-slate-600 italic text-sm">
+                                                                        Empty Slot
                                                                     </div>
                                                                 )}
                                                             </div>
