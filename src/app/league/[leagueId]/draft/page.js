@@ -520,7 +520,9 @@ export default function DraftPage() {
         let fieldName = statKey;
         const matches = statKey.match(/\(([^)]+)\)/g);
         if (matches) fieldName = matches[matches.length - 1].replace(/[()]/g, '');
-        return stats[fieldName.toLowerCase()] || '-';
+
+        const val = stats[fieldName.toLowerCase()];
+        return (val !== undefined && val !== null) ? val : '-';
     };
 
     const getStatAbbr = (cat) => {
@@ -1631,28 +1633,51 @@ export default function DraftPage() {
                                 <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({myTeam.filter(p => !isPlayerAssigned(p.player_id)).length})</h3>
                                 <p className="text-xs text-slate-400 mb-3">Click on a player to assign them to a position</p>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                                    {myTeam.filter(p => !isPlayerAssigned(p.player_id)).map((player) => (
-                                        <div
-                                            key={player.player_id}
-                                            onClick={() => setAssignModalPlayer(player)}
-                                            className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all cursor-pointer hover:bg-slate-800/80"
-                                        >
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img
-                                                        src={getPlayerPhoto(player)}
-                                                        onError={(e) => handleImageError(e, player)}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="text-center w-full">
-                                                    <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
-                                                    <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                    {myTeam.filter(p => !isPlayerAssigned(p.player_id)).map((player) => {
+                                        const isBatter = player.batter_or_pitcher === 'batter';
+                                        return (
+                                            <div
+                                                key={player.player_id}
+                                                onClick={() => setAssignModalPlayer(player)}
+                                                className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-all cursor-pointer hover:bg-slate-800/80"
+                                            >
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0 relative">
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img
+                                                            src={getPlayerPhoto(player)}
+                                                            onError={(e) => handleImageError(e, player)}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                    <div className="text-center w-full">
+                                                        <div className="text-xs font-bold text-slate-200 truncate flex items-center justify-center gap-1">
+                                                            {player.name}
+                                                            {player.identity?.toLowerCase() === 'foreigner' && (
+                                                                <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+
+                                                        {/* Stats Display */}
+                                                        <div className="mt-1 flex justify-center gap-2 text-[10px] text-slate-400 font-mono bg-slate-800/50 rounded px-1 py-0.5">
+                                                            {isBatter ? (
+                                                                <>
+                                                                    <span>Avg: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'Avg'))}</span></span>
+                                                                    <span>OPS: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'OPS'))}</span></span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <span>ERA: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'ERA'))}</span></span>
+                                                                    <span>WHIP: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'WHIP'))}</span></span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </>
@@ -1765,27 +1790,50 @@ export default function DraftPage() {
                                     <div className="border-b border-slate-700 pb-4 mb-4">
                                         <h3 className="text-lg font-bold mb-2 text-slate-300">Unassigned Players ({viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).length})</h3>
                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                                            {viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).map((player) => (
-                                                <div
-                                                    key={player.player_id}
-                                                    className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50"
-                                                >
-                                                    <div className="flex flex-col items-center gap-1">
-                                                        <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                            <img
-                                                                src={getPlayerPhoto(player)}
-                                                                onError={(e) => handleImageError(e, player)}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        </div>
-                                                        <div className="text-center w-full">
-                                                            <div className="text-xs font-bold text-slate-200 truncate">{player.name}</div>
-                                                            <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
+                                            {viewingTeam.filter(p => !viewingRosterAssignments.some(a => a.player_id === p.player_id)).map((player) => {
+                                                const isBatter = player.batter_or_pitcher === 'batter';
+                                                return (
+                                                    <div
+                                                        key={player.player_id}
+                                                        className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/50"
+                                                    >
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0">
+                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                <img
+                                                                    src={getPlayerPhoto(player)}
+                                                                    onError={(e) => handleImageError(e, player)}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                            <div className="text-center w-full">
+                                                                <div className="text-xs font-bold text-slate-200 truncate flex items-center justify-center gap-1">
+                                                                    {player.name}
+                                                                    {player.identity?.toLowerCase() === 'foreigner' && (
+                                                                        <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-xs text-slate-500 truncate">{filterPositions(player)}</div>
+
+                                                                {/* Stats Display */}
+                                                                <div className="mt-1 flex justify-center gap-2 text-[10px] text-slate-400 font-mono bg-slate-800/50 rounded px-1 py-0.5">
+                                                                    {isBatter ? (
+                                                                        <>
+                                                                            <span>Avg: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'Avg'))}</span></span>
+                                                                            <span>OPS: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'OPS'))}</span></span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <span>ERA: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'ERA'))}</span></span>
+                                                                            <span>WHIP: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'WHIP'))}</span></span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}

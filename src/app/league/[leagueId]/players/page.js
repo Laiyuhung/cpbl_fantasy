@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
 
@@ -16,6 +16,7 @@ export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' }); // Sorting config
   const [members, setMembers] = useState([]); // 當前聯盟成員（含 nickname）
   const [showConfirmAdd, setShowConfirmAdd] = useState(false); // 確認新增對話框
   const [playerToAdd, setPlayerToAdd] = useState(null); // 待加入的球員
@@ -205,6 +206,15 @@ export default function PlayersPage() {
     return formatStatValue(value, statKey);
   };
 
+  const getPlayerStatRaw = (playerId, statKey) => {
+    const val = getPlayerStat(playerId, statKey);
+    // If val is a React element (gray 0), extract clean number
+    if (typeof val === 'object' && val?.props?.children) {
+      return 0; // It was a gray 0
+    }
+    return val === '-' ? -999 : Number(val) || 0;
+  };
+
   // 根據 roster_positions 過濾守備位置
   const filterPositions = (player) => {
     let positionList = player.position_list;
@@ -261,21 +271,52 @@ export default function PlayersPage() {
     return () => { cancelled = true; };
   }, [players]);
 
-  const filteredPlayers = players.filter(player => {
-    const matchesSearch = searchTerm === '' ||
-      player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.original_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.team?.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleSort = (key) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
 
-    const matchesType =
-      (filterType === 'batter' && player.batter_or_pitcher === 'batter') ||
-      (filterType === 'pitcher' && player.batter_or_pitcher === 'pitcher');
+  const filteredPlayers = useMemo(() => {
+    let result = players.filter(player => {
+      const matchesSearch = searchTerm === '' ||
+        player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        player.original_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        player.team?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesIdentity = filterIdentity === 'all' ||
-      player.identity?.toLowerCase() === filterIdentity.toLowerCase();
+      const matchesType =
+        (filterType === 'batter' && player.batter_or_pitcher === 'batter') ||
+        (filterType === 'pitcher' && player.batter_or_pitcher === 'pitcher');
 
-    return matchesSearch && matchesType && matchesIdentity;
-  });
+      const matchesIdentity = filterIdentity === 'all' ||
+        player.identity?.toLowerCase() === filterIdentity.toLowerCase();
+
+      return matchesSearch && matchesType && matchesIdentity;
+    });
+
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let valA, valB;
+        if (sortConfig.key === 'rank') { // Default/Name sort
+          valA = a.name;
+          valB = b.name;
+        } else if (sortConfig.key === 'name') {
+          valA = a.name;
+          valB = b.name;
+        } else {
+          valA = getPlayerStatRaw(a.player_id, sortConfig.key);
+          valB = getPlayerStatRaw(b.player_id, sortConfig.key);
+        }
+
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [players, searchTerm, filterType, filterIdentity, sortConfig, playerStats]);
 
   const getTeamAbbr = (team) => {
     switch (team) {
@@ -1135,14 +1176,26 @@ export default function PlayersPage() {
                 <label className="block text-sm font-medium text-white mb-2">
                   Type
                 </label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="batter">Batter</option>
-                  <option value="pitcher">Pitcher</option>
-                </select>
+                <div className="flex bg-slate-800/60 p-1 rounded-md border border-purple-500/30">
+                  <button
+                    onClick={() => setFilterType('batter')}
+                    className={`flex-1 py-1.5 px-3 rounded text-sm font-bold transition-all ${filterType === 'batter'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                  >
+                    Batter
+                  </button>
+                  <button
+                    onClick={() => setFilterType('pitcher')}
+                    className={`flex-1 py-1.5 px-3 rounded text-sm font-bold transition-all ${filterType === 'pitcher'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                  >
+                    Pitcher
+                  </button>
+                </div>
               </div>
 
               {/* Identity */}
@@ -1199,7 +1252,17 @@ export default function PlayersPage() {
             <table className="w-full">
               <thead className="bg-slate-900/60 border-b border-purple-500/20">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-purple-300">Name</th>
+                  <th
+                    className="px-6 py-4 text-left text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group"
+                    onClick={() => handleSort('name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Name
+                      {sortConfig.key === 'name' && (
+                        <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                      )}
+                    </div>
+                  </th>
 
 
                   {/* 動態顯示統計項目 */}
@@ -1208,8 +1271,17 @@ export default function PlayersPage() {
                     const matches = stat.match(/\(([^)]+)\)/g);
                     const displayName = matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
                     return (
-                      <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
-                        {displayName}
+                      <th
+                        key={stat}
+                        className="px-4 py-4 text-center text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors select-none"
+                        onClick={() => handleSort(stat)}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          {displayName}
+                          {sortConfig.key === stat && (
+                            <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                          )}
+                        </div>
                       </th>
                     );
                   })}
@@ -1218,8 +1290,17 @@ export default function PlayersPage() {
                     const matches = stat.match(/\(([^)]+)\)/g);
                     const displayName = matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
                     return (
-                      <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300">
-                        {displayName}
+                      <th
+                        key={stat}
+                        className="px-4 py-4 text-center text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors select-none"
+                        onClick={() => handleSort(stat)}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          {displayName}
+                          {sortConfig.key === stat && (
+                            <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                          )}
+                        </div>
                       </th>
                     );
                   })}
