@@ -317,7 +317,10 @@ export default function DraftPage() {
                 for (let idx = 0; idx < count; idx++) {
                     const slotKey = count > 1 ? `${slot}${idx + 1}` : slot;
                     // Check if slot is compatible with player positions
-                    if (playerPositions.includes(slot) || slot === 'Util' || slot === 'BN' ||
+                    // Util is strictly for Batters
+                    if (playerPositions.includes(slot) ||
+                        (slot === 'Util' && player.batter_or_pitcher === 'batter') ||
+                        slot === 'BN' ||
                         (player.batter_or_pitcher === 'pitcher' && slot === 'P')) {
                         availableSlots.push({ key: slotKey, display: slot });
                     }
@@ -334,7 +337,9 @@ export default function DraftPage() {
 
             const playerPositions = filterPositions(player).split(', ');
 
-            if (baseSlot === 'Util' || baseSlot === 'BN') return true;
+            if (baseSlot === 'BN') return true;
+            // Util restricted to Batters
+            if (baseSlot === 'Util') return player.batter_or_pitcher === 'batter';
             if (baseSlot === 'P' && player.batter_or_pitcher === 'pitcher') return true;
             if (playerPositions.includes(baseSlot)) return true;
 
@@ -1600,7 +1605,7 @@ export default function DraftPage() {
                                                                                 className="text-slate-500 hover:text-red-400 text-xs px-2 disabled:opacity-50"
                                                                             >
                                                                                 {assigning && assigningId === assignment.assignment_id ? (
-                                                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
+                                                                                    <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
                                                                                 ) : '×'}
                                                                             </button>
                                                                         </>
@@ -1696,7 +1701,6 @@ export default function DraftPage() {
                                         <div className="flex bg-slate-800/60 p-2 text-xs font-bold text-slate-400 border-b border-slate-700">
                                             <div className="w-12 text-center">Slot</div>
                                             <div className="flex-1 pl-2">Player</div>
-                                            <div className="w-10 text-center">Team</div>
                                             <div className="flex ml-2 gap-2">
                                                 {statCats && statCats.length > 0 ? statCats.map(cat => (
                                                     <div key={cat} className="w-[30px] text-center" title={cat}>{getStatAbbr(cat)}</div>
@@ -1704,7 +1708,7 @@ export default function DraftPage() {
                                                     <div className="text-slate-600 text-[10px] italic">Stats</div>
                                                 )}
                                                 {/* Remove Button Placeholder for alignment if needed, though usually fixed width */}
-                                                <div className="w-8"></div>
+                                                <div className="w-16 text-center">Action</div>
                                             </div>
                                         </div>
 
@@ -1756,15 +1760,12 @@ export default function DraftPage() {
                                                                         {assignment.identity?.toLowerCase() === 'foreigner' && (
                                                                             <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
                                                                         )}
+                                                                        <span className={`px-1 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
+                                                                            {getTeamAbbr(assignment.team)}
+                                                                        </span>
                                                                     </div>
                                                                     <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
                                                                 </div>
-                                                            </div>
-
-                                                            <div className="w-10 text-center shrink-0">
-                                                                <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                    {getTeamAbbr(assignment.team)}
-                                                                </span>
                                                             </div>
 
                                                             <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
@@ -1774,7 +1775,7 @@ export default function DraftPage() {
                                                                     </div>
                                                                 ))}
 
-                                                                <div className="w-8 flex justify-center">
+                                                                <div className="w-16 flex justify-center">
                                                                     {!isLeagueView && (
                                                                         <button
                                                                             onClick={(e) => {
@@ -1782,11 +1783,11 @@ export default function DraftPage() {
                                                                                 handleRemoveAssignment(assignment.assignment_id);
                                                                             }}
                                                                             disabled={assigning}
-                                                                            className="text-slate-500 hover:text-red-400 disabled:opacity-50"
+                                                                            className="text-slate-500 hover:text-red-400 disabled:opacity-50 text-xs"
                                                                         >
                                                                             {assigning && assigningId === assignment.assignment_id ? (
                                                                                 <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
-                                                                            ) : '×'}
+                                                                            ) : 'REMOVE'}
                                                                         </button>
                                                                     )}
                                                                 </div>
@@ -1852,15 +1853,12 @@ export default function DraftPage() {
                                                                         {assignment.identity?.toLowerCase() === 'foreigner' && (
                                                                             <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
                                                                         )}
+                                                                        <span className={`px-1 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
+                                                                            {getTeamAbbr(assignment.team)}
+                                                                        </span>
                                                                     </div>
                                                                     <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
                                                                 </div>
-                                                            </div>
-
-                                                            <div className="w-10 text-center shrink-0">
-                                                                <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                    {getTeamAbbr(assignment.team)}
-                                                                </span>
                                                             </div>
 
                                                             {/* Inline Stats for Bench */}
@@ -1873,7 +1871,7 @@ export default function DraftPage() {
                                                                 ))}
                                                             </div>
 
-                                                            <div className="w-8 flex justify-center">
+                                                            <div className="w-16 flex justify-center">
                                                                 {!isLeagueView && (
                                                                     <button
                                                                         onClick={(e) => {
@@ -1881,11 +1879,11 @@ export default function DraftPage() {
                                                                             handleRemoveAssignment(assignment.assignment_id);
                                                                         }}
                                                                         disabled={assigning}
-                                                                        className="text-slate-500 hover:text-red-400 disabled:opacity-50"
+                                                                        className="text-slate-500 hover:text-red-400 disabled:opacity-50 text-xs"
                                                                     >
                                                                         {assigning && assigningId === assignment.assignment_id ? (
                                                                             <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
-                                                                        ) : '×'}
+                                                                        ) : 'REMOVE'}
                                                                     </button>
                                                                 )}
                                                             </div>
