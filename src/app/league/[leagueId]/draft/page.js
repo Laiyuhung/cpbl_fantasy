@@ -1623,7 +1623,15 @@ export default function DraftPage() {
 
             {mainTab === 'roster' && (
                 <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 350px)' }}>
-                    <h2 className="text-xl font-bold mb-2 text-purple-300">Roster Assignment ({draftRosterAssignments.length})</h2>
+                    <div className="flex items-center gap-3 mb-2">
+                        <h2 className="text-xl font-bold text-purple-300">Roster Assignment ({draftRosterAssignments.length})</h2>
+                        <button
+                            onClick={() => setShowLegend(true)}
+                            className="px-2 py-0.5 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 text-[10px] font-bold tracking-wider transition-colors"
+                        >
+                            LEGEND
+                        </button>
+                    </div>
                     <p className="text-xs text-slate-400 mb-4">Click on empty slots to assign players</p>
 
                     {/* Unassigned Players Section (Moved to Top) */}
@@ -1659,20 +1667,7 @@ export default function DraftPage() {
                                                         </div>
                                                         <div className="text-[10px] text-slate-500 truncate">{filterPositions(player)}</div>
 
-                                                        {/* Stats Display */}
-                                                        <div className="mt-1 flex justify-center gap-2 text-[10px] text-slate-400 font-mono bg-slate-800/50 rounded px-1 py-0.5">
-                                                            {isBatter ? (
-                                                                <>
-                                                                    <span>Avg: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'Avg'))}</span></span>
-                                                                    <span>OPS: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'OPS'))}</span></span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <span>ERA: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'ERA'))}</span></span>
-                                                                    <span>WHIP: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'WHIP'))}</span></span>
-                                                                </>
-                                                            )}
-                                                        </div>
+
                                                     </div>
                                                 </div>
                                             </div>
@@ -1728,6 +1723,14 @@ export default function DraftPage() {
                                                         <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(assignment.team)}`}>
                                                             {getTeamAbbr(assignment.team)}
                                                         </div>
+                                                        <div className="flex gap-2 ml-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide max-w-[150px] md:max-w-[200px]">
+                                                            {(assignment.batter_or_pitcher === 'batter' ? batterStatCategories : pitcherStatCategories).map(cat => (
+                                                                <div key={cat} className="flex flex-col items-center min-w-[24px]">
+                                                                    <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
+                                                                    <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -1764,6 +1767,12 @@ export default function DraftPage() {
                             <div className="flex items-center gap-4">
                                 <h2 className="text-xl font-bold text-purple-300">League Rosters</h2>
                                 <div className="text-xs text-slate-400">View other managers&apos; assignments</div>
+                                <button
+                                    onClick={() => setShowLegend(true)}
+                                    className="px-2 py-0.5 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 text-[10px] font-bold tracking-wider transition-colors"
+                                >
+                                    LEGEND
+                                </button>
                             </div>
                             <select
                                 className="bg-slate-700 text-white p-2 rounded border border-slate-600 outline-none focus:border-purple-500 min-w-[200px]"
@@ -1815,20 +1824,7 @@ export default function DraftPage() {
                                                                 </div>
                                                                 <div className="text-xs text-slate-500 truncate">{filterPositions(player)}</div>
 
-                                                                {/* Stats Display */}
-                                                                <div className="mt-1 flex justify-center gap-2 text-[10px] text-slate-400 font-mono bg-slate-800/50 rounded px-1 py-0.5">
-                                                                    {isBatter ? (
-                                                                        <>
-                                                                            <span>Avg: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'Avg'))}</span></span>
-                                                                            <span>OPS: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'OPS'))}</span></span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <span>ERA: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'ERA'))}</span></span>
-                                                                            <span>WHIP: <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, 'WHIP'))}</span></span>
-                                                                        </>
-                                                                    )}
-                                                                </div>
+
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1880,6 +1876,14 @@ export default function DraftPage() {
                                                                     </div>
                                                                     <div className={`text-xs px-2 py-1 rounded border ${getTeamColor(assignment.team)}`}>
                                                                         {getTeamAbbr(assignment.team)}
+                                                                    </div>
+                                                                    <div className="flex gap-2 ml-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide max-w-[150px] md:max-w-[200px]">
+                                                                        {(assignment.batter_or_pitcher === 'batter' ? batterStatCategories : pitcherStatCategories).map(cat => (
+                                                                            <div key={cat} className="flex flex-col items-center min-w-[24px]">
+                                                                                <span className="text-slate-600 mb-0.5 text-[8px]">{getStatAbbr(cat)}</span>
+                                                                                <span className="text-slate-300">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                            </div>
+                                                                        ))}
                                                                     </div>
                                                                 </>
                                                             ) : (
