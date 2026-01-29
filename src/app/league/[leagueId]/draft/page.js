@@ -639,7 +639,7 @@ export default function DraftPage() {
     // Draft & Filtering Logic
     // ---------------------------------------------------------
 
-    const { takenIds, recentPicks, myTeam, upcomingPicks, viewingTeam, foreignerCount } = useMemo(() => {
+    const { takenIds, recentPicks, myTeam, upcomingPicks, viewingTeam, foreignerCount, managerForeignerCounts } = useMemo(() => {
         if (!draftState?.picks) return { takenIds: new Set(), recentPicks: [], myTeam: [], upcomingPicks: [] };
         const picks = draftState.picks;
 
@@ -694,20 +694,20 @@ export default function DraftPage() {
             upcoming = upcoming.slice(1);
         }
 
-        // Calculate Foreigner Count
-        let foreignerCount = 0;
-        const limitToUse = foreignerLimit !== null ? foreignerLimit : (draftState?.foreignerActiveLimit);
+        // Calculate Foreigner Counts for all managers
+        const managerForeignerCounts = {};
+        picks.forEach(p => {
+            if (!p.player_id) return;
+            const mid = String(p.manager_id);
+            const id = (p.player?.identity || p.identity || '').toLowerCase();
+            if (id === 'foreigner' || id === 'f') {
+                managerForeignerCounts[mid] = (managerForeignerCounts[mid] || 0) + 1;
+            }
+        });
 
-        if (limitToUse !== null && limitToUse !== undefined) {
-            // Count foreigners in my team
-            // Use local 'mine' array which solves identity mapping
-            foreignerCount = mine.filter(p => {
-                const id = (p.identity || '').toLowerCase();
-                return id === 'foreigner' || id === 'f';
-            }).length;
-        }
+        const foreignerCount = managerForeignerCounts[String(myManagerId)] || 0;
 
-        return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming, viewingTeam, foreignerCount };
+        return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming, viewingTeam, foreignerCount, managerForeignerCounts };
     }, [draftState, myManagerId, viewingManagerId, foreignerLimit]);
 
     const handlePick = async (playerId) => {
@@ -1942,6 +1942,18 @@ export default function DraftPage() {
                             <div className="flex items-center gap-4">
                                 <h2 className="text-xl font-bold text-purple-300">League Rosters</h2>
                                 <div className="text-xs text-slate-400">View other managers&apos; assignments</div>
+                                {foreignerLimit !== null && (
+                                    <div className="flex items-center gap-1.5 bg-slate-900/60 px-3 py-1 rounded border border-slate-700 shadow-sm">
+                                        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Foreigners</span>
+                                        <div className="flex items-center gap-1">
+                                            <span className={`text-sm font-bold ${(managerForeignerCounts[String(viewingManagerId)] || 0) >= foreignerLimit ? 'text-red-400' : 'text-purple-300'}`}>
+                                                {managerForeignerCounts[String(viewingManagerId)] || 0}
+                                            </span>
+                                            <span className="text-slate-600 text-[10px]">/</span>
+                                            <span className="text-slate-400 text-sm">{foreignerLimit}</span>
+                                        </div>
+                                    </div>
+                                )}
                                 <button
                                     onClick={() => setShowLegend(true)}
                                     className="px-2 py-0.5 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 text-[10px] font-bold tracking-wider transition-colors"
@@ -1954,11 +1966,14 @@ export default function DraftPage() {
                                 value={viewingManagerId || ''}
                                 onChange={(e) => setViewingManagerId(e.target.value)}
                             >
-                                {members.map(m => (
-                                    <option key={m.manager_id} value={m.manager_id}>
-                                        {m.nickname} {m.manager_id === myManagerId ? '(You)' : ''}
-                                    </option>
-                                ))}
+                                {members.map(m => {
+                                    const fCount = managerForeignerCounts[String(m.manager_id)] || 0;
+                                    return (
+                                        <option key={m.manager_id} value={m.manager_id}>
+                                            {m.nickname} {m.manager_id === myManagerId ? '(You)' : ''} (F: {fCount})
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
 
