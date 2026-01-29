@@ -45,6 +45,45 @@ export async function POST(request, { params }) {
             return NextResponse.json({ success: false, error: 'Player already taken' }, { status: 400 });
         }
 
+        // 3.5 Check Foreigner Limit
+        const { data: settings } = await supabase
+            .from('league_settings')
+            .select('foreigner_active_limit')
+            .eq('league_id', leagueId)
+            .single();
+
+        if (settings?.foreigner_active_limit !== null && settings.foreigner_active_limit !== undefined) {
+            // Check if current player is Foreigner
+            const { data: playerInfo } = await supabase
+                .from('player_list')
+                .select('identity')
+                .eq('player_id', playerId)
+                .single();
+
+            if (playerInfo?.identity === 'Foreigner' || playerInfo?.identity === 'F') {
+                // Count how many foreigners this manager already has
+                // Optimization: We could use a view or join, but a direct query is clear here.
+                // We need to find picking rows for this manager where the player is a foreigner.
+                const { data: managerPicks } = await supabase
+                    .from('draft_picks')
+                    .select('player_id, player:player_list!inner(identity)')
+                    .eq('league_id', leagueId)
+                    .eq('manager_id', managerId)
+                    .not('player_id', 'is', null);
+
+                const currentForeignerCount = managerPicks?.filter(p =>
+                    p.player?.identity === 'Foreigner' || p.player?.identity === 'F'
+                ).length || 0;
+
+                if (currentForeignerCount >= settings.foreigner_active_limit) {
+                    return NextResponse.json({
+                        success: false,
+                        error: `Foreigner limit reached (${settings.foreigner_active_limit}). You cannot draft more foreign players.`
+                    }, { status: 400 });
+                }
+            }
+        }
+
         const now = new Date();
 
         // 4. Update Pick

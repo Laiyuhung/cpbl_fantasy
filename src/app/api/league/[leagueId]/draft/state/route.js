@@ -42,7 +42,7 @@ export async function GET(request, { params }) {
 
         const { data: settings } = await supabase
             .from('league_settings')
-            .select('live_draft_time, live_draft_pick_time')
+            .select('live_draft_time, live_draft_pick_time, foreigner_active_limit')
             .eq('league_id', leagueId)
             .single();
 
@@ -392,7 +392,8 @@ export async function GET(request, { params }) {
                 currentPick,
                 picks: picks || [],
                 nextPicks: nextPicks || [],
-                serverTime: now.toISOString()
+                serverTime: now.toISOString(),
+                foreignerActiveLimit: settings?.foreigner_active_limit
             });
         }
 

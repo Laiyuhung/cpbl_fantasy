@@ -596,7 +596,7 @@ export default function DraftPage() {
     // Draft & Filtering Logic
     // ---------------------------------------------------------
 
-    const { takenIds, recentPicks, myTeam, upcomingPicks, viewingTeam } = useMemo(() => {
+    const { takenIds, recentPicks, myTeam, upcomingPicks, viewingTeam, foreignerCount } = useMemo(() => {
         if (!draftState?.picks) return { takenIds: new Set(), recentPicks: [], myTeam: [], upcomingPicks: [] };
         const picks = draftState.picks;
 
@@ -651,7 +651,13 @@ export default function DraftPage() {
             upcoming = upcoming.slice(1);
         }
 
-        return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming, viewingTeam };
+        // Calculate Foreigner Count
+        let foreignerCount = 0;
+        if (draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined) {
+            foreignerCount = mine.filter(p => p.identity?.toLowerCase() === 'foreigner' || p.identity?.toLowerCase() === 'f').length;
+        }
+
+        return { takenIds: taken, recentPicks: recent, myTeam: mine, upcomingPicks: upcoming, viewingTeam, foreignerCount };
     }, [draftState, myManagerId, viewingManagerId]);
 
     const handlePick = async (playerId) => {
@@ -1297,9 +1303,9 @@ export default function DraftPage() {
                                                         </button>
                                                         <button
                                                             onClick={() => handlePick(player.player_id)}
-                                                            disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id))}
+                                                            disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id)) || (isForeigner && draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && foreignerCount >= draftState.foreignerActiveLimit)}
                                                             className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all flex items-center gap-2
-                                                            ${draftState?.currentPick?.manager_id === myManagerId && !pickingId
+                                                            ${draftState?.currentPick?.manager_id === myManagerId && !pickingId && !(isForeigner && draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && foreignerCount >= draftState.foreignerActiveLimit)
                                                                     ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
                                                                     : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'
                                                                 }`}
@@ -1307,7 +1313,11 @@ export default function DraftPage() {
                                                             {pickingId === player.player_id && (
                                                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                                                             )}
-                                                            {pickingId === player.player_id ? 'DRAFTING...' : 'DRAFT'}
+                                                            {pickingId === player.player_id ? 'DRAFTING...'
+                                                                : (isForeigner && draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && foreignerCount >= draftState.foreignerActiveLimit)
+                                                                    ? 'LIMIT'
+                                                                    : 'DRAFT'
+                                                            }
                                                         </button>
                                                     </div>
                                                 </td>
@@ -1417,6 +1427,12 @@ export default function DraftPage() {
                                         Roster ({draftRosterAssignments.length})
                                     </button>
                                 </div>
+                                {draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && (
+                                    <div className="px-4 pt-1 pb-1 text-xs text-purple-300 bg-purple-900/20 border-b border-purple-500/20 text-center">
+                                        Foreigners: {foreignerCount} / {draftState.foreignerActiveLimit}
+                                        {foreignerCount >= draftState.foreignerActiveLimit && <span className="ml-2 text-red-400 font-bold">(Limit Reached)</span>}
+                                    </div>
+                                )}
                                 <button
                                     onClick={() => setSidebarTeamOpen(!isSidebarTeamOpen)}
                                     className="text-slate-500 hover:text-slate-300 transition-colors p-1"
