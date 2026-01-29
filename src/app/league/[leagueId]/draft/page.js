@@ -1117,34 +1117,51 @@ export default function DraftPage() {
             </div>
 
             {/* Main Tab Selector */}
-            <div className="flex gap-4 mb-4 border-b-2 border-slate-700">
-                <button
-                    onClick={() => setMainTab('players')}
-                    className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'players'
-                        ? 'text-white border-b-4 border-purple-500 -mb-0.5'
-                        : 'text-slate-500 hover:text-slate-300'
-                        }`}
-                >
-                    Players
-                </button>
-                <button
-                    onClick={() => setMainTab('roster')}
-                    className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'roster'
-                        ? 'text-white border-b-4 border-purple-500 -mb-0.5'
-                        : 'text-slate-500 hover:text-slate-300'
-                        }`}
-                >
-                    My Roster ({draftRosterAssignments.length})
-                </button>
-                <button
-                    onClick={() => setMainTab('league_rosters')}
-                    className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'league_rosters'
-                        ? 'text-white border-b-4 border-purple-500 -mb-0.5'
-                        : 'text-slate-500 hover:text-slate-300'
-                        }`}
-                >
-                    League Rosters
-                </button>
+            <div className="flex justify-between items-end mb-4 border-b-2 border-slate-700">
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => setMainTab('players')}
+                        className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'players'
+                            ? 'text-white border-b-4 border-purple-500 -mb-0.5'
+                            : 'text-slate-500 hover:text-slate-300'
+                            }`}
+                    >
+                        Players
+                    </button>
+                    <button
+                        onClick={() => setMainTab('roster')}
+                        className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'roster'
+                            ? 'text-white border-b-4 border-purple-500 -mb-0.5'
+                            : 'text-slate-500 hover:text-slate-300'
+                            }`}
+                    >
+                        My Roster ({draftRosterAssignments.length})
+                    </button>
+                    <button
+                        onClick={() => setMainTab('league_rosters')}
+                        className={`px-6 py-3 text-lg font-bold uppercase tracking-widest transition-all ${mainTab === 'league_rosters'
+                            ? 'text-white border-b-4 border-purple-500 -mb-0.5'
+                            : 'text-slate-500 hover:text-slate-300'
+                            }`}
+                    >
+                        League Rosters
+                    </button>
+                </div>
+
+                {/* Foreigner Limit Hint */}
+                {draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && (
+                    <div className="bg-slate-800/80 px-4 py-2 rounded-t-lg border-t border-x border-slate-600 mb-0 text-sm font-bold text-slate-300 flex items-center gap-2">
+                        <span>Foreigners:</span>
+                        <span className={`text-base ${foreignerCount >= draftState.foreignerActiveLimit ? "text-red-400" : "text-white"}`}>{foreignerCount}</span>
+                        <span className="text-slate-500">/</span>
+                        <span className="text-white">{draftState.foreignerActiveLimit}</span>
+                        {foreignerCount >= draftState.foreignerActiveLimit && (
+                            <span className="ml-2 text-red-400 text-xs font-black uppercase tracking-wider animate-pulse border border-red-500/50 px-1 rounded bg-red-900/30">
+                                Limit Reached
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
 
             {mainTab === 'players' && (
@@ -1427,12 +1444,7 @@ export default function DraftPage() {
                                         Roster ({draftRosterAssignments.length})
                                     </button>
                                 </div>
-                                {draftState?.foreignerActiveLimit !== null && draftState?.foreignerActiveLimit !== undefined && (
-                                    <div className="px-4 pt-1 pb-1 text-xs text-purple-300 bg-purple-900/20 border-b border-purple-500/20 text-center">
-                                        Foreigners: {foreignerCount} / {draftState.foreignerActiveLimit}
-                                        {foreignerCount >= draftState.foreignerActiveLimit && <span className="ml-2 text-red-400 font-bold">(Limit Reached)</span>}
-                                    </div>
-                                )}
+
                                 <button
                                     onClick={() => setSidebarTeamOpen(!isSidebarTeamOpen)}
                                     className="text-slate-500 hover:text-slate-300 transition-colors p-1"

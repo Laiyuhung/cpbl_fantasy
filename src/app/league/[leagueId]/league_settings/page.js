@@ -55,7 +55,7 @@ export default function LeagueSettingsPage() {
           manager_id,
           player_id,
           picked_at,
-          player:player_list (name, team, batter_or_pitcher)
+          player:player_list (name, team, batter_or_pitcher, identity, position_list, original_name)
         `)
         .eq('league_id', leagueId)
         .order('pick_number', { ascending: true });
@@ -199,7 +199,8 @@ export default function LeagueSettingsPage() {
   }, [leagueId]);
 
   const canEdit = () => {
-    return (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && leagueStatus === 'pre-draft';
+    const hasPicks = draftOrder.some(p => p.player_id);
+    return (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && leagueStatus === 'pre-draft' && !hasPicks;
   };
 
   const handleEditClick = () => {
@@ -1676,29 +1677,52 @@ export default function LeagueSettingsPage() {
                           return (
                             <div key={`${item.round_number}-${item.pick_number}`} className={`flex items-center justify-between p-3 rounded-md transition-colors ${isPicked ? 'bg-purple-900/20 border border-purple-500/10' : 'hover:bg-white/5'}`}>
                               <div className="flex items-center gap-3">
-                                <div className="flex flex-col items-center justify-center w-10">
+                                <div className="flex flex-col items-center justify-center w-10 shrink-0">
                                   <span className="text-xs text-purple-400 font-mono">R{item.round_number}</span>
                                   <span className={`w-8 h-8 flex items-center justify-center font-bold rounded-full border ${isPicked ? 'bg-purple-500 text-white border-purple-400' : 'bg-purple-500/20 text-purple-300 border-purple-500/30'}`}>
                                     {item.pick_number}
                                   </span>
                                 </div>
-                                <div className="flex flex-col">
-                                  {isPicked ? (
-                                    <>
-                                      <span className="text-white font-bold text-lg">{item.player?.name}</span>
-                                      <span className="text-purple-300 text-xs">{item.player?.team} • {item.player?.batter_or_pitcher}</span>
+
+                                {isPicked ? (
+                                  <div className="flex items-center gap-3">
+                                    {/* Avatar */}
+                                    <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
+                                      <img
+                                        src={getPlayerPhoto(item.player)}
+                                        onError={handleImageError}
+                                        alt={item.player?.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-white font-bold text-lg">{item.player?.name}</span>
+                                        <span className="text-purple-300/70 text-sm font-normal">
+                                          - {filterPositions(item.player)}
+                                        </span>
+                                        <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(item.player?.team)}`}>
+                                          {getTeamAbbr(item.player?.team)}
+                                        </span>
+                                        {item.player?.identity?.toLowerCase() === 'foreigner' && (
+                                          <span className="text-[9px] font-bold bg-cyan-900/50 text-cyan-300 px-1 rounded border border-cyan-500/30">
+                                            F
+                                          </span>
+                                        )}
+                                      </div>
                                       <span className="text-purple-400/60 text-xs mt-0.5">Manager: {item.member_profile?.nickname}</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span className="text-white font-medium">{item.member_profile?.nickname}</span>
-                                      <span className="text-purple-400/50 text-xs">On the clock soon</span>
-                                    </>
-                                  )}
-                                </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col ml-2">
+                                    <span className="text-white font-medium">{item.member_profile?.nickname}</span>
+                                    <span className="text-purple-400/50 text-xs">On the clock soon</span>
+                                  </div>
+                                )}
                               </div>
                               {item.pick_number === 1 && item.round_number === 1 && (
-                                <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30">
+                                <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30 shrink-0 ml-2">
                                   1st Overall
                                 </span>
                               )}
