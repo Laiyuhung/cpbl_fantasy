@@ -500,6 +500,15 @@ export default function DraftPage() {
         fetchData();
     }, [leagueId]);
 
+    // Set default sort when categories are loaded
+    useEffect(() => {
+        if (filterType === 'batter' && batterStatCategories.length > 0 && sortConfig.key === null) {
+            setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
+        } else if (filterType === 'pitcher' && pitcherStatCategories.length > 0 && sortConfig.key === null) {
+            setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
+        }
+    }, [batterStatCategories, pitcherStatCategories, filterType]);
+
     // ---------------------------------------------------------
     // Helper Logic 
     // ---------------------------------------------------------
@@ -1224,11 +1233,21 @@ export default function DraftPage() {
                                 <div className="flex bg-slate-800 rounded p-1 border border-slate-700">
                                     <button
                                         className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                                        onClick={() => setFilterType('batter')}
+                                        onClick={() => {
+                                            setFilterType('batter');
+                                            if (batterStatCategories.length > 0) {
+                                                setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
+                                            }
+                                        }}
                                     >Batter</button>
                                     <button
                                         className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'pitcher' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                                        onClick={() => setFilterType('pitcher')}
+                                        onClick={() => {
+                                            setFilterType('pitcher');
+                                            if (pitcherStatCategories.length > 0) {
+                                                setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
+                                            }
+                                        }}
                                     >Pitcher</button>
                                 </div>
                             </div>
