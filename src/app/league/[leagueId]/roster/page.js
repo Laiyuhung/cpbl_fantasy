@@ -21,6 +21,7 @@ export default function RosterPage() {
     const [playerStats, setPlayerStats] = useState({});
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
+    const [playerRankings, setPlayerRankings] = useState({});
 
     // Settings State
     const [rosterPositionsConfig, setRosterPositionsConfig] = useState({});
@@ -213,6 +214,26 @@ export default function RosterPage() {
         fetchStats();
     }, [timeWindow]);
 
+    // Fetch Rankings
+    useEffect(() => {
+        const fetchRankings = async () => {
+            try {
+                const res = await fetch(`/api/league/${leagueId}/rankings?time_window=${encodeURIComponent(timeWindow)}`);
+                const data = await res.json();
+                if (data.success) {
+                    const rankMap = {};
+                    data.rankings.forEach(p => {
+                        rankMap[p.player_id] = p.rank;
+                    });
+                    setPlayerRankings(rankMap);
+                }
+            } catch (e) {
+                console.error('Failed to fetch rankings', e);
+            }
+        };
+        fetchRankings();
+    }, [leagueId, timeWindow]);
+
     const getPlayerStat = (playerId, statKey) => {
         if (!playerId || playerId === 'empty') return '-';
         const stats = playerStats[playerId];
@@ -262,6 +283,16 @@ export default function RosterPage() {
     const renderPlayerBadges = (player) => {
         if (player.player_id === 'empty') return null;
         const badges = [];
+
+        // Team Badge (First)
+        if (player.team) {
+            badges.push(
+                <span key="team" className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none mx-0.5 ${getTeamColor(player.team)}`}>
+                    {getTeamAbbr(player.team)}
+                </span>
+            );
+        }
+
         if (player.identity && player.identity.toLowerCase() === 'foreigner') {
             badges.push(<span key="f" title="Foreign Player" className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold">F</span>);
         }
@@ -489,9 +520,11 @@ export default function RosterPage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-white text-lg flex items-center">
+                                                            {playerRankings[player.player_id] && (
+                                                                <span className="text-cyan-400 text-sm font-bold mr-1">#{playerRankings[player.player_id]}</span>
+                                                            )}
                                                             {player.name}
                                                             <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
-                                                            <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                         </div>
                                                         <div className="mt-1">{renderPlayerBadges(player)}</div>
                                                     </div>
@@ -562,9 +595,11 @@ export default function RosterPage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-white text-lg flex items-center">
+                                                            {playerRankings[player.player_id] && (
+                                                                <span className="text-cyan-400 text-sm font-bold mr-1">#{playerRankings[player.player_id]}</span>
+                                                            )}
                                                             {player.name}
                                                             <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
-                                                            <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                         </div>
                                                         <div className="mt-1">{renderPlayerBadges(player)}</div>
                                                     </div>

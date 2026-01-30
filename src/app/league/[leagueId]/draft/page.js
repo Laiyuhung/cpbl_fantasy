@@ -810,7 +810,7 @@ export default function DraftPage() {
                 return 0;
             });
         }
-        return result.slice(0, 100);
+        return result.slice(0, 500);
     }, [players, takenIds, searchTerm, filterType, filterPos, filterTeam, filterIdentity, sortConfig, playerStats, playerRankings]);
 
     // Helpers
@@ -1664,12 +1664,12 @@ export default function DraftPage() {
                                                                                         <span className="text-[10px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
                                                                                     )}
                                                                                     {assignment.name}
-                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                                        <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                                    )}
                                                                                     <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
                                                                                         {getTeamAbbr(assignment.team)}
                                                                                     </span>
+                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                                        <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
+                                                                                    )}
                                                                                 </div>
                                                                                 <div className="text-[10px] text-slate-500">{filterPositions(assignment)}</div>
                                                                             </div>
@@ -1739,7 +1739,13 @@ export default function DraftPage() {
                                                     </div>
                                                     <div className="text-center w-full">
                                                         <div className="text-xs font-bold text-slate-200 truncate flex items-center justify-center gap-1">
+                                                            {playerRankings[player.player_id] && (
+                                                                <span className="text-[10px] font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
+                                                            )}
                                                             {player.name}
+                                                            <span className={`px-1 py-0.5 rounded-[4px] text-[8px] font-bold border leading-none ${getTeamColor(player.team)}`}>
+                                                                {getTeamAbbr(player.team)}
+                                                            </span>
                                                             {player.identity?.toLowerCase() === 'foreigner' && (
                                                                 <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
                                                             )}
@@ -1946,12 +1952,12 @@ export default function DraftPage() {
                                                                             <span className="text-[11px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
                                                                         )}
                                                                         {assignment.name}
-                                                                        {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                            <span className="text-[10px] font-bold bg-purple-900/50 text-purple-300 px-1.5 rounded border border-purple-500/30">F</span>
-                                                                        )}
                                                                         <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
                                                                             {getTeamAbbr(assignment.team)}
                                                                         </span>
+                                                                        {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                            <span className="text-[10px] font-bold bg-purple-900/50 text-purple-300 px-1.5 rounded border border-purple-500/30">F</span>
+                                                                        )}
                                                                     </div>
                                                                     <div className="text-xs text-slate-500 truncate mt-0.5">{assignment.position_list}</div>
                                                                 </div>
@@ -2110,7 +2116,13 @@ export default function DraftPage() {
                                                             </div>
                                                             <div className="text-center w-full">
                                                                 <div className="text-xs font-bold text-slate-200 truncate flex items-center justify-center gap-1">
+                                                                    {playerRankings[player.player_id] && (
+                                                                        <span className="text-[10px] font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
+                                                                    )}
                                                                     {player.name}
+                                                                    <span className={`px-1 py-0.5 rounded-[4px] text-[8px] font-bold border leading-none ${getTeamColor(player.team)}`}>
+                                                                        {getTeamAbbr(player.team)}
+                                                                    </span>
                                                                     {player.identity?.toLowerCase() === 'foreigner' && (
                                                                         <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
                                                                     )}

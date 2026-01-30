@@ -45,6 +45,7 @@ export default function PlayersPage() {
   const [batterStatCategories, setBatterStatCategories] = useState([]); // 打者統計項目
   const [pitcherStatCategories, setPitcherStatCategories] = useState([]); // 投手統計項目
   const [playerStats, setPlayerStats] = useState({}); // 球員統計數據
+  const [playerRankings, setPlayerRankings] = useState({}); // Z-score rankings
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeTargetManagerId, setTradeTargetManagerId] = useState(null);
   const [selectedMyPlayers, setSelectedMyPlayers] = useState([]);
@@ -183,7 +184,28 @@ export default function PlayersPage() {
     };
 
     fetchPlayerStats();
+    fetchPlayerStats();
   }, [timeWindow, filterType]);
+
+  // Fetch Rankings
+  useEffect(() => {
+    const fetchRankings = async () => {
+      try {
+        const res = await fetch(`/api/league/${leagueId}/rankings?time_window=${encodeURIComponent(timeWindow)}`);
+        const data = await res.json();
+        if (data.success) {
+          const rankMap = {};
+          data.rankings.forEach(p => {
+            rankMap[p.player_id] = p.rank;
+          });
+          setPlayerRankings(rankMap);
+        }
+      } catch (e) {
+        console.error('Failed to fetch rankings', e);
+      }
+    };
+    fetchRankings();
+  }, [leagueId, timeWindow]);
 
   // 格式化統計數據顯示
   const formatStatValue = (value, statKey) => {
@@ -312,9 +334,18 @@ export default function PlayersPage() {
     if (sortConfig.key) {
       result.sort((a, b) => {
         let valA, valB;
-        if (sortConfig.key === 'rank') { // Default/Name sort
-          valA = a.name;
-          valB = b.name;
+        if (sortConfig.key === 'rank') {
+          // Sort by Z-Score Rank
+          const rankA = playerRankings[a.player_id] || 9999;
+          const rankB = playerRankings[b.player_id] || 9999;
+          valA = rankA;
+          valB = rankB;
+          // If ranks are equal (both unranked), sort by name
+          if (valA === 9999 && valB === 9999) {
+            if (a.name < b.name) return -1;
+            if (a.name > b.name) return 1;
+            return 0;
+          }
         } else if (sortConfig.key === 'name') {
           valA = a.name;
           valB = b.name;
@@ -330,7 +361,7 @@ export default function PlayersPage() {
     }
 
     return result;
-  }, [players, searchTerm, filterType, filterIdentity, sortConfig, playerStats]);
+  }, [players, searchTerm, filterType, filterIdentity, sortConfig, playerStats, playerRankings]);
 
   const displayBatterCats = useMemo(() => {
     const forced = 'At Bats (AB)';
@@ -1294,6 +1325,17 @@ export default function PlayersPage() {
                       )}
                     </div>
                   </th>
+                  <th
+                    className="px-4 py-4 text-center text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
+                    onClick={() => handleSort('rank')}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      Rank
+                      {sortConfig.key === 'rank' && (
+                        <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                      )}
+                    </div>
+                  </th>
 
 
                   {/* 動態顯示統計項目 */}
@@ -1362,6 +1404,9 @@ export default function PlayersPage() {
                           />
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
+                              {playerRankings[player.player_id] && (
+                                <span className="text-xs font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
+                              )}
                               <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
                                 {player.name || 'Unknown'}
                                 <span className="text-purple-300/70 font-normal ml-2">
@@ -1397,6 +1442,9 @@ export default function PlayersPage() {
                             </div>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-4 text-center font-mono text-cyan-300">
+                        {playerRankings[player.player_id] || '-'}
                       </td>
 
 
