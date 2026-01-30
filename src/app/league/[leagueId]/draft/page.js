@@ -479,7 +479,7 @@ export default function DraftPage() {
                 }
 
                 const timeWindow = '2025 Season';
-                const [battingRes, pitchingRes] = await Promise.all([
+                const [battingRes, pitchingRes, rankingsRes] = await Promise.all([
                     fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
                     fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`),
                     fetch(`/api/league/${leagueId}/rankings?time_window=${encodeURIComponent(timeWindow)}`)
