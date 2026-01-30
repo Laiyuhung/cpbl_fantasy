@@ -513,9 +513,9 @@ export default function DraftPage() {
 
     // Set default sort when categories are loaded - REMOVED override to keep Rank as default
     useEffect(() => {
-        // We keep 'rank' as default, so we don't need to force stats sorting on load anymore.
-        // User can manually sort by stats if they want.
-    }, [batterStatCategories, pitcherStatCategories, filterType]);
+        // Force sort by rank when switching between batter/pitcher to provide consistent starting point
+        setSortConfig({ key: 'rank', direction: 'asc' });
+    }, [filterType]); // Trigger when filterType changes
 
     // ---------------------------------------------------------
     // Helper Logic 
@@ -869,6 +869,9 @@ export default function DraftPage() {
                         </div>
                         <div>
                             <div className="flex items-baseline gap-2">
+                                {playerRankings[player.player_id] && (
+                                    <span className="text-[10px] font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
+                                )}
                                 <span className="text-slate-200 font-bold group-hover:text-white text-base">{player.name}</span>
                                 <span className="text-xs text-slate-400 font-mono">{filterPositions(player)}</span>
                                 {player.identity?.toLowerCase() === 'foreigner' && (
@@ -1494,6 +1497,9 @@ export default function DraftPage() {
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="text-sm font-bold text-slate-200 truncate flex items-center gap-1">
+                                                            {playerRankings[pick.player_id] && (
+                                                                <span className="text-[10px] font-bold text-cyan-400 mr-1">#{playerRankings[pick.player_id]}</span>
+                                                            )}
                                                             {pick.player?.name}
                                                             {(pick.player?.identity || pick.identity)?.toLowerCase() === 'foreigner' && (
                                                                 <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
@@ -1579,6 +1585,9 @@ export default function DraftPage() {
                                                                 </div>
                                                                 <div>
                                                                     <div className="flex items-baseline gap-2">
+                                                                        {playerRankings[p.player_id] && (
+                                                                            <span className="text-[10px] font-bold text-cyan-400">#{playerRankings[p.player_id]}</span>
+                                                                        )}
                                                                         <span className="text-slate-200 font-bold group-hover:text-white text-base">{p.name}</span>
                                                                         <span className="text-xs text-slate-400 font-mono">{filterPositions(p)}</span>
                                                                         {p.identity?.toLowerCase() === 'foreigner' && (
@@ -1651,6 +1660,9 @@ export default function DraftPage() {
                                                                             </div>
                                                                             <div className="flex-1 min-w-0">
                                                                                 <div className="text-sm font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                                    {playerRankings[assignment.player_id] && (
+                                                                                        <span className="text-[10px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
+                                                                                    )}
                                                                                     {assignment.name}
                                                                                     {assignment.identity?.toLowerCase() === 'foreigner' && (
                                                                                         <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
@@ -1826,6 +1838,9 @@ export default function DraftPage() {
                                                                 </div>
                                                                 <div className="min-w-0">
                                                                     <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                        {playerRankings[assignment.player_id] && (
+                                                                            <span className="text-[10px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
+                                                                        )}
                                                                         {assignment.name}
                                                                         {assignment.identity?.toLowerCase() === 'foreigner' && (
                                                                             <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
@@ -1927,6 +1942,9 @@ export default function DraftPage() {
                                                                 </div>
                                                                 <div className="min-w-0 flex-1">
                                                                     <div className="text-base font-bold text-slate-200 truncate flex items-center gap-2">
+                                                                        {playerRankings[assignment.player_id] && (
+                                                                            <span className="text-[11px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
+                                                                        )}
                                                                         {assignment.name}
                                                                         {assignment.identity?.toLowerCase() === 'foreigner' && (
                                                                             <span className="text-[10px] font-bold bg-purple-900/50 text-purple-300 px-1.5 rounded border border-purple-500/30">F</span>
@@ -2178,6 +2196,9 @@ export default function DraftPage() {
                                                                             </div>
                                                                             <div className="min-w-0">
                                                                                 <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                                    {playerRankings[assignment.player_id] && (
+                                                                                        <span className="text-[10px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
+                                                                                    )}
                                                                                     {assignment.name}
                                                                                     {assignment.identity?.toLowerCase() === 'foreigner' && (
                                                                                         <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
