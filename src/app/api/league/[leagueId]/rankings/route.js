@@ -101,8 +101,8 @@ export async function GET(request, { params }) {
         const [batResponse, pitchResponse, playersResponse] = await Promise.all([
             supabase.from('v_batting_scoring').select('*').eq('time_window', timeWindow),
             supabase.from('v_pitching_scoring').select('*').eq('time_window', timeWindow),
-            // Fetch player details (team, position) separately if views don't have them
-            supabase.from('players').select('player_id, team, position_list')
+            // Fetch player details using correct table 'player_list' and simplifying to name/team
+            supabase.from('player_list').select('player_id, name, team')
         ]);
 
         if (batResponse.error || pitchResponse.error || playersResponse.error) {
@@ -183,8 +183,8 @@ export async function GET(request, { params }) {
             const details = playerMap.get(r.player_id);
             return {
                 ...r,
+                name: details?.name || r.name, // Prefer name from player_list if available
                 team: details?.team || null,
-                positions: details?.position_list || null,
                 // Round for display
                 bat_z: Number(r.bat_z.toFixed(2)),
                 pitch_z: Number(r.pitch_z.toFixed(2)),
