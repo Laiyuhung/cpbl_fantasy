@@ -27,7 +27,7 @@ export default function DraftPage() {
     const [filterPos, setFilterPos] = useState('All');
     const [filterTeam, setFilterTeam] = useState('All');
     const [filterIdentity, setFilterIdentity] = useState('All');
-    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
+    const [sortConfig, setSortConfig] = useState({ key: 'rank', direction: 'asc' });
 
     // Data Resources
     const [rosterPositions, setRosterPositions] = useState({});
@@ -511,13 +511,10 @@ export default function DraftPage() {
         fetchData();
     }, [leagueId]);
 
-    // Set default sort when categories are loaded
+    // Set default sort when categories are loaded - REMOVED override to keep Rank as default
     useEffect(() => {
-        if (filterType === 'batter' && batterStatCategories.length > 0 && sortConfig.key === null) {
-            setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
-        } else if (filterType === 'pitcher' && pitcherStatCategories.length > 0 && sortConfig.key === null) {
-            setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
-        }
+        // We keep 'rank' as default, so we don't need to force stats sorting on load anymore.
+        // User can manually sort by stats if they want.
     }, [batterStatCategories, pitcherStatCategories, filterType]);
 
     // ---------------------------------------------------------
@@ -801,8 +798,9 @@ export default function DraftPage() {
             result.sort((a, b) => {
                 let valA, valB;
                 if (sortConfig.key === 'rank') {
-                    valA = a.name;
-                    valB = b.name;
+                    // Use 9999 for unranked players so they go to bottom in asc sort
+                    valA = playerRankings[a.player_id] || 9999;
+                    valB = playerRankings[b.player_id] || 9999;
                 } else {
                     valA = getPlayerStatRaw(a.player_id, sortConfig.key);
                     valB = getPlayerStatRaw(b.player_id, sortConfig.key);
@@ -813,7 +811,7 @@ export default function DraftPage() {
             });
         }
         return result.slice(0, 100);
-    }, [players, takenIds, searchTerm, filterType, filterPos, filterTeam, filterIdentity, sortConfig, playerStats]);
+    }, [players, takenIds, searchTerm, filterType, filterPos, filterTeam, filterIdentity, sortConfig, playerStats, playerRankings]);
 
     // Helpers
     const getTeamAbbr = (team) => {
@@ -1330,6 +1328,12 @@ export default function DraftPage() {
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-slate-900/95 sticky top-0 z-10 text-[10px] text-slate-400 uppercase tracking-wider font-semibold shadow-md">
                                     <tr>
+                                        <th className="p-2 border-b border-slate-700 min-w-[50px] text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>
+                                            <div className="flex items-center justify-center gap-1">
+                                                Rank
+                                                {sortConfig.key === 'rank' && (<span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>)}
+                                            </div>
+                                        </th>
                                         <th className="p-2 border-b border-slate-700 min-w-[250px]">Player</th>
                                         {currentStatCats.map(cat => (
                                             <th key={cat} className="p-2 border-b border-slate-700 text-center min-w-[40px] cursor-pointer hover:text-white transition-colors"
@@ -1351,14 +1355,14 @@ export default function DraftPage() {
 
                                         return (
                                             <tr key={player.player_id} className="group hover:bg-slate-700/40 transition-colors border-b border-slate-800/50">
+                                                {/* Rank Column */}
+                                                <td className="p-2 text-center text-sm font-bold text-slate-400">
+                                                    {playerRankings[player.player_id] || '-'}
+                                                </td>
+
                                                 {/* Player Info Combined */}
                                                 <td className="p-2">
                                                     <div className="flex items-center gap-3">
-                                                        {playerRankings[player.player_id] && (
-                                                            <div className="font-bold text-slate-400 text-sm min-w-[24px] text-right">
-                                                                #{playerRankings[player.player_id]}
-                                                            </div>
-                                                        )}
                                                         <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
                                                             <img
                                                                 src={getPlayerPhoto(player)}
