@@ -27,7 +27,7 @@ export default function DraftPage() {
     const [filterPos, setFilterPos] = useState('All');
     const [filterTeam, setFilterTeam] = useState('All');
     const [filterIdentity, setFilterIdentity] = useState('All');
-    const [sortConfig, setSortConfig] = useState({ key: 'rank', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
 
     // Data Resources
     const [rosterPositions, setRosterPositions] = useState({});
