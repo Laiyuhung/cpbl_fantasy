@@ -41,6 +41,7 @@ export default function DraftPage() {
     const [playerStats, setPlayerStats] = useState({});
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
+    const [playerRankings, setPlayerRankings] = useState({}); // playerId -> rank
 
     // Queue State
     const [queue, setQueue] = useState([]);
@@ -480,16 +481,26 @@ export default function DraftPage() {
                 const timeWindow = '2025 Season';
                 const [battingRes, pitchingRes] = await Promise.all([
                     fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
-                    fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
+                    fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`),
+                    fetch(`/api/league/${leagueId}/rankings?time_window=${encodeURIComponent(timeWindow)}`)
                 ]);
 
                 const battingData = await battingRes.json();
                 const pitchingData = await pitchingRes.json();
+                const rankingsData = await rankingsRes.json();
 
                 const statsMap = {};
                 if (battingData.success && battingData.stats) battingData.stats.forEach(s => statsMap[s.player_id] = s);
                 if (pitchingData.success && pitchingData.stats) pitchingData.stats.forEach(s => statsMap[s.player_id] = s);
                 setPlayerStats(statsMap);
+
+                const rankMap = {};
+                if (rankingsData.success && rankingsData.rankings) {
+                    rankingsData.rankings.forEach(r => {
+                        rankMap[r.player_id] = r.rank;
+                    });
+                }
+                setPlayerRankings(rankMap);
 
             } catch (e) {
                 console.error('Failed to load draft resources', e);
@@ -1343,6 +1354,11 @@ export default function DraftPage() {
                                                 {/* Player Info Combined */}
                                                 <td className="p-2">
                                                     <div className="flex items-center gap-3">
+                                                        {playerRankings[player.player_id] && (
+                                                            <div className="font-bold text-slate-400 text-sm min-w-[24px] text-right">
+                                                                #{playerRankings[player.player_id]}
+                                                            </div>
+                                                        )}
                                                         <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
                                                             <img
                                                                 src={getPlayerPhoto(player)}
