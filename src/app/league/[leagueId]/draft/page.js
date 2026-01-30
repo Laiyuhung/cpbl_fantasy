@@ -1635,6 +1635,9 @@ export default function DraftPage() {
                                                                                     {assignment.identity?.toLowerCase() === 'foreigner' && (
                                                                                         <span className="text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
                                                                                     )}
+                                                                                    <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
+                                                                                        {getTeamAbbr(assignment.team)}
+                                                                                    </span>
                                                                                 </div>
                                                                                 <div className="text-[10px] text-slate-500">{filterPositions(assignment)}</div>
                                                                             </div>
