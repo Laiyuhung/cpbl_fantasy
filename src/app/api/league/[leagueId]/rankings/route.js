@@ -107,7 +107,14 @@ export async function GET(request, { params }) {
 
         if (batResponse.error || pitchResponse.error || playersResponse.error) {
             console.error('Data fetch error', batResponse.error, pitchResponse.error, playersResponse.error);
-            return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
+            return NextResponse.json({
+                error: 'Failed to fetch stats',
+                details: {
+                    bat: batResponse.error,
+                    pitch: pitchResponse.error,
+                    players: playersResponse.error
+                }
+            }, { status: 500 });
         }
 
         const batData = batResponse.data || [];
