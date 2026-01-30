@@ -215,6 +215,11 @@ export default function PlayersPage() {
     return formatStatValue(value, statKey);
   };
 
+  const getStatAbbr = (cat) => {
+    const matches = cat.match(/\(([^)]+)\)/g);
+    return matches ? matches[matches.length - 1].replace(/[()]/g, '') : cat;
+  };
+
   const getPlayerStatRaw = (playerId, statKey) => {
     const val = getPlayerStat(playerId, statKey);
     // If val is a React element (gray 0), extract clean number
@@ -326,6 +331,18 @@ export default function PlayersPage() {
 
     return result;
   }, [players, searchTerm, filterType, filterIdentity, sortConfig, playerStats]);
+
+  const displayBatterCats = useMemo(() => {
+    const forced = 'At Bats (AB)';
+    const hasForced = batterStatCategories.some(c => getStatAbbr(c) === 'AB');
+    return hasForced ? batterStatCategories : [forced, ...batterStatCategories];
+  }, [batterStatCategories]);
+
+  const displayPitcherCats = useMemo(() => {
+    const forced = 'Innings Pitched (IP)';
+    const hasForced = pitcherStatCategories.some(c => getStatAbbr(c) === 'IP');
+    return hasForced ? pitcherStatCategories : [forced, ...pitcherStatCategories];
+  }, [pitcherStatCategories]);
 
   const getTeamAbbr = (team) => {
     switch (team) {
@@ -1280,14 +1297,13 @@ export default function PlayersPage() {
 
 
                   {/* 動態顯示統計項目 */}
-                  {filterType === 'batter' && batterStatCategories.map((stat) => {
-                    // 提取最靠後的括號內的縮寫，例如 "Runs (R)" -> "R"
-                    const matches = stat.match(/\(([^)]+)\)/g);
-                    const displayName = matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
+                  {filterType === 'batter' && displayBatterCats.map((stat) => {
+                    const displayName = getStatAbbr(stat);
+                    const isForced = !batterStatCategories.includes(stat);
                     return (
                       <th
                         key={stat}
-                        className="px-4 py-4 text-center text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors select-none"
+                        className={`px-4 py-4 text-center text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
                         onClick={() => handleSort(stat)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -1299,14 +1315,13 @@ export default function PlayersPage() {
                       </th>
                     );
                   })}
-                  {filterType === 'pitcher' && pitcherStatCategories.map((stat) => {
-                    // 提取最靠後的括號內的縮寫，例如 "Earned Run Average (ERA)" -> "ERA"
-                    const matches = stat.match(/\(([^)]+)\)/g);
-                    const displayName = matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
+                  {filterType === 'pitcher' && displayPitcherCats.map((stat) => {
+                    const displayName = getStatAbbr(stat);
+                    const isForced = !pitcherStatCategories.includes(stat);
                     return (
                       <th
                         key={stat}
-                        className="px-4 py-4 text-center text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors select-none"
+                        className={`px-4 py-4 text-center text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
                         onClick={() => handleSort(stat)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -1323,7 +1338,7 @@ export default function PlayersPage() {
               <tbody className="divide-y divide-purple-500/10">
                 {filteredPlayers.length === 0 ? (
                   <tr>
-                    <td colSpan={3 + (filterType === 'batter' ? batterStatCategories.length : pitcherStatCategories.length)} className="px-6 py-12 text-center">
+                    <td colSpan={3 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)} className="px-6 py-12 text-center">
                       <div className="text-purple-300/50 text-lg">
                         {searchTerm || filterType !== 'all' || filterIdentity !== 'all'
                           ? 'No players found matching your filters'
@@ -1386,16 +1401,22 @@ export default function PlayersPage() {
 
 
                       {/* 動態顯示統計數據 */}
-                      {filterType === 'batter' && batterStatCategories.map((stat) => (
-                        <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
-                          {getPlayerStat(player.player_id, stat)}
-                        </td>
-                      ))}
-                      {filterType === 'pitcher' && pitcherStatCategories.map((stat) => (
-                        <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
-                          {getPlayerStat(player.player_id, stat)}
-                        </td>
-                      ))}
+                      {filterType === 'batter' && displayBatterCats.map((stat) => {
+                        const isForced = !batterStatCategories.includes(stat);
+                        return (
+                          <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                            {getPlayerStat(player.player_id, stat)}
+                          </td>
+                        );
+                      })}
+                      {filterType === 'pitcher' && displayPitcherCats.map((stat) => {
+                        const isForced = !pitcherStatCategories.includes(stat);
+                        return (
+                          <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                            {getPlayerStat(player.player_id, stat)}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))
                 )}

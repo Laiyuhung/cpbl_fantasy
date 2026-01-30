@@ -327,6 +327,14 @@ export default function RosterPage() {
         return (orderConfig[a.position] || 99) - (orderConfig[b.position] || 99);
     });
 
+    const displayBatterCats = batterStatCategories.length > 0 && !batterStatCategories.some(c => parseStatName(c) === 'AB')
+        ? ['At Bats (AB)', ...batterStatCategories]
+        : batterStatCategories;
+
+    const displayPitcherCats = pitcherStatCategories.length > 0 && !pitcherStatCategories.some(c => parseStatName(c) === 'IP')
+        ? ['Innings Pitched (IP)', ...pitcherStatCategories]
+        : pitcherStatCategories;
+
     const parseStatName = (stat) => {
         const matches = stat.match(/\(([^)]+)\)/g);
         return matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
@@ -444,11 +452,14 @@ export default function RosterPage() {
                                 <tr>
                                     <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 w-24">Slot</th>
                                     <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Player</th>
-                                    {batterStatCategories.map(stat => (
-                                        <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300 w-16">
-                                            {parseStatName(stat)}
-                                        </th>
-                                    ))}
+                                    {displayBatterCats.map(stat => {
+                                        const isForced = !batterStatCategories.includes(stat);
+                                        return (
+                                            <th key={stat} className={`px-4 py-4 text-center text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-16`}>
+                                                {parseStatName(stat)}
+                                            </th>
+                                        );
+                                    })}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-purple-500/10">
@@ -487,11 +498,14 @@ export default function RosterPage() {
                                                 </div>
                                             )}
                                         </td>
-                                        {batterStatCategories.map(stat => (
-                                            <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
-                                                {formatStat(getPlayerStat(player.player_id, stat))}
-                                            </td>
-                                        ))}
+                                        {displayBatterCats.map(stat => {
+                                            const isForced = !batterStatCategories.includes(stat);
+                                            return (
+                                                <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                                                    {formatStat(getPlayerStat(player.player_id, stat))}
+                                                </td>
+                                            );
+                                        })}
                                     </tr>
                                 ))}
                             </tbody>
@@ -511,11 +525,14 @@ export default function RosterPage() {
                                 <tr>
                                     <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 w-24">Slot</th>
                                     <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Player</th>
-                                    {pitcherStatCategories.map(stat => (
-                                        <th key={stat} className="px-4 py-4 text-center text-sm font-bold text-purple-300 w-16">
-                                            {parseStatName(stat)}
-                                        </th>
-                                    ))}
+                                    {displayPitcherCats.map(stat => {
+                                        const isForced = !pitcherStatCategories.includes(stat);
+                                        return (
+                                            <th key={stat} className={`px-4 py-4 text-center text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-16`}>
+                                                {parseStatName(stat)}
+                                            </th>
+                                        );
+                                    })}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-purple-500/10">
@@ -554,11 +571,14 @@ export default function RosterPage() {
                                                 </div>
                                             )}
                                         </td>
-                                        {pitcherStatCategories.map(stat => (
-                                            <td key={stat} className="px-4 py-4 text-center text-purple-100 font-mono">
-                                                {formatStat(getPlayerStat(player.player_id, stat))}
-                                            </td>
-                                        ))}
+                                        {displayPitcherCats.map(stat => {
+                                            const isForced = !pitcherStatCategories.includes(stat);
+                                            return (
+                                                <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                                                    {formatStat(getPlayerStat(player.player_id, stat))}
+                                                </td>
+                                            );
+                                        })}
                                     </tr>
                                 ))}
                             </tbody>

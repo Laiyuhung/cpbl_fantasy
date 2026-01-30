@@ -840,7 +840,11 @@ export default function DraftPage() {
         const player = players.find(p => p.player_id === item.player_id) || item.player;
         if (!player) return null;
         const isBatter = player.batter_or_pitcher === 'batter';
-        const cats = isBatter ? batterStatCategories : pitcherStatCategories;
+        const baseCats = isBatter ? batterStatCategories : pitcherStatCategories;
+        const forcedCat = isBatter ? 'At Bats (AB)' : 'Innings Pitched (IP)';
+        const forcedAbbr = isBatter ? 'AB' : 'IP';
+        const hasForced = baseCats.some(c => getStatAbbr(c) === forcedAbbr);
+        const cats = hasForced ? baseCats : [forcedCat, ...baseCats];
         const showOriginalName = player.original_name && player.original_name !== player.name;
 
         return (
@@ -877,12 +881,15 @@ export default function DraftPage() {
                     </button>
                 </div>
                 <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
-                    {cats.map(cat => (
-                        <div key={cat} className="flex flex-col items-center min-w-[30px]">
-                            <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
-                            <span className="text-slate-300">{formatStat(getPlayerStat(player.player_id, cat))}</span>
-                        </div>
-                    ))}
+                    {cats.map(cat => {
+                        const isForced = !baseCats.includes(cat);
+                        return (
+                            <div key={cat} className="flex flex-col items-center min-w-[30px]">
+                                <span className={`mb-0.5 ${isForced ? 'text-slate-600' : 'text-slate-600'}`}>{getStatAbbr(cat)}</span>
+                                <span className={`${isForced ? 'text-slate-500' : 'text-slate-300'}`}>{formatStat(getPlayerStat(player.player_id, cat))}</span>
+                            </div>
+                        );
+                    })}
                 </div>
                 <button
                     onClick={() => handlePick(player.player_id)}
@@ -908,7 +915,11 @@ export default function DraftPage() {
         </div>
     );
 
-    const currentStatCats = filterType === 'batter' ? batterStatCategories : pitcherStatCategories;
+    const baseStatCats = filterType === 'batter' ? batterStatCategories : pitcherStatCategories;
+    const forcedStatCat = filterType === 'batter' ? 'At Bats (AB)' : 'Innings Pitched (IP)';
+    const forcedStatAbbr = filterType === 'batter' ? 'AB' : 'IP';
+    const hasForcedStat = baseStatCats.some(c => getStatAbbr(c) === forcedStatAbbr);
+    const currentStatCats = hasForcedStat ? baseStatCats : [forcedStatCat, ...baseStatCats];
 
     // Filter Positions Options
     const getPosOptions = () => {
@@ -1365,8 +1376,9 @@ export default function DraftPage() {
                                                 {/* Stats */}
                                                 {currentStatCats.map(cat => {
                                                     const val = getPlayerStat(player.player_id, cat);
+                                                    const isForced = !baseStatCats.includes(cat);
                                                     return (
-                                                        <td key={cat} className="p-2 text-center text-xs text-slate-300 font-mono">
+                                                        <td key={cat} className={`p-2 text-center text-xs font-mono ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
                                                             {formatStat(val)}
                                                         </td>
                                                     );
@@ -1528,7 +1540,10 @@ export default function DraftPage() {
                                             {myTeam.length === 0 && <div className="text-slate-500 text-sm text-center py-4">Your roster is empty</div>}
                                             {myTeam.map((p, i) => {
                                                 const isBatter = p.batter_or_pitcher === 'batter';
-                                                const cats = isBatter ? batterStatCategories : pitcherStatCategories;
+                                                const baseCats = isBatter ? batterStatCategories : pitcherStatCategories;
+                                                const forcedCat = isBatter ? 'At Bats (AB)' : 'Innings Pitched (IP)';
+                                                const hasForced = baseCats.some(c => getStatAbbr(c) === (isBatter ? 'AB' : 'IP'));
+                                                const cats = hasForced ? baseCats : [forcedCat, ...baseCats];
                                                 const showOriginalName = p.original_name && p.original_name !== p.name;
                                                 return (
                                                     <div key={i} className="flex flex-col text-sm p-3 hover:bg-slate-800/50 rounded transition-colors group border-b border-slate-700/50">
@@ -1560,12 +1575,18 @@ export default function DraftPage() {
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-2 mt-2 text-[10px] text-slate-400 overflow-x-auto scrollbar-hide">
-                                                            {cats.map(cat => (
-                                                                <div key={cat} className="flex flex-col items-center min-w-[30px]">
-                                                                    <span className="text-slate-600 mb-0.5">{getStatAbbr(cat)}</span>
-                                                                    <span className="text-slate-300">{formatStat(getPlayerStat(p.player_id, cat))}</span>
-                                                                </div>
-                                                            ))}
+                                                            {cats.map(cat => {
+                                                                const isForced = isBatter
+                                                                    ? (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat))
+                                                                    : (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat));
+
+                                                                return (
+                                                                    <div key={cat} className="flex flex-col items-center min-w-[30px]">
+                                                                        <span className={`mb-0.5 ${isForced ? 'text-slate-500/60' : 'text-slate-600'}`}>{getStatAbbr(cat)}</span>
+                                                                        <span className={`${isForced ? 'text-slate-500' : 'text-slate-300'}`}>{formatStat(getPlayerStat(p.player_id, cat))}</span>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     </div>
                                                 );
@@ -1709,7 +1730,10 @@ export default function DraftPage() {
                         // Helper to render a table for a group of positions
                         const renderTable = (title, slots, isPitcher) => {
                             if (!slots || slots.length === 0) return null;
-                            const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
+                            const baseCats = isPitcher ? pitcherStatCategories : batterStatCategories;
+                            const forcedCat = isPitcher ? 'Innings Pitched (IP)' : 'At Bats (AB)';
+                            const hasForced = baseCats.some(c => getStatAbbr(c) === (isPitcher ? 'IP' : 'AB'));
+                            const statCats = hasForced ? baseCats : [forcedCat, ...baseCats];
 
                             return (
                                 <div className="mb-6" key={title}>
@@ -1720,9 +1744,14 @@ export default function DraftPage() {
                                             <div className="w-12 text-center">Slot</div>
                                             <div className="flex-1 pl-2">Player</div>
                                             <div className="flex ml-2 gap-2">
-                                                {statCats && statCats.length > 0 ? statCats.map(cat => (
-                                                    <div key={cat} className="w-[30px] text-center" title={cat}>{getStatAbbr(cat)}</div>
-                                                )) : (
+                                                {statCats && statCats.length > 0 ? statCats.map(cat => {
+                                                    const isForced = isPitcher
+                                                        ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
+                                                        : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
+                                                    return (
+                                                        <div key={cat} className={`w-[30px] text-center ${isForced ? 'text-slate-600' : ''}`} title={cat}>{getStatAbbr(cat)}</div>
+                                                    );
+                                                }) : (
                                                     <div className="text-slate-600 text-[10px] italic">Stats</div>
                                                 )}
                                                 {/* Remove Button Placeholder for alignment if needed, though usually fixed width */}
@@ -1787,11 +1816,16 @@ export default function DraftPage() {
                                                             </div>
 
                                                             <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
-                                                                {statCats.map(cat => (
-                                                                    <div key={cat} className="w-[30px] text-center">
-                                                                        {formatStat(getPlayerStat(assignment.player_id, cat))}
-                                                                    </div>
-                                                                ))}
+                                                                {statCats.map(cat => {
+                                                                    const isForced = isPitcher
+                                                                        ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
+                                                                        : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
+                                                                    return (
+                                                                        <div key={cat} className={`w-[30px] text-center ${isForced ? 'text-slate-500' : ''}`}>
+                                                                            {formatStat(getPlayerStat(assignment.player_id, cat))}
+                                                                        </div>
+                                                                    );
+                                                                })}
 
                                                                 <div className="w-16 flex justify-center">
                                                                     {!isLeagueView && (
@@ -1839,8 +1873,11 @@ export default function DraftPage() {
 
                                             // Determine which stats to show for Bench (Batter or Pitcher logic based on player)
                                             // If empty, no stats.
-
-                                            const playerStatCats = assignment?.batter_or_pitcher === 'pitcher' ? pitcherStatCategories : batterStatCategories;
+                                            const baseCats = assignment?.batter_or_pitcher === 'pitcher' ? pitcherStatCategories : batterStatCategories;
+                                            const isPitcher = assignment?.batter_or_pitcher === 'pitcher';
+                                            const forcedCat = isPitcher ? 'Innings Pitched (IP)' : 'At Bats (AB)';
+                                            const hasForced = baseCats.some(c => getStatAbbr(c) === (isPitcher ? 'IP' : 'AB'));
+                                            const playerStatCats = hasForced ? baseCats : [forcedCat, ...baseCats];
 
                                             return (
                                                 <div
@@ -1881,12 +1918,19 @@ export default function DraftPage() {
 
                                                             {/* Inline Stats for Bench */}
                                                             <div className="flex ml-4 gap-3 text-[11px] text-slate-400 overflow-x-auto hide-scrollbar max-w-[500px]">
-                                                                {playerStatCats.map(cat => (
-                                                                    <div key={cat} className="flex flex-col items-center min-w-[32px]">
-                                                                        <span className="text-slate-600 mb-0.5 text-[9px] font-bold">{getStatAbbr(cat)}</span>
-                                                                        <span className="text-slate-200 font-mono">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
-                                                                    </div>
-                                                                ))}
+                                                                {playerStatCats.map(cat => {
+                                                                    const isPitcher = assignment?.batter_or_pitcher === 'pitcher';
+                                                                    const isForced = isPitcher
+                                                                        ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
+                                                                        : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
+
+                                                                    return (
+                                                                        <div key={cat} className="flex flex-col items-center min-w-[32px]">
+                                                                            <span className={`mb-0.5 text-[9px] font-bold ${isForced ? 'text-slate-500/60' : 'text-slate-600'}`}>{getStatAbbr(cat)}</span>
+                                                                            <span className={`font-mono ${isForced ? 'text-slate-500' : 'text-slate-200'}`}>{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                        </div>
+                                                                    );
+                                                                })}
                                                             </div>
 
                                                             <div className="w-20 flex justify-center shrink-0 ml-4">
@@ -2049,7 +2093,10 @@ export default function DraftPage() {
                                     // Helper to render a table for a group of positions
                                     const renderTable = (title, slots, isPitcher) => {
                                         if (!slots || slots.length === 0) return null;
-                                        const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
+                                        const baseCats = isPitcher ? pitcherStatCategories : batterStatCategories;
+                                        const forcedCat = isPitcher ? 'Innings Pitched (IP)' : 'At Bats (AB)';
+                                        const hasForced = baseCats.some(c => getStatAbbr(c) === (isPitcher ? 'IP' : 'AB'));
+                                        const statCats = hasForced ? baseCats : [forcedCat, ...baseCats];
 
                                         return (
                                             <div className="mb-6" key={title}>
@@ -2061,9 +2108,14 @@ export default function DraftPage() {
                                                         <div className="flex-1 pl-2">Player</div>
                                                         <div className="w-10 text-center">Team</div>
                                                         <div className="flex ml-2 gap-2">
-                                                            {statCats && statCats.length > 0 ? statCats.map(cat => (
-                                                                <div key={cat} className="w-[30px] text-center" title={cat}>{getStatAbbr(cat)}</div>
-                                                            )) : (
+                                                            {statCats && statCats.length > 0 ? statCats.map(cat => {
+                                                                const isForced = isPitcher
+                                                                    ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
+                                                                    : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
+                                                                return (
+                                                                    <div key={cat} className={`w-[30px] text-center ${isForced ? 'text-slate-600' : ''}`} title={cat}>{getStatAbbr(cat)}</div>
+                                                                );
+                                                            }) : (
                                                                 <div className="text-slate-600 text-[10px] italic">Stats</div>
                                                             )}
                                                             <div className="w-8"></div>
@@ -2119,11 +2171,17 @@ export default function DraftPage() {
                                                                         </div>
 
                                                                         <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
-                                                                            {statCats.map(cat => (
-                                                                                <div key={cat} className="w-[30px] text-center">
-                                                                                    {formatStat(getPlayerStat(assignment.player_id, cat))}
-                                                                                </div>
-                                                                            ))}
+                                                                            {statCats.map(cat => {
+                                                                                const isForced = isPitcher
+                                                                                    ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
+                                                                                    : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
+
+                                                                                return (
+                                                                                    <div key={cat} className={`w-[30px] text-center ${isForced ? 'text-slate-500' : ''}`}>
+                                                                                        {formatStat(getPlayerStat(assignment.player_id, cat))}
+                                                                                    </div>
+                                                                                );
+                                                                            })}
 
                                                                             <div className="w-8 flex justify-center">
                                                                                 {!isLeagueView && (
@@ -2210,12 +2268,19 @@ export default function DraftPage() {
 
                                                                         {/* Inline Stats for Bench */}
                                                                         <div className="flex ml-4 gap-3 text-[11px] text-slate-400 overflow-x-auto hide-scrollbar max-w-[500px]">
-                                                                            {playerStatCats.map(cat => (
-                                                                                <div key={cat} className="flex flex-col items-center min-w-[32px]">
-                                                                                    <span className="text-slate-600 mb-0.5 text-[9px] font-bold">{getStatAbbr(cat)}</span>
-                                                                                    <span className="text-slate-200 font-mono">{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
-                                                                                </div>
-                                                                            ))}
+                                                                            {playerStatCats.map(cat => {
+                                                                                const isPitcher = assignment?.batter_or_pitcher === 'pitcher';
+                                                                                const isForced = isPitcher
+                                                                                    ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
+                                                                                    : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
+
+                                                                                return (
+                                                                                    <div key={cat} className="flex flex-col items-center min-w-[32px]">
+                                                                                        <span className={`mb-0.5 text-[9px] font-bold ${isForced ? 'text-slate-500/60' : 'text-slate-600'}`}>{getStatAbbr(cat)}</span>
+                                                                                        <span className={`font-mono ${isForced ? 'text-slate-500' : 'text-slate-200'}`}>{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
                                                                         </div>
 
                                                                         <div className="w-10 flex justify-center shrink-0 ml-4">
