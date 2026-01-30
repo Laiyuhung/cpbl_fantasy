@@ -16,7 +16,7 @@ export default function PlayersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('batter'); // batter, pitcher
   const [filterIdentity, setFilterIdentity] = useState('all'); // all, local, foreigner
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' }); // Sorting config
+  const [sortConfig, setSortConfig] = useState({ key: 'rank', direction: 'asc' }); // Sorting config
   const [members, setMembers] = useState([]); // 當前聯盟成員（含 nickname）
   const [showConfirmAdd, setShowConfirmAdd] = useState(false); // 確認新增對話框
   const [playerToAdd, setPlayerToAdd] = useState(null); // 待加入的球員
@@ -143,13 +143,8 @@ export default function PlayersPage() {
   }, [leagueId]);
 
   // Set default sort when categories are loaded
-  useEffect(() => {
-    if (filterType === 'batter' && batterStatCategories.length > 0 && sortConfig.key === null) {
-      setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
-    } else if (filterType === 'pitcher' && pitcherStatCategories.length > 0 && sortConfig.key === null) {
-      setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
-    }
-  }, [batterStatCategories, pitcherStatCategories, filterType]);
+  // Set default sort when categories are loaded
+  // useEffect removed to enforce Rank ASC default via initial state and button handlers
 
   // 取得球員統計數據
   useEffect(() => {
@@ -1282,9 +1277,7 @@ export default function PlayersPage() {
               <button
                 onClick={() => {
                   setFilterType('batter');
-                  if (batterStatCategories.length > 0) {
-                    setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
-                  }
+                  setSortConfig({ key: 'rank', direction: 'asc' });
                 }}
                 className={`flex items-center justify-center py-1.5 px-4 rounded text-sm font-bold transition-all ${filterType === 'batter'
                   ? 'bg-white text-purple-600 shadow'
@@ -1296,9 +1289,7 @@ export default function PlayersPage() {
               <button
                 onClick={() => {
                   setFilterType('pitcher');
-                  if (pitcherStatCategories.length > 0) {
-                    setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
-                  }
+                  setSortConfig({ key: 'rank', direction: 'asc' });
                 }}
                 className={`flex items-center justify-center py-1.5 px-4 rounded text-sm font-bold transition-all ${filterType === 'pitcher'
                   ? 'bg-white text-purple-600 shadow'
@@ -1472,393 +1463,415 @@ export default function PlayersPage() {
             </table>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* 確認新增對話框 */}
-      {showConfirmAdd && playerToAdd && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-purple-500/30 shadow-2xl">
-            <h3 className="text-2xl font-bold text-white mb-4">
-              {waiverMode ? 'Claim Waiver Player' : 'Add Player'}
-            </h3>
-            <p className="text-purple-200 mb-6">
-              {waiverMode ? (
-                <>
-                  Submit a waiver claim for <span className="font-bold text-white">{playerToAdd.name}</span>?
-                  <br />
-                  <span className="text-sm text-purple-300">(Optional) Select a player to drop if claim successful:</span>
-                  <select
-                    className="block w-full mt-2 px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={waiverDropPlayerId}
-                    onChange={e => setWaiverDropPlayerId(e.target.value)}
-                    disabled={isAdding}
-                  >
-                    <option value="">No drop (just add)</option>
-                    {ownerships.filter(o => o.manager_id === myManagerId && o.status?.toLowerCase() === 'on team').map(o => (
-                      <option key={o.player_id} value={o.player_id}>
-                        {players.find(p => p.player_id === o.player_id)?.name || o.player_id}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              ) : (
-                <>
-                  Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?
-                  <div className="mt-2 text-sm text-purple-300">
-                    Target Slot: <span className={`font-bold uppercase px-1.5 py-0.5 rounded ${projectedAddSlot === 'NA' ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-slate-700 text-slate-300 border border-slate-600'}`}>{projectedAddSlot}</span>
-                  </div>
-                </>
+      {
+        showConfirmAdd && playerToAdd && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-purple-500/30 shadow-2xl">
+              <h3 className="text-2xl font-bold text-white mb-4">
+                {waiverMode ? 'Claim Waiver Player' : 'Add Player'}
+              </h3>
+              <p className="text-purple-200 mb-6">
+                {waiverMode ? (
+                  <>
+                    Submit a waiver claim for <span className="font-bold text-white">{playerToAdd.name}</span>?
+                    <br />
+                    <span className="text-sm text-purple-300">(Optional) Select a player to drop if claim successful:</span>
+                    <select
+                      className="block w-full mt-2 px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={waiverDropPlayerId}
+                      onChange={e => setWaiverDropPlayerId(e.target.value)}
+                      disabled={isAdding}
+                    >
+                      <option value="">No drop (just add)</option>
+                      {ownerships.filter(o => o.manager_id === myManagerId && o.status?.toLowerCase() === 'on team').map(o => (
+                        <option key={o.player_id} value={o.player_id}>
+                          {players.find(p => p.player_id === o.player_id)?.name || o.player_id}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                ) : (
+                  <>
+                    Add <span className="font-bold text-white">{playerToAdd.name}</span> to your team?
+                    <div className="mt-2 text-sm text-purple-300">
+                      Target Slot: <span className={`font-bold uppercase px-1.5 py-0.5 rounded ${projectedAddSlot === 'NA' ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-slate-700 text-slate-300 border border-slate-600'}`}>{projectedAddSlot}</span>
+                    </div>
+                  </>
+                )}
+              </p>
+
+              {/* 執行中動畫 */}
+              {isAdding && (
+                <div className="mb-6 flex items-center justify-center gap-3 text-purple-300">
+                  <div className="w-6 h-6 border-3 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="font-semibold">{waiverMode ? 'Submitting...' : 'Adding player...'}</span>
+                </div>
               )}
-            </p>
 
-            {/* 執行中動畫 */}
-            {isAdding && (
-              <div className="mb-6 flex items-center justify-center gap-3 text-purple-300">
-                <div className="w-6 h-6 border-3 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-semibold">{waiverMode ? 'Submitting...' : 'Adding player...'}</span>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowConfirmAdd(false);
+                    setPlayerToAdd(null);
+                    setIsAdding(false);
+                    setWaiverMode(false);
+                    setWaiverDropPlayerId('');
+                  }}
+                  disabled={isAdding}
+                  className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAddPlayer}
+                  disabled={isAdding}
+                  className={`flex-1 px-4 py-2 ${waiverMode ? 'bg-yellow-400 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isAdding ? (waiverMode ? 'Submitting...' : 'Processing...') : (waiverMode ? 'Submit Claim' : 'Confirm')}
+                </button>
               </div>
-            )}
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  setShowConfirmAdd(false);
-                  setPlayerToAdd(null);
-                  setIsAdding(false);
-                  setWaiverMode(false);
-                  setWaiverDropPlayerId('');
-                }}
-                disabled={isAdding}
-                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmAddPlayer}
-                disabled={isAdding}
-                className={`flex-1 px-4 py-2 ${waiverMode ? 'bg-yellow-400 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {isAdding ? (waiverMode ? 'Submitting...' : 'Processing...') : (waiverMode ? 'Submit Claim' : 'Confirm')}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* 確認 DROP 對話框 */}
-      {showConfirmDrop && playerToDrop && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-red-500/30 shadow-2xl">
-            <h3 className="text-2xl font-bold text-white mb-4">Drop Player</h3>
-            <p className="text-red-200 mb-6">
-              Are you sure you want to drop <span className="font-bold text-white">{playerToDrop.name}</span>?
-            </p>
+      {
+        showConfirmDrop && playerToDrop && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-red-500/30 shadow-2xl">
+              <h3 className="text-2xl font-bold text-white mb-4">Drop Player</h3>
+              <p className="text-red-200 mb-6">
+                Are you sure you want to drop <span className="font-bold text-white">{playerToDrop.name}</span>?
+              </p>
 
-            {/* 執行中動畫 */}
-            {isDropping && (
-              <div className="mb-6 flex items-center justify-center gap-3 text-red-300">
-                <div className="w-6 h-6 border-3 border-red-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-semibold">Dropping player...</span>
+              {/* 執行中動畫 */}
+              {isDropping && (
+                <div className="mb-6 flex items-center justify-center gap-3 text-red-300">
+                  <div className="w-6 h-6 border-3 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="font-semibold">Dropping player...</span>
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowConfirmDrop(false);
+                    setPlayerToDrop(null);
+                    setIsDropping(false);
+                  }}
+                  disabled={isDropping}
+                  className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDropPlayer}
+                  disabled={isDropping}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDropping ? 'Processing...' : 'Confirm Drop'}
+                </button>
               </div>
-            )}
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  setShowConfirmDrop(false);
-                  setPlayerToDrop(null);
-                  setIsDropping(false);
-                }}
-                disabled={isDropping}
-                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDropPlayer}
-                disabled={isDropping}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDropping ? 'Processing...' : 'Confirm Drop'}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* 成功動畫 */}
-      {showSuccess && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className={`text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce ${successMessage.startsWith('Player Dropped') ? 'bg-red-600' : 'bg-green-600'}`}>
-            <div className="flex items-center gap-3">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-xl font-bold">{successMessage}</span>
+      {
+        showSuccess && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+            <div className={`text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce ${successMessage.startsWith('Player Dropped') ? 'bg-red-600' : 'bg-green-600'}`}>
+              <div className="flex items-center gap-3">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-xl font-bold">{successMessage}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* 重新載入動畫 */}
-      {isRefreshing && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-6 shadow-2xl">
-            <div className="flex items-center gap-4">
-              <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-white font-bold text-lg">Refreshing...</span>
+      {
+        isRefreshing && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-6 shadow-2xl">
+              <div className="flex items-center gap-4">
+                <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-white font-bold text-lg">Refreshing...</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* 失敗動畫 */}
-      {showError && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className="bg-red-600 text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce max-w-md mx-4">
-            <div className="flex items-center gap-3">
-              <svg className="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <div>
-                <div className="text-xl font-bold">Failed!</div>
-                <div className="text-sm">{errorMessage}</div>
+      {
+        showError && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+            <div className="bg-red-600 text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce max-w-md mx-4">
+              <div className="flex items-center gap-3">
+                <svg className="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <div>
+                  <div className="text-xl font-bold">Failed!</div>
+                  <div className="text-sm">{errorMessage}</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* 守位資格說明視窗 */}
-      {showInfoModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowInfoModal(false)}>
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Position Eligibility Rules
-              </h3>
-              <button
-                onClick={() => setShowInfoModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-5 text-purple-100">
-              <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                  Batter Position Eligibility
-                </h4>
-                <p className="text-purple-200 leading-relaxed">
-                  Players must appear in <span className="font-bold text-green-300">8 or more games</span> at a position to be eligible for that position.
-                </p>
+      {
+        showInfoModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowInfoModal(false)}>
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Position Eligibility Rules
+                </h3>
+                <button
+                  onClick={() => setShowInfoModal(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
 
-              <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
-                  Pitcher Position Eligibility
-                </h4>
-                <div className="space-y-2 text-purple-200">
-                  <p className="leading-relaxed">
-                    <span className="font-bold text-orange-300">SP (Starting Pitcher):</span> Must have <span className="font-bold text-orange-300">3 or more</span> starting appearances.
+              <div className="space-y-5 text-purple-100">
+                <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
+                  <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                    Batter Position Eligibility
+                  </h4>
+                  <p className="text-purple-200 leading-relaxed">
+                    Players must appear in <span className="font-bold text-green-300">8 or more games</span> at a position to be eligible for that position.
                   </p>
-                  <p className="leading-relaxed">
-                    <span className="font-bold text-orange-300">RP (Relief Pitcher):</span> Must have <span className="font-bold text-orange-300">5 or more</span> relief appearances.
+                </div>
+
+                <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
+                  <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                    Pitcher Position Eligibility
+                  </h4>
+                  <div className="space-y-2 text-purple-200">
+                    <p className="leading-relaxed">
+                      <span className="font-bold text-orange-300">SP (Starting Pitcher):</span> Must have <span className="font-bold text-orange-300">3 or more</span> starting appearances.
+                    </p>
+                    <p className="leading-relaxed">
+                      <span className="font-bold text-orange-300">RP (Relief Pitcher):</span> Must have <span className="font-bold text-orange-300">5 or more</span> relief appearances.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-500/10 rounded-lg p-5 border border-blue-500/20">
+                  <h4 className="text-lg font-bold text-blue-300 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                    Data Coverage
+                  </h4>
+                  <p className="text-blue-200 leading-relaxed">
+                    Position eligibility is calculated using <span className="font-bold text-blue-300">2025 OR 2026</span> season statistics (union of both seasons).
                   </p>
                 </div>
               </div>
 
-              <div className="bg-blue-500/10 rounded-lg p-5 border border-blue-500/20">
-                <h4 className="text-lg font-bold text-blue-300 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                  Data Coverage
-                </h4>
-                <p className="text-blue-200 leading-relaxed">
-                  Position eligibility is calculated using <span className="font-bold text-blue-300">2025 OR 2026</span> season statistics (union of both seasons).
-                </p>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowInfoModal(false)}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                  Got it
+                </button>
               </div>
             </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setShowInfoModal(false)}
-                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                Got it
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Trade Modal */}
       {renderTradeModal()}
 
       {/* Waiver Success Notification */}
-      {showWaiverSuccess && (
-        <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
-          <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
+      {
+        showWaiverSuccess && (
+          <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+            <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                 </div>
+                <div className="flex-1 pt-1">
+                  <h3 className="text-xl font-black text-white mb-1">
+                    Success!
+                  </h3>
+                  <p className="text-green-50/90 text-sm mb-3">
+                    {waiverSuccessMsg}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowWaiverSuccess(false)}
+                  className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex-1 pt-1">
-                <h3 className="text-xl font-black text-white mb-1">
-                  Success!
-                </h3>
-                <p className="text-green-50/90 text-sm mb-3">
-                  {waiverSuccessMsg}
-                </p>
+              {/* Progress bar */}
+              <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
               </div>
-              <button
-                onClick={() => setShowWaiverSuccess(false)}
-                className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {/* Progress bar */}
-            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Waiver Error Notification */}
-      {showWaiverError && (
-        <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
-          <div className="bg-gradient-to-br from-red-600/95 to-rose-600/95 border border-red-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+      {
+        showWaiverError && (
+          <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+            <div className="bg-gradient-to-br from-red-600/95 to-rose-600/95 border border-red-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
                 </div>
+                <div className="flex-1 pt-1">
+                  <h3 className="text-xl font-black text-white mb-1">
+                    Error
+                  </h3>
+                  <p className="text-red-50/90 text-sm mb-3">
+                    {waiverErrorMsg}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowWaiverError(false)}
+                  className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex-1 pt-1">
-                <h3 className="text-xl font-black text-white mb-1">
-                  Error
-                </h3>
-                <p className="text-red-50/90 text-sm mb-3">
-                  {waiverErrorMsg}
-                </p>
+              {/* Progress bar */}
+              <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
               </div>
-              <button
-                onClick={() => setShowWaiverError(false)}
-                className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {/* Progress bar */}
-            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Checking Roster Overlay */}
-      {checkingAdd && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4 animate-pulse">
-            <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-            <div className="text-blue-200 font-bold tracking-widest text-lg">CHECKING ROSTER ELIGIBILITY...</div>
+      {
+        checkingAdd && (
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4 animate-pulse">
+              <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <div className="text-blue-200 font-bold tracking-widest text-lg">CHECKING ROSTER ELIGIBILITY...</div>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Trade Success Notification */}
-      {showTradeSuccessNotification && (
-        <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
-          <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
+      {
+        showTradeSuccessNotification && (
+          <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+            <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                 </div>
+                <div className="flex-1 pt-1">
+                  <h3 className="text-xl font-black text-white mb-1">
+                    {tradeSuccessMessage.title}
+                  </h3>
+                  <p className="text-green-50/90 text-sm mb-3">
+                    {tradeSuccessMessage.description}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowTradeSuccessNotification(false)}
+                  className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex-1 pt-1">
-                <h3 className="text-xl font-black text-white mb-1">
-                  {tradeSuccessMessage.title}
-                </h3>
-                <p className="text-green-50/90 text-sm mb-3">
-                  {tradeSuccessMessage.description}
-                </p>
+              {/* Progress bar */}
+              <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
               </div>
-              <button
-                onClick={() => setShowTradeSuccessNotification(false)}
-                className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {/* Progress bar */}
-            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Trade Error Notification */}
-      {showTradeErrorNotification && (
-        <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
-          <div className="bg-gradient-to-br from-red-600/95 to-rose-600/95 border border-red-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+      {
+        showTradeErrorNotification && (
+          <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+            <div className="bg-gradient-to-br from-red-600/95 to-rose-600/95 border border-red-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-white/20 p-3 rounded-full animate-bounce-once">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
                 </div>
+                <div className="flex-1 pt-1">
+                  <h3 className="text-xl font-black text-white mb-1">
+                    {tradeErrorMessage.title}
+                  </h3>
+                  <p className="text-red-50/90 text-sm mb-3">
+                    {tradeErrorMessage.description}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowTradeErrorNotification(false)}
+                  className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex-1 pt-1">
-                <h3 className="text-xl font-black text-white mb-1">
-                  {tradeErrorMessage.title}
-                </h3>
-                <p className="text-red-50/90 text-sm mb-3">
-                  {tradeErrorMessage.description}
-                </p>
+              {/* Progress bar */}
+              <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
               </div>
-              <button
-                onClick={() => setShowTradeErrorNotification(false)}
-                className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {/* Progress bar */}
-            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Legend Modal */}
       <LegendModal
@@ -1909,107 +1922,109 @@ export default function PlayersPage() {
         }
       `}</style>
       {/* Add & Drop Modal */}
-      {showAddDropModal && pendingAddPlayer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-red-500/50 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-fade-in-up">
-            <div className="px-6 py-4 bg-red-900/30 border-b border-red-500/30 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                ⚠️ Limit Reached
-              </h3>
-              <button onClick={() => setShowAddDropModal(false)} className="text-slate-400 hover:text-white font-bold text-2xl">×</button>
-            </div>
-
-
-
-            <div className="p-6">
-              <div className="mb-4 text-slate-300 text-sm">
-                {limitViolationMsg}. To add <span className="text-white font-bold">{pendingAddPlayer.name}</span>, you must drop <span className="text-red-400 font-bold">{violationType.includes('foreigner') ? 'a Foreigner' : 'a player'}</span>.
+      {
+        showAddDropModal && pendingAddPlayer && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-red-500/50 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-fade-in-up">
+              <div className="px-6 py-4 bg-red-900/30 border-b border-red-500/30 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  ⚠️ Limit Reached
+                </h3>
+                <button onClick={() => setShowAddDropModal(false)} className="text-slate-400 hover:text-white font-bold text-2xl">×</button>
               </div>
 
-              <div className="bg-slate-800/50 rounded-lg p-3 border border-purple-500/20 mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-green-400 font-black text-xl">+</div>
-                  <img src={getPlayerPhoto(pendingAddPlayer)} className="w-10 h-10 rounded-full bg-slate-700" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
-                  <div>
-                    <div className="font-bold text-white">{pendingAddPlayer.name}</div>
-                    <div className="text-xs text-purple-300">Target Slot: <span className="font-bold uppercase border border-purple-500/50 px-1 rounded">{projectedAddSlot}</span></div>
+
+
+              <div className="p-6">
+                <div className="mb-4 text-slate-300 text-sm">
+                  {limitViolationMsg}. To add <span className="text-white font-bold">{pendingAddPlayer.name}</span>, you must drop <span className="text-red-400 font-bold">{violationType.includes('foreigner') ? 'a Foreigner' : 'a player'}</span>.
+                </div>
+
+                <div className="bg-slate-800/50 rounded-lg p-3 border border-purple-500/20 mb-6 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-green-400 font-black text-xl">+</div>
+                    <img src={getPlayerPhoto(pendingAddPlayer)} className="w-10 h-10 rounded-full bg-slate-700" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
+                    <div>
+                      <div className="font-bold text-white">{pendingAddPlayer.name}</div>
+                      <div className="text-xs text-purple-300">Target Slot: <span className="font-bold uppercase border border-purple-500/50 px-1 rounded">{projectedAddSlot}</span></div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <h4 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">
-                Select {violationType.includes('foreigner') ? 'Foreigner' : 'Player'} to Drop
-              </h4>
-              <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                {getMyPlayers().map(p => {
-                  const playerDetail = players.find(x => x.player_id === p.player_id);
-                  if (!playerDetail) return null;
+                <h4 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">
+                  Select {violationType.includes('foreigner') ? 'Foreigner' : 'Player'} to Drop
+                </h4>
+                <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {getMyPlayers().map(p => {
+                    const playerDetail = players.find(x => x.player_id === p.player_id);
+                    if (!playerDetail) return null;
 
-                  // Filter logic: If violation is foreigner specific, only show foreigners
-                  if (violationType === 'foreigner_limit' || violationType === 'foreigner_active_limit') {
-                    if (playerDetail.identity?.toLowerCase() !== 'foreigner') return null;
-                  }
+                    // Filter logic: If violation is foreigner specific, only show foreigners
+                    if (violationType === 'foreigner_limit' || violationType === 'foreigner_active_limit') {
+                      if (playerDetail.identity?.toLowerCase() !== 'foreigner') return null;
+                    }
 
-                  const isSelected = dropCandidateID === p.player_id;
-                  return (
-                    <div
-                      key={p.player_id}
-                      onClick={() => setDropCandidateID(p.player_id)}
-                      className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-red-900/40 border-red-500' : 'bg-slate-800 border-slate-700 hover:border-slate-500'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-900 overflow-hidden">
-                          <img src={getPlayerPhoto(playerDetail)} className="w-full h-full object-cover" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
+                    const isSelected = dropCandidateID === p.player_id;
+                    return (
+                      <div
+                        key={p.player_id}
+                        onClick={() => setDropCandidateID(p.player_id)}
+                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-red-900/40 border-red-500' : 'bg-slate-800 border-slate-700 hover:border-slate-500'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-900 overflow-hidden">
+                            <img src={getPlayerPhoto(playerDetail)} className="w-full h-full object-cover" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
+                          </div>
+                          <div className="font-bold text-white">{playerDetail.name}</div>
                         </div>
-                        <div className="font-bold text-white">{playerDetail.name}</div>
+                        {isSelected && <div className="text-red-400 font-bold text-sm">DROP</div>}
                       </div>
-                      {isSelected && <div className="text-red-400 font-bold text-sm">DROP</div>}
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
 
-              <div className="mt-6 flex justify-end gap-3">
-                <button onClick={() => setShowAddDropModal(false)} className="px-4 py-2 rounded-xl text-slate-300 hover:bg-slate-800">Cancel</button>
-                {(() => {
-                  const dropPlayerInRoster = currentRosterState.find(p => p.player_id === dropCandidateID);
-                  const isDropActive = dropPlayerInRoster && !['NA', 'Minor'].includes(dropPlayerInRoster.position);
+                <div className="mt-6 flex justify-end gap-3">
+                  <button onClick={() => setShowAddDropModal(false)} className="px-4 py-2 rounded-xl text-slate-300 hover:bg-slate-800">Cancel</button>
+                  {(() => {
+                    const dropPlayerInRoster = currentRosterState.find(p => p.player_id === dropCandidateID);
+                    const isDropActive = dropPlayerInRoster && !['NA', 'Minor'].includes(dropPlayerInRoster.position);
 
-                  // Validation: 
-                  // If Active Limit exceeded (active_roster_limit OR foreigner_active_limit), we usually need to drop Active.
-                  // BUT if the new player goes to NA (because we dropped an NA player??? No, if we add active, we must drop active OR drop NA to move someone to NA... wait)
-                  // Simplified: If violation is Active Limit, drop candidate MUST be Active.
-                  const isViolationActiveLimit = violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
+                    // Validation: 
+                    // If Active Limit exceeded (active_roster_limit OR foreigner_active_limit), we usually need to drop Active.
+                    // BUT if the new player goes to NA (because we dropped an NA player??? No, if we add active, we must drop active OR drop NA to move someone to NA... wait)
+                    // Simplified: If violation is Active Limit, drop candidate MUST be Active.
+                    const isViolationActiveLimit = violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
 
-                  // If violation is ActiveLimit, we generally must drop an Active player to free up a slot.
-                  // Exception: If we drop an NA player, but that allows us to move an active player to NA... the system doesn't auto-move players yet usually.
-                  // So we strictly require drop to be Active if limit is Active.
+                    // If violation is ActiveLimit, we generally must drop an Active player to free up a slot.
+                    // Exception: If we drop an NA player, but that allows us to move an active player to NA... the system doesn't auto-move players yet usually.
+                    // So we strictly require drop to be Active if limit is Active.
 
 
-                  // Simplified Logic:
-                  // We only have a problem if we represent a Net Increase in Active count that violates the limit.
-                  // Violation exists if: Add is Active AND Drop is NOT Active.
-                  // If Add becomes NA (projectedAddSlot 'NA'), then Add is NOT Active (0 increase), so we are safe regardless of drop.
-                  const isAddActive = !['NA', 'Minor'].includes(projectedAddSlot);
-                  const isInvalidDropForActiveLimit = isViolationActiveLimit && isAddActive && !isDropActive;
+                    // Simplified Logic:
+                    // We only have a problem if we represent a Net Increase in Active count that violates the limit.
+                    // Violation exists if: Add is Active AND Drop is NOT Active.
+                    // If Add becomes NA (projectedAddSlot 'NA'), then Add is NOT Active (0 increase), so we are safe regardless of drop.
+                    const isAddActive = !['NA', 'Minor'].includes(projectedAddSlot);
+                    const isInvalidDropForActiveLimit = isViolationActiveLimit && isAddActive && !isDropActive;
 
-                  return (
-                    <button
-                      onClick={confirmAddDrop}
-                      disabled={!dropCandidateID || isAdding || isInvalidDropForActiveLimit}
-                      className={`px-6 py-2 rounded-xl font-bold shadow-lg transition-all ${!dropCandidateID || isAdding || isInvalidDropForActiveLimit ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:scale-105'}`}
-                    >
-                      {isInvalidDropForActiveLimit ? 'Drop Active Player to Fix' : (isAdding ? 'Processing...' : 'Confirm Add & Drop')}
-                    </button>
-                  );
-                })()}
+                    return (
+                      <button
+                        onClick={confirmAddDrop}
+                        disabled={!dropCandidateID || isAdding || isInvalidDropForActiveLimit}
+                        className={`px-6 py-2 rounded-xl font-bold shadow-lg transition-all ${!dropCandidateID || isAdding || isInvalidDropForActiveLimit ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:scale-105'}`}
+                      >
+                        {isInvalidDropForActiveLimit ? 'Drop Active Player to Fix' : (isAdding ? 'Processing...' : 'Confirm Add & Drop')}
+                      </button>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-    </div>
+    </div >
   );
 }
 
