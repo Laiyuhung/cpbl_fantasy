@@ -647,7 +647,6 @@ export default function DraftPage() {
         const taken = new Set(picks.map(p => String(p.player_id)).filter(Boolean));
 
         // Recent Picks: "Draft History" order (Descending Pick Number - Newest First)
-        // Recent Picks: "Draft History" order (Descending Pick Number - Newest First)
         // Ensure player object has identity accessible if it's nested or direct
         const recent = picks.filter(p => p.player_id).sort((a, b) => b.pick_number - a.pick_number);
 
@@ -1970,7 +1969,7 @@ export default function DraftPage() {
                                     const fCount = managerForeignerCounts[String(m.manager_id)] || 0;
                                     return (
                                         <option key={m.manager_id} value={m.manager_id}>
-                                            {m.nickname} {m.manager_id === myManagerId ? '(You)' : ''} (F: {fCount})
+                                            {m.nickname} {m.manager_id === myManagerId ? '(You)' : ''}
                                         </option>
                                     );
                                 })}

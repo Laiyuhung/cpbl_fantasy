@@ -141,6 +141,15 @@ export default function PlayersPage() {
     fetchData();
   }, [leagueId]);
 
+  // Set default sort when categories are loaded
+  useEffect(() => {
+    if (filterType === 'batter' && batterStatCategories.length > 0 && sortConfig.key === null) {
+      setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
+    } else if (filterType === 'pitcher' && pitcherStatCategories.length > 0 && sortConfig.key === null) {
+      setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
+    }
+  }, [batterStatCategories, pitcherStatCategories, filterType]);
+
   // 取得球員統計數據
   useEffect(() => {
     const fetchPlayerStats = async () => {
@@ -1223,7 +1232,12 @@ export default function PlayersPage() {
             </h2>
             <div className="flex bg-slate-900/40 p-1 rounded-md border border-white/20">
               <button
-                onClick={() => setFilterType('batter')}
+                onClick={() => {
+                  setFilterType('batter');
+                  if (batterStatCategories.length > 0) {
+                    setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
+                  }
+                }}
                 className={`flex items-center justify-center py-1.5 px-4 rounded text-sm font-bold transition-all ${filterType === 'batter'
                   ? 'bg-white text-purple-600 shadow'
                   : 'text-purple-200 hover:text-white hover:bg-white/10'
@@ -1232,7 +1246,12 @@ export default function PlayersPage() {
                 Batter
               </button>
               <button
-                onClick={() => setFilterType('pitcher')}
+                onClick={() => {
+                  setFilterType('pitcher');
+                  if (pitcherStatCategories.length > 0) {
+                    setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
+                  }
+                }}
                 className={`flex items-center justify-center py-1.5 px-4 rounded text-sm font-bold transition-all ${filterType === 'pitcher'
                   ? 'bg-white text-purple-600 shadow'
                   : 'text-purple-200 hover:text-white hover:bg-white/10'
