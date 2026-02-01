@@ -20,14 +20,14 @@ const BATTER_STAT_MAP = {
     'Total Bases (TB)': 'z_tb',
     'Runs (R)': 'z_r',
     'Runs Batted In (RBI)': 'z_rbi',
-    'Strikeouts (K)': 'z_k', // Already inverted in view if bad? usually bad for batters? No, usually K is bad for batters. View handles inversion? I'll assume Yes as per previous SQL logic context.
+    'Strikeouts (K)': 'z_k',
     'Walks (BB)': 'z_bb',
     'Hit By Pitch (HBP)': 'z_hbp',
     'Sacrifice Hits (SH)': 'z_sh',
     'Sacrifice Flies (SF)': 'z_sf',
     'Stolen Bases (SB)': 'z_sb',
-    'Caught Stealing (CS)': 'z_cs', // Inverted in view
-    'Ground Into Double Play (GIDP)': 'z_gidp', // Inverted in view
+    'Caught Stealing (CS)': 'z_cs',
+    'Ground Into Double Play (GIDP)': 'z_gidp',
     'Hitting for the Cycle (CYC)': 'z_cyc',
     'Batting Average (AVG)': 'z_avg',
     'On-base Percentage (OBP)': 'z_obp',
@@ -44,33 +44,33 @@ const PITCHER_STAT_MAP = {
     'Total Batters Faced (TBF)': 'z_tbf',
     'Pitch Count (PC)': 'z_pc',
     'Wins (W)': 'z_w',
-    'Losses (L)': 'z_l', // Inverted
+    'Losses (L)': 'z_l',
     'Holds (HLD)': 'z_hld',
     'Saves (SV)': 'z_sv',
     'Saves + Holds (SV+HLD)': 'z_svhld',
     'Relief Wins (RW)': 'z_rw',
-    'Relief Losses (RL)': 'z_rl', // Inverted
-    'Hits (H)': 'z_h', // Inverted
-    'Home Runs (HR)': 'z_hr', // Inverted
+    'Relief Losses (RL)': 'z_rl',
+    'Hits (H)': 'z_h',
+    'Home Runs (HR)': 'z_hr',
     'Strikeouts (K)': 'z_k',
-    'Walks (BB)': 'z_bb', // Inverted
-    'Intentional Walks (IBB)': 'z_ibb', // Inverted
-    'Hit Batters (HBP)': 'z_hbp', // Inverted
-    'Runs Allowed (RA)': 'z_ra', // Inverted
-    'Earned Runs (ER)': 'z_er', // Inverted
+    'Walks (BB)': 'z_bb',
+    'Intentional Walks (IBB)': 'z_ibb',
+    'Hit Batters (HBP)': 'z_hbp',
+    'Runs Allowed (RA)': 'z_ra',
+    'Earned Runs (ER)': 'z_er',
     'Quality Starts (QS)': 'z_qs',
     'Complete Games (CG)': 'z_cg',
     'Shutouts (SHO)': 'z_sho',
     'Perfect Games (PG)': 'z_pg',
     'No Hitters (NH)': 'z_nh',
-    'Earned Run Average (ERA)': 'z_era', // Inverted
-    '(Walks + Hits)/ Innings Pitched (WHIP)': 'z_whip', // Inverted
+    'Earned Run Average (ERA)': 'z_era',
+    '(Walks + Hits)/ Innings Pitched (WHIP)': 'z_whip',
     'Winning Percentage (WIN%)': 'z_win%',
     'Strikeouts per Nine Innings (K/9)': 'z_k/9',
-    'Walks Per Nine Innings (BB/9)': 'z_bb/9', // Inverted
+    'Walks Per Nine Innings (BB/9)': 'z_bb/9',
     'Strikeout to Walk Ratio (K/BB)': 'z_k/bb',
-    'Hits Per Nine Innings (H/9)': 'z_h/9', // Inverted
-    'On-base Percentage Against (OBPA)': 'z_obpa' // Inverted
+    'Hits Per Nine Innings (H/9)': 'z_h/9',
+    'On-base Percentage Against (OBPA)': 'z_obpa'
 };
 
 export async function GET(request, { params }) {
@@ -86,7 +86,7 @@ export async function GET(request, { params }) {
         // 1. Fetch League Settings
         const { data: leagueSettings, error: settingsError } = await supabase
             .from('league_settings')
-            .select('batter_stat_categories, pitcher_stat_categories')
+            .select('scoring_type, batter_stat_categories, pitcher_stat_categories')
             .eq('league_id', leagueId)
             .single();
 
@@ -94,31 +94,63 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: 'Settings not found' }, { status: 404 });
         }
 
+        const scoringType = leagueSettings.scoring_type;
+        const isH2HPoints = scoringType === 'Head-to-Head Fantasy Points';
         const activeBatterCats = leagueSettings.batter_stat_categories || [];
         const activePitcherCats = leagueSettings.pitcher_stat_categories || [];
 
-        // 2. Fetch Z-Score Views
-        const [batResponse, pitchResponse, playersResponse] = await Promise.all([
+        // 2. Fetch Z-Score Views and Optional Weights
+        const pAll = [
             supabase.from('v_batting_scoring').select('*').eq('time_window', timeWindow),
             supabase.from('v_pitching_scoring').select('*').eq('time_window', timeWindow),
             // Fetch player details using correct table 'player_list' and simplifying to name/team
             supabase.from('player_list').select('player_id, name, team')
-        ]);
+        ];
 
-        if (batResponse.error || pitchResponse.error || playersResponse.error) {
-            console.error('Data fetch error', batResponse.error, pitchResponse.error, playersResponse.error);
+        if (isH2HPoints) {
+            pAll.push(
+                supabase.from('league_stat_category_weights')
+                    .select('category_type, category_name, weight')
+                    .eq('league_id', leagueId)
+            );
+        }
+
+        const responses = await Promise.all(pAll);
+        const batResponse = responses[0];
+        const pitchResponse = responses[1];
+        const playersResponse = responses[2];
+        const weightsResponse = isH2HPoints ? responses[3] : { data: [] };
+
+        if (batResponse.error || pitchResponse.error || playersResponse.error || (isH2HPoints && weightsResponse.error)) {
+            console.error('Data fetch error', batResponse.error, pitchResponse.error, playersResponse.error, weightsResponse.error);
             return NextResponse.json({
                 error: 'Failed to fetch stats',
                 details: {
                     bat: batResponse.error,
                     pitch: pitchResponse.error,
-                    players: playersResponse.error
+                    players: playersResponse.error,
+                    weights: weightsResponse.error
                 }
             }, { status: 500 });
         }
 
         const batData = batResponse.data || [];
         const pitchData = pitchResponse.data || [];
+        const weightsData = weightsResponse.data || [];
+
+        // Build weight maps
+        const batterWeights = {};
+        const pitcherWeights = {};
+
+        if (isH2HPoints) {
+            weightsData.forEach(w => {
+                if (w.category_type === 'batter') {
+                    batterWeights[w.category_name] = Number(w.weight);
+                } else if (w.category_type === 'pitcher') {
+                    pitcherWeights[w.category_name] = Number(w.weight);
+                }
+            });
+        }
 
         // Map player details
         const playerMap = new Map();
@@ -134,7 +166,9 @@ export async function GET(request, { params }) {
             activeBatterCats.forEach(cat => {
                 const col = BATTER_STAT_MAP[cat];
                 if (col && player[col] !== undefined && player[col] !== null) {
-                    batTotal += Number(player[col]);
+                    const zScore = Number(player[col]);
+                    const weight = isH2HPoints ? (batterWeights[cat] ?? 1.0) : 1.0;
+                    batTotal += zScore * weight;
                 }
             });
 
@@ -157,11 +191,10 @@ export async function GET(request, { params }) {
             activePitcherCats.forEach(cat => {
                 const col = PITCHER_STAT_MAP[cat];
                 if (col && player[col] !== undefined && player[col] !== null) {
-                    // Special handling for columns with special chars like % or /
-                    // Supabase/PostgREST usually returns them as keys. 
-                    // We need to double check if the view returns 'z_k/9' as a key or something else.
-                    // Assuming standard JSON response keys match the column names.
-                    pitchTotal += Number(player[col]);
+                    // columns for pitchers in view
+                    const zScore = Number(player[col]);
+                    const weight = isH2HPoints ? (pitcherWeights[cat] ?? 1.0) : 1.0;
+                    pitchTotal += zScore * weight;
                 }
             });
 
