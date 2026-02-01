@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import supabase from '@/lib/supabase';
 
 export default function LeaguePage() {
   const params = useParams();
@@ -44,7 +45,7 @@ export default function LeaguePage() {
           setLeagueStatus(result.status || 'unknown');
           setMaxTeams(result.maxTeams || 0);
           setInvitePermissions(result.invitePermissions || 'commissioner only');
-          
+
           // 获取当前用户的权限
           const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
           const currentUserId = cookie?.split('=')[1];
@@ -85,7 +86,7 @@ export default function LeaguePage() {
       }
 
       setDraftTimeStatus('upcoming');
-      
+
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -136,12 +137,12 @@ export default function LeaguePage() {
     if (members.length >= maxTeams || leagueStatus !== 'pre-draft' || leagueSettings?.is_finalized) {
       return false;
     }
-    
+
     // commissioner only: 只有 Commissioner 或 Co-Commissioner 可以看到
     if (invitePermissions?.toLowerCase() === 'commissioner only') {
       return currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner';
     }
-    
+
     // Managers can invite: 所有人都可以看到
     return true;
   };
@@ -191,32 +192,30 @@ export default function LeaguePage() {
           <div className="flex items-center gap-4 mt-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-purple-300 font-medium">Status:</span>
-              <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${
-                leagueStatus === 'pre-draft' ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50' :
-                leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
-                leagueStatus === 'drafting now' ? 'bg-blue-500/80 text-blue-100 shadow-blue-500/50 animate-pulse' :
-                leagueStatus === 'in season' ? 'bg-green-500/80 text-green-100 shadow-green-500/50' :
-                leagueStatus === 'playoffs' ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50' :
-                leagueStatus === 'finished' ? 'bg-gray-500/80 text-gray-100 shadow-gray-500/50' :
-                'bg-gray-500/80 text-gray-100 shadow-gray-500/50'
-              }`}>
+              <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${leagueStatus === 'pre-draft' ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50' :
+                  leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
+                    leagueStatus === 'drafting now' ? 'bg-blue-500/80 text-blue-100 shadow-blue-500/50 animate-pulse' :
+                      leagueStatus === 'in season' ? 'bg-green-500/80 text-green-100 shadow-green-500/50' :
+                        leagueStatus === 'playoffs' ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50' :
+                          leagueStatus === 'finished' ? 'bg-gray-500/80 text-gray-100 shadow-gray-500/50' :
+                            'bg-gray-500/80 text-gray-100 shadow-gray-500/50'
+                }`}>
                 {leagueStatus === 'pre-draft' ? 'Pre-Draft' :
-                 leagueStatus === 'post-draft & pre-season' ? 'Post-Draft & Pre-Season' :
-                 leagueStatus === 'drafting now' ? 'Drafting Now' :
-                 leagueStatus === 'in season' ? 'In Season' :
-                 leagueStatus === 'playoffs' ? 'Playoffs' :
-                 leagueStatus === 'finished' ? 'Finished' :
-                 leagueStatus}
+                  leagueStatus === 'post-draft & pre-season' ? 'Post-Draft & Pre-Season' :
+                    leagueStatus === 'drafting now' ? 'Drafting Now' :
+                      leagueStatus === 'in season' ? 'In Season' :
+                        leagueStatus === 'playoffs' ? 'Playoffs' :
+                          leagueStatus === 'finished' ? 'Finished' :
+                            leagueStatus}
               </span>
             </div>
             {currentUserRole && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-purple-300 font-medium">Your Role:</span>
-                <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${
-                  currentUserRole === 'Commissioner' ? 'bg-red-500/80 text-red-100 shadow-red-500/50' :
-                  currentUserRole === 'Co-Commissioner' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
-                  'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
-                }`}>
+                <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${currentUserRole === 'Commissioner' ? 'bg-red-500/80 text-red-100 shadow-red-500/50' :
+                    currentUserRole === 'Co-Commissioner' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
+                      'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
+                  }`}>
                   {currentUserRole}
                 </span>
               </div>
@@ -330,11 +329,10 @@ export default function LeaguePage() {
                         {member.nickname.charAt(0).toUpperCase()}
                       </div>
                       {member.role && (
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                          member.role === 'Commissioner' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-                          member.role === 'Co-Commissioner' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-                          'bg-blue-500/30 text-blue-300 border border-blue-500/50'
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${member.role === 'Commissioner' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
+                            member.role === 'Co-Commissioner' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
+                              'bg-blue-500/30 text-blue-300 border border-blue-500/50'
+                          }`}>
                           {member.role === 'Commissioner' ? 'COMM' : member.role === 'Co-Commissioner' ? 'CO-COMM' : 'MEMBER'}
                         </span>
                       )}
@@ -370,7 +368,7 @@ export default function LeaguePage() {
                         Week #
                       </th>
                       <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
-                        Week Label
+                        Label
                       </th>
                       <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
                         Type
@@ -387,12 +385,11 @@ export default function LeaguePage() {
                     {scheduleData.map((week, index) => (
                       <tr
                         key={week.id}
-                        className={`${
-                          index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
-                        } border-b border-purple-500/20 hover:bg-purple-500/20 transition-colors`}
+                        className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
+                          } border-b border-purple-500/20 hover:bg-purple-500/20 transition-colors`}
                       >
                         <td className="px-6 py-4 font-bold text-white text-lg">
-                          {week.week_number}
+                          Week {week.week_number}
                         </td>
                         <td className="px-6 py-4 text-purple-200 font-medium">
                           {week.week_label || '-'}

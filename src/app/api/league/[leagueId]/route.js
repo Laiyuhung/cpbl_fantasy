@@ -33,18 +33,25 @@ export async function GET(request, { params }) {
     }
 
     // Fetch league schedule
+    // Explicitly select columns to ensure alignment with schema
     const { data: schedule, error: scheduleError } = await supabase
       .from('league_schedule')
-      .select('*')
+      .select(`
+        id,
+        league_id,
+        week_number,
+        week_type,
+        week_start,
+        week_end,
+        week_label
+      `)
       .eq('league_id', leagueId)
       .order('week_number', { ascending: true });
 
     if (scheduleError) {
       console.error('Supabase schedule error:', scheduleError);
-      return NextResponse.json(
-        { error: 'Failed to fetch schedule', details: scheduleError.message },
-        { status: 500 }
-      );
+      // We don't block the page load if schedule fails, but we log it.
+      // The UI will show empty schedule state.
     }
 
     // Fetch league status
@@ -111,6 +118,7 @@ export async function GET(request, { params }) {
     );
   }
 }
+
 // DELETE: Delete entire league (Commissioner only)
 export async function DELETE(request, { params }) {
   try {
