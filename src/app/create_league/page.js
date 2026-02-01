@@ -875,7 +875,7 @@ const CreateLeaguePage = () => {
         setShowSuccessAnimation(true);
         window.dispatchEvent(new Event('leagues-changed'));
         setTimeout(() => {
-          router.push(`/league/${result.league_id}`);
+          window.location.href = `/league/${result.league_id}`;
         }, 2000);
       } else {
         setSaveMessage(`❌ 保存失敗: ${result.error || '未知錯誤'}`);
