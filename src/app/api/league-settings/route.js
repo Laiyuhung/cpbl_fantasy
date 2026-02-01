@@ -45,7 +45,7 @@ const toTaiwanIso = (dt) => {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 };
 
-// 計算聯盟周次
+// 計算聯盟周次 (Fallback fallback logic if frontend doesn't provide it)
 const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => {
   const schedule = [];
   const maxWeeks = 23; // 总共可用周次（week_id 1-23）
@@ -94,8 +94,6 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
       break;
     }
   }
-
-  const regularSeasonWeeks = schedule.length;
 
   // 計算季後賽周次
   if (playoffsStart && playoffsType && playoffsType !== 'No playoffs') {
@@ -155,7 +153,7 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { settings, manager_id, categoryWeights } = body;
+    const { settings, manager_id, categoryWeights, schedule: bodySchedule } = body;
 
     if (!manager_id) {
       return NextResponse.json(
@@ -281,16 +279,26 @@ export async function POST(request) {
     }
 
     // 生成並插入周次數據
-    const { schedule: scheduleData } = generateLeagueSchedule(
-      settings.scoring['Start Scoring On'],
-      settings.playoffs['Playoffs start'],
-      settings.playoffs['Playoffs']
-    );
+    let scheduleData;
+    if (bodySchedule && Array.isArray(bodySchedule) && bodySchedule.length > 0) {
+      scheduleData = bodySchedule;
+    } else {
+      const { schedule: generated } = generateLeagueSchedule(
+        settings.scoring['Start Scoring On'],
+        settings.playoffs['Playoffs start'],
+        settings.playoffs['Playoffs']
+      );
+      scheduleData = generated;
+    }
 
-    if (scheduleData.length > 0) {
+    if (scheduleData && scheduleData.length > 0) {
       const scheduleRecords = scheduleData.map(week => ({
         league_id: leagueId,
-        ...week
+        week_number: week.week_number,
+        week_type: week.week_type,
+        week_start: week.week_start,
+        week_end: week.week_end,
+        week_label: week.week_label
       }));
 
       const { error: scheduleInsertError } = await supabase
@@ -363,7 +371,7 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { league_id, settings, categoryWeights } = body;
+    const { league_id, settings, categoryWeights, schedule: bodySchedule } = body;
 
     if (!league_id) {
       return NextResponse.json(
@@ -459,16 +467,26 @@ export async function PUT(request) {
       .eq('league_id', league_id);
 
     // 重新生成並插入周次數據
-    const { schedule: scheduleData } = generateLeagueSchedule(
-      settings.scoring['Start Scoring On'],
-      settings.playoffs['Playoffs start'],
-      settings.playoffs['Playoffs']
-    );
+    let scheduleData;
+    if (bodySchedule && Array.isArray(bodySchedule) && bodySchedule.length > 0) {
+      scheduleData = bodySchedule;
+    } else {
+      const { schedule: generated } = generateLeagueSchedule(
+        settings.scoring['Start Scoring On'],
+        settings.playoffs['Playoffs start'],
+        settings.playoffs['Playoffs']
+      );
+      scheduleData = generated;
+    }
 
-    if (scheduleData.length > 0) {
+    if (scheduleData && scheduleData.length > 0) {
       const scheduleRecords = scheduleData.map(week => ({
         league_id: league_id,
-        ...week
+        week_number: week.week_number,
+        week_type: week.week_type,
+        week_start: week.week_start,
+        week_end: week.week_end,
+        week_label: week.week_label
       }));
 
       const { error: scheduleInsertError } = await supabase

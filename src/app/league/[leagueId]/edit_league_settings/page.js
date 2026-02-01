@@ -184,7 +184,7 @@ const sections = [
 ];
 
 // SchedulePreview 元件：根據設定值實時推算schedule_date表中的週次
-function SchedulePreview({ leagueId, settings, onValidationChange }) {
+function SchedulePreview({ leagueId, settings, onValidationChange, onScheduleChange }) {
   const [allScheduleData, setAllScheduleData] = useState([]);
   const [scheduleValidationError, setScheduleValidationError] = useState('');
   const [filteredSchedule, setFilteredSchedule] = useState([]);
@@ -226,6 +226,7 @@ function SchedulePreview({ leagueId, settings, onValidationChange }) {
   useEffect(() => {
     if (!allScheduleData || allScheduleData.length === 0) {
       setFilteredSchedule([]);
+      if (onScheduleChange) onScheduleChange([]);
       return;
     }
 
@@ -235,6 +236,7 @@ function SchedulePreview({ leagueId, settings, onValidationChange }) {
 
     if (!startScoringOn) {
       setFilteredSchedule([]);
+      if (onScheduleChange) onScheduleChange([]);
       return;
     }
 
@@ -263,6 +265,7 @@ function SchedulePreview({ leagueId, settings, onValidationChange }) {
 
     if (!startDate) {
       setFilteredSchedule([]);
+      if (onScheduleChange) onScheduleChange([]);
       return;
     }
 
@@ -321,21 +324,25 @@ function SchedulePreview({ leagueId, settings, onValidationChange }) {
     let weekCounter = 1;
     const scheduleWithTypes = regularSeasonWeeks.map((week) => {
       const label = `Week ${weekCounter}`;
-      weekCounter++;
-      return {
+      const weekObj = {
         ...week,
+        week_number: weekCounter,
         week_type: 'regular_season',
         week_label: label,
       };
+      weekCounter++;
+      return weekObj;
     });
 
     // 如果有季後賽，加入補賽預備週和季後賽週次
     if (playoffStartDate && playoffLabels.length > 0 && makeupWeek) {
       scheduleWithTypes.push({
         ...makeupWeek,
+        week_number: weekCounter,
         week_type: 'makeup',
         week_label: 'Makeup Preparation Week',
       });
+      weekCounter++;
 
       // 加入季後賽週次，跳過week_id=23
       const allPlayoffWeeks = allScheduleData
@@ -348,9 +355,11 @@ function SchedulePreview({ leagueId, settings, onValidationChange }) {
       allPlayoffWeeks.forEach((week, index) => {
         scheduleWithTypes.push({
           ...week,
+          week_number: weekCounter,
           week_type: 'playoffs',
           week_label: playoffLabels[index] || `Playoff ${index + 1}`,
         });
+        weekCounter++;
       });
 
       // 加入Preparation Week (在季後賽後)
@@ -364,9 +373,11 @@ function SchedulePreview({ leagueId, settings, onValidationChange }) {
       afterPlayoffWeeks.forEach((week) => {
         scheduleWithTypes.push({
           ...week,
+          week_number: weekCounter,
           week_type: 'preparation',
           week_label: 'Preparation Week',
         });
+        weekCounter++;
       });
 
       // 驗證季後賽週次是否足夠
@@ -388,6 +399,8 @@ function SchedulePreview({ leagueId, settings, onValidationChange }) {
     }
 
     setFilteredSchedule(scheduleWithTypes);
+    if (onScheduleChange) onScheduleChange(scheduleWithTypes);
+
   }, [allScheduleData, settings, onValidationChange]);
 
   if (loading) {
@@ -564,9 +577,14 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
   const [draftOrder, setDraftOrder] = useState([]);
   const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
+  const [scheduleData, setScheduleData] = useState([]); // Store calculated schedule
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
+  };
+
+  const handleScheduleChange = (data) => {
+    setScheduleData(data);
   };
 
   // Check if draft order has been generated and fetch it
@@ -1262,7 +1280,8 @@ const EditLeagueSettingsPage = ({ params }) => {
         body: JSON.stringify({
           league_id: leagueId,
           settings,
-          categoryWeights: settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' ? categoryWeights : null
+          categoryWeights: settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' ? categoryWeights : null,
+          schedule: scheduleData
         }),
       });
 
@@ -1679,7 +1698,7 @@ const EditLeagueSettingsPage = ({ params }) => {
 
           <div className="mt-8">
             {/* 週次預覽表 - 從schedule_date表顯示，根據設定即時篩選 */}
-            <SchedulePreview leagueId={leagueId} settings={settings} onValidationChange={handleScheduleValidation} />
+            <SchedulePreview leagueId={leagueId} settings={settings} onValidationChange={handleScheduleValidation} onScheduleChange={handleScheduleChange} />
           </div>
 
 
