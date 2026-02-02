@@ -988,7 +988,7 @@ export default function PlayersPage() {
     );
 
     // Check League Status
-    const allowedStatuses = ['in_season', 'playoffs'];
+    const allowedStatuses = ['post-draft & pre-season', 'in season', 'playoffs'];
     // Normalize status just in case (e.g. In Season vs in_season) - usually DB uses lowercase specific enum
     // If unknown, default to hide? Or show? Safe is hide.
     // Assuming API returns raw DB value: 'pre_season', 'in_season', 'playoffs', 'post_season'
