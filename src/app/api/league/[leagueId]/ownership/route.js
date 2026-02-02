@@ -110,35 +110,7 @@ export async function POST(req, { params }) {
         const lastWeek = scheduleInfo[scheduleInfo.length - 1]; // 最後一週
 
         let seasonStart = new Date(firstWeek.week_start);
-        let seasonEnd = null;
-
-        // 2. 透過最後一週的 week_end 去 schedule_date 找 week_id
-        const { data: weekData, error: weekError } = await supabase
-          .from('schedule_date')
-          .select('week')
-          .eq('end', lastWeek.week_end) // 假設完全匹配
-          .single();
-
-        if (!weekError && weekData) {
-          // 3. 找到 week_id + 1 作為賽季結束判定點
-          const currentWeekNum = parseInt(weekData.week.replace('W', ''), 10);
-          const nextWeekNum = currentWeekNum + 1;
-          const nextWeekStr = `W${nextWeekNum}`;
-
-          const { data: nextWeekData, error: nextWeekError } = await supabase
-            .from('schedule_date')
-            .select('end')
-            .eq('week', nextWeekStr)
-            .single();
-
-          if (!nextWeekError && nextWeekData) {
-            seasonEnd = new Date(nextWeekData.end);
-          }
-        }
-
-        if (!seasonEnd) {
-          seasonEnd = new Date(lastWeek.week_end);
-        }
+        let seasonEnd = new Date(lastWeek.week_end);
 
         // 4. 決定生成區間
         const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));

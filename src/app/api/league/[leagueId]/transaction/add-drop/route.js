@@ -272,27 +272,7 @@ export async function POST(request, { params }) {
             const firstWeek = scheduleInfo[0];
             const lastWeek = scheduleInfo[scheduleInfo.length - 1];
             seasonStart = new Date(firstWeek.week_start);
-
-            // Try to find schedule_date end for last week
-            const { data: weekData } = await supabase
-                .from('schedule_date')
-                .select('week')
-                .eq('end', lastWeek.week_end)
-                .single();
-
-            if (weekData) {
-                const currentWeekNum = parseInt(weekData.week.replace('W', ''), 10);
-                const nextWeekNum = currentWeekNum + 1;
-                const { data: nextWeekData } = await supabase
-                    .from('schedule_date')
-                    .select('end')
-                    .eq('week', `W${nextWeekNum}`)
-                    .single();
-                if (nextWeekData) {
-                    seasonEnd = new Date(nextWeekData.end);
-                }
-            }
-            if (!seasonEnd) seasonEnd = new Date(lastWeek.week_end);
+            seasonEnd = new Date(lastWeek.week_end);
         }
 
         // 2. Determine Start Date (Today)
