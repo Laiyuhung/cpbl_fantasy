@@ -69,7 +69,7 @@ export default function LeaguePage() {
 
   const [currentWeek, setCurrentWeek] = useState(1);
   const [matchups, setMatchups] = useState([]);
-  const [matchupsLoading, setMatchupsLoading] = useState(false);
+  const [matchupsLoading, setMatchupsLoading] = useState(true);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -351,12 +351,9 @@ export default function LeaguePage() {
 
           {/* Matchups Grid */}
           {matchupsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-32 md:h-40 bg-white/5 rounded-2xl animate-pulse border border-white/5 flex items-center justify-center">
-                  <span className="text-purple-400 font-bold tracking-widest uppercase text-sm">Loading Matchup...</span>
-                </div>
-              ))}
+            <div className="w-full h-64 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
+              <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-purple-300 font-bold tracking-widest uppercase text-sm">Loading Matchups...</span>
             </div>
           ) : matchups.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
