@@ -33,6 +33,11 @@ export default function RosterPage() {
     const [playerToMove, setPlayerToMove] = useState(null);
 
     // Helpers
+    const parseStatName = (stat) => {
+        const matches = stat.match(/\(([^)]+)\)/g);
+        return matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
+    };
+
     const getTeamAbbr = (team) => { /* ... same ... */
         switch (team) {
             case '統一獅': return 'UL';
@@ -184,8 +189,7 @@ export default function RosterPage() {
             if (settingsData.success && settingsData.data) {
                 setBatterStatCategories(settingsData.data.batter_stat_categories || []);
                 setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
-                setBatterStatCategories(settingsData.data.batter_stat_categories || []);
-                setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
+
                 setRosterPositionsConfig(settingsData.data.roster_positions || {});
                 setForeignerActiveLimit(settingsData.data.foreigner_active_limit);
             }
@@ -335,10 +339,7 @@ export default function RosterPage() {
         ? ['Innings Pitched (IP)', ...pitcherStatCategories]
         : pitcherStatCategories;
 
-    const parseStatName = (stat) => {
-        const matches = stat.match(/\(([^)]+)\)/g);
-        return matches ? matches[matches.length - 1].replace(/[()]/g, '') : stat;
-    };
+
 
     if (loading) {
         return (
