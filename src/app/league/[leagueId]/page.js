@@ -310,8 +310,8 @@ export default function LeaguePage() {
               </h1>
               <div className="flex items-center gap-2 mt-2">
                 <span className={`px-3 py-0.5 rounded-full text-xs font-bold border ${leagueStatus === 'in season'
-                    ? 'bg-green-500/20 text-green-300 border-green-500/30'
-                    : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                  ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                  : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
                   }`}>
                   {leagueStatus === 'in season' ? 'IN SEASON' : 'PRE-SEASON'}
                 </span>
@@ -366,16 +366,26 @@ export default function LeaguePage() {
                 const managerA = getManagerDetails(matchup.manager_id_a);
                 const managerB = getManagerDetails(matchup.manager_id_b);
                 // Calculate win probability or status if needed, for now just show scores
-                const scoreA = Number(matchup.score_a || 0);
-                const scoreB = Number(matchup.score_b || 0);
-                const isLive = leagueStatus === 'in season'; // Simplified logic for live tag
+                // Calculate status based on week schedule
+                const now = new Date();
+                const weekStart = new Date(weekDetails?.week_start);
+                const weekEnd = new Date(weekDetails?.week_end);
+
+                const hasStarted = now >= weekStart;
+                const isLive = now >= weekStart && now <= weekEnd;
+                const isFinal = now > weekEnd;
+
+                // Test override (optional, remove for production if needed, or keep logic solely on dates)
+                // const isLive = leagueStatus === 'in season'; 
 
                 return (
-                  <div key={matchup.id} className="group relative bg-slate-800/50 hover:bg-slate-800/80 backdrop-blur-sm border border-white/5 hover:border-purple-500/30 rounded-2xl p-0 overflow-hidden transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+                  <div key={matchup.id} className="group relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:from-purple-900/40 hover:to-blue-900/40 backdrop-blur-sm border border-white/5 hover:border-purple-500/50 rounded-2xl p-0 overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)]">
                     {/* Card Header / Status */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                    <div className="flex items-stretch h-32 md:h-40">
+                    <div className="flex items-stretch h-32 md:h-40 relative">
+                      {/* Background decorations */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none"></div>
                       {/* Team A */}
                       <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
                         <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 p-0.5 shadow-lg mb-2 group-hover:scale-105 transition-transform">
@@ -393,24 +403,28 @@ export default function LeaguePage() {
 
                       {/* VS / Score */}
                       <div className="w-32 md:w-40 flex flex-col items-center justify-center bg-black/20 z-10">
-                        {isLive ? (
+                        {hasStarted ? (
                           <div className="flex flex-col items-center gap-1">
                             <div className="flex items-center gap-4 text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">
                               <span className={scoreA > scoreB ? 'text-green-400' : scoreA < scoreB ? 'text-slate-300' : 'text-white'}>{scoreA}</span>
                               <span className="text-slate-600 text-lg font-normal">-</span>
                               <span className={scoreB > scoreA ? 'text-green-400' : scoreB < scoreA ? 'text-slate-300' : 'text-white'}>{scoreB}</span>
                             </div>
-                            <div className="text-[10px] font-bold tracking-widest text-red-400 uppercase animate-pulse flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                              LIVE
-                            </div>
+                            {isLive && (
+                              <div className="text-[10px] font-bold tracking-widest text-red-400 uppercase animate-pulse flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                LIVE
+                              </div>
+                            )}
+                            {isFinal && (
+                              <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                                FINAL
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="flex flex-col items-center">
-                            <span className="text-2xl font-black text-slate-600 italic">VS</span>
-                            <span className="text-xs font-bold text-slate-500 uppercase mt-1">
-                              {new Date(weekDetails?.week_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
+                            <span className="text-3xl font-black text-slate-600 italic tracking-widest">VS</span>
                           </div>
                         )}
                       </div>
