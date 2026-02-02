@@ -300,8 +300,8 @@ export default function LeaguePage() {
 
   if (showMatchups) {
     return (
-      <div className="p-4 md:p-8 min-h-screen bg-slate-900">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="p-4 md:p-8 min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="w-[70%] space-y-8">
           {/* Header with League Name & Week Selector */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-2xl">
             <div>
@@ -334,7 +334,7 @@ export default function LeaguePage() {
                 </span>
                 {weekDetails && (
                   <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
-                    {new Date(weekDetails.week_start).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    {new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 )}
               </div>
@@ -351,8 +351,12 @@ export default function LeaguePage() {
 
           {/* Matchups Grid */}
           {matchupsLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-32 md:h-40 bg-white/5 rounded-2xl animate-pulse border border-white/5 flex items-center justify-center">
+                  <span className="text-purple-400 font-bold tracking-widest uppercase text-sm">Loading Matchup...</span>
+                </div>
+              ))}
             </div>
           ) : matchups.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
@@ -388,15 +392,10 @@ export default function LeaguePage() {
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none"></div>
                       {/* Team A */}
                       <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 p-0.5 shadow-lg mb-2 group-hover:scale-105 transition-transform">
-                          <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xl md:text-2xl font-bold text-white">
-                            {managerA?.nickname?.charAt(0)?.toUpperCase()}
-                          </div>
-                        </div>
-                        <div className="text-sm md:text-base font-bold text-white text-center line-clamp-1 px-2">
+                        <div className="text-lg md:text-xl font-black text-white text-center line-clamp-1 px-2 mb-1 group-hover:text-purple-300 transition-colors">
                           {managerA?.nickname || 'Unknown'}
                         </div>
-                        <div className="text-xs text-slate-400 text-center line-clamp-1">
+                        <div className="text-xs text-slate-400 text-center line-clamp-1 font-bold uppercase tracking-wider">
                           {managerA?.managers?.name}
                         </div>
                       </div>
@@ -431,15 +430,10 @@ export default function LeaguePage() {
 
                       {/* Team B */}
                       <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-pink-600 to-rose-600 p-0.5 shadow-lg mb-2 group-hover:scale-105 transition-transform">
-                          <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xl md:text-2xl font-bold text-white">
-                            {managerB?.nickname?.charAt(0)?.toUpperCase()}
-                          </div>
-                        </div>
-                        <div className="text-sm md:text-base font-bold text-white text-center line-clamp-1 px-2">
+                        <div className="text-lg md:text-xl font-black text-white text-center line-clamp-1 px-2 mb-1 group-hover:text-pink-300 transition-colors">
                           {managerB?.nickname || 'Unknown'}
                         </div>
-                        <div className="text-xs text-slate-400 text-center line-clamp-1">
+                        <div className="text-xs text-slate-400 text-center line-clamp-1 font-bold uppercase tracking-wider">
                           {managerB?.managers?.name}
                         </div>
                       </div>
