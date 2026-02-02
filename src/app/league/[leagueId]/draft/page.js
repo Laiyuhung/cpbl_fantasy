@@ -905,9 +905,9 @@ export default function DraftPage() {
                 </div>
                 <button
                     onClick={() => handlePick(player.player_id)}
-                    disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(player.player_id)}
+                    disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(player.player_id) || (player.identity?.toLowerCase() === 'foreigner' && foreignerLimit !== null && foreignerCount >= foreignerLimit)}
                     className={`mt-2 w-full py-1 rounded text-xs font-bold transition-all flex items-center justify-center gap-2
-                        ${draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id)
+                        ${draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id) && !(player.identity?.toLowerCase() === 'foreigner' && foreignerLimit !== null && foreignerCount >= foreignerLimit)
                             ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg'
                             : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
                         }`}
@@ -915,7 +915,11 @@ export default function DraftPage() {
                     {pickingId === player.player_id && (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                     )}
-                    {pickingId === player.player_id ? 'Drafting...' : 'Draft'}
+                    {pickingId === player.player_id ? 'Drafting...'
+                        : (player.identity?.toLowerCase() === 'foreigner' && foreignerLimit !== null && foreignerCount >= foreignerLimit)
+                            ? 'LIMIT'
+                            : 'Draft'
+                    }
                 </button>
             </div>
         );
