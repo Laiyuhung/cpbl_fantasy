@@ -354,12 +354,22 @@ export default function DraftPage() {
         let timeoutId;
 
         const fetchState = async () => {
+            let shouldContinue = true;
             try {
                 const res = await fetch(`/api/league/${leagueId}/draft/state`);
                 if (!active) return; // Ignore if unmounted during fetch
 
                 const data = await res.json();
                 setDraftState(data);
+
+                // Stop polling if draft is complete
+                if (data.status === 'complete' || (!data.currentPick && (!data.nextPicks || data.nextPicks.length === 0))) {
+                    shouldContinue = false;
+                    // Ensure status shows complete if implicit
+                    if (data.status !== 'complete') {
+                        setDraftState(prev => ({ ...prev, status: 'complete' }));
+                    }
+                }
 
                 // Sync Time
                 if (data.serverTime) {
@@ -430,7 +440,7 @@ export default function DraftPage() {
             } catch (e) {
                 console.error(e);
             } finally {
-                if (active) {
+                if (active && shouldContinue) {
                     timeoutId = setTimeout(fetchState, 2000);
                 }
             }
@@ -1098,15 +1108,17 @@ export default function DraftPage() {
                     </div>
 
                     <div className="flex flex-col items-center">
-                        <div className={`text-6xl font-mono font-black tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(0,0,0,0.5)] ${timeLeft < 10 && draftState?.status !== 'pre-draft' ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
-                            {timeLeft < 0 && draftState?.status !== 'pre-draft' ? (
+                        <div className={`text-6xl font-mono font-black tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(0,0,0,0.5)] ${timeLeft < 10 && draftState?.status !== 'pre-draft' && draftState?.status !== 'complete' ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
+                            {draftState?.status === 'complete' ? (
+                                <span className="text-4xl text-green-400 whitespace-nowrap">Draft Finished</span>
+                            ) : timeLeft < 0 && draftState?.status !== 'pre-draft' ? (
                                 <span className="text-4xl text-red-500 animate-pulse whitespace-nowrap">Auto picking...</span>
                             ) : (
                                 formatTime(timeLeft < 0 ? 0 : timeLeft)
                             )}
                         </div>
                         <div className="text-xs uppercase tracking-widest text-slate-500 font-semibold mt-1">
-                            {draftState?.status === 'pre-draft' ? 'Until Start' : 'Time Remaining'}
+                            {draftState?.status === 'pre-draft' ? 'Until Start' : draftState?.status === 'complete' ? '' : 'Time Remaining'}
                         </div>
                     </div>
 

@@ -135,7 +135,7 @@ export async function POST(request, { params }) {
                 .eq('pick_id', nextPicks[0].pick_id);
         } else {
             // Draft Complete
-            await supabase.from('league_statuses').update({ status: 'post-draft & pre-season' }).eq('league_id', leagueId);
+            // await supabase.from('league_statuses').update({ status: 'post-draft & pre-season' }).eq('league_id', leagueId);
         }
 
         return NextResponse.json({ success: true });

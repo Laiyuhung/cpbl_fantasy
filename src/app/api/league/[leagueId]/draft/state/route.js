@@ -371,7 +371,7 @@ export async function GET(request, { params }) {
                         } else {
                             // Finished just now
                             console.log('[DraftState] Last pick made. Finished.');
-                            await supabase.from('league_statuses').update({ status: 'post-draft & pre-season' }).eq('league_id', leagueId);
+                            // await supabase.from('league_statuses').update({ status: 'post-draft & pre-season' }).eq('league_id', leagueId);
                             return NextResponse.json({ status: 'completed' });
                         }
                     }
@@ -453,7 +453,7 @@ export async function GET(request, { params }) {
         if (remainingPicks === 0 && totalPicks > 0) {
             if (leagueStatus !== 'post-draft & pre-season' && leagueStatus !== 'in-season') {
                 console.log('[DraftState] All picks done. Updating to post-draft & pre-season.');
-                await supabase.from('league_statuses').update({ status: 'post-draft & pre-season' }).eq('league_id', leagueId);
+                // await supabase.from('league_statuses').update({ status: 'post-draft & pre-season' }).eq('league_id', leagueId);
             }
 
             const { data: picks } = await supabase
