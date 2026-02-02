@@ -93,7 +93,7 @@ export async function GET(request, { params }) {
                     // Fetch "taken" picks (usually empty in pre-draft, but robust to check)
                     const { data: picks, error: picksError } = await supabase
                         .from('draft_picks')
-                        .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher, identity)')
+                        .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher, identity, original_name)')
                         .eq('league_id', leagueId)
                         .filter('player_id', 'not.is', null)
                         .order('pick_number', { ascending: true });
@@ -381,7 +381,7 @@ export async function GET(request, { params }) {
             // Return Active State
             const { data: picks, error: picksError } = await supabase
                 .from('draft_picks')
-                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher, identity)')
+                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher, identity, original_name)')
                 .eq('league_id', leagueId)
                 .filter('player_id', 'not.is', null)
                 .order('pick_number', { ascending: true });
@@ -458,7 +458,7 @@ export async function GET(request, { params }) {
 
             const { data: picks } = await supabase
                 .from('draft_picks')
-                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher, identity)')
+                .select('pick_id, pick_number, round_number, player_id, manager_id, picked_at, player:player_list(name, team, batter_or_pitcher, identity, original_name)')
                 .eq('league_id', leagueId)
                 .filter('player_id', 'not.is', null)
                 .order('pick_number', { ascending: true });

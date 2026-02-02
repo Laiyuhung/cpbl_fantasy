@@ -1098,38 +1098,114 @@ export default function PlayersPage() {
               <div className="font-bold text-pink-200">{theirNick}</div>
             </div>
             <div className="grid grid-cols-2 gap-6 px-6 pb-2">
-              <div>
-                <div className="max-h-60 overflow-y-auto border rounded-xl p-2 bg-slate-900/60">
-                  {myPlayers.length === 0 && <div className="text-gray-400">No tradable players</div>}
-                  {myPlayers.map(o => (
-                    <label key={o.player_id} className="flex items-center gap-2 mb-1 text-purple-100">
-                      <input
-                        type="checkbox"
-                        checked={selectedMyPlayers.includes(o.player_id)}
-                        onChange={e => {
-                          setSelectedMyPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
-                        }}
-                      />
-                      <span>{players.find(p => p.player_id === o.player_id)?.name || o.player_id}</span>
-                    </label>
-                  ))}
+              <div className="flex flex-col h-full overflow-hidden">
+                <h3 className="text-purple-300 font-bold mb-2 sticky top-0 bg-slate-900/90 z-10 px-1 backdrop-blur-sm">My Players</h3>
+                <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                  {myPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
+                  {myPlayers.map(o => {
+                    const player = players.find(p => p.player_id === o.player_id);
+                    if (!player) return null;
+                    const isSelected = selectedMyPlayers.includes(o.player_id);
+                    return (
+                      <label
+                        key={o.player_id}
+                        className={`
+                          flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer relative overflow-hidden
+                          ${isSelected
+                            ? 'bg-purple-600/20 border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                            : 'bg-slate-800/40 border-slate-700 hover:bg-slate-800/80 hover:border-slate-500'}
+                        `}
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={isSelected}
+                          onChange={e => {
+                            setSelectedMyPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
+                          }}
+                        />
+                        {/* Selection Indicator */}
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-slate-500'}`}>
+                          {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                        </div>
+
+                        {/* Photo */}
+                        <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden border border-slate-600 shrink-0">
+                          <img
+                            src={getPlayerPhoto(player)}
+                            alt={player.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => handleImageError(e, player)}
+                          />
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex flex-col min-w-0">
+                          <div className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{player.name}</div>
+                          <div className="text-xs text-slate-400 flex items-center gap-1.5 truncate">
+                            <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                            <span>{filterPositions(player)}</span>
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
-              <div>
-                <div className="max-h-60 overflow-y-auto border rounded-xl p-2 bg-slate-900/60">
-                  {theirPlayers.length === 0 && <div className="text-gray-400">No tradable players</div>}
-                  {theirPlayers.map(o => (
-                    <label key={o.player_id} className="flex items-center gap-2 mb-1 text-pink-100">
-                      <input
-                        type="checkbox"
-                        checked={selectedTheirPlayers.includes(o.player_id)}
-                        onChange={e => {
-                          setSelectedTheirPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
-                        }}
-                      />
-                      <span>{players.find(p => p.player_id === o.player_id)?.name || o.player_id}</span>
-                    </label>
-                  ))}
+              <div className="flex flex-col h-full overflow-hidden">
+                <h3 className="text-pink-300 font-bold mb-2 sticky top-0 bg-slate-900/90 z-10 px-1 backdrop-blur-sm">Their Players</h3>
+                <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                  {theirPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
+                  {theirPlayers.map(o => {
+                    const player = players.find(p => p.player_id === o.player_id);
+                    if (!player) return null;
+                    const isSelected = selectedTheirPlayers.includes(o.player_id);
+                    return (
+                      <label
+                        key={o.player_id}
+                        className={`
+                          flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer relative overflow-hidden
+                          ${isSelected
+                            ? 'bg-pink-600/20 border-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.2)]'
+                            : 'bg-slate-800/40 border-slate-700 hover:bg-slate-800/80 hover:border-slate-500'}
+                        `}
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={isSelected}
+                          onChange={e => {
+                            setSelectedTheirPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
+                          }}
+                        />
+                        {/* Selection Indicator */}
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-pink-500 border-pink-500' : 'border-slate-500'}`}>
+                          {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                        </div>
+
+                        {/* Photo */}
+                        <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden border border-slate-600 shrink-0">
+                          <img
+                            src={getPlayerPhoto(player)}
+                            alt={player.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => handleImageError(e, player)}
+                          />
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex flex-col min-w-0">
+                          <div className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{player.name}</div>
+                          <div className="text-xs text-slate-400 flex items-center gap-1.5 truncate">
+                            <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                            <span>{filterPositions(player)}</span>
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>
