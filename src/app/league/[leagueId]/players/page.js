@@ -1229,8 +1229,8 @@ export default function PlayersPage() {
           </div>
         </div>
       </div>
-
-};
+    );
+  };
 
   if (loading) {
     return (
