@@ -67,6 +67,110 @@ export default function LeaguePage() {
     fetchLeagueData();
   }, [leagueId]);
 
+  const [currentWeek, setCurrentWeek] = useState(1);
+  const [matchups, setMatchups] = useState([]);
+  const [matchupsLoading, setMatchupsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!leagueId) return;
+
+    const fetchLeagueData = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await fetch(`/api/league/${leagueId}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+          setError(result.error || 'Failed to load league data');
+          return;
+        }
+
+        if (result.success) {
+          setLeagueSettings(result.league);
+          setScheduleData(result.schedule || []);
+          setMembers(result.members || []);
+          const status = result.status || 'unknown';
+          setLeagueStatus(status);
+          setMaxTeams(result.maxTeams || 0);
+          setInvitePermissions(result.invitePermissions || 'commissioner only');
+
+          // Initialize Current Week logic
+          if (status === 'post-draft & pre-season' || status === 'in season') {
+            const today = new Date();
+            // Find grid week based on today
+            let week = 1;
+            if (result.schedule && result.schedule.length > 0) {
+              const schedule = result.schedule;
+              // If before first week, use week 1
+              if (today < new Date(schedule[0].week_start)) {
+                week = 1;
+              }
+              // If after last week, use last week
+              else if (today > new Date(schedule[schedule.length - 1].week_end)) {
+                week = schedule[schedule.length - 1].week_number;
+              }
+              // Find current week
+              else {
+                const current = schedule.find(w => today >= new Date(w.week_start) && today <= new Date(w.week_end));
+                if (current) week = current.week_number;
+              }
+            }
+            setCurrentWeek(week);
+            // Fetch matchups for this default week will be triggered by another effect or called here
+            fetchMatchups(week);
+          }
+
+
+          // 获取当前用户的权限
+          const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+          const currentUserId = cookie?.split('=')[1];
+          if (currentUserId) {
+            const currentMember = result.members?.find(m => m.manager_id === currentUserId);
+            setCurrentUserRole(currentMember?.role || 'member');
+          }
+        } else {
+          setError('Failed to load league data');
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeagueData();
+  }, [leagueId]);
+
+  const fetchMatchups = async (week) => {
+    setMatchupsLoading(true);
+    try {
+      const res = await fetch(`/api/league/${leagueId}/matchups?week=${week}`);
+      const data = await res.json();
+      if (data.success) {
+        setMatchups(data.matchups);
+      }
+    } catch (e) {
+      console.error("Error fetching matchups", e);
+    } finally {
+      setMatchupsLoading(false);
+    }
+  };
+
+  const handleWeekChange = (direction) => {
+    const maxWeek = scheduleData.length > 0 ? scheduleData[scheduleData.length - 1].week_number : 1;
+    let newWeek = currentWeek + direction;
+    if (newWeek < 1) newWeek = 1;
+    if (newWeek > maxWeek) newWeek = maxWeek;
+
+    if (newWeek !== currentWeek) {
+      setCurrentWeek(newWeek);
+      fetchMatchups(newWeek);
+    }
+  };
+
   // Countdown timer for draft time
   useEffect(() => {
     if (!leagueSettings?.live_draft_time || leagueSettings?.draft_type !== 'Live Draft') {
@@ -181,6 +285,167 @@ export default function LeaguePage() {
     }
   };
 
+  // Helper to get manager details
+  const getManagerDetails = (managerId) => {
+    return members.find(m => m.manager_id === managerId);
+  };
+
+  // Helper to get week details
+  const getCurrentWeekDetails = () => {
+    return scheduleData.find(w => w.week_number === currentWeek);
+  };
+
+  const showMatchups = leagueStatus === 'post-draft & pre-season' || leagueStatus === 'in season';
+  const weekDetails = getCurrentWeekDetails();
+
+  if (showMatchups) {
+    return (
+      <div className="p-4 md:p-8 min-h-screen bg-slate-900">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Header with League Name & Week Selector */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-2xl">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
+                {leagueSettings?.league_name}
+              </h1>
+              <div className="flex items-center gap-2 mt-2">
+                <span className={`px-3 py-0.5 rounded-full text-xs font-bold border ${leagueStatus === 'in season'
+                    ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                    : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                  }`}>
+                  {leagueStatus === 'in season' ? 'IN SEASON' : 'PRE-SEASON'}
+                </span>
+              </div>
+            </div>
+
+            {/* Week Selector */}
+            <div className="flex items-center bg-slate-800/80 rounded-full p-1.5 border border-white/10 shadow-lg">
+              <button
+                onClick={() => handleWeekChange(-1)}
+                disabled={currentWeek <= 1 || matchupsLoading}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+
+              <div className="flex flex-col items-center min-w-[160px] px-4">
+                <span className="text-lg font-black text-white tracking-wide">
+                  WEEK {currentWeek}
+                </span>
+                {weekDetails && (
+                  <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
+                    {new Date(weekDetails.week_start).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={() => handleWeekChange(1)}
+                disabled={currentWeek >= (scheduleData.length || 0) || matchupsLoading}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Matchups Grid */}
+          {matchupsLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : matchups.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
+              <div className="text-6xl mb-4">🏟️</div>
+              <h3 className="text-xl font-bold text-white mb-2">No Matchups Scheduled</h3>
+              <p className="text-slate-400">There are no games scheduled for this week.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+              {matchups.map((matchup) => {
+                const managerA = getManagerDetails(matchup.manager_id_a);
+                const managerB = getManagerDetails(matchup.manager_id_b);
+                // Calculate win probability or status if needed, for now just show scores
+                const scoreA = Number(matchup.score_a || 0);
+                const scoreB = Number(matchup.score_b || 0);
+                const isLive = leagueStatus === 'in season'; // Simplified logic for live tag
+
+                return (
+                  <div key={matchup.id} className="group relative bg-slate-800/50 hover:bg-slate-800/80 backdrop-blur-sm border border-white/5 hover:border-purple-500/30 rounded-2xl p-0 overflow-hidden transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+                    {/* Card Header / Status */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                    <div className="flex items-stretch h-32 md:h-40">
+                      {/* Team A */}
+                      <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 p-0.5 shadow-lg mb-2 group-hover:scale-105 transition-transform">
+                          <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xl md:text-2xl font-bold text-white">
+                            {managerA?.nickname?.charAt(0)?.toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="text-sm md:text-base font-bold text-white text-center line-clamp-1 px-2">
+                          {managerA?.nickname || 'Unknown'}
+                        </div>
+                        <div className="text-xs text-slate-400 text-center line-clamp-1">
+                          {managerA?.managers?.name}
+                        </div>
+                      </div>
+
+                      {/* VS / Score */}
+                      <div className="w-32 md:w-40 flex flex-col items-center justify-center bg-black/20 z-10">
+                        {isLive ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="flex items-center gap-4 text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">
+                              <span className={scoreA > scoreB ? 'text-green-400' : scoreA < scoreB ? 'text-slate-300' : 'text-white'}>{scoreA}</span>
+                              <span className="text-slate-600 text-lg font-normal">-</span>
+                              <span className={scoreB > scoreA ? 'text-green-400' : scoreB < scoreA ? 'text-slate-300' : 'text-white'}>{scoreB}</span>
+                            </div>
+                            <div className="text-[10px] font-bold tracking-widest text-red-400 uppercase animate-pulse flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                              LIVE
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <span className="text-2xl font-black text-slate-600 italic">VS</span>
+                            <span className="text-xs font-bold text-slate-500 uppercase mt-1">
+                              {new Date(weekDetails?.week_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Team B */}
+                      <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-pink-600 to-rose-600 p-0.5 shadow-lg mb-2 group-hover:scale-105 transition-transform">
+                          <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xl md:text-2xl font-bold text-white">
+                            {managerB?.nickname?.charAt(0)?.toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="text-sm md:text-base font-bold text-white text-center line-clamp-1 px-2">
+                          {managerB?.nickname || 'Unknown'}
+                        </div>
+                        <div className="text-xs text-slate-400 text-center line-clamp-1">
+                          {managerB?.managers?.name}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer / Actions */}
+                    <div className="bg-white/5 px-4 py-2 flex justify-between items-center text-xs font-medium text-slate-400">
+                      <span>Matchup Info</span>
+                      <span className="group-hover:text-purple-300 transition-colors">View Details →</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
@@ -193,12 +458,12 @@ export default function LeaguePage() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-purple-300 font-medium">Status:</span>
               <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${leagueStatus === 'pre-draft' ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50' :
-                  leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
-                    leagueStatus === 'drafting now' ? 'bg-blue-500/80 text-blue-100 shadow-blue-500/50 animate-pulse' :
-                      leagueStatus === 'in season' ? 'bg-green-500/80 text-green-100 shadow-green-500/50' :
-                        leagueStatus === 'playoffs' ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50' :
-                          leagueStatus === 'finished' ? 'bg-gray-500/80 text-gray-100 shadow-gray-500/50' :
-                            'bg-gray-500/80 text-gray-100 shadow-gray-500/50'
+                leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
+                  leagueStatus === 'drafting now' ? 'bg-blue-500/80 text-blue-100 shadow-blue-500/50 animate-pulse' :
+                    leagueStatus === 'in season' ? 'bg-green-500/80 text-green-100 shadow-green-500/50' :
+                      leagueStatus === 'playoffs' ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50' :
+                        leagueStatus === 'finished' ? 'bg-gray-500/80 text-gray-100 shadow-gray-500/50' :
+                          'bg-gray-500/80 text-gray-100 shadow-gray-500/50'
                 }`}>
                 {leagueStatus === 'pre-draft' ? 'Pre-Draft' :
                   leagueStatus === 'post-draft & pre-season' ? 'Post-Draft & Pre-Season' :
@@ -213,8 +478,8 @@ export default function LeaguePage() {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-purple-300 font-medium">Your Role:</span>
                 <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${currentUserRole === 'Commissioner' ? 'bg-red-500/80 text-red-100 shadow-red-500/50' :
-                    currentUserRole === 'Co-Commissioner' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
-                      'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
+                  currentUserRole === 'Co-Commissioner' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
+                    'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
                   }`}>
                   {currentUserRole}
                 </span>
@@ -330,8 +595,8 @@ export default function LeaguePage() {
                       </div>
                       {member.role && (
                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${member.role === 'Commissioner' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-                            member.role === 'Co-Commissioner' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-                              'bg-blue-500/30 text-blue-300 border border-blue-500/50'
+                          member.role === 'Co-Commissioner' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
+                            'bg-blue-500/30 text-blue-300 border border-blue-500/50'
                           }`}>
                           {member.role === 'Commissioner' ? 'COMM' : member.role === 'Co-Commissioner' ? 'CO-COMM' : 'MEMBER'}
                         </span>
