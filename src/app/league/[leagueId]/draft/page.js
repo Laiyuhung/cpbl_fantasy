@@ -589,7 +589,7 @@ export default function DraftPage() {
         let cancelled = false;
         const resolvePhotos = async () => {
             // Combine available players and picked players
-            const pickedPlayers = draftState?.picks?.map(p => p.player).filter(Boolean) || [];
+            const pickedPlayers = draftState?.picks?.map(p => p.player ? { ...p.player, player_id: p.player_id } : null).filter(Boolean) || [];
             const allPlayers = [...players, ...pickedPlayers];
 
             // Filter out players already in photoSrcMap or resolvedIds
