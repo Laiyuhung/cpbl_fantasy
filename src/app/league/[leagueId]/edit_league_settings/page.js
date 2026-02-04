@@ -1399,8 +1399,8 @@ const EditLeagueSettingsPage = ({ params }) => {
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
+        <div className="max-w-7xl mx-auto pt-8">
+          <div className="mt-12 mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
             <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
             <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
               <span>Status:</span>
