@@ -84,12 +84,31 @@ export default function MatchupsPage() {
         );
     }
 
-    // Display Helper for categories
+    // Display Helper for categories - 遵照 v_weekly_manager_stats 的小數點規則
     const formatStat = (val, cat) => {
+        // K/BB 為 null 代表無限大（BB=0 但 K>0）
+        if (cat === 'p_k/bb' && (val === null || val === undefined)) {
+            return 'INF';
+        }
+
         if (val === undefined || val === null) return '0';
-        if (['b_avg', 'b_obp', 'b_slg', 'b_ops', 'p_era', 'p_whip', 'p_win%'].includes(cat)) {
+
+        // 3位小數: AVG, OBP, SLG, OPS, WIN%, OBPA
+        if (['b_avg', 'b_obp', 'b_slg', 'b_ops', 'p_win%', 'p_obpa'].includes(cat)) {
             return Number(val).toFixed(3);
         }
+
+        // 2位小數: ERA, WHIP, K/9, BB/9, K/BB, H/9
+        if (['p_era', 'p_whip', 'p_k/9', 'p_bb/9', 'p_k/bb', 'p_h/9'].includes(cat)) {
+            return Number(val).toFixed(2);
+        }
+
+        // IP 已經由後端格式化好了（整數局數 + 剩餘出局數/10）
+        if (cat === 'p_ip') {
+            return Number(val).toFixed(1);
+        }
+
+        // 其他數據顯示為整數
         return val;
     };
 
