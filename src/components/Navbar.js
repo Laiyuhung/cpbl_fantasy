@@ -170,7 +170,7 @@ export default function Navbar() {
   if (!userId) return null
 
   return (
-    <nav className="relative z-[9999] bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-2xl border-b border-blue-500/30">
+    <nav className="sticky top-0 z-[99999] bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-2xl border-b border-blue-500/30">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f46e510_1px,transparent_1px),linear-gradient(to_bottom,#4f46e510_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none"></div>
 
       <div className="relative px-6 py-4 flex items-center justify-between">

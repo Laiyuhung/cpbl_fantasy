@@ -150,6 +150,20 @@ export default function LeagueLayout({ children }) {
                 </div>
               </a>
               <a
+                href={`/league/${leagueId}/matchups`}
+                className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${pathname.includes('/matchups')
+                  ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'
+                  : 'text-purple-300 hover:text-white hover:bg-purple-600/30'
+                  }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Matchups
+                </div>
+              </a>
+              <a
                 href={`/league/${leagueId}/league_settings`}
                 className={`flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all ${pathname.includes('/league_settings') || pathname.includes('/edit_league_settings')
                   ? 'text-white bg-purple-600/50 shadow-lg shadow-purple-500/30'

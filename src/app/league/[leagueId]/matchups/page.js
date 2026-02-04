@@ -91,7 +91,9 @@ export default function MatchupsPage() {
             return 'INF';
         }
 
-        if (val === undefined || val === null) return '0';
+        if (typeof val === 'string' && val.includes('.')) {
+            return val;
+        }
 
         // 3位小數: AVG, OBP, SLG, OPS, WIN%, OBPA
         if (['b_avg', 'b_obp', 'b_slg', 'b_ops', 'p_win%', 'p_obpa'].includes(cat)) {
