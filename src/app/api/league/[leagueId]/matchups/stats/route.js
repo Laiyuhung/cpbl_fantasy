@@ -64,8 +64,8 @@ export async function GET(request, { params }) {
             const manager1Id = match.manager_id_a || match.manager1_id || match.manager_id_1 || match.team_a_id;
             const manager2Id = match.manager_id_b || match.manager2_id || match.manager_id_2 || match.team_b_id;
 
-            const stats1 = statsMap[manager1Id] || generateEmptyStats(settings.batter_stat_categories, settings.pitcher_stat_categories);
-            const stats2 = statsMap[manager2Id] || generateEmptyStats(settings.batter_stat_categories, settings.pitcher_stat_categories);
+            const stats1 = formatStats(statsMap[manager1Id] || generateEmptyStats(settings.batter_stat_categories, settings.pitcher_stat_categories));
+            const stats2 = formatStats(statsMap[manager2Id] || generateEmptyStats(settings.batter_stat_categories, settings.pitcher_stat_categories));
 
             return {
                 ...match,
@@ -131,6 +131,39 @@ export async function GET(request, { params }) {
         console.error('Unexpected error:', error);
         return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
     }
+}
+
+// 格式化統計數據，遵照 v_weekly_manager_stats 的小數點規則
+function formatStats(stats) {
+    if (!stats) return stats;
+
+    const formatted = { ...stats };
+
+    // 3位小數: AVG, OBP, SLG, OPS, WIN%, OBPA
+    const threeDecimals = ['b_avg', 'b_obp', 'b_slg', 'b_ops', 'p_win%', 'p_obpa'];
+    threeDecimals.forEach(key => {
+        if (formatted[key] !== undefined && formatted[key] !== null) {
+            formatted[key] = parseFloat(Number(formatted[key]).toFixed(3));
+        }
+    });
+
+    // 2位小數: ERA, WHIP, K/9, BB/9, K/BB, H/9
+    const twoDecimals = ['p_era', 'p_whip', 'p_k/9', 'p_bb/9', 'p_k/bb', 'p_h/9'];
+    twoDecimals.forEach(key => {
+        if (formatted[key] !== undefined && formatted[key] !== null) {
+            formatted[key] = parseFloat(Number(formatted[key]).toFixed(2));
+        }
+    });
+
+    // IP 保持1位小數
+    if (formatted.p_ip !== undefined && formatted.p_ip !== null) {
+        formatted.p_ip = parseFloat(Number(formatted.p_ip).toFixed(1));
+    }
+
+    // K/BB 為 null 時保持 null（前端會顯示為 INF）
+    // 其他數據保持原樣
+
+    return formatted;
 }
 
 function generateEmptyStats(batterCats, pitcherCats) {
