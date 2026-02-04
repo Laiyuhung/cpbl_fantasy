@@ -196,8 +196,12 @@ export default function Navbar() {
             className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
             onClick={(e) => {
               console.log('🖱️ [Navbar] HOME link clicked')
-              console.log('🖱️ [Navbar] Event:', e)
-              console.log('🖱️ [Navbar] Target:', e.target)
+              console.log('🖱️ [Navbar] defaultPrevented:', e.defaultPrevented)
+              // If event is already prevented by something else, force navigation
+              if (e.defaultPrevented) {
+                console.warn('⚠️ [Navbar] Event was prevented! Forcing navigation with router.push')
+                router.push('/home')
+              }
             }}
           >
             HOME
@@ -207,8 +211,11 @@ export default function Navbar() {
             className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
             onClick={(e) => {
               console.log('🖱️ [Navbar] ROSTER link clicked')
-              console.log('🖱️ [Navbar] Event:', e)
-              console.log('🖱️ [Navbar] Target:', e.target)
+              console.log('🖱️ [Navbar] defaultPrevented:', e.defaultPrevented)
+              if (e.defaultPrevented) {
+                console.warn('⚠️ [Navbar] Event was prevented! Forcing navigation')
+                router.push('/roster')
+              }
             }}
           >
             ROSTER
@@ -219,8 +226,11 @@ export default function Navbar() {
             className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
             onClick={(e) => {
               console.log('🖱️ [Navbar] MATCHUP link clicked')
-              console.log('🖱️ [Navbar] Event:', e)
-              console.log('🖱️ [Navbar] Target:', e.target)
+              console.log('🖱️ [Navbar] defaultPrevented:', e.defaultPrevented)
+              if (e.defaultPrevented) {
+                console.warn('⚠️ [Navbar] Event was prevented! Forcing navigation')
+                router.push('/matchup')
+              }
             }}
           >
             MATCHUP
@@ -231,8 +241,11 @@ export default function Navbar() {
             className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
             onClick={(e) => {
               console.log('🖱️ [Navbar] RECORDS link clicked')
-              console.log('🖱️ [Navbar] Event:', e)
-              console.log('🖱️ [Navbar] Target:', e.target)
+              console.log('🖱️ [Navbar] defaultPrevented:', e.defaultPrevented)
+              if (e.defaultPrevented) {
+                console.warn('⚠️ [Navbar] Event was prevented! Forcing navigation')
+                router.push('/record_book')
+              }
             }}
           >
             RECORDS
