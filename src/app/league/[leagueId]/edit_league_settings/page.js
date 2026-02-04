@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
 
 const cloneSettings = (settings) => JSON.parse(JSON.stringify(settings));
@@ -1368,7 +1367,7 @@ const EditLeagueSettingsPage = ({ params }) => {
         }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pt-0 px-8 pb-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         {/* Help Modal */}
         {activeHelpKey && (
           <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn" onClick={() => setActiveHelpKey(null)}>
@@ -1399,7 +1398,7 @@ const EditLeagueSettingsPage = ({ params }) => {
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto pt-8">
+        <div className="max-w-7xl mx-auto">
           <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
             <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
             <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
