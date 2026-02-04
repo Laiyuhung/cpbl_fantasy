@@ -169,6 +169,10 @@ export default function Navbar() {
   // 如果沒有登入，則不顯示 navbar
   if (!userId) return null
 
+  console.log('🔍 [Navbar] Rendering navbar, z-index: 99999')
+  console.log('🔍 [Navbar] Current pathname:', pathname)
+  console.log('🔍 [Navbar] Current league:', currentLeague)
+
   return (
     <nav className="sticky top-0 z-[99999] bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-2xl border-b border-blue-500/30">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f46e510_1px,transparent_1px),linear-gradient(to_bottom,#4f46e510_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none"></div>
@@ -187,18 +191,50 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden lg:flex items-center space-x-1">
-          <Link href="/home" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+          <Link
+            href="/home"
+            className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
+            onClick={(e) => {
+              console.log('🖱️ [Navbar] HOME link clicked')
+              console.log('🖱️ [Navbar] Event:', e)
+              console.log('🖱️ [Navbar] Target:', e.target)
+            }}
+          >
             HOME
           </Link>
-          <Link href="/roster" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+          <Link
+            href="/roster"
+            className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
+            onClick={(e) => {
+              console.log('🖱️ [Navbar] ROSTER link clicked')
+              console.log('🖱️ [Navbar] Event:', e)
+              console.log('🖱️ [Navbar] Target:', e.target)
+            }}
+          >
             ROSTER
           </Link>
 
-          <Link href="/matchup" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+          <Link
+            href="/matchup"
+            className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
+            onClick={(e) => {
+              console.log('🖱️ [Navbar] MATCHUP link clicked')
+              console.log('🖱️ [Navbar] Event:', e)
+              console.log('🖱️ [Navbar] Target:', e.target)
+            }}
+          >
             MATCHUP
           </Link>
 
-          <Link href="/record_book" className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200">
+          <Link
+            href="/record_book"
+            className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
+            onClick={(e) => {
+              console.log('🖱️ [Navbar] RECORDS link clicked')
+              console.log('🖱️ [Navbar] Event:', e)
+              console.log('🖱️ [Navbar] Target:', e.target)
+            }}
+          >
             RECORDS
           </Link>
 
@@ -363,7 +399,7 @@ export default function Navbar() {
                 )}
               </div>
 
-              
+
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-500/30 bg-slate-900/50">
