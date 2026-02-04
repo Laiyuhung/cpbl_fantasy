@@ -1367,7 +1367,7 @@ const EditLeagueSettingsPage = ({ params }) => {
         }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+      <div className="max-w-7xl mx-auto space-y-8 p-8">
         {/* Help Modal */}
         {activeHelpKey && (
           <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn" onClick={() => setActiveHelpKey(null)}>
@@ -1398,352 +1398,351 @@ const EditLeagueSettingsPage = ({ params }) => {
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
-            <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
-            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
-              <span>Status:</span>
-              <span>{status || 'unknown'}</span>
-            </div>
+        {/* Content Wrapper merged with main container */}
+        <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
+          <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
+          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
+            <span>Status:</span>
+            <span>{status || 'unknown'}</span>
           </div>
+        </div>
 
-          <div className="space-y-8">
-            {sections.map((section) => (
-              <div 
-                key={section.key} 
-                className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden"
-              >
-                <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
-                  <h2 className="flex items-center gap-3 text-3xl font-black text-white">
-                    <span className="text-2xl">{section.icon}</span>
-                    {section.label}
-                  </h2>
-                </div>
-                <div className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <tbody>
-                        {Object.entries(settings[section.key]).map(([key, value], index) => {
-                          if (
-                            section.key === 'playoffs' &&
-                            settings.playoffs['Playoffs'] === 'No playoffs' &&
-                            ['Playoffs start', 'Playoff Reseeding', 'Lock Eliminated Teams'].includes(key)
-                          ) {
-                            return null;
-                          }
-                          if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
-                            return null;
-                          }
-                          if (
-                            section.key === 'general' &&
-                            settings.general['Draft Type'] !== 'Live Draft' &&
-                            ['Live Draft Pick Time', 'Live Draft Time'].includes(key)
-                          ) {
-                            return null;
-                          }
-                          return (
-                            <tr
-                              key={key}
-                              className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
-                                } hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}
-                            >
-                              <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
-                                <div className="flex items-center gap-2">
-                                  {key}
-                                  {getSettingDescription(key) && (
-                                    <button
-                                      onClick={() => setActiveHelpKey(key)}
-                                      className="cursor-help text-purple-400 hover:text-purple-200 bg-purple-500/20 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold border border-purple-500/50 transition-colors"
-                                      type="button"
-                                    >
-                                      ?
-                                    </button>
+        <div className="space-y-8">
+          {sections.map((section) => (
+            <div
+              key={section.key}
+              className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
+                <h2 className="flex items-center gap-3 text-3xl font-black text-white">
+                  <span className="text-2xl">{section.icon}</span>
+                  {section.label}
+                </h2>
+              </div>
+              <div className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <tbody>
+                      {Object.entries(settings[section.key]).map(([key, value], index) => {
+                        if (
+                          section.key === 'playoffs' &&
+                          settings.playoffs['Playoffs'] === 'No playoffs' &&
+                          ['Playoffs start', 'Playoff Reseeding', 'Lock Eliminated Teams'].includes(key)
+                        ) {
+                          return null;
+                        }
+                        if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') {
+                          return null;
+                        }
+                        if (
+                          section.key === 'general' &&
+                          settings.general['Draft Type'] !== 'Live Draft' &&
+                          ['Live Draft Pick Time', 'Live Draft Time'].includes(key)
+                        ) {
+                          return null;
+                        }
+                        return (
+                          <tr
+                            key={key}
+                            className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
+                              } hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}
+                          >
+                            <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
+                              <div className="flex items-center gap-2">
+                                {key}
+                                {getSettingDescription(key) && (
+                                  <button
+                                    onClick={() => setActiveHelpKey(key)}
+                                    className="cursor-help text-purple-400 hover:text-purple-200 bg-purple-500/20 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold border border-purple-500/50 transition-colors"
+                                    type="button"
+                                  >
+                                    ?
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-purple-300 w-3/5">
+                              {isMultilineField(key) ? (
+                                <div>
+                                  <textarea
+                                    value={value}
+                                    onChange={(e) =>
+                                      handleSettingChange(section.key, key, e.target.value)
+                                    }
+                                    disabled={isFieldDisabled(section.key, key)}
+                                    rows="3"
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${!isFieldDisabled(section.key, key) && (!value || value.trim() === '')
+                                      ? 'border-red-500 bg-red-900/30'
+                                      : 'border-purple-500/30'
+                                      }`}
+                                  />
+                                  {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
+                                    <p className="text-red-600 text-sm mt-1">required</p>
                                   )}
                                 </div>
-                              </td>
-                              <td className="px-6 py-4 text-purple-300 w-3/5">
-                                {isMultilineField(key) ? (
-                                  <div>
-                                    <textarea
-                                      value={value}
-                                      onChange={(e) =>
-                                        handleSettingChange(section.key, key, e.target.value)
-                                      }
-                                      disabled={isFieldDisabled(section.key, key)}
-                                      rows="3"
-                                      className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${!isFieldDisabled(section.key, key) && (!value || value.trim() === '')
-                                        ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30'
-                                        }`}
-                                    />
-                                    {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
-                                      <p className="text-red-600 text-sm mt-1">required</p>
-                                    )}
-                                  </div>
-                                ) : isDateTimeField(key) ? (
-                                  <div>
-                                    <input
-                                      type="datetime-local"
-                                      min={minDraftDateTime()}
-                                      value={value}
-                                      onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
-                                      disabled={settings.general['Draft Type'] !== 'Live Draft' || isFieldDisabled(section.key, key)}
-                                      className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${((settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError
-                                        ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30'
-                                        }`}
-                                    />
-                                    {(settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '') && (
-                                      <p className="text-red-600 text-sm mt-1">required</p>
-                                    )}
-                                    {(settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && value && dateValidationErrors.draftTimeError && (
-                                      <p className="text-red-600 text-sm mt-1">{dateValidationErrors.draftTimeError}</p>
-                                    )}
-                                  </div>
-                                ) : isRosterPositions(key) ? (
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                      {Object.entries(value).map(([position, count]) => {
-                                        const nonMinorTotal = Object.entries(value)
-                                          .filter(([pos]) => pos !== 'Minor')
-                                          .reduce((sum, [, cnt]) => sum + cnt, 0);
-                                        const minorCount = value['Minor'] || 0;
-                                        const isOverLimit = position === 'Minor'
-                                          ? false
-                                          : nonMinorTotal > 25;
-                                        const isMinorOverLimit = position === 'Minor' && minorCount > 5;
-                                        const isDisabled = isFieldDisabled(section.key, key);
-
-                                        return (
-                                          <div key={position} className="flex flex-col gap-1">
-                                            <label className="text-sm font-medium text-purple-300">
-                                              {position}
-                                            </label>
-                                            <input
-                                              type="number"
-                                              min="0"
-                                              max={position === 'Minor' ? '5' : '10'}
-                                              value={count}
-                                              onChange={(e) =>
-                                                handleRosterPositionChange(position, e.target.value)
-                                              }
-                                              disabled={isDisabled}
-                                              className={`px-2 py-1 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${isOverLimit || isMinorOverLimit
-                                                ? 'border-red-500 bg-red-900/30'
-                                                : 'border-purple-500/30'
-                                                }`}
-                                            />
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                    <div className="flex gap-4 text-sm">
-                                      <div className={`${Object.entries(value)
-                                        .filter(([pos]) => pos !== 'Minor')
-                                        .reduce((sum, [, cnt]) => sum + cnt, 0) > 25
-                                        ? 'text-red-400 font-semibold'
-                                        : 'text-purple-300'
-                                        }`}>
-                                        Non-Minor total: {
-                                          Object.entries(value)
-                                            .filter(([pos]) => pos !== 'Minor')
-                                            .reduce((sum, [, cnt]) => sum + cnt, 0)
-                                        } / 25 (max)
-                                      </div>
-                                      <div className={`${(value['Minor'] || 0) > 5
-                                        ? 'text-red-400 font-semibold'
-                                        : 'text-purple-300'
-                                        }`}>
-                                        Minor: {value['Minor'] || 0} / 5 (max)
-                                      </div>
-                                    </div>
-                                  </div>
-                                ) : isMultiSelectField(key) ? (
-                                  <div>
-                                    {settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && (
-                                      <div className="mb-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded text-sm text-blue-300">
-                                        ℹ️ Set weights for each category (range: -10 to 10, max 1 decimal place, default: 1.0)
-                                      </div>
-                                    )}
-                                    <div className={`grid grid-cols-1 gap-2 p-3 border rounded-md ${!isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0)
+                              ) : isDateTimeField(key) ? (
+                                <div>
+                                  <input
+                                    type="datetime-local"
+                                    min={minDraftDateTime()}
+                                    value={value}
+                                    onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
+                                    disabled={settings.general['Draft Type'] !== 'Live Draft' || isFieldDisabled(section.key, key)}
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${((settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError
                                       ? 'border-red-500 bg-red-900/30'
-                                      : 'border-purple-500/30 bg-slate-800/40'
-                                      }`}>
-                                      {settingOptions[key]?.map((option) => {
-                                        const isChecked = Array.isArray(value) && value.includes(option);
-                                        const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
-                                        const currentWeight = categoryWeights[categoryType]?.[option] !== undefined
-                                          ? categoryWeights[categoryType][option]
-                                          : 1.0;
-                                        const showWeight = settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && isChecked;
-                                        const weightError = showWeight ? validateWeight(currentWeight) : null;
+                                      : 'border-purple-500/30'
+                                      }`}
+                                  />
+                                  {(settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && (!value || value.trim() === '') && (
+                                    <p className="text-red-600 text-sm mt-1">required</p>
+                                  )}
+                                  {(settings.general['Draft Type'] === 'Live Draft' && !isFieldDisabled(section.key, key)) && value && dateValidationErrors.draftTimeError && (
+                                    <p className="text-red-600 text-sm mt-1">{dateValidationErrors.draftTimeError}</p>
+                                  )}
+                                </div>
+                              ) : isRosterPositions(key) ? (
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                    {Object.entries(value).map(([position, count]) => {
+                                      const nonMinorTotal = Object.entries(value)
+                                        .filter(([pos]) => pos !== 'Minor')
+                                        .reduce((sum, [, cnt]) => sum + cnt, 0);
+                                      const minorCount = value['Minor'] || 0;
+                                      const isOverLimit = position === 'Minor'
+                                        ? false
+                                        : nonMinorTotal > 25;
+                                      const isMinorOverLimit = position === 'Minor' && minorCount > 5;
+                                      const isDisabled = isFieldDisabled(section.key, key);
 
-                                        return (
-                                          <div key={option} className={`flex items-center gap-2 ${showWeight ? 'justify-between' : ''}`}>
-                                            <label className="flex items-center gap-2 text-purple-300 flex-1">
-                                              <input
-                                                type="checkbox"
-                                                checked={isChecked}
-                                                disabled={
-                                                  (isFieldDisabled(section.key, key)) ||
-                                                  ((!Array.isArray(value) || !value.includes(option)) &&
-                                                    ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                                      (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30)
-                                                }
-                                                onChange={(e) =>
-                                                  handleMultiSelectChange(
-                                                    section.key,
-                                                    key,
-                                                    option,
-                                                    e.target.checked
-                                                  )
-                                                }
-                                              />
-                                              <span className={isFieldDisabled(section.key, key) ? 'text-gray-500' : 'text-purple-300'}>{option}</span>
-                                            </label>
-                                            {showWeight && (
-                                              <div className="flex flex-col gap-1">
-                                                <div className="flex items-center gap-1">
-                                                  <span className="text-xs text-purple-400">Weight:</span>
-                                                  <input
-                                                    type="number"
-                                                    min="-10"
-                                                    max="10"
-                                                    step="0.1"
-                                                    value={currentWeight}
-                                                    onChange={(e) => handleWeightChange(categoryType, option, e.target.value)}
-                                                    disabled={isFieldDisabled(section.key, key)}
-                                                    className={`w-20 px-2 py-1 bg-slate-700/60 border rounded text-white text-sm focus:outline-none focus:ring-2 disabled:bg-slate-700/40 disabled:cursor-not-allowed ${weightError ? 'border-red-500 focus:ring-red-500' : 'border-purple-500/30 focus:ring-purple-500'
-                                                      }`}
-                                                  />
-                                                </div>
-                                                {weightError && (
-                                                  <span className="text-xs text-red-400">{weightError}</span>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                      <div className="text-xs text-purple-400 mt-2 col-span-full">
-                                        selected: {(
-                                          (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                          (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
-                                        )} / 30 (max)
-                                      </div>
+                                      return (
+                                        <div key={position} className="flex flex-col gap-1">
+                                          <label className="text-sm font-medium text-purple-300">
+                                            {position}
+                                          </label>
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max={position === 'Minor' ? '5' : '10'}
+                                            value={count}
+                                            onChange={(e) =>
+                                              handleRosterPositionChange(position, e.target.value)
+                                            }
+                                            disabled={isDisabled}
+                                            className={`px-2 py-1 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${isOverLimit || isMinorOverLimit
+                                              ? 'border-red-500 bg-red-900/30'
+                                              : 'border-purple-500/30'
+                                              }`}
+                                          />
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className="flex gap-4 text-sm">
+                                    <div className={`${Object.entries(value)
+                                      .filter(([pos]) => pos !== 'Minor')
+                                      .reduce((sum, [, cnt]) => sum + cnt, 0) > 25
+                                      ? 'text-red-400 font-semibold'
+                                      : 'text-purple-300'
+                                      }`}>
+                                      Non-Minor total: {
+                                        Object.entries(value)
+                                          .filter(([pos]) => pos !== 'Minor')
+                                          .reduce((sum, [, cnt]) => sum + cnt, 0)
+                                      } / 25 (max)
                                     </div>
-                                    {!isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0) && (
-                                      <p className="text-red-600 text-sm mt-1">required - select at least one</p>
-                                    )}
+                                    <div className={`${(value['Minor'] || 0) > 5
+                                      ? 'text-red-400 font-semibold'
+                                      : 'text-purple-300'
+                                      }`}>
+                                      Minor: {value['Minor'] || 0} / 5 (max)
+                                    </div>
                                   </div>
-                                ) : isTextField(key) ? (
-                                  <div>
-                                    <input
-                                      type="text"
-                                      value={value}
-                                      onChange={(e) =>
-                                        handleSettingChange(section.key, key, e.target.value)
-                                      }
-                                      disabled={isFieldDisabled(section.key, key)}
-                                      className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${!isFieldDisabled(section.key, key) && (!value || value.trim() === '')
-                                        ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30'
-                                        }`}
-                                    />
-                                    {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
-                                      <p className="text-red-600 text-sm mt-1">required</p>
-                                    )}
+                                </div>
+                              ) : isMultiSelectField(key) ? (
+                                <div>
+                                  {settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && (
+                                    <div className="mb-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded text-sm text-blue-300">
+                                      ℹ️ Set weights for each category (range: -10 to 10, max 1 decimal place, default: 1.0)
+                                    </div>
+                                  )}
+                                  <div className={`grid grid-cols-1 gap-2 p-3 border rounded-md ${!isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0)
+                                    ? 'border-red-500 bg-red-900/30'
+                                    : 'border-purple-500/30 bg-slate-800/40'
+                                    }`}>
+                                    {settingOptions[key]?.map((option) => {
+                                      const isChecked = Array.isArray(value) && value.includes(option);
+                                      const categoryType = key === 'Batter Stat Categories' ? 'batter' : 'pitcher';
+                                      const currentWeight = categoryWeights[categoryType]?.[option] !== undefined
+                                        ? categoryWeights[categoryType][option]
+                                        : 1.0;
+                                      const showWeight = settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && isChecked;
+                                      const weightError = showWeight ? validateWeight(currentWeight) : null;
+
+                                      return (
+                                        <div key={option} className={`flex items-center gap-2 ${showWeight ? 'justify-between' : ''}`}>
+                                          <label className="flex items-center gap-2 text-purple-300 flex-1">
+                                            <input
+                                              type="checkbox"
+                                              checked={isChecked}
+                                              disabled={
+                                                (isFieldDisabled(section.key, key)) ||
+                                                ((!Array.isArray(value) || !value.includes(option)) &&
+                                                  ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
+                                                    (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30)
+                                              }
+                                              onChange={(e) =>
+                                                handleMultiSelectChange(
+                                                  section.key,
+                                                  key,
+                                                  option,
+                                                  e.target.checked
+                                                )
+                                              }
+                                            />
+                                            <span className={isFieldDisabled(section.key, key) ? 'text-gray-500' : 'text-purple-300'}>{option}</span>
+                                          </label>
+                                          {showWeight && (
+                                            <div className="flex flex-col gap-1">
+                                              <div className="flex items-center gap-1">
+                                                <span className="text-xs text-purple-400">Weight:</span>
+                                                <input
+                                                  type="number"
+                                                  min="-10"
+                                                  max="10"
+                                                  step="0.1"
+                                                  value={currentWeight}
+                                                  onChange={(e) => handleWeightChange(categoryType, option, e.target.value)}
+                                                  disabled={isFieldDisabled(section.key, key)}
+                                                  className={`w-20 px-2 py-1 bg-slate-700/60 border rounded text-white text-sm focus:outline-none focus:ring-2 disabled:bg-slate-700/40 disabled:cursor-not-allowed ${weightError ? 'border-red-500 focus:ring-red-500' : 'border-purple-500/30 focus:ring-purple-500'
+                                                    }`}
+                                                />
+                                              </div>
+                                              {weightError && (
+                                                <span className="text-xs text-red-400">{weightError}</span>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                    <div className="text-xs text-purple-400 mt-2 col-span-full">
+                                      selected: {(
+                                        (Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
+                                        (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)
+                                      )} / 30 (max)
+                                    </div>
                                   </div>
-                                ) : (
-                                  <div>
-                                    <select
-                                      value={value}
-                                      onChange={(e) =>
-                                        handleSettingChange(section.key, key, e.target.value)
-                                      }
-                                      disabled={isFieldDisabled(section.key, key)}
-                                      className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${(!isFieldDisabled(section.key, key) && (!value || value.trim() === '')) || (key === 'Start Scoring On' && dateValidationErrors.scoringDateError)
-                                        ? 'border-red-500 bg-red-900/30'
-                                        : 'border-purple-500/30'
-                                        }`}
-                                    >
-                                      {(() => {
-                                        const options = key === 'Playoff/ranking Tie-Breaker' && settings.playoffs['Playoffs'] === 'No playoffs'
-                                          ? (settingOptions[key] || []).filter((o) => o !== 'Better record wins')
-                                          : settingOptions[key];
-                                        return options?.map((option) => (
-                                          <option key={option} value={option}>
-                                            {option}
-                                          </option>
-                                        ));
-                                      })()}
-                                    </select>
-                                    {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
-                                      <p className="text-red-600 text-sm mt-1">required</p>
-                                    )}
-                                    {key === 'Start Scoring On' && value && dateValidationErrors.scoringDateError && (
-                                      <p className="text-red-600 text-sm mt-1">{dateValidationErrors.scoringDateError}</p>
-                                    )}
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                  {!isFieldDisabled(section.key, key) && (!Array.isArray(value) || value.length === 0) && (
+                                    <p className="text-red-600 text-sm mt-1">required - select at least one</p>
+                                  )}
+                                </div>
+                              ) : isTextField(key) ? (
+                                <div>
+                                  <input
+                                    type="text"
+                                    value={value}
+                                    onChange={(e) =>
+                                      handleSettingChange(section.key, key, e.target.value)
+                                    }
+                                    disabled={isFieldDisabled(section.key, key)}
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${!isFieldDisabled(section.key, key) && (!value || value.trim() === '')
+                                      ? 'border-red-500 bg-red-900/30'
+                                      : 'border-purple-500/30'
+                                      }`}
+                                  />
+                                  {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
+                                    <p className="text-red-600 text-sm mt-1">required</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div>
+                                  <select
+                                    value={value}
+                                    onChange={(e) =>
+                                      handleSettingChange(section.key, key, e.target.value)
+                                    }
+                                    disabled={isFieldDisabled(section.key, key)}
+                                    className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 disabled:cursor-not-allowed disabled:text-gray-500 ${(!isFieldDisabled(section.key, key) && (!value || value.trim() === '')) || (key === 'Start Scoring On' && dateValidationErrors.scoringDateError)
+                                      ? 'border-red-500 bg-red-900/30'
+                                      : 'border-purple-500/30'
+                                      }`}
+                                  >
+                                    {(() => {
+                                      const options = key === 'Playoff/ranking Tie-Breaker' && settings.playoffs['Playoffs'] === 'No playoffs'
+                                        ? (settingOptions[key] || []).filter((o) => o !== 'Better record wins')
+                                        : settingOptions[key];
+                                      return options?.map((option) => (
+                                        <option key={option} value={option}>
+                                          {option}
+                                        </option>
+                                      ));
+                                    })()}
+                                  </select>
+                                  {!isFieldDisabled(section.key, key) && (!value || value.trim() === '') && (
+                                    <p className="text-red-600 text-sm mt-1">required</p>
+                                  )}
+                                  {key === 'Start Scoring On' && value && dateValidationErrors.scoringDateError && (
+                                    <p className="text-red-600 text-sm mt-1">{dateValidationErrors.scoringDateError}</p>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
 
-          <div className="mt-8">
-            {/* 週次預覽表 - 從schedule_date表顯示，根據設定即時篩選 */}
-            <SchedulePreview leagueId={leagueId} settings={settings} onValidationChange={handleScheduleValidation} onScheduleChange={handleScheduleChange} />
-          </div>
+        <div className="mt-8">
+          {/* 週次預覽表 - 從schedule_date表顯示，根據設定即時篩選 */}
+          <SchedulePreview leagueId={leagueId} settings={settings} onValidationChange={handleScheduleValidation} onScheduleChange={handleScheduleChange} />
+        </div>
 
 
 
-          <div className="mt-8 flex justify-end gap-4">
-            {saveMessage && (
-              <div className={`px-4 py-2 rounded-md ${saveMessage.includes('✅')
-                ? 'bg-green-500/20 text-green-300 border border-green-500/50'
-                : 'bg-red-500/20 text-red-300 border border-red-500/50'
-                }`}>
-                {saveMessage.split('\n').map((line, i) => (
-                  <div key={i}>{line}</div>
-                ))}
-              </div>
-            )}
-            {scheduleError && (
-              <div className="px-4 py-2 rounded-md bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 text-sm">
-                Button disabled: Schedule validation error
-              </div>
-            )}
-            {hasWeightErrors() && (
-              <div className="px-4 py-2 rounded-md bg-red-500/20 text-red-300 border border-red-500/50 text-sm">
-                Button disabled: Invalid weight values detected
-              </div>
-            )}
-            <button
-              onClick={handleSave}
-              disabled={isSaving || scheduleError || hasWeightErrors()}
-              title={
-                scheduleError
-                  ? 'Schedule validation failed - please check the Schedule preview below'
-                  : hasWeightErrors()
-                    ? 'Please fix all weight validation errors'
-                    : ''
-              }
-              className={`px-6 py-2 font-semibold rounded-md transition-colors ${isSaving || scheduleError || hasWeightErrors()
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg'
-                }`}
-            >
-              {isSaving ? 'Saving...' : 'Update League Settings'}
-            </button>
-          </div>
+        <div className="mt-8 flex justify-end gap-4">
+          {saveMessage && (
+            <div className={`px-4 py-2 rounded-md ${saveMessage.includes('✅')
+              ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+              : 'bg-red-500/20 text-red-300 border border-red-500/50'
+              }`}>
+              {saveMessage.split('\n').map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
+          )}
+          {scheduleError && (
+            <div className="px-4 py-2 rounded-md bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 text-sm">
+              Button disabled: Schedule validation error
+            </div>
+          )}
+          {hasWeightErrors() && (
+            <div className="px-4 py-2 rounded-md bg-red-500/20 text-red-300 border border-red-500/50 text-sm">
+              Button disabled: Invalid weight values detected
+            </div>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={isSaving || scheduleError || hasWeightErrors()}
+            title={
+              scheduleError
+                ? 'Schedule validation failed - please check the Schedule preview below'
+                : hasWeightErrors()
+                  ? 'Please fix all weight validation errors'
+                  : ''
+            }
+            className={`px-6 py-2 font-semibold rounded-md transition-colors ${isSaving || scheduleError || hasWeightErrors()
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg'
+              }`}
+          >
+            {isSaving ? 'Saving...' : 'Update League Settings'}
+          </button>
         </div>
       </div>
     </>

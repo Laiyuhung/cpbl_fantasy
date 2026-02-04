@@ -109,7 +109,7 @@ export default function LeagueLayout({ children }) {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Sub Navigation */}
       {!pathname.includes('/join') && !pathname.includes('/draft') && (
-        <div className="sticky top-0 z-40 bg-gradient-to-br from-slate-900/95 via-purple-900/95 to-slate-900/95 backdrop-blur-lg border-b border-purple-500/20 shadow-lg">
+        <div className="sticky top-[74px] z-40 bg-gradient-to-br from-slate-900/95 via-purple-900/95 to-slate-900/95 backdrop-blur-lg border-b border-purple-500/20 shadow-lg">
           <div className="max-w-7xl mx-auto px-8 py-4">
             <div className="flex items-center gap-1">
               <a
