@@ -60,12 +60,9 @@ export async function GET(request, { params }) {
         }
 
         const enrichedMatchups = matchups.map(match => {
-            // Assuming columns are manager_id_1 and manager_id_2 based on typical schema
-            // We will try to detect the column names if they differ, or fallback to defaults
-            // But for now, let's assume standard 'manager_id_1' and 'manager_id_2' OR 'team_a_id' / 'team_b_id'
-            // Adjust this based on your actual schema.
-            const manager1Id = match.manager1_id || match.manager_id_1 || match.team_a_id;
-            const manager2Id = match.manager2_id || match.manager_id_2 || match.team_b_id;
+            // 使用正確的欄位名稱：manager_id_a 和 manager_id_b
+            const manager1Id = match.manager_id_a || match.manager1_id || match.manager_id_1 || match.team_a_id;
+            const manager2Id = match.manager_id_b || match.manager2_id || match.manager_id_2 || match.team_b_id;
 
             const stats1 = statsMap[manager1Id] || generateEmptyStats(settings.batter_stat_categories, settings.pitcher_stat_categories);
             const stats2 = statsMap[manager2Id] || generateEmptyStats(settings.batter_stat_categories, settings.pitcher_stat_categories);
