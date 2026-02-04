@@ -143,7 +143,7 @@ function formatStats(stats) {
     const threeDecimals = ['b_avg', 'b_obp', 'b_slg', 'b_ops', 'p_win%', 'p_obpa'];
     threeDecimals.forEach(key => {
         if (formatted[key] !== undefined && formatted[key] !== null) {
-            formatted[key] = parseFloat(Number(formatted[key]).toFixed(3));
+            formatted[key] = Number(formatted[key]).toFixed(3);
         }
     });
 
@@ -151,13 +151,13 @@ function formatStats(stats) {
     const twoDecimals = ['p_era', 'p_whip', 'p_k/9', 'p_bb/9', 'p_k/bb', 'p_h/9'];
     twoDecimals.forEach(key => {
         if (formatted[key] !== undefined && formatted[key] !== null) {
-            formatted[key] = parseFloat(Number(formatted[key]).toFixed(2));
+            formatted[key] = Number(formatted[key]).toFixed(2);
         }
     });
 
     // IP 保持1位小數
     if (formatted.p_ip !== undefined && formatted.p_ip !== null) {
-        formatted.p_ip = parseFloat(Number(formatted.p_ip).toFixed(1));
+        formatted.p_ip = Number(formatted.p_ip).toFixed(1);
     }
 
     // K/BB 為 null 時保持 null（前端會顯示為 INF）

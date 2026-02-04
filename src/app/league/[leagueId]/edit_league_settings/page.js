@@ -1368,10 +1368,10 @@ const EditLeagueSettingsPage = ({ params }) => {
         }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+      <div className="relative z-0 min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pt-0 px-8 pb-8">
         {/* Help Modal */}
         {activeHelpKey && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn" onClick={() => setActiveHelpKey(null)}>
+          <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn" onClick={() => setActiveHelpKey(null)}>
             <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl max-w-md w-full animate-scaleIn" onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold text-white">{activeHelpKey}</h3>
