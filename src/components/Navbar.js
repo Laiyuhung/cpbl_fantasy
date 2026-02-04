@@ -178,7 +178,14 @@ export default function Navbar() {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f46e510_1px,transparent_1px),linear-gradient(to_bottom,#4f46e510_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none"></div>
 
       <div className="relative px-6 py-4 flex items-center justify-between">
-        <Link href="/home" className="flex items-center space-x-3 group">
+        <Link
+          href="/home"
+          className="flex items-center space-x-3 group"
+          onClick={(e) => {
+            e.preventDefault()
+            window.location.href = '/home'
+          }}
+        >
           <div className="relative">
             <div className="absolute inset-0 bg-blue-500 blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
             <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg shadow-lg">
@@ -272,7 +279,12 @@ export default function Navbar() {
                 <Link
                   href="/create_league"
                   className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 border-b border-blue-400/30"
-                  onClick={() => setLeagueDropdownOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setLeagueDropdownOpen(false)
+                    console.log('🚀 [Navbar] Navigating to /create_league')
+                    window.location.href = '/create_league'
+                  }}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -287,7 +299,12 @@ export default function Navbar() {
                         key={league.league_id}
                         href={`/league/${league.league_id}`}
                         className={`block px-4 py-3 hover:bg-blue-500/20 transition-all duration-200 ${index !== leagues.length - 1 ? 'border-b border-slate-700/50' : ''}`}
-                        onClick={() => setLeagueDropdownOpen(false)}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setLeagueDropdownOpen(false)
+                          console.log(`🚀 [Navbar] Navigating to /league/${league.league_id}`)
+                          window.location.href = `/league/${league.league_id}`
+                        }}
                       >
                         <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
                         <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
@@ -379,17 +396,17 @@ export default function Navbar() {
             </div>
 
             <div className="overflow-y-auto h-[calc(100%-180px)] p-4 space-y-1">
-              <Link href="/home" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>HOME</Link>
-              <Link href="/roster" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>ROSTER</Link>
+              <Link href="/home" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/home'; }}>HOME</Link>
+              <Link href="/roster" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/roster'; }}>ROSTER</Link>
 
-              <Link href="/matchup" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>MATCHUP</Link>
+              <Link href="/matchup" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/matchup'; }}>MATCHUP</Link>
 
-              <Link href="/record_book" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={() => setMenuOpen(false)}>RECORDS</Link>
+              <Link href="/record_book" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/record_book'; }}>RECORDS</Link>
 
               <div className="border-t border-blue-500/30 mt-4 pt-4">
                 <div className="text-xs text-blue-300/70 mb-3 px-4 font-semibold tracking-wider">MY LEAGUES</div>
 
-                <Link href="/create_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium" onClick={() => setMenuOpen(false)}>
+                <Link href="/create_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/create_league'; }}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
@@ -398,7 +415,7 @@ export default function Navbar() {
 
                 {leagues.length > 0 ? (
                   leagues.map(league => (
-                    <Link key={league.league_id} href={`/league/${league.league_id}`} className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors" onClick={() => setMenuOpen(false)}>
+                    <Link key={league.league_id} href={`/league/${league.league_id}`} className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${league.league_id}`; }}>
                       <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
                       <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
                     </Link>
