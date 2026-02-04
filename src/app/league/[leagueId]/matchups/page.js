@@ -165,25 +165,11 @@ export default function MatchupsPage() {
                                 `}
                                 >
                                     <div className="flex justify-between items-center text-sm font-semibold">
-                                        <div className="flex items-center gap-2 truncate max-w-[100px]">
-                                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden shrink-0">
-                                                {match.manager1.avatar_url ? (
-                                                    <img src={match.manager1.avatar_url} alt="Avt" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <span className="flex items-center justify-center h-full text-[10px] text-purple-300">{match.manager1.nickname?.[0]}</span>
-                                                )}
-                                            </div>
+                                        <div className="flex items-center gap-2 truncate max-w-[120px]">
                                             <span className="truncate text-purple-100">{match.manager1.nickname}</span>
                                         </div>
                                         <span className="text-purple-400 px-1">vs</span>
-                                        <div className="flex items-center gap-2 truncate max-w-[100px] flex-row-reverse text-right">
-                                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden shrink-0">
-                                                {match.manager2.avatar_url ? (
-                                                    <img src={match.manager2.avatar_url} alt="Avt" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <span className="flex items-center justify-center h-full text-[10px] text-purple-300">{match.manager2.nickname?.[0]}</span>
-                                                )}
-                                            </div>
+                                        <div className="flex items-center gap-2 truncate max-w-[120px] flex-row-reverse text-right">
                                             <span className="truncate text-purple-100">{match.manager2.nickname}</span>
                                         </div>
                                     </div>
@@ -204,13 +190,6 @@ export default function MatchupsPage() {
                             <div className="flex justify-between items-center px-2 md:px-8">
                                 {/* Manager 1 */}
                                 <div className="flex items-center gap-3 md:gap-4 flex-1">
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-900 overflow-hidden border-2 border-purple-400/50 shadow-sm shrink-0">
-                                        {activeMatchup.manager1.avatar_url ? (
-                                            <img src={activeMatchup.manager1.avatar_url} alt="Avt" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="flex items-center justify-center h-full text-lg font-bold text-purple-300">{activeMatchup.manager1.nickname?.[0]}</span>
-                                        )}
-                                    </div>
                                     <div className="min-w-0">
                                         <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager1.nickname}</div>
                                         {activeMatchup.manager1.name && (
@@ -229,13 +208,6 @@ export default function MatchupsPage() {
                                         <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager2.nickname}</div>
                                         {activeMatchup.manager2.name && (
                                             <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager2.name}</div>
-                                        )}
-                                    </div>
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-900 overflow-hidden border-2 border-purple-400/50 shadow-sm shrink-0">
-                                        {activeMatchup.manager2.avatar_url ? (
-                                            <img src={activeMatchup.manager2.avatar_url} alt="Avt" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="flex items-center justify-center h-full text-lg font-bold text-purple-300">{activeMatchup.manager2.nickname?.[0]}</span>
                                         )}
                                     </div>
                                 </div>

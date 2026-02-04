@@ -81,10 +81,10 @@ export async function GET(request, { params }) {
 
         let managersMap = {};
         if (managerIds.length > 0) {
-            // User requested to fetch league_members.nickname AND managers.name
+            // 查詢 league_members.nickname 和 managers.name
             const { data: members, error: membersError } = await supabase
                 .from('league_members')
-                .select('manager_id, nickname, managers (name, avatar_url)')
+                .select('manager_id, nickname, managers (name)')
                 .eq('league_id', leagueId)
                 .in('manager_id', managerIds);
 
@@ -92,8 +92,6 @@ export async function GET(request, { params }) {
                 members.forEach(m => {
                     managersMap[m.manager_id] = {
                         nickname: m.nickname,
-                        // Avatar might be on manager profile, not league member
-                        avatar_url: m.managers?.avatar_url || null,
                         name: m.managers?.name || ''
                     };
                 });
@@ -102,11 +100,22 @@ export async function GET(request, { params }) {
             }
         }
 
-        const finalMatchups = enrichedMatchups.map(m => ({
-            ...m,
-            manager1: managersMap[m.manager1_id] || { nickname: 'Unknown', team_name: 'Team A' },
-            manager2: managersMap[m.manager2_id] || { nickname: 'Unknown', team_name: 'Team B' }
-        }));
+        const finalMatchups = enrichedMatchups.map(m => {
+            const manager1Data = managersMap[m.manager1_id];
+            const manager2Data = managersMap[m.manager2_id];
+
+            return {
+                ...m,
+                manager1: manager1Data ? {
+                    nickname: manager1Data.nickname || 'Unknown',
+                    team_name: manager1Data.name || 'Team A'
+                } : { nickname: 'Unknown', team_name: 'Team A' },
+                manager2: manager2Data ? {
+                    nickname: manager2Data.nickname || 'Unknown',
+                    team_name: manager2Data.name || 'Team B'
+                } : { nickname: 'Unknown', team_name: 'Team B' }
+            };
+        });
 
         return NextResponse.json({
             success: true,
