@@ -24,6 +24,7 @@
     "next": "15.2.8",
     "nodemailer": "^6.10.1",
     "puppeteer": "^24.19.0",
+    "radix-ui": "^1.4.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^4.4.1",
