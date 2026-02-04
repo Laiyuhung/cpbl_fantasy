@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
 
@@ -578,47 +578,6 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [draftOrder, setDraftOrder] = useState([]);
   const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
   const [scheduleData, setScheduleData] = useState([]); // Store calculated schedule
-  const [activeSection, setActiveSection] = useState('general');
-  
-  // Create refs for each section
-  const sectionRefs = useRef({});
-  
-  // Scroll to section handler
-  const scrollToSection = (sectionKey) => {
-    setActiveSection(sectionKey);
-    const element = sectionRefs.current[sectionKey];
-    if (element) {
-      const navHeight = 80; // Height of sticky nav
-      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-      window.scrollTo({
-        top: elementPosition - navHeight,
-        behavior: 'smooth'
-      });
-    }
-  };
-  
-  // Update active section on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const navHeight = 100;
-      let currentSection = 'general';
-      
-      for (const section of sections) {
-        const element = sectionRefs.current[section.key];
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= navHeight + 50) {
-            currentSection = section.key;
-          }
-        }
-      }
-      
-      setActiveSection(currentSection);
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
@@ -1441,7 +1400,7 @@ const EditLeagueSettingsPage = ({ params }) => {
         )}
 
         <div className="max-w-7xl mx-auto pt-8">
-          <div className="mb-6 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
+          <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
             <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
             <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
               <span>Status:</span>
@@ -1449,34 +1408,11 @@ const EditLeagueSettingsPage = ({ params }) => {
             </div>
           </div>
 
-          {/* Sticky Navigation */}
-          <div className="sticky top-0 z-50 mb-6 bg-slate-900/95 backdrop-blur-md border border-purple-500/30 rounded-xl p-3 shadow-xl">
-            <div className="flex flex-wrap gap-2 justify-center">
-              {sections.map((section) => (
-                <button
-                  key={section.key}
-                  type="button"
-                  onClick={() => scrollToSection(section.key)}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center gap-2 ${
-                    activeSection === section.key
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg scale-105'
-                      : 'bg-slate-800/60 text-purple-300 hover:bg-purple-500/30 hover:text-white'
-                  }`}
-                >
-                  <span>{section.icon}</span>
-                  <span className="hidden sm:inline">{section.label.replace(' Settings', '')}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="space-y-8">
             {sections.map((section) => (
               <div 
                 key={section.key} 
-                ref={(el) => (sectionRefs.current[section.key] = el)}
-                id={`section-${section.key}`}
-                className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden scroll-mt-24"
+                className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden"
               >
                 <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
                   <h2 className="flex items-center gap-3 text-3xl font-black text-white">
