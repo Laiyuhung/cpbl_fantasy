@@ -17,13 +17,21 @@ export default function MatchupsPage() {
     const [scroingSettings, setScoringSettings] = useState(null);
     const [selectedWeek, setSelectedWeek] = useState('1'); // Default to Week 1 or current
     const [availableWeeks, setAvailableWeeks] = useState([]);
+    const [currentManagerId, setCurrentManagerId] = useState(null);
+    const [selectedMatchupIndex, setSelectedMatchupIndex] = useState(0);
 
-    // Fetch available weeks (assuming standard 23 weeks or fetch from schedule if possible)
-    // For now we'll just generate 1-23. ideally we fetch from league_schedule
+    // Fetch available weeks
     useEffect(() => {
         const weeks = Array.from({ length: 23 }, (_, i) => i + 1);
         setAvailableWeeks(weeks);
-        // TODO: Fetch current week from API or calculate it
+    }, []);
+
+    // Get current user's manager ID
+    useEffect(() => {
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+        if (cookie) {
+            setCurrentManagerId(cookie.split('=')[1]);
+        }
     }, []);
 
     useEffect(() => {
@@ -38,6 +46,18 @@ export default function MatchupsPage() {
                 if (data.success) {
                     setMatchups(data.matchups);
                     setScoringSettings(data.settings);
+
+                    // Auto-select user's matchup if available
+                    if (currentManagerId && data.matchups.length > 0) {
+                        const userIndex = data.matchups.findIndex(
+                            m => m.manager1_id === currentManagerId || m.manager2_id === currentManagerId
+                        );
+                        if (userIndex !== -1) {
+                            setSelectedMatchupIndex(userIndex);
+                        } else {
+                            setSelectedMatchupIndex(0);
+                        }
+                    }
                 } else {
                     console.error("Failed to fetch matchups:", data.error);
                 }
@@ -49,18 +69,22 @@ export default function MatchupsPage() {
         };
 
         fetchData();
-    }, [leagueId, selectedWeek]);
+    }, [leagueId, selectedWeek, currentManagerId]);
 
     if (loading) {
         return (
             <div className="p-6 space-y-6">
                 <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-                <div className="h-64 bg-gray-200 rounded animate-pulse" />
+                <div className="flex gap-4">
+                    <div className="h-24 w-64 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-24 w-64 bg-gray-200 rounded animate-pulse" />
+                </div>
+                <div className="h-96 bg-gray-200 rounded animate-pulse" />
             </div>
         );
     }
 
-    // Display Helper for categories with custom formatting
+    // Display Helper for categories
     const formatStat = (val, cat) => {
         if (val === undefined || val === null) return '0';
         if (['b_avg', 'b_obp', 'b_slg', 'b_ops', 'p_era', 'p_whip', 'p_win%'].includes(cat)) {
@@ -69,61 +93,29 @@ export default function MatchupsPage() {
         return val;
     };
 
+    const getAbbr = (cat) => {
+        const match = cat.match(/\(([^)]+)\)[^(]*$/);
+        return match ? match[1] : cat;
+    };
+
     // Mapping display names to db columns
     const statMap = {
         // Batting
-        'H/AB': 'b_avg', // Special handling usually, but here we use avg
-        'AVG': 'b_avg',
-        'R': 'b_r',
-        'H': 'b_h',
-        '1B': 'b_1b',
-        '2B': 'b_2b',
-        '3B': 'b_3b',
-        'HR': 'b_hr',
-        'XBH': 'b_xbh',
-        'TB': 'b_tb',
-        'RBI': 'b_rbi',
-        'BB': 'b_bb',
-        'IBB': 'b_ibb',
-        'HBP': 'b_hbp',
-        'K': 'b_k',
-        'SB': 'b_sb',
-        'CS': 'b_cs',
-        'SH': 'b_sh',
-        'SF': 'b_sf',
-        'GIDP': 'b_gidp',
-        'E': 'b_e',
-        'CYC': 'b_cyc',
-        'OBP': 'b_obp',
-        'SLG': 'b_slg',
-        'OPS': 'b_ops',
+        'H/AB': 'b_avg', 'AVG': 'b_avg', 'R': 'b_r', 'H': 'b_h', '1B': 'b_1b',
+        '2B': 'b_2b', '3B': 'b_3b', 'HR': 'b_hr', 'XBH': 'b_xbh', 'TB': 'b_tb',
+        'RBI': 'b_rbi', 'BB': 'b_bb', 'IBB': 'b_ibb', 'HBP': 'b_hbp', 'K': 'b_k',
+        'SB': 'b_sb', 'CS': 'b_cs', 'SH': 'b_sh', 'SF': 'b_sf', 'GIDP': 'b_gidp',
+        'E': 'b_e', 'CYC': 'b_cyc', 'OBP': 'b_obp', 'SLG': 'b_slg', 'OPS': 'b_ops',
 
         // Pitching
-        'IP': 'p_ip', // decimal
-        'W': 'p_w',
-        'L': 'p_l',
-        'SV': 'p_sv',
-        'HLD': 'p_hld',
-        'SV+HLD': 'p_svhld',
-        'K': 'p_k_pitching', // Disambiguate? DB cols are specific: p_k
-        'ERA': 'p_era',
-        'WHIP': 'p_whip',
-        'K/9': 'p_k/9',
-        'BB/9': 'p_bb/9',
-        'K/BB': 'p_k/bb',
-        'QS': 'p_qs',
-        'CG': 'p_cg',
-        'SHO': 'p_sho',
-        'NH': 'p_nh',
-        'PG': 'p_pg',
-        'APP': 'p_app',
-        'GS': 'p_gs',
+        'IP': 'p_ip', 'W': 'p_w', 'L': 'p_l', 'SV': 'p_sv', 'HLD': 'p_hld',
+        'SV+HLD': 'p_svhld', 'K': 'p_k_pitching', 'ERA': 'p_era', 'WHIP': 'p_whip',
+        'K/9': 'p_k/9', 'BB/9': 'p_bb/9', 'K/BB': 'p_k/bb', 'QS': 'p_qs',
+        'CG': 'p_cg', 'SHO': 'p_sho', 'NH': 'p_nh', 'PG': 'p_pg', 'APP': 'p_app', 'GS': 'p_gs',
     };
 
     const getDbCol = (cat, type) => {
-        // Map frontend category label (e.g. "HR") to DB view column (e.g. "b_hr")
         if (type === 'batter') {
-            // Simple mapping or lookup
             const key = cat.toLowerCase();
             return `b_${key}` in { b_r: 1, b_h: 1, b_hr: 1, b_rbi: 1, b_sb: 1, b_avg: 1, b_obp: 1, b_ops: 1 } ? `b_${key}` : statMap[cat] || `b_${key}`;
         } else {
@@ -132,14 +124,16 @@ export default function MatchupsPage() {
         }
     };
 
+    const activeMatchup = matchups[selectedMatchupIndex];
+
     return (
-        <div className="space-y-6">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Matchups</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Matchups</h1>
                 <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium">Week:</span>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Week:</span>
                     <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                        <SelectTrigger className="w-[120px]">
+                        <SelectTrigger className="w-[120px] bg-white dark:bg-slate-900">
                             <SelectValue placeholder="Select Week" />
                         </SelectTrigger>
                         <SelectContent>
@@ -151,98 +145,144 @@ export default function MatchupsPage() {
                 </div>
             </div>
 
+            {/* Matchup Carousel */}
+            {matchups.length > 0 && (
+                <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
+                    {matchups.map((match, idx) => {
+                        const isSelected = idx === selectedMatchupIndex;
+                        return (
+                            <div
+                                key={idx}
+                                onClick={() => setSelectedMatchupIndex(idx)}
+                                className={`
+                                    min-w-[280px] cursor-pointer rounded-lg border p-3 flex flex-col justify-center transition-all
+                                    ${isSelected
+                                        ? 'bg-blue-50 border-blue-500 shadow-md ring-1 ring-blue-500 dark:bg-blue-900/20 dark:border-blue-400'
+                                        : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'
+                                    }
+                                `}
+                            >
+                                <div className="flex justify-between items-center text-sm font-semibold">
+                                    <div className="flex items-center gap-2 truncate max-w-[100px]">
+                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0">
+                                            {match.manager1.avatar_url ? (
+                                                <img src={match.manager1.avatar_url} alt="Avt" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="flex items-center justify-center h-full text-[10px]">{match.manager1.nickname?.[0]}</span>
+                                            )}
+                                        </div>
+                                        <span className="truncate">{match.manager1.nickname}</span>
+                                    </div>
+                                    <span className="text-slate-400 px-1">vs</span>
+                                    <div className="flex items-center gap-2 truncate max-w-[100px] flex-row-reverse text-right">
+                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0">
+                                            {match.manager2.avatar_url ? (
+                                                <img src={match.manager2.avatar_url} alt="Avt" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="flex items-center justify-center h-full text-[10px]">{match.manager2.nickname?.[0]}</span>
+                                            )}
+                                        </div>
+                                        <span className="truncate">{match.manager2.nickname}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
             {matchups.length === 0 ? (
-                <Card>
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                     <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
                         <p>No matchups found for this week.</p>
                     </CardContent>
                 </Card>
-            ) : (
-                <div className="space-y-8">
-                    {matchups.map((match, idx) => (
-                        <Card key={idx} className="overflow-hidden border-2">
-                            <CardHeader className="bg-slate-50 dark:bg-slate-900 border-b p-4">
-                                <div className="flex justify-between items-center px-4">
-                                    <div className="text-xl font-bold flex items-center gap-2">
-                                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
-                                            {/* Avatar placeholder */}
-                                            {match.manager1.avatar_url ? (
-                                                <img src={match.manager1.avatar_url} alt="Avt" />
-                                            ) : (
-                                                <span>{match.manager1.nickname?.[0]}</span>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <div>{match.manager1.items?.team_name || match.manager1.nickname}</div>
-                                            <div className='text-xs font-normal text-muted-foreground'>Manager</div>
-                                        </div>
+            ) : activeMatchup && (
+                <div className="grid gap-8">
+                    <Card className="overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
+                        <CardHeader className="bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 p-4">
+                            <div className="flex justify-between items-center px-2 md:px-8">
+                                {/* Manager 1 */}
+                                <div className="flex items-center gap-3 md:gap-4 flex-1">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-white dark:border-slate-600 shadow-sm shrink-0">
+                                        {activeMatchup.manager1.avatar_url ? (
+                                            <img src={activeMatchup.manager1.avatar_url} alt="Avt" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-slate-500 dark:text-slate-400 text-lg font-bold">{activeMatchup.manager1.nickname?.[0]}</span>
+                                        )}
                                     </div>
-
-                                    <div className="text-2xl font-black text-slate-300">VS</div>
-
-                                    <div className="text-xl font-bold flex items-center gap-2 flex-row-reverse text-right">
-                                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
-                                            {match.manager2.avatar_url ? (
-                                                <img src={match.manager2.avatar_url} alt="Avt" />
-                                            ) : (
-                                                <span>{match.manager2.nickname?.[0]}</span>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <div>{match.manager2.items?.team_name || match.manager2.nickname}</div>
-                                            <div className='text-xs font-normal text-muted-foreground'>Manager</div>
-                                        </div>
+                                    <div className="min-w-0">
+                                        <div className="font-bold text-lg md:text-xl truncate text-slate-900 dark:text-slate-100">{activeMatchup.manager1.nickname}</div>
                                     </div>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                {/* Stats Table */}
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="w-[150px]">Category</TableHead>
-                                                <TableHead className="text-center w-1/3 text-lg font-semibold bg-slate-50/50">{match.manager1.nickname}</TableHead>
-                                                <TableHead className="text-center w-1/3 text-lg font-semibold bg-slate-50/50">{match.manager2.nickname}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {/* Batting Stats */}
-                                            <TableRow className="bg-slate-100 dark:bg-slate-800"><TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-muted-foreground p-1">Batting</TableCell></TableRow>
-                                            {scroingSettings?.batter_categories?.map(cat => {
-                                                const dbCol = getDbCol(cat, 'batter');
-                                                const val1 = match.manager1_stats[dbCol];
-                                                const val2 = match.manager2_stats[dbCol];
-                                                // Simple win highlight logic? Maybe later.
-                                                return (
-                                                    <TableRow key={cat}>
-                                                        <TableCell className="font-medium text-muted-foreground">{cat}</TableCell>
-                                                        <TableCell className="text-center font-mono text-lg">{formatStat(val1, dbCol)}</TableCell>
-                                                        <TableCell className="text-center font-mono text-lg">{formatStat(val2, dbCol)}</TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
 
-                                            {/* Pitching Stats */}
-                                            <TableRow className="bg-slate-100 dark:bg-slate-800"><TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-muted-foreground p-1">Pitching</TableCell></TableRow>
-                                            {scroingSettings?.pitcher_categories?.map(cat => {
-                                                const dbCol = getDbCol(cat, 'pitcher');
-                                                const val1 = match.manager1_stats[dbCol];
-                                                const val2 = match.manager2_stats[dbCol];
-                                                return (
-                                                    <TableRow key={cat}>
-                                                        <TableCell className="font-medium text-muted-foreground">{cat}</TableCell>
-                                                        <TableCell className="text-center font-mono text-lg">{formatStat(val1, dbCol)}</TableCell>
-                                                        <TableCell className="text-center font-mono text-lg">{formatStat(val2, dbCol)}</TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
+                                <div className="px-4 text-center shrink-0">
+                                    <div className="text-xl md:text-3xl font-black text-slate-300 dark:text-slate-700">VS</div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+
+                                {/* Manager 2 */}
+                                <div className="flex items-center gap-3 md:gap-4 flex-1 justify-end text-right">
+                                    <div className="min-w-0">
+                                        <div className="font-bold text-lg md:text-xl truncate text-slate-900 dark:text-slate-100">{activeMatchup.manager2.nickname}</div>
+                                    </div>
+                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-white dark:border-slate-600 shadow-sm shrink-0">
+                                        {activeMatchup.manager2.avatar_url ? (
+                                            <img src={activeMatchup.manager2.avatar_url} alt="Avt" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-slate-500 dark:text-slate-400 text-lg font-bold">{activeMatchup.manager2.nickname?.[0]}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {/* Stats Table */}
+                            <div className="w-full">
+                                <Table>
+                                    <TableHeader className="hidden">
+                                        <TableRow>
+                                            <TableHead className="w-[40%] text-right">Manager 1</TableHead>
+                                            <TableHead className="w-[20%] text-center">Category</TableHead>
+                                            <TableHead className="w-[40%] text-left">Manager 2</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {/* Batting Stats */}
+                                        <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50/50"><TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-slate-500 py-2">Batting</TableCell></TableRow>
+                                        {scroingSettings?.batter_categories?.map(cat => {
+                                            const dbCol = getDbCol(cat, 'batter');
+                                            const val1 = activeMatchup.manager1_stats[dbCol];
+                                            const val2 = activeMatchup.manager2_stats[dbCol];
+                                            const abbr = getAbbr(cat);
+                                            return (
+                                                <TableRow key={cat} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 border-0 border-b border-slate-100 dark:border-slate-800/50 last:border-0">
+                                                    <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-slate-700 dark:text-slate-300 py-3 pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
+                                                    <TableCell className="w-[20%] text-center font-bold text-sm text-slate-400 uppercase tracking-wider py-3 bg-slate-50/30 dark:bg-slate-800/30">{abbr}</TableCell>
+                                                    <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-slate-700 dark:text-slate-300 py-3 pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+
+                                        {/* Pitching Stats */}
+                                        <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50/50"><TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-slate-500 py-2 mt-4">Pitching</TableCell></TableRow>
+                                        {scroingSettings?.pitcher_categories?.map(cat => {
+                                            const dbCol = getDbCol(cat, 'pitcher');
+                                            const val1 = activeMatchup.manager1_stats[dbCol];
+                                            const val2 = activeMatchup.manager2_stats[dbCol];
+                                            const abbr = getAbbr(cat);
+                                            return (
+                                                <TableRow key={cat} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 border-0 border-b border-slate-100 dark:border-slate-800/50 last:border-0">
+                                                    <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-slate-700 dark:text-slate-300 py-3 pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
+                                                    <TableCell className="w-[20%] text-center font-bold text-sm text-slate-400 uppercase tracking-wider py-3 bg-slate-50/30 dark:bg-slate-800/30">{abbr}</TableCell>
+                                                    <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-slate-700 dark:text-slate-300 py-3 pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             )}
         </div>
