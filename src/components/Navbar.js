@@ -363,12 +363,7 @@ export default function Navbar() {
                 )}
               </div>
 
-              {userId === '2' && (
-                <div className="border-t border-blue-500/30 mt-4 pt-4 space-y-1">
-                  <Link href="/bulk-insert" className="block px-4 py-3 rounded-lg bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors font-medium" onClick={() => setMenuOpen(false)}>資料登錄系統</Link>
-                  <Link href="/matchup_debug" className="block px-4 py-3 rounded-lg bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors font-medium" onClick={() => setMenuOpen(false)}>Debug</Link>
-                </div>
-              )}
+              
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-500/30 bg-slate-900/50">
