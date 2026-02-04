@@ -159,18 +159,20 @@ export default function MatchupsPage() {
                                     className={`
                                     min-w-[280px] cursor-pointer rounded-lg border p-3 flex flex-col justify-center transition-all
                                     ${isSelected
-                                            ? 'bg-blue-50 border-blue-500 shadow-md ring-1 ring-blue-500 dark:bg-blue-900/20 dark:border-blue-400'
-                                            : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'
+                                            ? 'bg-purple-600/30 border-purple-400 shadow-md ring-1 ring-purple-400'
+                                            : 'bg-slate-800/60 border-purple-500/30 hover:border-purple-400/50 hover:bg-slate-800/80'
                                         }
                                 `}
                                 >
                                     <div className="flex justify-between items-center text-sm font-semibold">
-                                        <div className="flex items-center gap-2 truncate max-w-[120px]">
-                                            <span className="truncate text-purple-100">{match.manager1.nickname}</span>
+                                        <div className="flex flex-col gap-0.5 truncate max-w-[120px]">
+                                            <span className="truncate text-purple-100 font-semibold">{match.manager1.nickname}</span>
+                                            <span className="truncate text-purple-300/70 text-xs">{match.manager1.team_name}</span>
                                         </div>
                                         <span className="text-purple-400 px-1">vs</span>
-                                        <div className="flex items-center gap-2 truncate max-w-[120px] flex-row-reverse text-right">
-                                            <span className="truncate text-purple-100">{match.manager2.nickname}</span>
+                                        <div className="flex flex-col gap-0.5 truncate max-w-[120px] text-right">
+                                            <span className="truncate text-purple-100 font-semibold">{match.manager2.nickname}</span>
+                                            <span className="truncate text-purple-300/70 text-xs">{match.manager2.team_name}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -219,7 +221,7 @@ export default function MatchupsPage() {
                             {/* Stats Table */}
                             <div className="w-full">
                                 <Table>
-                                    <TableHeader className="bg-slate-900/60 border-b border-purple-500/20">
+                                    <TableHeader className="hidden">
                                         <TableRow>
                                             <TableHead className="w-[40%] text-right text-purple-300">Manager 1</TableHead>
                                             <TableHead className="w-[20%] text-center text-purple-300">Category</TableHead>
