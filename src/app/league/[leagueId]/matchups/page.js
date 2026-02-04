@@ -46,18 +46,6 @@ export default function MatchupsPage() {
                 if (data.success) {
                     setMatchups(data.matchups);
                     setScoringSettings(data.settings);
-
-                    // Auto-select user's matchup if available
-                    if (currentManagerId && data.matchups.length > 0) {
-                        const userIndex = data.matchups.findIndex(
-                            m => m.manager1_id === currentManagerId || m.manager2_id === currentManagerId
-                        );
-                        if (userIndex !== -1) {
-                            setSelectedMatchupIndex(userIndex);
-                        } else {
-                            setSelectedMatchupIndex(0);
-                        }
-                    }
                 } else {
                     console.error("Failed to fetch matchups:", data.error);
                 }
@@ -69,7 +57,19 @@ export default function MatchupsPage() {
         };
 
         fetchData();
-    }, [leagueId, selectedWeek, currentManagerId]);
+    }, [leagueId, selectedWeek]); // 移除 currentManagerId 避免雙重 fetch
+
+    // 獨立處理 auto-select 用戶的對戰
+    useEffect(() => {
+        if (currentManagerId && matchups.length > 0) {
+            const userIndex = matchups.findIndex(
+                m => m.manager1_id === currentManagerId || m.manager2_id === currentManagerId
+            );
+            if (userIndex !== -1) {
+                setSelectedMatchupIndex(userIndex);
+            }
+        }
+    }, [currentManagerId, matchups]);
 
     if (loading) {
         return (
@@ -164,13 +164,20 @@ export default function MatchupsPage() {
                                         }
                                 `}
                                 >
-                                    <div className="flex justify-between items-center text-sm font-semibold">
-                                        <div className="flex flex-col gap-0.5 truncate max-w-[120px]">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <div className="flex flex-col gap-0.5 truncate max-w-[100px]">
                                             <span className="truncate text-purple-100 font-semibold">{match.manager1.nickname}</span>
                                             <span className="truncate text-purple-300/70 text-xs">{match.manager1.team_name}</span>
                                         </div>
-                                        <span className="text-purple-400 px-1">vs</span>
-                                        <div className="flex flex-col gap-0.5 truncate max-w-[120px] text-right">
+                                        <div className="flex flex-col items-center px-2">
+                                            <span className="text-purple-400 text-xs">vs</span>
+                                            <div className="flex items-center gap-1 text-purple-100 font-bold text-sm">
+                                                <span>{match.score_a || 0}</span>
+                                                <span className="text-purple-400">-</span>
+                                                <span>{match.score_b || 0}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-0.5 truncate max-w-[100px] text-right">
                                             <span className="truncate text-purple-100 font-semibold">{match.manager2.nickname}</span>
                                             <span className="truncate text-purple-300/70 text-xs">{match.manager2.team_name}</span>
                                         </div>
@@ -194,23 +201,23 @@ export default function MatchupsPage() {
                                 <div className="flex items-center gap-3 md:gap-4 flex-1">
                                     <div className="min-w-0">
                                         <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager1.nickname}</div>
-                                        {activeMatchup.manager1.name && (
-                                            <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager1.name}</div>
-                                        )}
+                                        <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager1.team_name}</div>
                                     </div>
                                 </div>
 
                                 <div className="px-4 text-center shrink-0">
-                                    <div className="text-xl md:text-3xl font-black text-white/90">VS</div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-3xl md:text-4xl font-black text-white">{activeMatchup.score_a || 0}</div>
+                                        <div className="text-xl md:text-2xl font-bold text-white/70">VS</div>
+                                        <div className="text-3xl md:text-4xl font-black text-white">{activeMatchup.score_b || 0}</div>
+                                    </div>
                                 </div>
 
                                 {/* Manager 2 */}
                                 <div className="flex items-center gap-3 md:gap-4 flex-1 justify-end text-right">
                                     <div className="min-w-0">
                                         <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager2.nickname}</div>
-                                        {activeMatchup.manager2.name && (
-                                            <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager2.name}</div>
-                                        )}
+                                        <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager2.team_name}</div>
                                     </div>
                                 </div>
                             </div>
