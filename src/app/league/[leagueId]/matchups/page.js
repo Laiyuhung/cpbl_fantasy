@@ -127,100 +127,100 @@ export default function MatchupsPage() {
     const activeMatchup = matchups[selectedMatchupIndex];
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Matchups</h1>
-                <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Week:</span>
-                    <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                        <SelectTrigger className="w-[120px] bg-white dark:bg-slate-900">
-                            <SelectValue placeholder="Select Week" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableWeeks.map(w => (
-                                <SelectItem key={w} value={w.toString()}>Week {w}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Matchups</h1>
+                    <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-purple-300">Week:</span>
+                        <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                            <SelectTrigger className="w-[120px] bg-slate-800/60 border-purple-500/30 text-white">
+                                <SelectValue placeholder="Select Week" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableWeeks.map(w => (
+                                    <SelectItem key={w} value={w.toString()}>Week {w}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
-            </div>
 
-            {/* Matchup Carousel */}
-            {matchups.length > 0 && (
-                <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
-                    {matchups.map((match, idx) => {
-                        const isSelected = idx === selectedMatchupIndex;
-                        return (
-                            <div
-                                key={idx}
-                                onClick={() => setSelectedMatchupIndex(idx)}
-                                className={`
+                {/* Matchup Carousel */}
+                {matchups.length > 0 && (
+                    <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-thin scrollbar-thumb-purple-500/50">
+                        {matchups.map((match, idx) => {
+                            const isSelected = idx === selectedMatchupIndex;
+                            return (
+                                <div
+                                    key={idx}
+                                    onClick={() => setSelectedMatchupIndex(idx)}
+                                    className={`
                                     min-w-[280px] cursor-pointer rounded-lg border p-3 flex flex-col justify-center transition-all
                                     ${isSelected
-                                        ? 'bg-blue-50 border-blue-500 shadow-md ring-1 ring-blue-500 dark:bg-blue-900/20 dark:border-blue-400'
-                                        : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'
-                                    }
+                                            ? 'bg-blue-50 border-blue-500 shadow-md ring-1 ring-blue-500 dark:bg-blue-900/20 dark:border-blue-400'
+                                            : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'
+                                        }
                                 `}
-                            >
-                                <div className="flex justify-between items-center text-sm font-semibold">
-                                    <div className="flex items-center gap-2 truncate max-w-[100px]">
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0">
-                                            {match.manager1.avatar_url ? (
-                                                <img src={match.manager1.avatar_url} alt="Avt" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <span className="flex items-center justify-center h-full text-[10px]">{match.manager1.nickname?.[0]}</span>
-                                            )}
+                                >
+                                    <div className="flex justify-between items-center text-sm font-semibold">
+                                        <div className="flex items-center gap-2 truncate max-w-[100px]">
+                                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden shrink-0">
+                                                {match.manager1.avatar_url ? (
+                                                    <img src={match.manager1.avatar_url} alt="Avt" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="flex items-center justify-center h-full text-[10px] text-purple-300">{match.manager1.nickname?.[0]}</span>
+                                                )}
+                                            </div>
+                                            <span className="truncate text-purple-100">{match.manager1.nickname}</span>
                                         </div>
-                                        <span className="truncate">{match.manager1.nickname}</span>
-                                    </div>
-                                    <span className="text-slate-400 px-1">vs</span>
-                                    <div className="flex items-center gap-2 truncate max-w-[100px] flex-row-reverse text-right">
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0">
-                                            {match.manager2.avatar_url ? (
-                                                <img src={match.manager2.avatar_url} alt="Avt" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <span className="flex items-center justify-center h-full text-[10px]">{match.manager2.nickname?.[0]}</span>
-                                            )}
+                                        <span className="text-purple-400 px-1">vs</span>
+                                        <div className="flex items-center gap-2 truncate max-w-[100px] flex-row-reverse text-right">
+                                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden shrink-0">
+                                                {match.manager2.avatar_url ? (
+                                                    <img src={match.manager2.avatar_url} alt="Avt" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="flex items-center justify-center h-full text-[10px] text-purple-300">{match.manager2.nickname?.[0]}</span>
+                                                )}
+                                            </div>
+                                            <span className="truncate text-purple-100">{match.manager2.nickname}</span>
                                         </div>
-                                        <span className="truncate">{match.manager2.nickname}</span>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                            );
+                        })}
+                    </div>
+                )}
 
-            {matchups.length === 0 ? (
-                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                    <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
-                        <p>No matchups found for this week.</p>
-                    </CardContent>
-                </Card>
-            ) : activeMatchup && (
-                <div className="grid gap-8">
-                    <Card className="overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-                        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 border-b border-purple-500 text-white p-4">
+                {matchups.length === 0 ? (
+                    <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-12">
+                        <p className="text-center text-purple-300">No matchups found for this week.</p>
+                    </div>
+                ) : activeMatchup && (
+                    <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-6 border-b border-purple-400/30">
                             <div className="flex justify-between items-center px-2 md:px-8">
                                 {/* Manager 1 */}
                                 <div className="flex items-center gap-3 md:gap-4 flex-1">
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden border-2 border-white/50 shadow-sm shrink-0">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-900 overflow-hidden border-2 border-purple-400/50 shadow-sm shrink-0">
                                         {activeMatchup.manager1.avatar_url ? (
                                             <img src={activeMatchup.manager1.avatar_url} alt="Avt" className="w-full h-full object-cover" />
                                         ) : (
-                                            <span className="text-white text-lg font-bold">{activeMatchup.manager1.nickname?.[0]}</span>
+                                            <span className="flex items-center justify-center h-full text-lg font-bold text-purple-300">{activeMatchup.manager1.nickname?.[0]}</span>
                                         )}
                                     </div>
                                     <div className="min-w-0">
                                         <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager1.nickname}</div>
                                         {activeMatchup.manager1.name && (
-                                            <div className="text-xs md:text-sm text-white/70 truncate">{activeMatchup.manager1.name}</div>
+                                            <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager1.name}</div>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="px-4 text-center shrink-0">
-                                    <div className="text-xl md:text-3xl font-black text-white/80">VS</div>
+                                    <div className="text-xl md:text-3xl font-black text-white/90">VS</div>
                                 </div>
 
                                 {/* Manager 2 */}
@@ -228,69 +228,75 @@ export default function MatchupsPage() {
                                     <div className="min-w-0">
                                         <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager2.nickname}</div>
                                         {activeMatchup.manager2.name && (
-                                            <div className="text-xs md:text-sm text-white/70 truncate">{activeMatchup.manager2.name}</div>
+                                            <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager2.name}</div>
                                         )}
                                     </div>
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden border-2 border-white/50 shadow-sm shrink-0">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-900 overflow-hidden border-2 border-purple-400/50 shadow-sm shrink-0">
                                         {activeMatchup.manager2.avatar_url ? (
                                             <img src={activeMatchup.manager2.avatar_url} alt="Avt" className="w-full h-full object-cover" />
                                         ) : (
-                                            <span className="text-white text-lg font-bold">{activeMatchup.manager2.nickname?.[0]}</span>
+                                            <span className="flex items-center justify-center h-full text-lg font-bold text-purple-300">{activeMatchup.manager2.nickname?.[0]}</span>
                                         )}
                                     </div>
                                 </div>
                             </div>
-                        </CardHeader>
-                        <CardContent className="p-0">
+                        </div>
+
+                        {/* Stats Table */}
+                        <div className="overflow-x-auto">
                             {/* Stats Table */}
                             <div className="w-full">
                                 <Table>
-                                    <TableHeader className="hidden">
+                                    <TableHeader className="bg-slate-900/60 border-b border-purple-500/20">
                                         <TableRow>
-                                            <TableHead className="w-[40%] text-right">Manager 1</TableHead>
-                                            <TableHead className="w-[20%] text-center">Category</TableHead>
-                                            <TableHead className="w-[40%] text-left">Manager 2</TableHead>
+                                            <TableHead className="w-[40%] text-right text-purple-300">Manager 1</TableHead>
+                                            <TableHead className="w-[20%] text-center text-purple-300">Category</TableHead>
+                                            <TableHead className="w-[40%] text-left text-purple-300">Manager 2</TableHead>
                                         </TableRow>
                                     </TableHeader>
-                                    <TableBody>
+                                    <TableBody className="divide-y divide-purple-500/10">
                                         {/* Batting Stats */}
-                                        <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50/50"><TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-slate-500 py-2">Batting</TableCell></TableRow>
+                                        <TableRow className="bg-slate-900/40 hover:bg-slate-900/40">
+                                            <TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-purple-400 py-2">Batting</TableCell>
+                                        </TableRow>
                                         {scroingSettings?.batter_categories?.map(cat => {
                                             const dbCol = getDbCol(cat, 'batter');
                                             const val1 = activeMatchup.manager1_stats[dbCol];
                                             const val2 = activeMatchup.manager2_stats[dbCol];
                                             const abbr = getAbbr(cat);
                                             return (
-                                                <TableRow key={cat} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 border-0 border-b border-slate-100 dark:border-slate-800/50 last:border-0">
-                                                    <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-slate-700 dark:text-slate-300 py-3 pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
-                                                    <TableCell className="w-[20%] text-center font-bold text-sm text-slate-400 uppercase tracking-wider py-3 bg-slate-50/30 dark:bg-slate-800/30">{abbr}</TableCell>
-                                                    <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-slate-700 dark:text-slate-300 py-3 pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
+                                                <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
+                                                    <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-purple-100 py-3 pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
+                                                    <TableCell className="w-[20%] text-center font-bold text-sm text-purple-300 uppercase tracking-wider py-3">{abbr}</TableCell>
+                                                    <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-purple-100 py-3 pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
                                                 </TableRow>
                                             );
                                         })}
 
                                         {/* Pitching Stats */}
-                                        <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50/50"><TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-slate-500 py-2 mt-4">Pitching</TableCell></TableRow>
+                                        <TableRow className="bg-slate-900/40 hover:bg-slate-900/40">
+                                            <TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-purple-400 py-2 mt-4">Pitching</TableCell>
+                                        </TableRow>
                                         {scroingSettings?.pitcher_categories?.map(cat => {
                                             const dbCol = getDbCol(cat, 'pitcher');
                                             const val1 = activeMatchup.manager1_stats[dbCol];
                                             const val2 = activeMatchup.manager2_stats[dbCol];
                                             const abbr = getAbbr(cat);
                                             return (
-                                                <TableRow key={cat} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 border-0 border-b border-slate-100 dark:border-slate-800/50 last:border-0">
-                                                    <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-slate-700 dark:text-slate-300 py-3 pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
-                                                    <TableCell className="w-[20%] text-center font-bold text-sm text-slate-400 uppercase tracking-wider py-3 bg-slate-50/30 dark:bg-slate-800/30">{abbr}</TableCell>
-                                                    <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-slate-700 dark:text-slate-300 py-3 pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
+                                                <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
+                                                    <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-purple-100 py-3 pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
+                                                    <TableCell className="w-[20%] text-center font-bold text-sm text-purple-300 uppercase tracking-wider py-3">{abbr}</TableCell>
+                                                    <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-purple-100 py-3 pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
                                                 </TableRow>
                                             );
                                         })}
                                     </TableBody>
                                 </Table>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

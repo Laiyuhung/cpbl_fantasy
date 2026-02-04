@@ -84,11 +84,10 @@ export async function GET(request, { params }) {
 
         let managersMap = {};
         if (managerIds.length > 0) {
-            const { data: managers, error: managersError } = await supabase
             // User requested to fetch league_members.nickname AND managers.name
             const { data: members, error: membersError } = await supabase
                 .from('league_members')
-                .select('manager_id, nickname, avatar_url, managers (name)')
+                .select('manager_id, nickname, managers (name, avatar_url)')
                 .eq('league_id', leagueId)
                 .in('manager_id', managerIds);
 
@@ -96,7 +95,8 @@ export async function GET(request, { params }) {
                 members.forEach(m => {
                     managersMap[m.manager_id] = {
                         nickname: m.nickname,
-                        avatar_url: m.avatar_url,
+                        // Avatar might be on manager profile, not league member
+                        avatar_url: m.managers?.avatar_url || null,
                         name: m.managers?.name || ''
                     };
                 });
