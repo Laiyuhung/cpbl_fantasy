@@ -1368,7 +1368,7 @@ const EditLeagueSettingsPage = ({ params }) => {
         }
       `}</style>
 
-      <div className="relative z-0 min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pt-0 px-8 pb-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pt-0 px-8 pb-8">
         {/* Help Modal */}
         {activeHelpKey && (
           <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn" onClick={() => setActiveHelpKey(null)}>
