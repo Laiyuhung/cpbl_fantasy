@@ -1367,38 +1367,36 @@ const EditLeagueSettingsPage = ({ params }) => {
         }
       `}</style>
 
-      <div className="max-w-7xl mx-auto space-y-8 p-8">
-        {/* Help Modal */}
-        {activeHelpKey && (
-          <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn" onClick={() => setActiveHelpKey(null)}>
-            <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl max-w-md w-full animate-scaleIn" onClick={e => e.stopPropagation()}>
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-bold text-white">{activeHelpKey}</h3>
-                <button
-                  onClick={() => setActiveHelpKey(null)}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-purple-200 leading-relaxed">
-                {getSettingDescription(activeHelpKey)}
-              </p>
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setActiveHelpKey(null)}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all font-medium shadow-lg"
-                >
-                  Got it
-                </button>
-              </div>
+      {activeHelpKey && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn" onClick={() => setActiveHelpKey(null)}>
+          <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl max-w-md w-full animate-scaleIn" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-white">{activeHelpKey}</h3>
+              <button
+                onClick={() => setActiveHelpKey(null)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-purple-200 leading-relaxed">
+              {getSettingDescription(activeHelpKey)}
+            </p>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setActiveHelpKey(null)}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all font-medium shadow-lg"
+              >
+                Got it
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Content Wrapper merged with main container */}
+      <div className="max-w-7xl mx-auto space-y-8 p-8 pt-24">
         <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
           <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
           <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
