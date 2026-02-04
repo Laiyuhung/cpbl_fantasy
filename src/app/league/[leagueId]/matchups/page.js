@@ -200,36 +200,42 @@ export default function MatchupsPage() {
             ) : activeMatchup && (
                 <div className="grid gap-8">
                     <Card className="overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-                        <CardHeader className="bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 p-4">
+                        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 border-b border-purple-500 text-white p-4">
                             <div className="flex justify-between items-center px-2 md:px-8">
                                 {/* Manager 1 */}
                                 <div className="flex items-center gap-3 md:gap-4 flex-1">
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-white dark:border-slate-600 shadow-sm shrink-0">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden border-2 border-white/50 shadow-sm shrink-0">
                                         {activeMatchup.manager1.avatar_url ? (
                                             <img src={activeMatchup.manager1.avatar_url} alt="Avt" className="w-full h-full object-cover" />
                                         ) : (
-                                            <span className="text-slate-500 dark:text-slate-400 text-lg font-bold">{activeMatchup.manager1.nickname?.[0]}</span>
+                                            <span className="text-white text-lg font-bold">{activeMatchup.manager1.nickname?.[0]}</span>
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="font-bold text-lg md:text-xl truncate text-slate-900 dark:text-slate-100">{activeMatchup.manager1.nickname}</div>
+                                        <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager1.nickname}</div>
+                                        {activeMatchup.manager1.name && (
+                                            <div className="text-xs md:text-sm text-white/70 truncate">{activeMatchup.manager1.name}</div>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="px-4 text-center shrink-0">
-                                    <div className="text-xl md:text-3xl font-black text-slate-300 dark:text-slate-700">VS</div>
+                                    <div className="text-xl md:text-3xl font-black text-white/80">VS</div>
                                 </div>
 
                                 {/* Manager 2 */}
                                 <div className="flex items-center gap-3 md:gap-4 flex-1 justify-end text-right">
                                     <div className="min-w-0">
-                                        <div className="font-bold text-lg md:text-xl truncate text-slate-900 dark:text-slate-100">{activeMatchup.manager2.nickname}</div>
+                                        <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager2.nickname}</div>
+                                        {activeMatchup.manager2.name && (
+                                            <div className="text-xs md:text-sm text-white/70 truncate">{activeMatchup.manager2.name}</div>
+                                        )}
                                     </div>
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-white dark:border-slate-600 shadow-sm shrink-0">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden border-2 border-white/50 shadow-sm shrink-0">
                                         {activeMatchup.manager2.avatar_url ? (
                                             <img src={activeMatchup.manager2.avatar_url} alt="Avt" className="w-full h-full object-cover" />
                                         ) : (
-                                            <span className="text-slate-500 dark:text-slate-400 text-lg font-bold">{activeMatchup.manager2.nickname?.[0]}</span>
+                                            <span className="text-white text-lg font-bold">{activeMatchup.manager2.nickname?.[0]}</span>
                                         )}
                                     </div>
                                 </div>

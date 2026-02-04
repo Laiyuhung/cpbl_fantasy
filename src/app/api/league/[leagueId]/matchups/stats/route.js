@@ -85,13 +85,23 @@ export async function GET(request, { params }) {
         let managersMap = {};
         if (managerIds.length > 0) {
             const { data: managers, error: managersError } = await supabase
-                .from('league_members') // OR 'managers' table? Usually league_members has nickname/team info
-                .select('manager_id, team_name, nickname, avatar_url')
+            // User requested to fetch league_members.nickname AND managers.name
+            const { data: members, error: membersError } = await supabase
+                .from('league_members')
+                .select('manager_id, nickname, avatar_url, managers (name)')
                 .eq('league_id', leagueId)
                 .in('manager_id', managerIds);
 
-            if (!managersError && managers) {
-                managers.forEach(m => managersMap[m.manager_id] = m);
+            if (!membersError && members) {
+                members.forEach(m => {
+                    managersMap[m.manager_id] = {
+                        nickname: m.nickname,
+                        avatar_url: m.avatar_url,
+                        name: m.managers?.name || ''
+                    };
+                });
+            } else if (membersError) {
+                console.error("Error fetching league members:", membersError);
             }
         }
 
