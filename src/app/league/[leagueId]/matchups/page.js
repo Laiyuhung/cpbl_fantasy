@@ -44,13 +44,6 @@ export default function MatchupsPage() {
                 const data = await res.json();
 
                 if (data.success) {
-                    console.log('=== API Response ===');
-                    console.log('Full data:', data);
-                    console.log('manager1_stats.p_obpa:', data.matchups[0]?.manager1_stats?.p_obpa);
-                    console.log('manager1_stats.b_avg:', data.matchups[0]?.manager1_stats?.b_avg);
-                    console.log('Type of p_obpa:', typeof data.matchups[0]?.manager1_stats?.p_obpa);
-                    console.log('Type of b_avg:', typeof data.matchups[0]?.manager1_stats?.b_avg);
-
                     setMatchups(data.matchups);
                     setScoringSettings(data.settings);
                 } else {
@@ -93,11 +86,6 @@ export default function MatchupsPage() {
 
     // Display Helper - 直接顯示後端的值
     const formatStat = (val, cat) => {
-        // 詳細調試
-        if (cat === 'p_obpa' || cat === 'b_avg' || cat === 'p_era') {
-            console.log(`formatStat called: cat=${cat}, val=${val}, type=${typeof val}, JSON=${JSON.stringify(val)}`);
-        }
-
         // K/BB 為 null 代表無限大（BB=0 但 K>0）
         if (cat === 'p_k/bb' && (val === null || val === undefined)) {
             return 'INF';
@@ -105,16 +93,11 @@ export default function MatchupsPage() {
 
         // 如果值為 undefined 或 null，顯示 0
         if (val === undefined || val === null) {
-            console.log(`formatStat: ${cat} is undefined/null, returning '0'`);
             return '0';
         }
 
         // 直接返回後端提供的值（包括 "0.000" 這種字串）
-        const result = val;
-        if (cat === 'p_obpa' || cat === 'b_avg' || cat === 'p_era') {
-            console.log(`formatStat returning: ${result} (type: ${typeof result})`);
-        }
-        return result;
+        return val;
     };
 
     const getAbbr = (cat) => {
@@ -248,6 +231,14 @@ export default function MatchupsPage() {
                                         <TableRow className="bg-slate-900/40 hover:bg-slate-900/40">
                                             <TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-purple-400 py-2">Batting</TableCell>
                                         </TableRow>
+                                        {/* AB - 只在不是計分項目時顯示 */}
+                                        {!scroingSettings?.batter_categories?.some(cat => getAbbr(cat).toLowerCase() === 'ab') && (
+                                            <TableRow className="hover:bg-slate-800/30 border-0">
+                                                <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-gray-500 py-3 pr-8 md:pr-12">{activeMatchup.manager1_stats.b_ab || 0}</TableCell>
+                                                <TableCell className="w-[20%] text-center font-bold text-sm text-gray-500 uppercase tracking-wider py-3">AB</TableCell>
+                                                <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-gray-500 py-3 pl-8 md:pl-12">{activeMatchup.manager2_stats.b_ab || 0}</TableCell>
+                                            </TableRow>
+                                        )}
                                         {scroingSettings?.batter_categories?.map(cat => {
                                             const dbCol = getDbCol(cat, 'batter');
                                             const val1 = activeMatchup.manager1_stats[dbCol];
@@ -262,10 +253,19 @@ export default function MatchupsPage() {
                                             );
                                         })}
 
+
                                         {/* Pitching Stats */}
                                         <TableRow className="bg-slate-900/40 hover:bg-slate-900/40">
                                             <TableCell colSpan={3} className="font-bold text-center text-xs uppercase tracking-widest text-purple-400 py-2 mt-4">Pitching</TableCell>
                                         </TableRow>
+                                        {/* IP - 只在不是計分項目時顯示 */}
+                                        {!scroingSettings?.pitcher_categories?.some(cat => getAbbr(cat).toLowerCase() === 'ip') && (
+                                            <TableRow className="hover:bg-slate-800/30 border-0">
+                                                <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-gray-500 py-3 pr-8 md:pr-12">{activeMatchup.manager1_stats.p_ip || '0.0'}</TableCell>
+                                                <TableCell className="w-[20%] text-center font-bold text-sm text-gray-500 uppercase tracking-wider py-3">IP</TableCell>
+                                                <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-gray-500 py-3 pl-8 md:pl-12">{activeMatchup.manager2_stats.p_ip || '0.0'}</TableCell>
+                                            </TableRow>
+                                        )}
                                         {scroingSettings?.pitcher_categories?.map(cat => {
                                             const dbCol = getDbCol(cat, 'pitcher');
                                             const val1 = activeMatchup.manager1_stats[dbCol];
