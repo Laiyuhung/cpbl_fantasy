@@ -591,25 +591,60 @@ const EditLeagueSettingsPage = ({ params }) => {
     const checkDraftOrder = async () => {
       if (!leagueId) return;
 
-      // Fetch picks to see if draft order exists
-      const { data: picks } = await supabase
+      // 檢查是否有任何選秀權已被使用（player_id 不為 null）
+      const { data: usedPicks, error: usedPicksError } = await supabase
         .from('draft_picks')
-        .select(`
-          pick_number, 
-          manager_id,
-          member_profile:manager_id (nickname)
-        `)
+        .select('pick_number, player_id')
+        .eq('league_id', leagueId)
+        .not('player_id', 'is', null)
+        .limit(1);
+
+      if (usedPicksError) {
+        console.error('Error checking used picks:', usedPicksError);
+      }
+
+      const hasDraftStarted = usedPicks && usedPicks.length > 0;
+      setHasDraftOrder(hasDraftStarted);
+
+      // Fetch picks to see if draft order exists
+      const { data: picks, error: picksError } = await supabase
+        .from('draft_picks')
+        .select('pick_number, manager_id')
         .eq('league_id', leagueId)
         .eq('round_number', 1)
         .order('pick_number', { ascending: true });
 
+      if (picksError) {
+        console.error('Error fetching draft picks:', picksError);
+        return;
+      }
+
       if (picks && picks.length > 0) {
-        setHasDraftOrder(true);
+        // Fetch nicknames from league_members
+        const managerIds = [...new Set(picks.map(p => p.manager_id))];
+        const { data: members, error: membersError } = await supabase
+          .from('league_members')
+          .select('manager_id, nickname')
+          .eq('league_id', leagueId)
+          .in('manager_id', managerIds);
+
+        if (membersError) {
+          console.error('Error fetching members:', membersError);
+        }
+
+        // Create a map of manager_id to nickname
+        const nicknameMap = {};
+        if (members) {
+          members.forEach(m => {
+            nicknameMap[m.manager_id] = m.nickname;
+          });
+        }
+
         // Extract unique managers in draft order
         const uniqueManagers = picks.map(p => ({
           pick_number: p.pick_number,
           manager_id: p.manager_id,
-          nickname: p.member_profile?.nickname || 'Unknown Manager'
+          nickname: nicknameMap[p.manager_id] || 'Unknown Manager'
         }));
         setDraftOrder(uniqueManagers);
       } else {
