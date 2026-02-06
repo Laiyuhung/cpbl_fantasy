@@ -122,32 +122,14 @@ export default function MatchupsPage() {
         return match ? match[1] : cat;
     };
 
-    // Mapping display names to db columns
-    const statMap = {
-        // Batting
-        'GP': 'b_gp', 'PA': 'b_pa', 'AB': 'b_ab', 'R': 'b_r', 'H': 'b_h', '1B': 'b_1b',
-        '2B': 'b_2b', '3B': 'b_3b', 'HR': 'b_hr', 'XBH': 'b_xbh', 'TB': 'b_tb',
-        'RBI': 'b_rbi', 'BB': 'b_bb', 'IBB': 'b_ibb', 'HBP': 'b_hbp', 'K': 'b_k',
-        'SB': 'b_sb', 'CS': 'b_cs', 'SH': 'b_sh', 'SF': 'b_sf', 'GIDP': 'b_gidp',
-        'E': 'b_e', 'CYC': 'b_cyc', 'AVG': 'b_avg', 'OBP': 'b_obp', 'SLG': 'b_slg', 'OPS': 'b_ops',
-
-        // Pitching
-        'APP': 'p_app', 'GS': 'p_gs', 'RAPP': 'p_rapp', 'IP': 'p_ip', 'TBF': 'p_tbf', 'PC': 'p_pc',
-        'W': 'p_w', 'L': 'p_l', 'SV': 'p_sv', 'HLD': 'p_hld',
-        'SV+HLD': 'p_svhld', 'RW': 'p_rw', 'RL': 'p_rl', 'K': 'p_k', 'BB': 'p_bb', 'IBB': 'p_ibb', 'HBP': 'p_hbp', 'H': 'p_h', 'R': 'p_r', 'HR': 'p_hr', 'RA': 'p_ra', 'ER': 'p_er', 'ERA': 'p_era', 'WHIP': 'p_whip',
-        'QS': 'p_qs', 'K/9': 'p_k/9', 'BB/9': 'p_bb/9', 'K/BB': 'p_k/bb',
-        'CG': 'p_cg', 'SHO': 'p_sho', 'NH': 'p_nh', 'PG': 'p_pg',
-        'WIN%': 'p_win%', 'H/9': 'p_h/9', 'OBPA': 'p_obpa'
-    };
 
     const getDbCol = (cat, type) => {
-        if (type === 'batter') {
-            const key = cat.toLowerCase();
-            return `b_${key}` in { b_r: 1, b_h: 1, b_hr: 1, b_rbi: 1, b_sb: 1, b_avg: 1, b_obp: 1, b_ops: 1 } ? `b_${key}` : statMap[cat] || `b_${key}`;
-        } else {
-            const key = cat.toLowerCase();
-            return `p_${key}` in { p_w: 1, p_l: 1, p_sv: 1, p_k: 1, p_era: 1, p_whip: 1 } ? `p_${key}` : statMap[cat] || `p_${key}`;
-        }
+        // 提取縮寫並轉小寫
+        const abbr = getAbbr(cat).toLowerCase();
+
+        // 直接加上前綴
+        const prefix = type === 'batter' ? 'b_' : 'p_';
+        return `${prefix}${abbr}`;
     };
 
     const activeMatchup = matchups[selectedMatchupIndex];
