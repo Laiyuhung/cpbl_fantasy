@@ -137,45 +137,56 @@ export async function GET(request, { params }) {
 function formatStats(stats) {
     if (!stats) return stats;
 
+    // 移除 view 中的 metadata 欄位，只保留統計數據
+    const metadataFields = ['league_id', 'week_number', 'manager_id', 'week_type', 'week_start', 'week_end', 'week_label'];
     const formatted = { ...stats };
+    metadataFields.forEach(field => delete formatted[field]);
 
     // 3位小數: AVG, OBP, SLG, OPS, WIN%, OBPA
     const threeDecimals = ['b_avg', 'b_obp', 'b_slg', 'b_ops', 'p_win%', 'p_obpa'];
     threeDecimals.forEach(key => {
-        if (formatted[key] !== undefined && formatted[key] !== null) {
-            formatted[key] = Number(formatted[key]).toFixed(3);
+        if (formatted[key] !== undefined) {
+            // 即使是 0 也要格式化成 "0.000"
+            formatted[key] = Number(formatted[key] || 0).toFixed(3);
         }
     });
 
     // 2位小數: ERA, WHIP, K/9, BB/9, K/BB, H/9
     const twoDecimals = ['p_era', 'p_whip', 'p_k/9', 'p_bb/9', 'p_k/bb', 'p_h/9'];
     twoDecimals.forEach(key => {
-        if (formatted[key] !== undefined && formatted[key] !== null) {
-            formatted[key] = Number(formatted[key]).toFixed(2);
+        if (formatted[key] !== undefined) {
+            // K/BB 為 null 時保持 null（前端會顯示為 INF）
+            if (key === 'p_k/bb' && formatted[key] === null) {
+                // 保持 null
+            } else {
+                // 即使是 0 也要格式化成 "0.00"
+                formatted[key] = Number(formatted[key] || 0).toFixed(2);
+            }
         }
     });
 
     // IP 保持1位小數
-    if (formatted.p_ip !== undefined && formatted.p_ip !== null) {
-        formatted.p_ip = Number(formatted.p_ip).toFixed(1);
+    if (formatted.p_ip !== undefined) {
+        formatted.p_ip = Number(formatted.p_ip || 0).toFixed(1);
     }
-
-    // K/BB 為 null 時保持 null（前端會顯示為 INF）
-    // 其他數據保持原樣
 
     return formatted;
 }
 
 function generateEmptyStats(batterCats, pitcherCats) {
     const stats = {
-        b_gp: 0, b_ab: 0, b_r: 0, b_h: 0, b_1b: 0, b_2b: 0, b_3b: 0, b_hr: 0,
-        b_xbh: 0, b_tb: 0, b_rbi: 0, b_bb: 0, b_hbp: 0, b_k: 0, b_sb: 0,
-        b_cs: 0, b_gidp: 0, b_cyc: 0, b_e: 0, b_avg: 0, b_obp: 0, b_slg: 0, b_ops: 0,
-        b_ibb: 0, b_sh: 0, b_sf: 0,
-        p_app: 0, p_gs: 0, p_ip: 0, p_w: 0, p_l: 0, p_sv: 0, p_hld: 0,
-        p_svhld: 0, p_k: 0, p_qs: 0, p_cg: 0, p_sho: 0, p_nh: 0, p_era: 0,
-        p_whip: 0, "p_k/9": 0, "p_bb/9": 0, "p_k/bb": 0, "p_win%": 0,
-        p_h: 0, p_hr: 0, p_bb: 0, p_ibb: 0, p_hbp: 0, p_ra: 0, p_er: 0, "p_h/9": 0, p_obpa: 0
+        // Batting stats
+        b_gp: 0, b_pa: 0, b_ab: 0, b_r: 0, b_h: 0, b_1b: 0, b_2b: 0, b_3b: 0, b_hr: 0,
+        b_xbh: 0, b_tb: 0, b_rbi: 0, b_bb: 0, b_ibb: 0, b_hbp: 0, b_k: 0, b_sb: 0,
+        b_cs: 0, b_sh: 0, b_sf: 0, b_gidp: 0, b_e: 0, b_cyc: 0,
+        b_avg: 0, b_obp: 0, b_slg: 0, b_ops: 0,
+
+        // Pitching stats
+        p_app: 0, p_gs: 0, p_rapp: 0, p_ip: 0, p_tbf: 0, p_pc: 0,
+        p_w: 0, p_l: 0, p_sv: 0, p_hld: 0, p_svhld: 0, p_rw: 0, p_rl: 0,
+        p_k: 0, p_bb: 0, p_ibb: 0, p_hbp: 0, p_h: 0, p_hr: 0, p_ra: 0, p_er: 0,
+        p_qs: 0, p_cg: 0, p_sho: 0, p_pg: 0, p_nh: 0,
+        p_era: 0, p_whip: 0, "p_k/9": 0, "p_bb/9": 0, "p_k/bb": 0, "p_win%": 0, "p_h/9": 0, p_obpa: 0
     };
     return stats;
 }
