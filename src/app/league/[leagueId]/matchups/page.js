@@ -86,6 +86,11 @@ export default function MatchupsPage() {
 
     // Display Helper - 直接顯示後端的值
     const formatStat = (val, cat) => {
+        // 調試：查看實際收到的值
+        if (cat === 'p_obpa') {
+            console.log('OBPA value:', val, 'type:', typeof val);
+        }
+
         // K/BB 為 null 代表無限大（BB=0 但 K>0）
         if (cat === 'p_k/bb' && (val === null || val === undefined)) {
             return 'INF';
