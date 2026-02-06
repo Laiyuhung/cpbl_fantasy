@@ -86,11 +86,6 @@ export default function MatchupsPage() {
 
     // Display Helper - 直接顯示後端的值
     const formatStat = (val, cat) => {
-        // 調試：查看實際收到的值
-        if (cat === 'p_obpa') {
-            console.log('OBPA value:', val, 'type:', typeof val);
-        }
-
         // K/BB 為 null 代表無限大（BB=0 但 K>0）
         if (cat === 'p_k/bb' && (val === null || val === undefined)) {
             return 'INF';
@@ -111,17 +106,19 @@ export default function MatchupsPage() {
     // Mapping display names to db columns
     const statMap = {
         // Batting
-        'H/AB': 'b_avg', 'AVG': 'b_avg', 'R': 'b_r', 'H': 'b_h', '1B': 'b_1b',
+        'GP': 'b_gp', 'PA': 'b_pa', 'AB': 'b_ab', 'R': 'b_r', 'H': 'b_h', '1B': 'b_1b',
         '2B': 'b_2b', '3B': 'b_3b', 'HR': 'b_hr', 'XBH': 'b_xbh', 'TB': 'b_tb',
         'RBI': 'b_rbi', 'BB': 'b_bb', 'IBB': 'b_ibb', 'HBP': 'b_hbp', 'K': 'b_k',
         'SB': 'b_sb', 'CS': 'b_cs', 'SH': 'b_sh', 'SF': 'b_sf', 'GIDP': 'b_gidp',
-        'E': 'b_e', 'CYC': 'b_cyc', 'OBP': 'b_obp', 'SLG': 'b_slg', 'OPS': 'b_ops',
+        'E': 'b_e', 'CYC': 'b_cyc', 'AVG': 'b_avg', 'OBP': 'b_obp', 'SLG': 'b_slg', 'OPS': 'b_ops',
 
         // Pitching
-        'IP': 'p_ip', 'W': 'p_w', 'L': 'p_l', 'SV': 'p_sv', 'HLD': 'p_hld',
-        'SV+HLD': 'p_svhld', 'K': 'p_k_pitching', 'ERA': 'p_era', 'WHIP': 'p_whip',
-        'K/9': 'p_k/9', 'BB/9': 'p_bb/9', 'K/BB': 'p_k/bb', 'QS': 'p_qs',
-        'CG': 'p_cg', 'SHO': 'p_sho', 'NH': 'p_nh', 'PG': 'p_pg', 'APP': 'p_app', 'GS': 'p_gs',
+        'APP': 'p_app', 'GS': 'p_gs', 'RAPP': 'p_rapp', 'IP': 'p_ip', 'TBF': 'p_tbf', 'PC': 'p_pc',
+        'W': 'p_w', 'L': 'p_l', 'SV': 'p_sv', 'HLD': 'p_hld',
+        'SV+HLD': 'p_svhld', 'RW': 'p_rw', 'RL': 'p_rl', 'K': 'p_k', 'BB': 'p_bb', 'IBB': 'p_ibb', 'HBP': 'p_hbp', 'H': 'p_h', 'R': 'p_r', 'HR': 'p_hr', 'RA': 'p_ra', 'ER': 'p_er', 'ERA': 'p_era', 'WHIP': 'p_whip',
+        'QS': 'p_qs', 'K/9': 'p_k/9', 'BB/9': 'p_bb/9', 'K/BB': 'p_k/bb',
+        'CG': 'p_cg', 'SHO': 'p_sho', 'NH': 'p_nh', 'PG': 'p_pg',
+        'WIN%': 'p_win%', 'H/9': 'p_h/9', 'OBPA': 'p_obpa'
     };
 
     const getDbCol = (cat, type) => {
