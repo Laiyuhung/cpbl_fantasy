@@ -37,9 +37,6 @@ export default function Navbar() {
 
   // Fetch user's leagues
   const fetchLeagues = useCallback((uid) => {
-    console.log('=== Navbar: Fetching leagues ===')
-    console.log('Manager ID (user_id):', uid)
-
     fetch('/api/managers/leagues', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -47,10 +44,8 @@ export default function Navbar() {
     })
       .then(res => res.json())
       .then(data => {
-        console.log('Leagues API response:', data)
         if (data?.leagues) {
           setLeagues(data.leagues)
-          console.log('Leagues set:', data.leagues)
         }
       })
       .catch(err => console.error('Failed to fetch leagues:', err))
@@ -134,7 +129,6 @@ export default function Navbar() {
   useEffect(() => {
     const handler = () => {
       if (userId) {
-        console.log('Refreshing leagues after change...')
         fetchLeagues(userId)
       }
     }
@@ -169,9 +163,6 @@ export default function Navbar() {
   // 如果沒有登入，則不顯示 navbar
   if (!userId) return null
 
-  console.log('🔍 [Navbar] Rendering navbar, z-index: 99999')
-  console.log('🔍 [Navbar] Current pathname:', pathname)
-  console.log('🔍 [Navbar] Current league:', currentLeague)
 
   return (
     <nav className="sticky top-0 z-[99999] bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-2xl border-b border-blue-500/30">
@@ -202,14 +193,7 @@ export default function Navbar() {
             href="/home"
             className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
             onClick={(e) => {
-              console.log('🖱️ [Navbar] HOME link clicked')
-              console.log('🖱️ [Navbar] defaultPrevented:', e.defaultPrevented)
-              console.log('🖱️ [Navbar] Router object:', router)
-              console.log('🖱️ [Navbar] Current pathname:', pathname)
-
-              // Force navigation using window.location as ultimate fallback
               e.preventDefault()
-              console.log('🚀 [Navbar] Forcing navigation to /home with window.location.href')
               window.location.href = '/home'
             }}
           >
@@ -219,9 +203,7 @@ export default function Navbar() {
             href="/roster"
             className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
             onClick={(e) => {
-              console.log('🖱️ [Navbar] ROSTER link clicked')
               e.preventDefault()
-              console.log('🚀 [Navbar] Forcing navigation to /roster')
               window.location.href = '/roster'
             }}
           >
@@ -232,9 +214,7 @@ export default function Navbar() {
             href="/matchup"
             className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
             onClick={(e) => {
-              console.log('🖱️ [Navbar] MATCHUP link clicked')
               e.preventDefault()
-              console.log('🚀 [Navbar] Forcing navigation to /matchup')
               window.location.href = '/matchup'
             }}
           >
@@ -245,9 +225,7 @@ export default function Navbar() {
             href="/record_book"
             className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
             onClick={(e) => {
-              console.log('🖱️ [Navbar] RECORDS link clicked')
               e.preventDefault()
-              console.log('🚀 [Navbar] Forcing navigation to /record_book')
               window.location.href = '/record_book'
             }}
           >
@@ -282,7 +260,6 @@ export default function Navbar() {
                   onClick={(e) => {
                     e.preventDefault()
                     setLeagueDropdownOpen(false)
-                    console.log('🚀 [Navbar] Navigating to /create_league')
                     window.location.href = '/create_league'
                   }}
                 >
@@ -302,7 +279,6 @@ export default function Navbar() {
                         onClick={(e) => {
                           e.preventDefault()
                           setLeagueDropdownOpen(false)
-                          console.log(`🚀 [Navbar] Navigating to /league/${league.league_id}`)
                           window.location.href = `/league/${league.league_id}`
                         }}
                       >

@@ -44,6 +44,13 @@ export default function MatchupsPage() {
                 const data = await res.json();
 
                 if (data.success) {
+                    console.log('=== API Response ===');
+                    console.log('Full data:', data);
+                    console.log('manager1_stats.p_obpa:', data.matchups[0]?.manager1_stats?.p_obpa);
+                    console.log('manager1_stats.b_avg:', data.matchups[0]?.manager1_stats?.b_avg);
+                    console.log('Type of p_obpa:', typeof data.matchups[0]?.manager1_stats?.p_obpa);
+                    console.log('Type of b_avg:', typeof data.matchups[0]?.manager1_stats?.b_avg);
+
                     setMatchups(data.matchups);
                     setScoringSettings(data.settings);
                 } else {
@@ -86,16 +93,28 @@ export default function MatchupsPage() {
 
     // Display Helper - 直接顯示後端的值
     const formatStat = (val, cat) => {
+        // 詳細調試
+        if (cat === 'p_obpa' || cat === 'b_avg' || cat === 'p_era') {
+            console.log(`formatStat called: cat=${cat}, val=${val}, type=${typeof val}, JSON=${JSON.stringify(val)}`);
+        }
+
         // K/BB 為 null 代表無限大（BB=0 但 K>0）
         if (cat === 'p_k/bb' && (val === null || val === undefined)) {
             return 'INF';
         }
 
         // 如果值為 undefined 或 null，顯示 0
-        if (val === undefined || val === null) return '0';
+        if (val === undefined || val === null) {
+            console.log(`formatStat: ${cat} is undefined/null, returning '0'`);
+            return '0';
+        }
 
         // 直接返回後端提供的值（包括 "0.000" 這種字串）
-        return val;
+        const result = val;
+        if (cat === 'p_obpa' || cat === 'b_avg' || cat === 'p_era') {
+            console.log(`formatStat returning: ${result} (type: ${typeof result})`);
+        }
+        return result;
     };
 
     const getAbbr = (cat) => {
