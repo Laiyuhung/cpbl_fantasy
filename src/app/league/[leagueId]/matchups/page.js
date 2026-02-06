@@ -234,9 +234,9 @@ export default function MatchupsPage() {
                                         {/* AB - 只在不是計分項目時顯示 */}
                                         {!scroingSettings?.batter_categories?.some(cat => getAbbr(cat).toLowerCase() === 'ab') && (
                                             <TableRow className="hover:bg-slate-800/30 border-0">
-                                                <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-gray-500 py-3 pr-8 md:pr-12">{activeMatchup.manager1_stats.b_ab || 0}</TableCell>
-                                                <TableCell className="w-[20%] text-center font-bold text-sm text-gray-500 uppercase tracking-wider py-3">AB</TableCell>
-                                                <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-gray-500 py-3 pl-8 md:pl-12">{activeMatchup.manager2_stats.b_ab || 0}</TableCell>
+                                                <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-gray-400 py-3 pr-8 md:pr-12">{activeMatchup.manager1_stats.b_ab || 0}</TableCell>
+                                                <TableCell className="w-[20%] text-center font-bold text-sm text-gray-400 uppercase tracking-wider py-3">AB</TableCell>
+                                                <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-gray-400 py-3 pl-8 md:pl-12">{activeMatchup.manager2_stats.b_ab || 0}</TableCell>
                                             </TableRow>
                                         )}
                                         {scroingSettings?.batter_categories?.map(cat => {
@@ -261,9 +261,9 @@ export default function MatchupsPage() {
                                         {/* IP - 只在不是計分項目時顯示 */}
                                         {!scroingSettings?.pitcher_categories?.some(cat => getAbbr(cat).toLowerCase() === 'ip') && (
                                             <TableRow className="hover:bg-slate-800/30 border-0">
-                                                <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-gray-500 py-3 pr-8 md:pr-12">{activeMatchup.manager1_stats.p_ip || '0.0'}</TableCell>
-                                                <TableCell className="w-[20%] text-center font-bold text-sm text-gray-500 uppercase tracking-wider py-3">IP</TableCell>
-                                                <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-gray-500 py-3 pl-8 md:pl-12">{activeMatchup.manager2_stats.p_ip || '0.0'}</TableCell>
+                                                <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-gray-400 py-3 pr-8 md:pr-12">{activeMatchup.manager1_stats.p_ip || '0.0'}</TableCell>
+                                                <TableCell className="w-[20%] text-center font-bold text-sm text-gray-400 uppercase tracking-wider py-3">IP</TableCell>
+                                                <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-gray-400 py-3 pl-8 md:pl-12">{activeMatchup.manager2_stats.p_ip || '0.0'}</TableCell>
                                             </TableRow>
                                         )}
                                         {scroingSettings?.pitcher_categories?.map(cat => {
