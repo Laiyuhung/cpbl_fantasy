@@ -378,11 +378,41 @@ export default function LeaguePage() {
             </div>
           </div>
 
-          {/* MATCHUPS Section Header */}
-          <div className="mb-4">
+          {/* MATCHUPS Section Header with Week Selector */}
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider">
               Matchups
             </h2>
+
+            {/* Week Selector */}
+            <div className="flex items-center bg-slate-800/80 rounded-full p-1.5 border border-white/10 shadow-lg">
+              <button
+                onClick={() => handleWeekChange(-1)}
+                disabled={currentWeek <= 1 || matchupsLoading}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+
+              <div className="flex flex-col items-center min-w-[160px] px-4">
+                <span className="text-lg font-black text-white tracking-wide">
+                  WEEK {currentWeek}
+                </span>
+                {weekDetails && (
+                  <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
+                    {new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={() => handleWeekChange(1)}
+                disabled={currentWeek >= (scheduleData.length || 0) || matchupsLoading}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
           </div>
 
           {/* Matchups Grid */}
@@ -398,7 +428,7 @@ export default function LeaguePage() {
               <p className="text-slate-400">There are no games scheduled for this week.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+            <div className="space-y-4">
               {matchups.map((matchup) => {
                 const managerA = getManagerDetails(matchup.manager_id_a);
                 const managerB = getManagerDetails(matchup.manager_id_b);
