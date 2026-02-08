@@ -235,11 +235,11 @@ export default function MatchupsPage() {
                     </div>
                 )}
 
-                {matchups.length === 0 ? (
+                {!loading && matchups.length === 0 ? (
                     <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-12">
                         <p className="text-center text-purple-300">No matchups found for this week.</p>
                     </div>
-                ) : activeMatchup && (
+                ) : !loading && activeMatchup && (
                     <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
                         {/* Header */}
                         <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-6 border-b border-purple-400/30">
