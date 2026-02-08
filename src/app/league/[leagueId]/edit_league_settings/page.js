@@ -171,6 +171,26 @@ const getSettingDescription = (key) => {
   return null;
 };
 
+// Helper function to check if a category is average-based (incompatible with Fantasy Points)
+const isAverageBasedCategory = (category) => {
+  const averageCategories = [
+    'Batting Average (AVG)',
+    'On-base Percentage (OBP)',
+    'Slugging Percentage (SLG)',
+    'On-base + Slugging Percentage (OPS)',
+    'Earned Run Average (ERA)',
+    '(Walks + Hits)/ Innings Pitched (WHIP)',
+    'Winning Percentage (WIN%)',
+    'Strikeouts per Nine Innings (K/9)',
+    'Walks Per Nine Innings (BB/9)',
+    'Strikeout to Walk Ratio (K/BB)',
+    'Hits Per Nine Innings (H/9)',
+    'On-base Percentage Against (OBPA)',
+  ];
+  return averageCategories.includes(category);
+};
+
+
 const sections = [
   { key: 'general', label: 'General Settings', icon: '⚙️' },
   { key: 'acquisitions', label: 'Acquisitions & Trading', icon: '🔄' },
@@ -664,9 +684,26 @@ const EditLeagueSettingsPage = ({ params }) => {
         next.general['Live Draft Time'] = '';
       }
 
+      // When switching to Head-to-Head Fantasy Points, remove average-based categories
+      if (section === 'general' && key === 'Scoring Type' && value === 'Head-to-Head Fantasy Points') {
+        // Filter out average-based categories from batter categories
+        if (Array.isArray(next.scoring['Batter Stat Categories'])) {
+          next.scoring['Batter Stat Categories'] = next.scoring['Batter Stat Categories'].filter(
+            cat => !isAverageBasedCategory(cat)
+          );
+        }
+        // Filter out average-based categories from pitcher categories
+        if (Array.isArray(next.scoring['Pitcher Stat Categories'])) {
+          next.scoring['Pitcher Stat Categories'] = next.scoring['Pitcher Stat Categories'].filter(
+            cat => !isAverageBasedCategory(cat)
+          );
+        }
+      }
+
       return next;
     });
   };
+
 
   const isMultilineField = (key) => {
     return [].includes(key);
@@ -1611,18 +1648,20 @@ const EditLeagueSettingsPage = ({ params }) => {
                                       const showWeight = settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points' && isChecked;
                                       const weightError = showWeight ? validateWeight(currentWeight) : null;
 
+                                      // Disable average-based categories when Fantasy Points is selected
+                                      const isFantasyPoints = settings.general['Scoring Type'] === 'Head-to-Head Fantasy Points';
+                                      const isDisabledDueToAverage = isFantasyPoints && isAverageBasedCategory(option);
+                                      const isDisabledDueToField = isFieldDisabled(section.key, key);
+                                      const isDisabledDueToLimit = (!Array.isArray(value) || !value.includes(option)) && ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) + (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30;
+                                      const isDisabled = isDisabledDueToField || isDisabledDueToAverage || isDisabledDueToLimit;
+
                                       return (
                                         <div key={option} className={`flex items-center gap-2 ${showWeight ? 'justify-between' : ''}`}>
                                           <label className="flex items-center gap-2 text-purple-300 flex-1">
                                             <input
                                               type="checkbox"
                                               checked={isChecked}
-                                              disabled={
-                                                (isFieldDisabled(section.key, key)) ||
-                                                ((!Array.isArray(value) || !value.includes(option)) &&
-                                                  ((Array.isArray(settings.scoring['Batter Stat Categories']) ? settings.scoring['Batter Stat Categories'].length : 0) +
-                                                    (Array.isArray(settings.scoring['Pitcher Stat Categories']) ? settings.scoring['Pitcher Stat Categories'].length : 0)) >= 30)
-                                              }
+                                              disabled={isDisabled}
                                               onChange={(e) =>
                                                 handleMultiSelectChange(
                                                   section.key,
@@ -1632,7 +1671,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                                 )
                                               }
                                             />
-                                            <span className={isFieldDisabled(section.key, key) ? 'text-gray-500' : 'text-purple-300'}>{option}</span>
+                                            <span className={isDisabledDueToField ? 'text-gray-500' : isDisabledDueToAverage ? 'text-gray-500' : 'text-purple-300'}>{option}</span>
                                           </label>
                                           {showWeight && (
                                             <div className="flex flex-col gap-1">
