@@ -331,50 +331,18 @@ export default function LeaguePage() {
     return (
       <div className="p-4 md:p-8 min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="w-[70%] space-y-8">
-          {/* Header with League Name & Week Selector */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-2xl">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
-                {leagueSettings?.league_name}
-              </h1>
-              <div className="flex items-center gap-2 mt-2">
-                <span className={`px-3 py-0.5 rounded-full text-xs font-bold border ${leagueStatus === 'in season'
-                  ? 'bg-green-500/20 text-green-300 border-green-500/30'
-                  : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
-                  }`}>
-                  {leagueStatus === 'in season' ? 'IN SEASON' : 'PRE-SEASON'}
-                </span>
-              </div>
-            </div>
-
-            {/* Week Selector */}
-            <div className="flex items-center bg-slate-800/80 rounded-full p-1.5 border border-white/10 shadow-lg">
-              <button
-                onClick={() => handleWeekChange(-1)}
-                disabled={currentWeek <= 1 || matchupsLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-              </button>
-
-              <div className="flex flex-col items-center min-w-[160px] px-4">
-                <span className="text-lg font-black text-white tracking-wide">
-                  WEEK {currentWeek}
-                </span>
-                {weekDetails && (
-                  <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
-                    {new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                )}
-              </div>
-
-              <button
-                onClick={() => handleWeekChange(1)}
-                disabled={currentWeek >= (scheduleData.length || 0) || matchupsLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
+          {/* Header with League Name */}
+          <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-2xl">
+            <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
+              {leagueSettings?.league_name}
+            </h1>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`px-3 py-0.5 rounded-full text-xs font-bold border ${leagueStatus === 'in season'
+                ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                }`}>
+                {leagueStatus === 'in season' ? 'IN SEASON' : 'PRE-SEASON'}
+              </span>
             </div>
           </div>
 
@@ -428,84 +396,149 @@ export default function LeaguePage() {
               <p className="text-slate-400">There are no games scheduled for this week.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {matchups.map((matchup) => {
                 const managerA = getManagerDetails(matchup.manager_id_a);
                 const managerB = getManagerDetails(matchup.manager_id_b);
-                // Calculate win probability or status if needed, for now just show scores
-                // Calculate status based on week schedule
                 const now = new Date();
                 const weekStart = new Date(weekDetails?.week_start);
                 const weekEnd = new Date(weekDetails?.week_end);
-
                 const hasStarted = now >= weekStart;
                 const isLive = now >= weekStart && now <= weekEnd;
                 const isFinal = now > weekEnd;
 
-                // Test override (optional, remove for production if needed, or keep logic solely on dates)
-                // const isLive = leagueStatus === 'in season'; 
+                // Get actual scores from database
+                const scoreA = matchup.score_a !== null ? parseFloat(matchup.score_a) : 0;
+                const scoreB = matchup.score_b !== null ? parseFloat(matchup.score_b) : 0;
 
                 return (
-                  <div key={matchup.id} className="group relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:from-purple-900/40 hover:to-blue-900/40 backdrop-blur-sm border border-white/5 hover:border-purple-500/50 rounded-2xl p-0 overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)]">
-                    {/* Card Header / Status */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                    <div className="flex items-stretch h-32 md:h-40 relative">
-                      {/* Background decorations */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none"></div>
-                      {/* Team A */}
-                      <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-                        <div className="text-lg md:text-xl font-black text-white text-center line-clamp-1 px-2 mb-1 group-hover:text-purple-300 transition-colors">
-                          {managerA?.nickname || 'Unknown'}
+                  <div key={matchup.id} className="group relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-white/10 hover:border-purple-500/40 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(168,85,247,0.15)]">
+                    {/* Status Badge */}
+                    <div className="absolute top-4 right-4 z-20">
+                      {isLive && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 border border-red-500/40 rounded-full">
+                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                          <span className="text-xs font-bold text-red-300 uppercase tracking-wider">LIVE</span>
                         </div>
-                        <div className="text-xs text-slate-400 text-center line-clamp-1 font-bold uppercase tracking-wider">
-                          {managerA?.managers?.name}
+                      )}
+                      {isFinal && (
+                        <div className="px-3 py-1.5 bg-slate-700/40 border border-slate-600/40 rounded-full">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">FINAL</span>
                         </div>
-                      </div>
+                      )}
+                      {!hasStarted && (
+                        <div className="px-3 py-1.5 bg-blue-500/20 border border-blue-500/40 rounded-full">
+                          <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">UPCOMING</span>
+                        </div>
+                      )}
+                    </div>
 
-                      {/* VS / Score */}
-                      <div className="w-32 md:w-40 flex flex-col items-center justify-center bg-black/20 z-10">
-                        {hasStarted ? (
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex items-center gap-4 text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">
-                              <span className={scoreA > scoreB ? 'text-green-400' : scoreA < scoreB ? 'text-slate-300' : 'text-white'}>{scoreA}</span>
-                              <span className="text-slate-600 text-lg font-normal">-</span>
-                              <span className={scoreB > scoreA ? 'text-green-400' : scoreB < scoreA ? 'text-slate-300' : 'text-white'}>{scoreB}</span>
+                    {/* Main Content */}
+                    <div className="p-8">
+                      <div className="flex items-center justify-between gap-8">
+                        {/* Team A */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-4">
+                            {/* Team Avatar/Icon */}
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-2 border-purple-500/30 flex items-center justify-center">
+                              <span className="text-2xl font-black text-purple-300">
+                                {managerA?.nickname?.charAt(0)?.toUpperCase() || '?'}
+                              </span>
                             </div>
-                            {isLive && (
-                              <div className="text-[10px] font-bold tracking-widest text-red-400 uppercase animate-pulse flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                LIVE
-                              </div>
-                            )}
-                            {isFinal && (
-                              <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                                FINAL
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center">
-                            <span className="text-3xl font-black text-slate-600 italic tracking-widest">VS</span>
-                          </div>
-                        )}
-                      </div>
 
-                      {/* Team B */}
-                      <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-                        <div className="text-lg md:text-xl font-black text-white text-center line-clamp-1 px-2 mb-1 group-hover:text-pink-300 transition-colors">
-                          {managerB?.nickname || 'Unknown'}
+                            {/* Team Info */}
+                            <div className="flex-1">
+                              <div className="text-xl font-black text-white mb-1 group-hover:text-purple-300 transition-colors">
+                                {managerA?.nickname || 'Unknown'}
+                              </div>
+                              <div className="text-sm text-slate-400 font-medium">
+                                {managerA?.managers?.name}
+                              </div>
+                            </div>
+
+                            {/* Score A */}
+                            {hasStarted && (
+                              <div className="text-right">
+                                <div className={`text-5xl font-black tabular-nums ${scoreA > scoreB ? 'text-green-400' :
+                                    scoreA < scoreB ? 'text-slate-500' :
+                                      'text-cyan-300'
+                                  }`}>
+                                  {scoreA.toFixed(1)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-400 text-center line-clamp-1 font-bold uppercase tracking-wider">
-                          {managerB?.managers?.name}
+
+                        {/* VS Divider */}
+                        <div className="flex flex-col items-center px-6">
+                          <div className="w-px h-20 bg-gradient-to-b from-transparent via-purple-500/50 to-transparent"></div>
+                          <div className="absolute">
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-purple-500/30 flex items-center justify-center">
+                              <span className="text-sm font-black text-purple-400 uppercase tracking-wider">VS</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Team B */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-4 flex-row-reverse">
+                            {/* Team Avatar/Icon */}
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/30 flex items-center justify-center">
+                              <span className="text-2xl font-black text-cyan-300">
+                                {managerB?.nickname?.charAt(0)?.toUpperCase() || '?'}
+                              </span>
+                            </div>
+
+                            {/* Team Info */}
+                            <div className="flex-1 text-right">
+                              <div className="text-xl font-black text-white mb-1 group-hover:text-cyan-300 transition-colors">
+                                {managerB?.nickname || 'Unknown'}
+                              </div>
+                              <div className="text-sm text-slate-400 font-medium">
+                                {managerB?.managers?.name}
+                              </div>
+                            </div>
+
+                            {/* Score B */}
+                            {hasStarted && (
+                              <div className="text-left">
+                                <div className={`text-5xl font-black tabular-nums ${scoreB > scoreA ? 'text-green-400' :
+                                    scoreB < scoreA ? 'text-slate-500' :
+                                      'text-cyan-300'
+                                  }`}>
+                                  {scoreB.toFixed(1)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Footer / Actions */}
-                    <div className="bg-white/5 px-4 py-2 flex justify-between items-center text-xs font-medium text-slate-400">
-                      <span>Matchup Info</span>
-                      <span className="group-hover:text-purple-300 transition-colors">View Details →</span>
+                    {/* Footer */}
+                    <div className="bg-white/5 px-8 py-4 flex items-center justify-between border-t border-white/5">
+                      <div className="flex items-center gap-6 text-sm text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="font-medium">
+                            {weekDetails && `${new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                          </span>
+                        </div>
+                        {matchup.is_tie && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
+                            <span className="text-xs font-bold text-yellow-300">TIE</span>
+                          </div>
+                        )}
+                      </div>
+                      <button className="flex items-center gap-2 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors group/btn">
+                        <span>View Full Stats</span>
+                        <svg className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 );
