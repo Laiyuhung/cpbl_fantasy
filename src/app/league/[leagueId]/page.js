@@ -70,6 +70,8 @@ export default function LeaguePage() {
   const [currentWeek, setCurrentWeek] = useState(1);
   const [matchups, setMatchups] = useState([]);
   const [matchupsLoading, setMatchupsLoading] = useState(true);
+  const [standings, setStandings] = useState([]);
+  const [standingsLoading, setStandingsLoading] = useState(true);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -158,6 +160,33 @@ export default function LeaguePage() {
       setMatchupsLoading(false);
     }
   };
+
+  // Fetch standings
+  useEffect(() => {
+    if (!leagueId) return;
+
+    const fetchStandings = async () => {
+      setStandingsLoading(true);
+      try {
+        const response = await fetch(`/api/league/${leagueId}/standings`);
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          setStandings(result.standings || []);
+        } else {
+          console.error('Failed to fetch standings:', result.error);
+          setStandings([]);
+        }
+      } catch (error) {
+        console.error('Error fetching standings:', error);
+        setStandings([]);
+      } finally {
+        setStandingsLoading(false);
+      }
+    };
+
+    fetchStandings();
+  }, [leagueId]);
 
   const handleWeekChange = (direction) => {
     const maxWeek = scheduleData.length > 0 ? scheduleData[scheduleData.length - 1].week_number : 1;
@@ -349,6 +378,13 @@ export default function LeaguePage() {
             </div>
           </div>
 
+          {/* MATCHUPS Section Header */}
+          <div className="mb-4">
+            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider">
+              Matchups
+            </h2>
+          </div>
+
           {/* Matchups Grid */}
           {matchupsLoading ? (
             <div className="w-full h-64 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
@@ -446,6 +482,113 @@ export default function LeaguePage() {
               })}
             </div>
           )}
+
+          {/* STANDINGS Section */}
+          <div className="mt-12">
+            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
+              Standings
+            </h2>
+
+            {standingsLoading ? (
+              <div className="w-full h-48 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
+                <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-purple-300 font-bold tracking-widest uppercase text-sm">Loading Standings...</span>
+              </div>
+            ) : standings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
+                <div className="text-4xl mb-3">📊</div>
+                <h3 className="text-lg font-bold text-white mb-2">No Standings Available</h3>
+                <p className="text-slate-400 text-sm">Standings will appear once matchups are completed.</p>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden">
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-b border-white/10">
+                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Rank</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Team</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Record</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Win %</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Streak</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {standings.map((team, index) => (
+                        <tr key={team.manager_id} className="hover:bg-purple-500/10 transition-colors">
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                                team.rank === 2 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
+                                  team.rank === 3 ? 'bg-orange-600/20 text-orange-300 border border-orange-600/30' :
+                                    'bg-slate-700/40 text-slate-400'
+                              }`}>
+                              {team.rank}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-white">{team.nickname}</div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="font-mono text-cyan-300 font-semibold">{team.record_display}</span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="font-mono text-purple-300 font-semibold">{team.win_pct.toFixed(3)}</span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                                team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                                  team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                                    'bg-slate-700/40 text-slate-400'
+                              }`}>
+                              {team.streak}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden divide-y divide-white/5">
+                  {standings.map((team) => (
+                    <div key={team.manager_id} className="p-4 hover:bg-purple-500/10 transition-colors">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                              team.rank === 2 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
+                                team.rank === 3 ? 'bg-orange-600/20 text-orange-300 border border-orange-600/30' :
+                                  'bg-slate-700/40 text-slate-400'
+                            }`}>
+                            {team.rank}
+                          </span>
+                          <div className="font-bold text-white">{team.nickname}</div>
+                        </div>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                            team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                              team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                                'bg-slate-700/40 text-slate-400'
+                          }`}>
+                          {team.streak}
+                        </span>
+                      </div>
+                      <div className="flex justify-around text-sm">
+                        <div className="text-center">
+                          <div className="text-slate-400 text-xs uppercase mb-1">Record</div>
+                          <div className="font-mono text-cyan-300 font-semibold">{team.record_display}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-slate-400 text-xs uppercase mb-1">Win %</div>
+                          <div className="font-mono text-purple-300 font-semibold">{team.win_pct.toFixed(3)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
