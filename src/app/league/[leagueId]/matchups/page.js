@@ -19,12 +19,7 @@ export default function MatchupsPage() {
     const [availableWeeks, setAvailableWeeks] = useState([]);
     const [currentManagerId, setCurrentManagerId] = useState(null);
     const [selectedMatchupIndex, setSelectedMatchupIndex] = useState(0);
-
-    // Fetch available weeks
-    useEffect(() => {
-        const weeks = Array.from({ length: 23 }, (_, i) => i + 1);
-        setAvailableWeeks(weeks);
-    }, []);
+    const [scheduleData, setScheduleData] = useState([]);
 
     // Get current user's manager ID
     useEffect(() => {
@@ -33,6 +28,50 @@ export default function MatchupsPage() {
             setCurrentManagerId(cookie.split('=')[1]);
         }
     }, []);
+
+    // Fetch league data and determine current week
+    useEffect(() => {
+        if (!leagueId) return;
+
+        const fetchLeagueData = async () => {
+            try {
+                const response = await fetch(`/api/league/${leagueId}`);
+                const result = await response.json();
+
+                if (result.success && result.schedule) {
+                    setScheduleData(result.schedule);
+
+                    // Generate available weeks from schedule
+                    const weeks = result.schedule.map(w => w.week_number);
+                    setAvailableWeeks(weeks);
+
+                    // Determine current week based on today's date
+                    const today = new Date();
+                    let currentWeek = 1;
+
+                    // If before first week, use week 1
+                    if (today < new Date(result.schedule[0].week_start)) {
+                        currentWeek = 1;
+                    }
+                    // If after last week, use last week
+                    else if (today > new Date(result.schedule[result.schedule.length - 1].week_end)) {
+                        currentWeek = result.schedule[result.schedule.length - 1].week_number;
+                    }
+                    // Find current week
+                    else {
+                        const current = result.schedule.find(w => today >= new Date(w.week_start) && today <= new Date(w.week_end));
+                        if (current) currentWeek = current.week_number;
+                    }
+
+                    setSelectedWeek(currentWeek.toString());
+                }
+            } catch (error) {
+                console.error("Error loading league data:", error);
+            }
+        };
+
+        fetchLeagueData();
+    }, [leagueId]);
 
     useEffect(() => {
         if (!leagueId || !selectedWeek) return;
@@ -123,18 +162,43 @@ export default function MatchupsPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Matchups</h1>
-                    <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-purple-300">Week:</span>
-                        <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                            <SelectTrigger className="w-[120px] bg-slate-800/60 border-purple-500/30 text-white">
-                                <SelectValue placeholder="Select Week" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableWeeks.map(w => (
-                                    <SelectItem key={w} value={w.toString()}>Week {w}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="flex items-center bg-slate-800/80 rounded-full p-1.5 border border-white/10 shadow-lg">
+                        <button
+                            onClick={() => {
+                                const currentIndex = availableWeeks.indexOf(parseInt(selectedWeek));
+                                if (currentIndex > 0) {
+                                    setSelectedWeek(availableWeeks[currentIndex - 1].toString());
+                                }
+                            }}
+                            disabled={availableWeeks.indexOf(parseInt(selectedWeek)) <= 0 || loading}
+                            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                        </button>
+
+                        <div className="flex flex-col items-center min-w-[160px] px-4">
+                            <span className="text-lg font-black text-white tracking-wide">
+                                WEEK {selectedWeek}
+                            </span>
+                            {scheduleData.find(w => w.week_number === parseInt(selectedWeek)) && (
+                                <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
+                                    {new Date(scheduleData.find(w => w.week_number === parseInt(selectedWeek)).week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(scheduleData.find(w => w.week_number === parseInt(selectedWeek)).week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                const currentIndex = availableWeeks.indexOf(parseInt(selectedWeek));
+                                if (currentIndex < availableWeeks.length - 1) {
+                                    setSelectedWeek(availableWeeks[currentIndex + 1].toString());
+                                }
+                            }}
+                            disabled={availableWeeks.indexOf(parseInt(selectedWeek)) >= availableWeeks.length - 1 || loading}
+                            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                        </button>
                     </div>
                 </div>
 
