@@ -110,19 +110,6 @@ export default function MatchupsPage() {
         }
     }, [currentManagerId, matchups]);
 
-    if (loading) {
-        return (
-            <div className="p-6 space-y-6">
-                <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-                <div className="flex gap-4">
-                    <div className="h-24 w-64 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-24 w-64 bg-gray-200 rounded animate-pulse" />
-                </div>
-                <div className="h-96 bg-gray-200 rounded animate-pulse" />
-            </div>
-        );
-    }
-
     // Display Helper - 直接顯示後端的值
     const formatStat = (val, cat) => {
         // K/BB 為 null 代表無限大（BB=0 但 K>0）
@@ -203,7 +190,12 @@ export default function MatchupsPage() {
                 </div>
 
                 {/* Matchup Carousel */}
-                {matchups.length > 0 && (
+                {loading ? (
+                    <div className="w-full h-64 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
+                        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-purple-300 font-bold tracking-widest uppercase text-sm">Loading Matchups...</span>
+                    </div>
+                ) : matchups.length > 0 && (
                     <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-thin scrollbar-thumb-purple-500/50">
                         {matchups.map((match, idx) => {
                             const isSelected = idx === selectedMatchupIndex;
