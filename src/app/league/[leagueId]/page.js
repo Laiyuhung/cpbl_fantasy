@@ -7,6 +7,7 @@ import supabase from '@/lib/supabase';
 
 export default function LeaguePage() {
   const params = useParams();
+  const router = useRouter();
   const leagueId = params.leagueId;
 
   const [leagueSettings, setLeagueSettings] = useState(null);
@@ -330,264 +331,166 @@ export default function LeaguePage() {
   if (showMatchups) {
     return (
       <div className="p-4 md:p-8 min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="w-[70%] space-y-8">
-          {/* Header with League Name & Week Selector */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-2xl">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
-                {leagueSettings?.league_name}
-              </h1>
-              <div className="flex items-center gap-2 mt-2">
-                <span className={`px-3 py-0.5 rounded-full text-xs font-bold border ${leagueStatus === 'in season'
-                  ? 'bg-green-500/20 text-green-300 border-green-500/30'
-                  : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
-                  }`}>
-                  {leagueStatus === 'in season' ? 'IN SEASON' : 'PRE-SEASON'}
-                </span>
-              </div>
-            </div>
-
-            {/* Week Selector */}
-            <div className="flex items-center bg-slate-800/80 rounded-full p-1.5 border border-white/10 shadow-lg">
-              <button
-                onClick={() => handleWeekChange(-1)}
-                disabled={currentWeek <= 1 || matchupsLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-              </button>
-
-              <div className="flex flex-col items-center min-w-[160px] px-4">
-                <span className="text-lg font-black text-white tracking-wide">
-                  WEEK {currentWeek}
-                </span>
-                {weekDetails && (
-                  <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
-                    {new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                )}
-              </div>
-
-              <button
-                onClick={() => handleWeekChange(1)}
-                disabled={currentWeek >= (scheduleData.length || 0) || matchupsLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
+        {/* League Header */}
+        <div className="max-w-7xl mx-auto mb-8">
+          <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-2xl">
+            <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
+              {leagueSettings?.league_name}
+            </h1>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`px-3 py-0.5 rounded-full text-xs font-bold border ${leagueStatus === 'in season'
+                ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                }`}>
+                {leagueStatus === 'in season' ? 'IN SEASON' : 'PRE-SEASON'}
+              </span>
             </div>
           </div>
+        </div>
 
-          {/* MATCHUPS Section Header */}
-          <div className="mb-4">
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider">
-              Matchups
-            </h2>
-          </div>
+        {/* Main Content Grid */}
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Week Selector - Left Column */}
+          <div className="lg:col-span-3">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl p-6 sticky top-8">
+              <h3 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
+                Week
+              </h3>
 
-          {/* Matchups Grid */}
-          {matchupsLoading ? (
-            <div className="w-full h-64 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
-              <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-purple-300 font-bold tracking-widest uppercase text-sm">Loading Matchups...</span>
-            </div>
-          ) : matchups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
-              <div className="text-6xl mb-4">🏟️</div>
-              <h3 className="text-xl font-bold text-white mb-2">No Matchups Scheduled</h3>
-              <p className="text-slate-400">There are no games scheduled for this week.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
-              {matchups.map((matchup) => {
-                const managerA = getManagerDetails(matchup.manager_id_a);
-                const managerB = getManagerDetails(matchup.manager_id_b);
-                // Calculate win probability or status if needed, for now just show scores
-                // Calculate status based on week schedule
-                const now = new Date();
-                const weekStart = new Date(weekDetails?.week_start);
-                const weekEnd = new Date(weekDetails?.week_end);
-
-                const hasStarted = now >= weekStart;
-                const isLive = now >= weekStart && now <= weekEnd;
-                const isFinal = now > weekEnd;
-
-                // Test override (optional, remove for production if needed, or keep logic solely on dates)
-                // const isLive = leagueStatus === 'in season'; 
-
-                return (
-                  <div key={matchup.id} className="group relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:from-purple-900/40 hover:to-blue-900/40 backdrop-blur-sm border border-white/5 hover:border-purple-500/50 rounded-2xl p-0 overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)]">
-                    {/* Card Header / Status */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                    <div className="flex items-stretch h-32 md:h-40 relative">
-                      {/* Background decorations */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none"></div>
-                      {/* Team A */}
-                      <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-                        <div className="text-lg md:text-xl font-black text-white text-center line-clamp-1 px-2 mb-1 group-hover:text-purple-300 transition-colors">
-                          {managerA?.nickname || 'Unknown'}
-                        </div>
-                        <div className="text-xs text-slate-400 text-center line-clamp-1 font-bold uppercase tracking-wider">
-                          {managerA?.managers?.name}
-                        </div>
-                      </div>
-
-                      {/* VS / Score */}
-                      <div className="w-32 md:w-40 flex flex-col items-center justify-center bg-black/20 z-10">
-                        {hasStarted ? (
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex items-center gap-4 text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">
-                              <span className={scoreA > scoreB ? 'text-green-400' : scoreA < scoreB ? 'text-slate-300' : 'text-white'}>{scoreA}</span>
-                              <span className="text-slate-600 text-lg font-normal">-</span>
-                              <span className={scoreB > scoreA ? 'text-green-400' : scoreB < scoreA ? 'text-slate-300' : 'text-white'}>{scoreB}</span>
-                            </div>
-                            {isLive && (
-                              <div className="text-[10px] font-bold tracking-widest text-red-400 uppercase animate-pulse flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                LIVE
-                              </div>
-                            )}
-                            {isFinal && (
-                              <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                                FINAL
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center">
-                            <span className="text-3xl font-black text-slate-600 italic tracking-widest">VS</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Team B */}
-                      <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-                        <div className="text-lg md:text-xl font-black text-white text-center line-clamp-1 px-2 mb-1 group-hover:text-pink-300 transition-colors">
-                          {managerB?.nickname || 'Unknown'}
-                        </div>
-                        <div className="text-xs text-slate-400 text-center line-clamp-1 font-bold uppercase tracking-wider">
-                          {managerB?.managers?.name}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer / Actions */}
-                    <div className="bg-white/5 px-4 py-2 flex justify-between items-center text-xs font-medium text-slate-400">
-                      <span>Matchup Info</span>
-                      <span className="group-hover:text-purple-300 transition-colors">View Details →</span>
-                    </div>
+              <div className="space-y-4">
+                {/* Current Week Display */}
+                <div className="text-center p-4 bg-purple-500/20 rounded-xl border border-purple-500/30">
+                  <div className="text-3xl font-black text-white mb-1">
+                    WEEK {currentWeek}
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* STANDINGS Section */}
-          <div className="mt-12">
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
-              Standings
-            </h2>
-
-            {standingsLoading ? (
-              <div className="w-full h-48 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
-                <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-purple-300 font-bold tracking-widest uppercase text-sm">Loading Standings...</span>
-              </div>
-            ) : standings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
-                <div className="text-4xl mb-3">📊</div>
-                <h3 className="text-lg font-bold text-white mb-2">No Standings Available</h3>
-                <p className="text-slate-400 text-sm">Standings will appear once matchups are completed.</p>
-              </div>
-            ) : (
-              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden">
-                {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-b border-white/10">
-                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Rank</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Team</th>
-                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Record</th>
-                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Win %</th>
-                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Streak</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {standings.map((team, index) => (
-                        <tr key={team.manager_id} className="hover:bg-purple-500/10 transition-colors">
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                                team.rank === 2 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
-                                  team.rank === 3 ? 'bg-orange-600/20 text-orange-300 border border-orange-600/30' :
-                                    'bg-slate-700/40 text-slate-400'
-                              }`}>
-                              {team.rank}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="font-bold text-white">{team.nickname}</div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className="font-mono text-cyan-300 font-semibold">{team.record_display}</span>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className="font-mono text-purple-300 font-semibold">{team.win_pct.toFixed(3)}</span>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                                team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                                  team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                                    'bg-slate-700/40 text-slate-400'
-                              }`}>
-                              {team.streak}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Cards */}
-                <div className="md:hidden divide-y divide-white/5">
-                  {standings.map((team) => (
-                    <div key={team.manager_id} className="p-4 hover:bg-purple-500/10 transition-colors">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                              team.rank === 2 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
-                                team.rank === 3 ? 'bg-orange-600/20 text-orange-300 border border-orange-600/30' :
-                                  'bg-slate-700/40 text-slate-400'
-                            }`}>
-                            {team.rank}
-                          </span>
-                          <div className="font-bold text-white">{team.nickname}</div>
-                        </div>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                            team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                              team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                                'bg-slate-700/40 text-slate-400'
-                          }`}>
-                          {team.streak}
-                        </span>
-                      </div>
-                      <div className="flex justify-around text-sm">
-                        <div className="text-center">
-                          <div className="text-slate-400 text-xs uppercase mb-1">Record</div>
-                          <div className="font-mono text-cyan-300 font-semibold">{team.record_display}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-slate-400 text-xs uppercase mb-1">Win %</div>
-                          <div className="font-mono text-purple-300 font-semibold">{team.win_pct.toFixed(3)}</div>
-                        </div>
-                      </div>
+                  {weekDetails && (
+                    <div className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
+                      {new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
-                  ))}
+                  )}
+                </div>
+
+                {/* Week Navigation */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleWeekChange(-1)}
+                    disabled={currentWeek <= 1 || matchupsLoading}
+                    className="flex-1 px-4 py-3 bg-slate-700/60 hover:bg-purple-500/30 rounded-xl text-white font-bold disabled:opacity-30 disabled:hover:bg-slate-700/60 transition-all border border-white/10"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    onClick={() => handleWeekChange(1)}
+                    disabled={currentWeek >= (scheduleData.length || 0) || matchupsLoading}
+                    className="flex-1 px-4 py-3 bg-slate-700/60 hover:bg-purple-500/30 rounded-xl text-white font-bold disabled:opacity-30 disabled:hover:bg-slate-700/60 transition-all border border-white/10"
+                  >
+                    Next →
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
+
+          {/* Content - Right Column */}
+          <div className="lg:col-span-9 space-y-8">
+            {/* MATCHUPS Section */}
+            <div>
+              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
+                Matchups
+              </h2>
+
+              {matchupsLoading ? (
+                <div className="w-full h-64 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
+                  <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-purple-300 font-bold tracking-widest uppercase text-sm">Loading Matchups...</span>
+                </div>
+              ) : matchups.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
+                  <div className="text-6xl mb-4">🏟️</div>
+                  <h3 className="text-xl font-bold text-white mb-2">No Matchups Scheduled</h3>
+                  <p className="text-slate-400">There are no games scheduled for this week.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {matchups.map((matchup) => {
+                    const managerA = getManagerDetails(matchup.manager_id_a);
+                    const managerB = getManagerDetails(matchup.manager_id_b);
+                    const now = new Date();
+                    const weekStart = new Date(weekDetails?.week_start);
+                    const weekEnd = new Date(weekDetails?.week_end);
+                    const hasStarted = now >= weekStart;
+                    const isLive = now >= weekStart && now <= weekEnd;
+                    const isFinal = now > weekEnd;
+
+                    return (
+                      <div
+                        key={matchup.id}
+                        onClick={() => router.push(`/league/${leagueId}/matchups?week=${currentWeek}&matchup=${matchup.id}`)}
+                        className="group cursor-pointer bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:from-purple-900/40 hover:to-blue-900/40 backdrop-blur-sm border border-white/5 hover:border-purple-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)]"
+                      >
+                        <div className="grid grid-cols-3 items-center p-6">
+                          {/* Team A */}
+                          <div className="text-center">
+                            <div className="text-xl font-black text-white mb-1 group-hover:text-purple-300 transition-colors">
+                              {managerA?.nickname || 'Unknown'}
+                            </div>
+                            <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                              {managerA?.managers?.name}
+                            </div>
+                            {hasStarted && (
+                              <div className="text-3xl font-black text-cyan-300 mt-3">
+                                {matchup.score_a !== null ? matchup.score_a.toFixed(1) : '0.0'}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* VS / Status */}
+                          <div className="flex flex-col items-center justify-center">
+                            {!hasStarted ? (
+                              <div className="text-2xl font-black text-slate-500 uppercase tracking-wider">VS</div>
+                            ) : isLive ? (
+                              <>
+                                <div className="text-sm font-bold text-green-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                  LIVE
+                                </div>
+                                <div className="text-2xl font-black text-slate-400">-</div>
+                              </>
+                            ) : isFinal ? (
+                              <>
+                                <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">FINAL</div>
+                                <div className="text-2xl font-black text-slate-400">-</div>
+                              </>
+                            ) : null}
+                          </div>
+
+                          {/* Team B */}
+                          <div className="text-center">
+                            <div className="text-xl font-black text-white mb-1 group-hover:text-purple-300 transition-colors">
+                              {managerB?.nickname || 'Unknown'}
+                            </div>
+                            <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                              {managerB?.managers?.name}
+                            </div>
+                            {hasStarted && (
+                              <div className="text-3xl font-black text-cyan-300 mt-3">
+                                {matchup.score_b !== null ? matchup.score_b.toFixed(1) : '0.0'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="bg-white/5 px-6 py-3 flex justify-between items-center text-xs font-medium text-slate-400 border-t border-white/5">
+                          <span>Matchup Details</span>
+                          <span className="group-hover:text-purple-300 transition-colors">View Full Stats →</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
