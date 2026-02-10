@@ -587,7 +587,7 @@ export default function RosterPage() {
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                                                 </button>
                                                 <span className="text-white font-bold text-sm">
-                                                    {viewDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                                    {viewDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
                                                 </span>
                                                 <button
                                                     onClick={(e) => {
@@ -825,110 +825,69 @@ export default function RosterPage() {
                 <LegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} batterStats={batterStatCategories} pitcherStats={pitcherStatCategories} />
 
                 {showInfoModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <div className="bg-slate-900 border border-purple-500/30 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative p-8">
-                            <button
-                                onClick={() => setShowInfoModal(false)}
-                                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowInfoModal(false)}>
+                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between p-6 border-b border-purple-500/20 flex-shrink-0">
+                                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                                    <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Position Eligibility Rules
+                                </h3>
+                                <button
+                                    onClick={() => setShowInfoModal(false)}
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
 
-                            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                                <span className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-sm">?</span>
-                                Position Eligibility Rules
-                            </h2>
+                            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-5 text-purple-100">
+                                <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
+                                    <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                                        Batter Position Eligibility
+                                    </h4>
+                                    <p className="text-purple-200 leading-relaxed">
+                                        Players must appear in <span className="font-bold text-green-300">8 or more games</span> at a position to be eligible for that position.
+                                    </p>
+                                </div>
 
-                            <div className="space-y-6">
-                                {/* Standard Batters */}
-                                {['C', '1B', '2B', '3B', 'SS', 'OF', 'LF', 'CF', 'RF'].some(p => rosterPositionsConfig[p] > 0) && (
-                                    <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                        <div className="font-bold text-white mb-1">Standard Positions (C, 1B, 2B, 3B, SS, OF, LF, CF, RF)</div>
-                                        <div className="text-sm opacity-80 text-gray-300">
-                                            Player must have played at least <span className="text-green-400 font-bold">8 games</span> at that position in the current or previous season.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* CI */}
-                                {rosterPositionsConfig['CI'] > 0 && (
-                                    <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                        <div className="font-bold text-white mb-1">Corner Infield (CI)</div>
-                                        <div className="text-sm opacity-80 text-gray-300">
-                                            Player must have played at least <span className="text-green-400 font-bold">8 games</span> at <span className="text-purple-300">1B</span> or <span className="text-purple-300">3B</span>.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* MI */}
-                                {rosterPositionsConfig['MI'] > 0 && (
-                                    <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                        <div className="font-bold text-white mb-1">Middle Infield (MI)</div>
-                                        <div className="text-sm opacity-80 text-gray-300">
-                                            Player must have played at least <span className="text-green-400 font-bold">8 games</span> at <span className="text-purple-300">2B</span> or <span className="text-purple-300">SS</span>.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Util */}
-                                {rosterPositionsConfig['Util'] > 0 && (
-                                    <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                        <div className="font-bold text-white mb-1">Utility (Util)</div>
-                                        <div className="text-sm opacity-80 text-gray-300">
-                                            Any <span className="text-white font-bold">Batter</span> can be placed in the Util slot.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* SP */}
-                                {rosterPositionsConfig['SP'] > 0 && (
-                                    <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                        <div className="font-bold text-white mb-1">Starting Pitcher (SP)</div>
-                                        <div className="text-sm opacity-80 text-gray-300">
-                                            Player must have started at least <span className="text-green-400 font-bold">3 games</span> in the current or previous season.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* RP */}
-                                {rosterPositionsConfig['RP'] > 0 && (
-                                    <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                        <div className="font-bold text-white mb-1">Relief Pitcher (RP)</div>
-                                        <div className="text-sm opacity-80 text-gray-300">
-                                            Player must have made at least <span className="text-green-400 font-bold">5 relief appearances</span> in the current or previous season.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* P */}
-                                {rosterPositionsConfig['P'] > 0 && (
-                                    <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                        <div className="font-bold text-white mb-1">Pitcher (P)</div>
-                                        <div className="text-sm opacity-80 text-gray-300">
-                                            Any <span className="text-white font-bold">Pitcher</span> can be placed in the P slot.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* BN */}
-                                <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                    <div className="font-bold text-white mb-1">Bench (BN)</div>
-                                    <div className="text-sm opacity-80 text-gray-300">
-                                        Any player can be placed on the Bench.
+                                <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
+                                    <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                                        Pitcher Position Eligibility
+                                    </h4>
+                                    <div className="space-y-2 text-purple-200">
+                                        <p className="leading-relaxed">
+                                            <span className="font-bold text-orange-300">SP (Starting Pitcher):</span> Must have <span className="font-bold text-orange-300">3 or more</span> starting appearances.
+                                        </p>
+                                        <p className="leading-relaxed">
+                                            <span className="font-bold text-orange-300">RP (Relief Pitcher):</span> Must have <span className="font-bold text-orange-300">5 or more</span> relief appearances.
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* NA */}
-                                {(rosterPositionsConfig['NA'] > 0 || rosterPositionsConfig['Minor'] > 0) && (
-                                    <div className="bg-slate-800/50 p-4 rounded-lg border border-purple-500/10">
-                                        <div className="font-bold text-white mb-1">Minor League (NA)</div>
-                                        <div className="text-sm opacity-80 text-gray-300">
-                                            Only players with <span className="text-yellow-300 font-bold">NA / Minor</span>, <span className="text-red-300 font-bold">Deregistered (DR)</span>, or <span className="text-slate-300 font-bold">Unregistered (NR)</span> status can be placed here.
-                                        </div>
-                                    </div>
-                                )}
+                                <div className="bg-blue-500/10 rounded-lg p-5 border border-blue-500/20">
+                                    <h4 className="text-lg font-bold text-blue-300 mb-3 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                                        Data Coverage
+                                    </h4>
+                                    <p className="text-blue-200 leading-relaxed">
+                                        Position eligibility is calculated using <span className="font-bold text-blue-300">2025 OR 2026</span> season statistics (union of both seasons).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t border-purple-500/20 flex justify-end flex-shrink-0">
+                                <button
+                                    onClick={() => setShowInfoModal(false)}
+                                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+                                >
+                                    Got it
+                                </button>
                             </div>
                         </div>
                     </div>
