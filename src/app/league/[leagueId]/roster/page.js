@@ -129,7 +129,7 @@ export default function RosterPage() {
                     currentPosition: playerToMove.position,
                     targetPosition: targetPos,
                     swapWithPlayerId: swapWithPlayerId || null,
-                    gameDate: date
+                    gameDate: selectedDate
                 })
             });
 
@@ -227,16 +227,18 @@ export default function RosterPage() {
         fetchSchedule();
     }, [leagueId]);
 
-    // Initial Load - fetch roster when selectedDate is set
+    // Fetch roster when selectedDate changes
     useEffect(() => {
         if (!selectedDate) return;
 
-        const init = async () => {
+        const fetchRosterForDate = async () => {
+            setLoading(true);
             await refreshRoster();
             setLoading(false);
         };
-        init();
-    }, [leagueId, selectedDate]);
+
+        fetchRosterForDate();
+    }, [selectedDate]);
 
     // Settings
     useEffect(() => {
@@ -510,9 +512,22 @@ export default function RosterPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                 </svg>
                             </button>
-                            <span className="text-white font-bold font-mono min-w-[100px] text-center">
-                                {selectedDate || date}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-white font-bold font-mono min-w-[100px] text-center">
+                                    {selectedDate || date}
+                                </span>
+                                {(() => {
+                                    const now = new Date();
+                                    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                                    const todayStr = taiwanTime.toISOString().split('T')[0];
+                                    const isToday = selectedDate === todayStr;
+                                    return isToday ? (
+                                        <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30 text-xs font-bold">
+                                            TODAY
+                                        </span>
+                                    ) : null;
+                                })()}
+                            </div>
                             <button
                                 onClick={() => {
                                     const currentIndex = availableDates.indexOf(selectedDate);
