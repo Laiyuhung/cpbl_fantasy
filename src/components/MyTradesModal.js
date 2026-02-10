@@ -130,6 +130,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                             <option value="last_14">Last 14 Days</option>
                             <option value="last_30">Last 30 Days</option>
                             <option value="2026 Season">2026 Season</option>
+                            <option value="2025 Season">2025 Season</option>
                         </select>
                         <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
