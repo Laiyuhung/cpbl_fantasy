@@ -103,30 +103,63 @@ export async function GET(request) {
     }
 
     // Fetch pending trades where the user is either initiator or recipient
-    const { data, error } = await supabase
+    const { data: trades, error: tradesError } = await supabase
       .from('pending_trade')
       .select(`
         *,
         initiator:managers!fk_pending_trade_initiator (name),
         recipient:managers!fk_pending_trade_recipient (name)
-      `) // Assuming nickname is in managers table. Join syntax might vary based on Supabase setup, but fk names help.
-      // If foreign keys are set up correctly, Supabase can join.
-      // The user provided FK names: fk_pending_trade_initiator, fk_pending_trade_recipient.
-      // In Supabase generic query, we might need to specify the join if multiple FKs point to same table.
-      // But typically .select('*, initiator:managers!initiator_manager_id(*), ...') works.
-      // Let's try simple join first or just fetch IDs and let frontend resolve names (frontend has members list).
-      // Actually, frontend has `members` list which maps manager_id to nickname.
-      // So returning raw IDs is fine.
+      `)
       .eq('league_id', league_id)
       .or(`initiator_manager_id.eq.${manager_id},recipient_manager_id.eq.${manager_id}`)
+      //.eq('status', 'pending') // The user asked for "Status", implies they might want to see history? 
+      // User request: "sending 1 player... should display package content and STATUS". 
+      // If I only fetch pending, status is always pending.
+      // But maybe they want to see "Accepted/Rejected" history?
+      // The prompt says "My Trades modal... allow initiator to cancel, recipient to accept/reject". 
+      // This implies PENDING trades.
+      // But "show status" could mean "Pending". 
+      // I'll stick to 'pending' for now or maybe fetch all to show history?
+      // The prompt "My Trades modal that displays PENDING trades" (from previous turn) 
+      // implies only pending.
+      // But if user wants to see status, maybe they want to see "Rejected" ones too?
+      // I'll keep .eq('status', 'pending') for now as per original spec which was "Pending Trades". 
+      // If user wants history, they'll ask.
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    if (tradesError) {
+      return NextResponse.json({ success: false, error: tradesError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, trades: data });
+    // Enrich with player details
+    if (trades && trades.length > 0) {
+      const playerIds = new Set();
+      trades.forEach(t => {
+        if (Array.isArray(t.initiator_player_ids)) t.initiator_player_ids.forEach(id => playerIds.add(id));
+        if (Array.isArray(t.recipient_player_ids)) t.recipient_player_ids.forEach(id => playerIds.add(id));
+      });
+      const ids = Array.from(playerIds);
+
+      if (ids.length > 0) {
+        const { data: playersData, error: playersError } = await supabase
+          .from('players')
+          .select('player_id, name, team, position, name_en')
+          .in('player_id', ids);
+
+        if (playersData) {
+          const playerMap = {};
+          playersData.forEach(p => playerMap[p.player_id] = p);
+
+          trades.forEach(t => {
+            t.initiator_players = (t.initiator_player_ids || []).map(id => playerMap[id] || { player_id: id, name: 'Unknown' });
+            t.recipient_players = (t.recipient_player_ids || []).map(id => playerMap[id] || { player_id: id, name: 'Unknown' });
+          });
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, trades: trades });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
