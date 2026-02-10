@@ -97,9 +97,21 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const league_id = searchParams.get('league_id');
     const manager_id = searchParams.get('manager_id');
+    const time_window = searchParams.get('time_window') || '2026 Season';
 
     if (!league_id || !manager_id) {
       return NextResponse.json({ success: false, error: 'Missing league_id or manager_id' }, { status: 400 });
+    }
+
+    // Fetch league settings for roster positions and stat categories
+    const { data: settings, error: settingsError } = await supabase
+      .from('league_settings')
+      .select('roster_positions, batter_stat_categories, pitcher_stat_categories')
+      .eq('league_id', league_id)
+      .single();
+
+    if (settingsError) {
+      console.error('Error fetching league settings:', settingsError);
     }
 
     // Fetch pending trades where the user is either initiator or recipient
@@ -112,19 +124,6 @@ export async function GET(request) {
       `)
       .eq('league_id', league_id)
       .or(`initiator_manager_id.eq.${manager_id},recipient_manager_id.eq.${manager_id}`)
-      //.eq('status', 'pending') // The user asked for "Status", implies they might want to see history? 
-      // User request: "sending 1 player... should display package content and STATUS". 
-      // If I only fetch pending, status is always pending.
-      // But maybe they want to see "Accepted/Rejected" history?
-      // The prompt says "My Trades modal... allow initiator to cancel, recipient to accept/reject". 
-      // This implies PENDING trades.
-      // But "show status" could mean "Pending". 
-      // I'll stick to 'pending' for now or maybe fetch all to show history?
-      // The prompt "My Trades modal that displays PENDING trades" (from previous turn) 
-      // implies only pending.
-      // But if user wants to see status, maybe they want to see "Rejected" ones too?
-      // I'll keep .eq('status', 'pending') for now as per original spec which was "Pending Trades". 
-      // If user wants history, they'll ask.
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
@@ -132,7 +131,7 @@ export async function GET(request) {
       return NextResponse.json({ success: false, error: tradesError.message }, { status: 500 });
     }
 
-    // Enrich with player details
+    // Enrich with player details and stats
     if (trades && trades.length > 0) {
       const playerIds = new Set();
       trades.forEach(t => {
@@ -159,19 +158,40 @@ export async function GET(request) {
           .select('player_id, position_list')
           .in('player_id', ids);
 
+        // Fetch Stats
+        const { data: batterStats, error: bsError } = await supabase
+          .from('v_batting_summary')
+          .select('*')
+          .eq('time_window', time_window)
+          .in('player_id', ids);
+
+        const { data: pitcherStats, error: psError } = await supabase
+          .from('v_pitching_summary')
+          .select('*')
+          .eq('time_window', time_window)
+          .in('player_id', ids);
+
         if (playersData) {
           const playerMap = {};
           const posMap = {};
+          const statsMap = {};
 
           if (batterPos) batterPos.forEach(p => posMap[p.player_id] = p.position_list);
           if (pitcherPos) pitcherPos.forEach(p => posMap[p.player_id] = p.position_list);
+
+          if (batterStats) batterStats.forEach(s => statsMap[s.player_id] = s);
+          if (pitcherStats) pitcherStats.forEach(s => statsMap[s.player_id] = s);
 
           playersData.forEach(p => {
             let pos = posMap[p.player_id];
             if (!pos) {
               pos = p.batter_or_pitcher === 'pitcher' ? 'P' : 'Util';
             }
-            playerMap[p.player_id] = { ...p, position: pos };
+            playerMap[p.player_id] = {
+              ...p,
+              position: pos,
+              stats: statsMap[p.player_id] || {}
+            };
           });
 
           trades.forEach(t => {
@@ -182,7 +202,15 @@ export async function GET(request) {
       }
     }
 
-    return NextResponse.json({ success: true, trades: trades });
+    return NextResponse.json({
+      success: true,
+      trades: trades,
+      settings: {
+        roster_positions: settings?.roster_positions || {},
+        batter_stat_categories: settings?.batter_stat_categories || [],
+        pitcher_stat_categories: settings?.pitcher_stat_categories || []
+      }
+    });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

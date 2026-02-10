@@ -4,21 +4,26 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
     const [trades, setTrades] = useState([]);
     const [loading, setLoading] = useState(false);
     const [processingId, setProcessingId] = useState(null);
+    const [timeWindow, setTimeWindow] = useState('2026 Season');
+    const [settings, setSettings] = useState({ roster_positions: {}, batter_stat_categories: [], pitcher_stat_categories: [] });
 
-    // Fetch trades when modal opens
+    // Fetch trades when modal opens or timeWindow changes
     useEffect(() => {
         if (isOpen && leagueId && managerId) {
             fetchTrades();
         }
-    }, [isOpen, leagueId, managerId]);
+    }, [isOpen, leagueId, managerId, timeWindow]);
 
     const fetchTrades = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/trade/pending?league_id=${leagueId}&manager_id=${managerId}`);
+            const res = await fetch(`/api/trade/pending?league_id=${leagueId}&manager_id=${managerId}&time_window=${encodeURIComponent(timeWindow)}`);
             const data = await res.json();
             if (data.success) {
                 setTrades(data.trades);
+                if (data.settings) {
+                    setSettings(data.settings);
+                }
             }
         } catch (error) {
             console.error('Failed to fetch trades:', error);
@@ -55,6 +60,52 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
         }
     };
 
+    const getStatAbbr = (cat) => {
+        const matches = cat.match(/\(([^)]+)\)/g);
+        return matches ? matches[matches.length - 1].replace(/[()]/g, '') : cat;
+    };
+
+    const getStatKey = (cat) => {
+        return getStatAbbr(cat).toLowerCase();
+    };
+
+    const filterPositions = (player) => {
+        let positionList = player.position;
+        if (!positionList) return 'NA';
+
+        const positions = positionList.split(',').map(p => p.trim());
+        const validPositions = positions.filter(pos => {
+            return settings.roster_positions && settings.roster_positions[pos] > 0;
+        });
+
+        return validPositions.length > 0 ? validPositions.join(', ') : 'NA';
+    };
+
+    const renderStats = (player) => {
+        const stats = player.stats || {};
+        const isPitcher = player.batter_or_pitcher === 'pitcher';
+        const categories = isPitcher ? settings.pitcher_stat_categories : settings.batter_stat_categories;
+
+        if (!categories || categories.length === 0) return null;
+
+        return (
+            <div className="flex gap-2 mt-1 overflow-x-auto pb-1 scrollbar-hide">
+                {categories.map(cat => {
+                    const key = getStatKey(cat);
+                    const val = stats[key] !== undefined && stats[key] !== null ? stats[key] : '-';
+                    return (
+                        <div key={cat} className="flex flex-col items-center min-w-[20px]">
+                            <span className="text-[9px] text-slate-500 uppercase">{getStatAbbr(cat)}</span>
+                            <span className={`text-[10px] font-mono ${val === 0 || val === '0' ? 'text-slate-600' : 'text-slate-300'}`}>
+                                {val}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -67,9 +118,23 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                     <h3 className="text-2xl font-bold text-white flex items-center gap-2">
                         <span className="text-2xl">⇌</span> My Pending Trades
                     </h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <select
+                            value={timeWindow}
+                            onChange={(e) => setTimeWindow(e.target.value)}
+                            className="bg-slate-900/50 text-white text-xs border border-purple-500/30 rounded px-2 py-1 outline-none focus:border-purple-400"
+                        >
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="last_7">Last 7 Days</option>
+                            <option value="last_14">Last 14 Days</option>
+                            <option value="last_30">Last 30 Days</option>
+                            <option value="2026 Season">2026 Season</option>
+                        </select>
+                        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
@@ -114,11 +179,14 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                                 <div className="text-xs font-bold text-purple-400 mb-1 border-b border-purple-500/20 pb-1">
                                                     Sending ({trade.initiator_players?.length || 0})
                                                 </div>
-                                                <div className="space-y-1">
+                                                <div className="space-y-3 pt-1">
                                                     {trade.initiator_players?.map(p => (
-                                                        <div key={p.player_id} className="text-purple-200 text-xs flex justify-between">
-                                                            <span>{p.name}</span>
-                                                            <span className="text-purple-400/70">{p.team} - {p.position}</span>
+                                                        <div key={p.player_id}>
+                                                            <div className="text-purple-200 text-xs flex justify-between items-center">
+                                                                <span className="font-semibold">{p.name}</span>
+                                                                <span className="text-purple-400/70 text-[10px]">{p.team} - {filterPositions(p)}</span>
+                                                            </div>
+                                                            {renderStats(p)}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -127,11 +195,14 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                                 <div className="text-xs font-bold text-pink-400 mb-1 border-b border-pink-500/20 pb-1">
                                                     Receiving ({trade.recipient_players?.length || 0})
                                                 </div>
-                                                <div className="space-y-1">
+                                                <div className="space-y-3 pt-1">
                                                     {trade.recipient_players?.map(p => (
-                                                        <div key={p.player_id} className="text-pink-200 text-xs flex justify-between">
-                                                            <span>{p.name}</span>
-                                                            <span className="text-pink-400/70">{p.team} - {p.position}</span>
+                                                        <div key={p.player_id}>
+                                                            <div className="text-pink-200 text-xs flex justify-between items-center">
+                                                                <span className="font-semibold">{p.name}</span>
+                                                                <span className="text-pink-400/70 text-[10px]">{p.team} - {filterPositions(p)}</span>
+                                                            </div>
+                                                            {renderStats(p)}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -139,8 +210,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                         </div>
                                         <div className="mt-2 text-right">
                                             <span className={`text-xs px-2 py-0.5 rounded border ${trade.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' :
-                                                    trade.status === 'accepted' ? 'bg-green-500/10 text-green-500 border-green-500/30' :
-                                                        'bg-red-500/10 text-red-500 border-red-500/30'
+                                                trade.status === 'accepted' ? 'bg-green-500/10 text-green-500 border-green-500/30' :
+                                                    'bg-red-500/10 text-red-500 border-red-500/30'
                                                 }`}>
                                                 {trade.status.toUpperCase()}
                                             </span>
@@ -152,7 +223,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                             <button
                                                 onClick={() => handleAction(trade.id, 'cancel')}
                                                 disabled={isProcessing}
-                                                className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
+                                                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-red-900/20"
                                             >
                                                 {isProcessing ? 'Processing...' : 'Cancel Request'}
                                             </button>
@@ -161,14 +232,14 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                                 <button
                                                     onClick={() => handleAction(trade.id, 'reject')}
                                                     disabled={isProcessing}
-                                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
+                                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-red-900/20"
                                                 >
                                                     {isProcessing ? '...' : 'Reject'}
                                                 </button>
                                                 <button
                                                     onClick={() => handleAction(trade.id, 'accept')}
                                                     disabled={isProcessing}
-                                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
+                                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-green-900/20"
                                                 >
                                                     {isProcessing ? 'Processing...' : 'Accept Trade'}
                                                 </button>
