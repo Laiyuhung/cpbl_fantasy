@@ -5,88 +5,105 @@ export async function GET(request, { params }) {
     const { leagueId } = params;
     const { searchParams } = new URL(request.url);
     const managerId = searchParams.get('manager_id');
+    const gameDate = searchParams.get('game_date'); // Get game_date from query params
 
     if (!leagueId || !managerId) {
         return NextResponse.json({ success: false, error: 'Missing league_id or manager_id' }, { status: 400 });
     }
 
     try {
-        // 1. Calculate Today's Date in Taiwan Time (UTC+8)
-        const now = new Date();
-        const nowTaiwan = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
-        const todayStr = nowTaiwan.toISOString().split('T')[0];
-        const todayDate = new Date(todayStr); // 00:00:00 UTC representing Taiwan midnight
+        let gameDateStr;
 
-        // 2. Fetch League Settings (Start Scoring On) and Schedule (Season End)
-        const { data: settings, error: settingsError } = await supabase
-            .from('league_settings')
-            .select('start_scoring_on')
-            .eq('league_id', leagueId)
-            .single();
+        // If game_date is provided, use it directly
+        if (gameDate) {
+            gameDateStr = gameDate;
+            console.log('='.repeat(80));
+            console.log(`[Roster API] 📅 Using provided game_date: ${gameDateStr}`);
+            console.log('='.repeat(80));
+        } else {
+            // Otherwise, calculate today's date in Taiwan Time (UTC+8) and apply clamping logic
+            console.log('='.repeat(80));
+            console.log(`[Roster API] ⚠️  No game_date provided, calculating from today (Taiwan time)`);
+            console.log('='.repeat(80));
 
-        if (settingsError) {
-            console.error('Error fetching league settings:', settingsError);
-            return NextResponse.json({ success: false, error: 'Settings Error' }, { status: 500 });
-        }
+            const now = new Date();
+            const nowTaiwan = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+            const todayStr = nowTaiwan.toISOString().split('T')[0];
+            const todayDate = new Date(todayStr);
 
-        const { data: scheduleInfo } = await supabase
-            .from('league_schedule')
-            .select('week_number, week_end')
-            .eq('league_id', leagueId)
-            .order('week_number', { ascending: true });
-
-        let gameDateStr = todayStr;
-        let seasonEnd = null;
-        let seasonStart = null;
-
-        if (settings && settings.start_scoring_on) {
-            const parts = settings.start_scoring_on.split('.');
-            if (parts.length === 3) {
-                seasonStart = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-            }
-        }
-
-        if (scheduleInfo && scheduleInfo.length > 0) {
-            const lastWeek = scheduleInfo[scheduleInfo.length - 1];
-
-            const { data: weekData } = await supabase
-                .from('schedule_date')
-                .select('week')
-                .eq('end', lastWeek.week_end)
+            // Fetch League Settings (Start Scoring On) and Schedule (Season End)
+            const { data: settings, error: settingsError } = await supabase
+                .from('league_settings')
+                .select('start_scoring_on')
+                .eq('league_id', leagueId)
                 .single();
 
-            if (weekData) {
-                const currentWeekNum = parseInt(weekData.week.replace('W', ''), 10);
-                const nextWeekNum = currentWeekNum + 1;
-                const nextWeekStr = `W${nextWeekNum}`;
+            if (settingsError) {
+                console.error('Error fetching league settings:', settingsError);
+                return NextResponse.json({ success: false, error: 'Settings Error' }, { status: 500 });
+            }
 
-                const { data: nextWeekData } = await supabase
-                    .from('schedule_date')
-                    .select('end')
-                    .eq('week', nextWeekStr)
-                    .single();
+            const { data: scheduleInfo } = await supabase
+                .from('league_schedule')
+                .select('week_number, week_end')
+                .eq('league_id', leagueId)
+                .order('week_number', { ascending: true });
 
-                if (nextWeekData) {
-                    seasonEnd = new Date(nextWeekData.end);
+            gameDateStr = todayStr;
+            let seasonEnd = null;
+            let seasonStart = null;
+
+            if (settings && settings.start_scoring_on) {
+                const parts = settings.start_scoring_on.split('.');
+                if (parts.length === 3) {
+                    seasonStart = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
                 }
             }
 
-            if (!seasonEnd) {
-                seasonEnd = new Date(lastWeek.week_end);
-            }
-        }
+            if (scheduleInfo && scheduleInfo.length > 0) {
+                const lastWeek = scheduleInfo[scheduleInfo.length - 1];
 
-        // 3. Logic: Clamp Date
-        if (seasonStart && todayDate < seasonStart) {
-            const year = seasonStart.getFullYear();
-            const month = String(seasonStart.getMonth() + 1).padStart(2, '0');
-            const day = String(seasonStart.getDate()).padStart(2, '0');
-            gameDateStr = `${year}-${month}-${day}`;
-        } else if (seasonEnd && todayDate > seasonEnd) {
-            const year = seasonEnd.getFullYear();
-            const month = String(seasonEnd.getMonth() + 1).padStart(2, '0');
-            const day = String(seasonEnd.getDate()).padStart(2, '0');
-            gameDateStr = `${year}-${month}-${day}`;
+                const { data: weekData } = await supabase
+                    .from('schedule_date')
+                    .select('week')
+                    .eq('end', lastWeek.week_end)
+                    .single();
+
+                if (weekData) {
+                    const currentWeekNum = parseInt(weekData.week.replace('W', ''), 10);
+                    const nextWeekNum = currentWeekNum + 1;
+                    const nextWeekStr = `W${nextWeekNum}`;
+
+                    const { data: nextWeekData } = await supabase
+                        .from('schedule_date')
+                        .select('end')
+                        .eq('week', nextWeekStr)
+                        .single();
+
+                    if (nextWeekData) {
+                        seasonEnd = new Date(nextWeekData.end);
+                    }
+                }
+
+                if (!seasonEnd) {
+                    seasonEnd = new Date(lastWeek.week_end);
+                }
+            }
+
+            // Logic: Clamp Date
+            if (seasonStart && todayDate < seasonStart) {
+                const year = seasonStart.getFullYear();
+                const month = String(seasonStart.getMonth() + 1).padStart(2, '0');
+                const day = String(seasonStart.getDate()).padStart(2, '0');
+                gameDateStr = `${year}-${month}-${day}`;
+            } else if (seasonEnd && todayDate > seasonEnd) {
+                const year = seasonEnd.getFullYear();
+                const month = String(seasonEnd.getMonth() + 1).padStart(2, '0');
+                const day = String(seasonEnd.getDate()).padStart(2, '0');
+                gameDateStr = `${year}-${month}-${day}`;
+            }
+
+            console.log(`[Roster API] 📅 Calculated game_date: ${gameDateStr}`);
         }
 
         // 4. Fetch Roster with Clamped Date
