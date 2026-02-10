@@ -348,9 +348,18 @@ export default function LeaguePage() {
 
           {/* MATCHUPS Section Header with Week Selector */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider">
-              Matchups
-            </h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider">
+                Matchups
+              </h2>
+
+              {/* Week Type Badge */}
+              {weekDetails && (
+                <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${getWeekTypeColor(weekDetails.week_type)}`}>
+                  {getWeekTypeLabel(weekDetails.week_type)}
+                </span>
+              )}
+            </div>
 
             {/* Week Selector */}
             <div className="flex items-center bg-slate-800/80 rounded-full p-1.5 border border-white/10 shadow-lg">
@@ -413,26 +422,6 @@ export default function LeaguePage() {
 
                 return (
                   <div key={matchup.id} className="group relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-white/10 hover:border-purple-500/40 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(168,85,247,0.15)]">
-                    {/* Status Badge */}
-                    <div className="absolute top-4 right-4 z-20">
-                      {isLive && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 border border-red-500/40 rounded-full">
-                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                          <span className="text-xs font-bold text-red-300 uppercase tracking-wider">LIVE</span>
-                        </div>
-                      )}
-                      {isFinal && (
-                        <div className="px-3 py-1.5 bg-slate-700/40 border border-slate-600/40 rounded-full">
-                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">FINAL</span>
-                        </div>
-                      )}
-                      {!hasStarted && (
-                        <div className="px-3 py-1.5 bg-blue-500/20 border border-blue-500/40 rounded-full">
-                          <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">UPCOMING</span>
-                        </div>
-                      )}
-                    </div>
-
                     {/* Main Content */}
                     <div className="p-6">
                       <div className="flex items-center justify-between gap-6">
@@ -450,16 +439,14 @@ export default function LeaguePage() {
                             </div>
 
                             {/* Score A */}
-                            {hasStarted && (
-                              <div className="text-right">
-                                <div className={`text-4xl font-black tabular-nums ${scoreA > scoreB ? 'text-green-400' :
-                                  scoreA < scoreB ? 'text-slate-500' :
-                                    'text-cyan-300'
-                                  }`}>
-                                  {scoreA.toFixed(1)}
-                                </div>
+                            <div className="text-right">
+                              <div className={`text-4xl font-black tabular-nums ${scoreA > scoreB ? 'text-green-400' :
+                                scoreA < scoreB ? 'text-slate-500' :
+                                  'text-cyan-300'
+                                }`}>
+                                {scoreA.toFixed(1)}
                               </div>
-                            )}
+                            </div>
                           </div>
                         </div>
 
@@ -487,44 +474,17 @@ export default function LeaguePage() {
                             </div>
 
                             {/* Score B */}
-                            {hasStarted && (
-                              <div className="text-left">
-                                <div className={`text-4xl font-black tabular-nums ${scoreB > scoreA ? 'text-green-400' :
-                                  scoreB < scoreA ? 'text-slate-500' :
-                                    'text-cyan-300'
-                                  }`}>
-                                  {scoreB.toFixed(1)}
-                                </div>
+                            <div className="text-left">
+                              <div className={`text-4xl font-black tabular-nums ${scoreB > scoreA ? 'text-green-400' :
+                                scoreB < scoreA ? 'text-slate-500' :
+                                  'text-cyan-300'
+                                }`}>
+                                {scoreB.toFixed(1)}
                               </div>
-                            )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="bg-white/5 px-8 py-4 flex items-center justify-between border-t border-white/5">
-                      <div className="flex items-center gap-6 text-sm text-slate-400">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <span className="font-medium">
-                            {weekDetails && `${new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                          </span>
-                        </div>
-                        {matchup.is_tie && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
-                            <span className="text-xs font-bold text-yellow-300">TIE</span>
-                          </div>
-                        )}
-                      </div>
-                      <button className="flex items-center gap-2 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors group/btn">
-                        <span>View Full Stats</span>
-                        <svg className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
                     </div>
                   </div>
                 );
