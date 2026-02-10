@@ -496,7 +496,7 @@ export default function LeaguePage() {
                                 scoreA < scoreB ? 'text-slate-500' :
                                   'text-cyan-300'
                                 }`}>
-                                {scoreA.toFixed(1)}
+                                {scoreA}
                               </div>
                             </div>
                           </div>
@@ -531,7 +531,7 @@ export default function LeaguePage() {
                                 scoreB < scoreA ? 'text-slate-500' :
                                   'text-cyan-300'
                                 }`}>
-                                {scoreB.toFixed(1)}
+                                {scoreB}
                               </div>
                             </div>
                           </div>
