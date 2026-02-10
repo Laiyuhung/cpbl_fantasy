@@ -222,34 +222,36 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-700/50">
-                                        {isInitiator ? (
-                                            <button
-                                                onClick={() => handleAction(trade.id, 'cancel')}
-                                                disabled={isProcessing}
-                                                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-red-900/20"
-                                            >
-                                                {isProcessing ? 'Processing...' : 'Cancel Request'}
-                                            </button>
-                                        ) : (
-                                            <>
+                                    {trade.status === 'pending' && (
+                                        <div className="flex justify-end gap-2 pt-2 border-t border-slate-700/50">
+                                            {isInitiator ? (
                                                 <button
-                                                    onClick={() => handleAction(trade.id, 'reject')}
+                                                    onClick={() => handleAction(trade.id, 'cancel')}
                                                     disabled={isProcessing}
                                                     className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-red-900/20"
                                                 >
-                                                    {isProcessing ? '...' : 'Reject'}
+                                                    {isProcessing ? 'Processing...' : 'Cancel Request'}
                                                 </button>
-                                                <button
-                                                    onClick={() => handleAction(trade.id, 'accept')}
-                                                    disabled={isProcessing}
-                                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-green-900/20"
-                                                >
-                                                    {isProcessing ? 'Processing...' : 'Accept Trade'}
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleAction(trade.id, 'reject')}
+                                                        disabled={isProcessing}
+                                                        className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-red-900/20"
+                                                    >
+                                                        {isProcessing ? '...' : 'Reject'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleAction(trade.id, 'accept')}
+                                                        disabled={isProcessing}
+                                                        className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-green-900/20"
+                                                    >
+                                                        {isProcessing ? 'Processing...' : 'Accept Trade'}
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })
