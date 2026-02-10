@@ -150,9 +150,12 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                             const isInitiator = trade.initiator_manager_id === managerId;
                             const isProcessing = processingId === trade.id;
 
-                            // Resolve nicknames
-                            const initNick = trade.initiator?.nickname || trade.initiator?.name || members.find(m => m.manager_id === trade.initiator_manager_id)?.nickname || 'Unknown';
-                            const recNick = trade.recipient?.nickname || trade.recipient?.name || members.find(m => m.manager_id === trade.recipient_manager_id)?.nickname || 'Unknown';
+                            // Resolve nicknames (Prioritize league member nickname)
+                            const initMember = members.find(m => m.manager_id === trade.initiator_manager_id);
+                            const recMember = members.find(m => m.manager_id === trade.recipient_manager_id);
+
+                            const initNick = initMember?.nickname || trade.initiator?.name || 'Unknown';
+                            const recNick = recMember?.nickname || trade.recipient?.name || 'Unknown';
 
                             return (
                                 <div key={trade.id} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex flex-col gap-3">
