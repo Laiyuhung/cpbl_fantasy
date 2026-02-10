@@ -114,7 +114,25 @@ export async function GET(request) {
       console.error('Error fetching league settings:', settingsError);
     }
 
+    // Fetch league members to get nicknames
+    const { data: members, error: membersError } = await supabase
+      .from('league_members')
+      .select('manager_id, nickname')
+      .eq('league_id', league_id);
+
+    const memberMap = {};
+    if (members) {
+      members.forEach(m => {
+        memberMap[m.manager_id] = m.nickname;
+      });
+    }
+
+    // Calculate 48 hours ago
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
     // Fetch pending trades where the user is either initiator or recipient
+    // Fetch trades where the user is either initiator or recipient
+    // We want PENDING trades OR (Resolved trades updated within last 48 hours)
     const { data: trades, error: tradesError } = await supabase
       .from('pending_trade')
       .select(`
@@ -124,17 +142,33 @@ export async function GET(request) {
       `)
       .eq('league_id', league_id)
       .or(`initiator_manager_id.eq.${manager_id},recipient_manager_id.eq.${manager_id}`)
-      .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
     if (tradesError) {
       return NextResponse.json({ success: false, error: tradesError.message }, { status: 500 });
     }
 
+
+
+    // Filter trades logic
+    const filteredTrades = (trades || []).filter(t => { // Safety check or handle after error check
+      if (t.status === 'pending') return true;
+      const updatedAt = t.updated_at ? new Date(t.updated_at) : new Date(t.created_at);
+      return updatedAt > fortyEightHoursAgo;
+    });
+
+    if (tradesError) {
+      return NextResponse.json({ success: false, error: tradesError.message }, { status: 500 });
+    }
+
     // Enrich with player details and stats
-    if (trades && trades.length > 0) {
+    if (filteredTrades && filteredTrades.length > 0) {
       const playerIds = new Set();
-      trades.forEach(t => {
+      filteredTrades.forEach(t => {
+        // Enrich nicknames
+        if (t.initiator) t.initiator.nickname = memberMap[t.initiator_manager_id] || t.initiator.name;
+        if (t.recipient) t.recipient.nickname = memberMap[t.recipient_manager_id] || t.recipient.name;
+
         if (Array.isArray(t.initiator_player_ids)) t.initiator_player_ids.forEach(id => playerIds.add(id));
         if (Array.isArray(t.recipient_player_ids)) t.recipient_player_ids.forEach(id => playerIds.add(id));
       });
@@ -194,7 +228,7 @@ export async function GET(request) {
             };
           });
 
-          trades.forEach(t => {
+          filteredTrades.forEach(t => {
             t.initiator_players = (t.initiator_player_ids || []).map(id => playerMap[id] || { player_id: id, name: 'Unknown' });
             t.recipient_players = (t.recipient_player_ids || []).map(id => playerMap[id] || { player_id: id, name: 'Unknown' });
           });
@@ -204,7 +238,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       success: true,
-      trades: trades,
+      trades: filteredTrades,
       settings: {
         roster_positions: settings?.roster_positions || {},
         batter_stat_categories: settings?.batter_stat_categories || [],
