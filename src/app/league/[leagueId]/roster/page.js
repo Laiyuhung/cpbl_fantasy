@@ -8,7 +8,6 @@ import MoveModal from './MoveModal';
 export default function RosterPage() {
     const params = useParams();
     const leagueId = params.leagueId;
-    const dateInputRef = useRef(null);
 
     const [roster, setRoster] = useState([]);
     const [loading, setLoading] = useState(true); // Initial Load
@@ -21,6 +20,10 @@ export default function RosterPage() {
     const [scheduleData, setScheduleData] = useState([]);
     const [selectedDate, setSelectedDate] = useState(null);
     const [availableDates, setAvailableDates] = useState([]);
+
+    // Calendar Dropdown State
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [viewDate, setViewDate] = useState(new Date()); // Controls the month being viewed
 
     // Stats State
     const [timeWindow, setTimeWindow] = useState('Today');
@@ -529,77 +532,130 @@ export default function RosterPage() {
                                 </svg>
                             </button>
 
-                            <label
-                                className="relative flex items-center gap-2 px-3 py-1 hover:bg-purple-600/30 rounded transition-colors cursor-pointer group"
-                                onClick={(e) => {
-                                    console.log('📅 User clicked Date Picker area');
-                                    console.log('👉 Click Target:', e.target.tagName);
-
-                                    // If clicking directly on the input, native behavior should handle it.
-                                    if (e.target.tagName === 'INPUT') {
-                                        console.log('ℹ️ Clicked directly on INPUT - letting browser handle it.');
-                                        return;
-                                    }
-
-                                    console.log('🔄 Clicked on label/container, attempting to trigger input manually...');
-
-                                    if (dateInputRef.current) {
-                                        // console.log('✅ Ref is valid');
-                                        try {
-                                            if ('showPicker' in HTMLInputElement.prototype) {
-                                                console.log('🚀 Calling showPicker()...');
-                                                dateInputRef.current.showPicker();
-                                            } else {
-                                                console.warn('⚠️ showPicker() API not supported.');
-                                                dateInputRef.current.click(); // Fallback
+                            <div className="relative">
+                                <button
+                                    onClick={() => {
+                                        if (!showDatePicker) {
+                                            // Initialize view to selected date or today
+                                            let initDate = new Date();
+                                            // Adjust to Taiwan time if needed, but local browser time is usually fine for UI logic
+                                            // Use selectedDate to focus the calendar
+                                            if (selectedDate) {
+                                                const [y, m, d] = selectedDate.split('-').map(Number);
+                                                initDate = new Date(y, m - 1, d);
                                             }
-                                        } catch (err) {
-                                            console.error('❌ Error calling showPicker:', err);
+                                            setViewDate(initDate);
                                         }
-                                    } else {
-                                        console.error('❌ dateInputRef.current is NULL');
-                                    }
-                                }}
-                            >
-                                <input
-                                    ref={dateInputRef}
-                                    type="date"
-                                    value={selectedDate || ''}
-                                    min={availableDates.length > 0 ? availableDates[0] : undefined}
-                                    max={availableDates.length > 0 ? availableDates[availableDates.length - 1] : undefined}
-                                    onChange={(e) => {
-                                        const newDate = e.target.value;
-                                        // Simple validation to ensure it's within range
-                                        if (newDate && availableDates.length > 0) {
-                                            if (newDate >= availableDates[0] && newDate <= availableDates[availableDates.length - 1]) {
-                                                setSelectedDate(newDate);
-                                            } else {
-                                                // Ideally show error or snap back, but native picker usually handles min/max
-                                                // Just ignoring out of bounds for now or could alert
-                                                console.log('Date out of bounds');
-                                            }
-                                        }
+                                        setShowDatePicker(!showDatePicker);
                                     }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                />
-                                <svg className="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <span className="text-white font-bold font-mono min-w-[100px] text-center group-hover:text-purple-100 transition-colors relative">
-                                    {selectedDate || date}
-                                </span>
-                                {(() => {
-                                    const now = new Date();
-                                    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-                                    const todayStr = taiwanTime.toISOString().split('T')[0];
-                                    const isToday = selectedDate === todayStr;
-                                    return isToday ? (
-                                        <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30 text-xs font-bold">
-                                            TODAY
-                                        </span>
-                                    ) : null;
-                                })()}
-                            </label>
+                                    className="flex items-center gap-2 px-3 py-1 hover:bg-purple-600/30 rounded transition-colors cursor-pointer group"
+                                >
+                                    <svg className="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="text-white font-bold font-mono min-w-[100px] text-center group-hover:text-purple-100 transition-colors relative">
+                                        {selectedDate || date}
+                                    </span>
+                                    {(() => {
+                                        const now = new Date();
+                                        const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                                        const todayStr = taiwanTime.toISOString().split('T')[0];
+                                        const isToday = selectedDate === todayStr;
+                                        return isToday ? (
+                                            <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30 text-xs font-bold">
+                                                TODAY
+                                            </span>
+                                        ) : null;
+                                    })()}
+                                </button>
+
+                                {showDatePicker && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)} />
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px]">
+                                            {/* Header */}
+                                            <div className="flex justify-between items-center mb-4">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const newDate = new Date(viewDate);
+                                                        newDate.setMonth(newDate.getMonth() - 1);
+                                                        setViewDate(newDate);
+                                                    }}
+                                                    className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                                </button>
+                                                <span className="text-white font-bold text-sm">
+                                                    {viewDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                                </span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const newDate = new Date(viewDate);
+                                                        newDate.setMonth(newDate.getMonth() + 1);
+                                                        setViewDate(newDate);
+                                                    }}
+                                                    className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                                </button>
+                                            </div>
+
+                                            {/* Days Header */}
+                                            <div className="grid grid-cols-7 mb-2">
+                                                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                                                    <div key={d} className="text-center text-xs font-bold text-slate-500">{d}</div>
+                                                ))}
+                                            </div>
+
+                                            {/* Calendar Grid */}
+                                            <div className="grid grid-cols-7 gap-1">
+                                                {/* Empty Cells */}
+                                                {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() }).map((_, i) => (
+                                                    <div key={`empty-${i}`} />
+                                                ))}
+
+                                                {/* Days */}
+                                                {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
+                                                    const day = i + 1;
+                                                    const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                                    const isAvailable = availableDates.includes(dateStr);
+                                                    const isSelected = selectedDate === dateStr;
+
+                                                    const now = new Date();
+                                                    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                                                    const todayStr = taiwanTime.toISOString().split('T')[0];
+                                                    const isToday = dateStr === todayStr;
+
+                                                    return (
+                                                        <button
+                                                            key={dateStr}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (isAvailable) {
+                                                                    setSelectedDate(dateStr);
+                                                                    setShowDatePicker(false);
+                                                                }
+                                                            }}
+                                                            disabled={!isAvailable}
+                                                            className={`
+                                                                h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all
+                                                                ${isSelected ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50 scale-110' : ''}
+                                                                ${!isSelected && isToday ? 'border border-green-500 text-green-400' : ''}
+                                                                ${!isSelected && !isToday && isAvailable ? 'text-slate-300 hover:bg-purple-500/20 hover:text-white' : ''}
+                                                                ${!isAvailable ? 'text-slate-700 cursor-not-allowed opacity-50' : ''}
+                                                            `}
+                                                        >
+                                                            {day}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
                             <button
                                 onClick={() => {
