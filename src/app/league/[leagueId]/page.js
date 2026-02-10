@@ -100,14 +100,18 @@ export default function LeaguePage() {
 
           // Initialize Current Week logic
           if (status === 'post-draft & pre-season' || status === 'in season') {
-            const today = new Date();
+            // Get current date in Taiwan timezone (UTC+8)
+            const now = new Date();
+            const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+
             console.log('🔍 Current Week Calculation:', {
-              today: today.toISOString(),
-              todayLocal: today.toLocaleDateString('en-US'),
+              utcTime: now.toISOString(),
+              taiwanTime: taiwanTime.toISOString(),
+              taiwanLocal: taiwanTime.toLocaleDateString('en-US'),
               scheduleLength: result.schedule?.length
             });
 
-            // Find grid week based on today
+            // Find grid week based on Taiwan time
             let week = 1;
             if (result.schedule && result.schedule.length > 0) {
               const schedule = result.schedule;
@@ -118,28 +122,40 @@ export default function LeaguePage() {
                 week_end: schedule[0].week_end
               });
 
+              // Parse dates in Taiwan timezone for comparison
+              const getDateInTaiwan = (dateStr) => {
+                const date = new Date(dateStr);
+                return new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+              };
+
+              const firstWeekStart = getDateInTaiwan(schedule[0].week_start);
+              const lastWeekEnd = getDateInTaiwan(schedule[schedule.length - 1].week_end);
+
               // If before first week, use week 1
-              if (today < new Date(schedule[0].week_start)) {
+              if (taiwanTime < firstWeekStart) {
                 week = 1;
                 console.log('⏰ Before first week, using week 1');
               }
               // If after last week, use last week
-              else if (today > new Date(schedule[schedule.length - 1].week_end)) {
+              else if (taiwanTime > lastWeekEnd) {
                 week = schedule[schedule.length - 1].week_number;
                 console.log('⏰ After last week, using week:', week);
               }
               // Find current week
               else {
                 const current = schedule.find(w => {
-                  const weekStart = new Date(w.week_start);
-                  const weekEnd = new Date(w.week_end);
-                  const isInRange = today >= weekStart && today <= weekEnd;
+                  const weekStart = getDateInTaiwan(w.week_start);
+                  const weekEnd = getDateInTaiwan(w.week_end);
+                  // Set end of day for week_end comparison
+                  weekEnd.setHours(23, 59, 59, 999);
+                  const isInRange = taiwanTime >= weekStart && taiwanTime <= weekEnd;
 
                   console.log(`Week ${w.week_number}:`, {
                     week_start: w.week_start,
                     week_end: w.week_end,
                     weekStartDate: weekStart.toLocaleDateString('en-US'),
                     weekEndDate: weekEnd.toLocaleDateString('en-US'),
+                    taiwanNow: taiwanTime.toLocaleDateString('en-US'),
                     isInRange
                   });
 
