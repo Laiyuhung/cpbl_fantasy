@@ -532,16 +532,32 @@ export default function RosterPage() {
                             <label
                                 className="relative flex items-center gap-2 px-3 py-1 hover:bg-purple-600/30 rounded transition-colors cursor-pointer group"
                                 onClick={(e) => {
-                                    // Prevent default if it's not the input itself to avoid double trigger
-                                    if (e.target.tagName !== 'INPUT') {
+                                    console.log('📅 User clicked Date Picker area');
+                                    console.log('👉 Click Target:', e.target.tagName);
+
+                                    // If clicking directly on the input, native behavior should handle it.
+                                    if (e.target.tagName === 'INPUT') {
+                                        console.log('ℹ️ Clicked directly on INPUT - letting browser handle it.');
+                                        return;
+                                    }
+
+                                    console.log('🔄 Clicked on label/container, attempting to trigger input manually...');
+
+                                    if (dateInputRef.current) {
+                                        // console.log('✅ Ref is valid');
                                         try {
-                                            if (dateInputRef.current) {
+                                            if ('showPicker' in HTMLInputElement.prototype) {
+                                                console.log('🚀 Calling showPicker()...');
                                                 dateInputRef.current.showPicker();
+                                            } else {
+                                                console.warn('⚠️ showPicker() API not supported.');
+                                                dateInputRef.current.click(); // Fallback
                                             }
                                         } catch (err) {
-                                            // Fallback for browsers that don't support showPicker
-                                            console.log('showPicker not supported', err);
+                                            console.error('❌ Error calling showPicker:', err);
                                         }
+                                    } else {
+                                        console.error('❌ dateInputRef.current is NULL');
                                     }
                                 }}
                             >
