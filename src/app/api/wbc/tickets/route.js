@@ -1,14 +1,25 @@
 import { NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 export async function GET() {
     let browser = null;
 
     try {
-        // Launch browser
+        // Launch browser with serverless chromium for production, local chromium for dev
+        const isProduction = process.env.NODE_ENV === 'production';
+
         browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: isProduction ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'],
+            defaultViewport: chromium.defaultViewport,
+            executablePath: isProduction
+                ? await chromium.executablePath()
+                : process.platform === 'win32'
+                    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+                    : process.platform === 'darwin'
+                        ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+                        : '/usr/bin/google-chrome',
+            headless: chromium.headless,
         });
 
         // Scrape both sites in parallel
