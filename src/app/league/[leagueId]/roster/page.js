@@ -418,13 +418,7 @@ export default function RosterPage() {
 
 
 
-    if (loading) {
-        return (
-            <div className="min-h-[50vh] flex items-center justify-center">
-                <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-        );
-    }
+
 
     if (error) {
         return (
@@ -438,7 +432,7 @@ export default function RosterPage() {
         <div className="relative">
             {/* Blur Overlay Loader */}
             {actionLoading && (
-                <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                <div className="fixed inset-0 z-[1100] bg-black/40 backdrop-blur-sm flex items-center justify-center">
                     <div className="flex flex-col items-center gap-4">
                         <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                         <div className="text-white font-bold tracking-widest animate-pulse">UPDATING ROSTER...</div>
@@ -448,7 +442,7 @@ export default function RosterPage() {
 
             {/* Notification Toast - Centered */}
             {notification && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none">
+                <div className="fixed inset-0 z-[1200] flex items-center justify-center pointer-events-none">
                     <div className="pointer-events-auto animate-fade-in-down">
                         <div className={`px-8 py-6 rounded-2xl shadow-2xl border-2 backdrop-blur-md flex flex-col gap-2 items-center min-w-[400px]
                             ${notification.type === 'success'
@@ -571,8 +565,8 @@ export default function RosterPage() {
 
                                 {showDatePicker && (
                                     <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)} />
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px]">
+                                        <div className="fixed inset-0 z-[890]" onClick={() => setShowDatePicker(false)} />
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[900] bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px]">
                                             {/* Header */}
                                             <div className="flex justify-between items-center mb-4">
                                                 <button
@@ -682,7 +676,12 @@ export default function RosterPage() {
                         <span className="w-2 h-6 bg-pink-500 rounded-full"></span>
                         Batter Roster
                     </h2>
-                    <div className="bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+                        {loading && (
+                            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20">
+                                <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        )}
                         <table className="w-full">
                             <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
@@ -755,7 +754,12 @@ export default function RosterPage() {
                         <span className="w-2 h-6 bg-orange-500 rounded-full"></span>
                         Pitcher Roster
                     </h2>
-                    <div className="bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+                        {loading && (
+                            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20">
+                                <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        )}
                         <table className="w-full">
                             <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
@@ -825,7 +829,7 @@ export default function RosterPage() {
                 <LegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} batterStats={batterStatCategories} pitcherStats={pitcherStatCategories} />
 
                 {showInfoModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowInfoModal(false)}>
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]" onClick={() => setShowInfoModal(false)}>
                         <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-between p-6 border-b border-purple-500/20 flex-shrink-0">
                                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">

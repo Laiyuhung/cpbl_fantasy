@@ -11,7 +11,7 @@ export default function LegendModal({ isOpen, onClose, batterStats = [], pitcher
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70]" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]" onClick={onClose}>
             <div
                 className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-4xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}

@@ -1544,7 +1544,7 @@ export default function PlayersPage() {
       {/* 確認新增對話框 */}
       {
         showConfirmAdd && playerToAdd && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]">
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-purple-500/30 shadow-2xl">
               <h3 className="text-2xl font-bold text-white mb-4">
                 {waiverMode ? 'Claim Waiver Player' : 'Add Player'}
@@ -1617,7 +1617,7 @@ export default function PlayersPage() {
       {/* 確認 DROP 對話框 */}
       {
         showConfirmDrop && playerToDrop && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]">
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-red-500/30 shadow-2xl">
               <h3 className="text-2xl font-bold text-white mb-4">Drop Player</h3>
               <p className="text-red-200 mb-6">
@@ -1660,7 +1660,7 @@ export default function PlayersPage() {
       {/* 成功動畫 */}
       {
         showSuccess && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="fixed inset-0 flex items-center justify-center z-[1200] pointer-events-none">
             <div className={`text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce ${successMessage.startsWith('Player Dropped') ? 'bg-red-600' : 'bg-green-600'}`}>
               <div className="flex items-center gap-3">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1676,7 +1676,7 @@ export default function PlayersPage() {
       {/* 重新載入動畫 */}
       {
         isRefreshing && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[1100]">
             <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-6 shadow-2xl">
               <div className="flex items-center gap-4">
                 <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -1690,7 +1690,7 @@ export default function PlayersPage() {
       {/* 失敗動畫 */}
       {
         showError && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="fixed inset-0 flex items-center justify-center z-[1200] pointer-events-none">
             <div className="bg-red-600 text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce max-w-md mx-4">
               <div className="flex items-center gap-3">
                 <svg className="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1709,7 +1709,7 @@ export default function PlayersPage() {
       {/* 守位資格說明視窗 */}
       {
         showInfoModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowInfoModal(false)}>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]" onClick={() => setShowInfoModal(false)}>
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between p-6 border-b border-purple-500/20 flex-shrink-0">
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -1784,7 +1784,7 @@ export default function PlayersPage() {
       {/* Waiver Success Notification */}
       {
         showWaiverSuccess && (
-          <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+          <div className="fixed top-6 right-6 z-[1200] animate-slide-in-right">
             <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
@@ -1823,7 +1823,7 @@ export default function PlayersPage() {
       {/* Waiver Error Notification */}
       {
         showWaiverError && (
-          <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+          <div className="fixed top-6 right-6 z-[1200] animate-slide-in-right">
             <div className="bg-gradient-to-br from-red-600/95 to-rose-600/95 border border-red-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
@@ -1862,7 +1862,7 @@ export default function PlayersPage() {
       {/* Checking Roster Overlay */}
       {
         checkingAdd && (
-          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="fixed inset-0 z-[1100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
             <div className="flex flex-col items-center gap-4 animate-pulse">
               <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
               <div className="text-blue-200 font-bold tracking-widest text-lg">CHECKING ROSTER ELIGIBILITY...</div>
@@ -1874,7 +1874,7 @@ export default function PlayersPage() {
       {/* Trade Success Notification */}
       {
         showTradeSuccessNotification && (
-          <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+          <div className="fixed top-6 right-6 z-[1200] animate-slide-in-right">
             <div className="bg-gradient-to-br from-green-600/95 to-emerald-600/95 border border-green-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
@@ -1913,7 +1913,7 @@ export default function PlayersPage() {
       {/* Trade Error Notification */}
       {
         showTradeErrorNotification && (
-          <div className="fixed top-6 right-6 z-[60] animate-slide-in-right">
+          <div className="fixed top-6 right-6 z-[1200] animate-slide-in-right">
             <div className="bg-gradient-to-br from-red-600/95 to-rose-600/95 border border-red-400/30 rounded-2xl shadow-2xl p-6 max-w-md transform transition-all duration-300">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
