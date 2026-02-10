@@ -8,6 +8,7 @@ import MoveModal from './MoveModal';
 export default function RosterPage() {
     const params = useParams();
     const leagueId = params.leagueId;
+    const dateInputRef = useRef(null);
 
     const [roster, setRoster] = useState([]);
     const [loading, setLoading] = useState(true); // Initial Load
@@ -528,8 +529,24 @@ export default function RosterPage() {
                                 </svg>
                             </button>
 
-                            <div className="relative flex items-center gap-2 px-3 py-1 hover:bg-purple-600/30 rounded transition-colors cursor-pointer group">
+                            <label
+                                className="relative flex items-center gap-2 px-3 py-1 hover:bg-purple-600/30 rounded transition-colors cursor-pointer group"
+                                onClick={(e) => {
+                                    // Prevent default if it's not the input itself to avoid double trigger
+                                    if (e.target.tagName !== 'INPUT') {
+                                        try {
+                                            if (dateInputRef.current) {
+                                                dateInputRef.current.showPicker();
+                                            }
+                                        } catch (err) {
+                                            // Fallback for browsers that don't support showPicker
+                                            console.log('showPicker not supported', err);
+                                        }
+                                    }
+                                }}
+                            >
                                 <input
+                                    ref={dateInputRef}
                                     type="date"
                                     value={selectedDate || ''}
                                     min={availableDates.length > 0 ? availableDates[0] : undefined}
@@ -566,7 +583,7 @@ export default function RosterPage() {
                                         </span>
                                     ) : null;
                                 })()}
-                            </div>
+                            </label>
 
                             <button
                                 onClick={() => {
