@@ -20,6 +20,7 @@ export default function RosterPage() {
     const [scheduleData, setScheduleData] = useState([]);
     const [selectedDate, setSelectedDate] = useState(null);
     const [availableDates, setAvailableDates] = useState([]);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     // Stats State
     const [timeWindow, setTimeWindow] = useState('Today');
@@ -121,15 +122,6 @@ export default function RosterPage() {
             const managerId = cookie?.split('=')[1];
             if (!managerId) return;
 
-            console.log('='.repeat(80));
-            console.log('🎯 [Frontend] Roster Move Request');
-            console.log('Player ID:', playerToMove.player_id);
-            console.log('Player Name:', playerToMove.name);
-            console.log('Current Position:', playerToMove.position);
-            console.log('Target Position:', targetPos);
-            console.log('Game Date:', selectedDate);
-            console.log('⚠️  This will update roster for dates >= ' + selectedDate);
-            console.log('='.repeat(80));
 
             const res = await fetch(`/api/league/${leagueId}/roster/move`, {
                 method: 'POST',
@@ -146,9 +138,6 @@ export default function RosterPage() {
 
             const data = await res.json();
 
-            console.log('='.repeat(80));
-            console.log('📡 [Frontend] API Response:', data);
-            console.log('='.repeat(80));
 
             if (data.success) {
                 // Construct Success Message
@@ -174,14 +163,9 @@ export default function RosterPage() {
                     }
                 }
 
-                console.log('✅ [Frontend] Move successful, refreshing roster...');
-                setNotification({ type: 'success', message: msg, details });
-                setTimeout(() => setNotification(null), 5000); // Auto dismiss
-
                 await refreshRoster(); // Wait for refresh
-                console.log('✅ [Frontend] Roster refreshed successfully');
             } else {
-                console.error('❌ [Frontend] Move failed:', data.error);
+                console.error(data.error);
                 setError(data.error || 'Move failed');
                 setActionLoading(false);
                 setPlayerToMove(null);
@@ -189,7 +173,7 @@ export default function RosterPage() {
             }
 
         } catch (err) {
-            console.error('❌ [Frontend] System Error:', err);
+            console.error(err);
             setActionLoading(false);
             setError('System Error');
             setTimeout(() => setError(''), 3000);
@@ -226,16 +210,28 @@ export default function RosterPage() {
                         const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
                         const todayStr = taiwanTime.toISOString().split('T')[0];
 
+                        console.log('='.repeat(80));
+                        console.log('📅 [Roster] Date Initialization');
+                        console.log('UTC Time:', now.toISOString());
+                        console.log('Taiwan Time (UTC+8):', taiwanTime.toISOString());
+                        console.log('Today (Taiwan):', todayStr);
+                        console.log('Available Dates Range:', dates[0], 'to', dates[dates.length - 1]);
+                        console.log('Total Available Dates:', dates.length);
+
                         // Check if today is within available dates
                         if (dates.includes(todayStr)) {
+                            console.log('✅ Today is within season, using:', todayStr);
                             setSelectedDate(todayStr);
                         } else if (todayStr < dates[0]) {
                             // Before season, use first date
+                            console.log('⚠️  Today is before season, using first date:', dates[0]);
                             setSelectedDate(dates[0]);
                         } else {
                             // After season, use last date
+                            console.log('⚠️  Today is after season, using last date:', dates[dates.length - 1]);
                             setSelectedDate(dates[dates.length - 1]);
                         }
+                        console.log('='.repeat(80));
                     }
                 }
             } catch (err) {
@@ -517,7 +513,6 @@ export default function RosterPage() {
                         </button>
                         {/* Date Selector */}
                         <div className="flex items-center gap-2 bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-500/30">
-                            <span className="text-purple-200 font-mono text-sm">Game Date:</span>
                             <button
                                 onClick={() => {
                                     const currentIndex = availableDates.indexOf(selectedDate);
@@ -533,7 +528,13 @@ export default function RosterPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                 </svg>
                             </button>
-                            <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setShowDatePicker(true)}
+                                className="flex items-center gap-2 px-3 py-1 hover:bg-purple-600/30 rounded transition-colors cursor-pointer"
+                            >
+                                <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
                                 <span className="text-white font-bold font-mono min-w-[100px] text-center">
                                     {selectedDate || date}
                                 </span>
@@ -548,7 +549,7 @@ export default function RosterPage() {
                                         </span>
                                     ) : null;
                                 })()}
-                            </div>
+                            </button>
                             <button
                                 onClick={() => {
                                     const currentIndex = availableDates.indexOf(selectedDate);
@@ -565,6 +566,67 @@ export default function RosterPage() {
                                 </svg>
                             </button>
                         </div>
+
+                        {/* Date Picker Modal */}
+                        {showDatePicker && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowDatePicker(false)}>
+                                <div className="bg-slate-800 rounded-2xl shadow-2xl border border-purple-500/30 p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Select Game Date</h3>
+                                        <button onClick={() => setShowDatePicker(false)} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {scheduleData.map((week, idx) => {
+                                            const weekStart = new Date(week.week_start);
+                                            const weekEnd = new Date(week.week_end);
+                                            const weekDates = [];
+                                            for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
+                                                weekDates.push(new Date(d).toISOString().split('T')[0]);
+                                            }
+
+                                            return (
+                                                <div key={idx} className="bg-slate-900/50 rounded-xl p-4 border border-purple-500/20">
+                                                    <div className="text-sm font-bold text-purple-300 mb-3">
+                                                        {week.week_label || `Week ${week.week_number}`} ({week.week_type})
+                                                    </div>
+                                                    <div className="grid grid-cols-7 gap-2">
+                                                        {weekDates.map(dateStr => {
+                                                            const isSelected = dateStr === selectedDate;
+                                                            const now = new Date();
+                                                            const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                                                            const todayStr = taiwanTime.toISOString().split('T')[0];
+                                                            const isToday = dateStr === todayStr;
+
+                                                            return (
+                                                                <button
+                                                                    key={dateStr}
+                                                                    onClick={() => {
+                                                                        setSelectedDate(dateStr);
+                                                                        setShowDatePicker(false);
+                                                                    }}
+                                                                    className={`px-3 py-2 rounded-lg font-mono text-sm transition-all ${isSelected
+                                                                        ? 'bg-purple-600 text-white font-bold ring-2 ring-purple-400'
+                                                                        : isToday
+                                                                            ? 'bg-green-600/30 text-green-300 border border-green-500/50 hover:bg-green-600/50'
+                                                                            : 'bg-slate-700/50 text-slate-300 hover:bg-purple-600/30 hover:text-white'
+                                                                        }`}
+                                                                >
+                                                                    {dateStr.split('-')[2]}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
