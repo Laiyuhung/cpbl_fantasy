@@ -101,24 +101,60 @@ export default function LeaguePage() {
           // Initialize Current Week logic
           if (status === 'post-draft & pre-season' || status === 'in season') {
             const today = new Date();
+            console.log('🔍 Current Week Calculation:', {
+              today: today.toISOString(),
+              todayLocal: today.toLocaleDateString('en-US'),
+              scheduleLength: result.schedule?.length
+            });
+
             // Find grid week based on today
             let week = 1;
             if (result.schedule && result.schedule.length > 0) {
               const schedule = result.schedule;
+
+              console.log('📅 First Week:', {
+                week_number: schedule[0].week_number,
+                week_start: schedule[0].week_start,
+                week_end: schedule[0].week_end
+              });
+
               // If before first week, use week 1
               if (today < new Date(schedule[0].week_start)) {
                 week = 1;
+                console.log('⏰ Before first week, using week 1');
               }
               // If after last week, use last week
               else if (today > new Date(schedule[schedule.length - 1].week_end)) {
                 week = schedule[schedule.length - 1].week_number;
+                console.log('⏰ After last week, using week:', week);
               }
               // Find current week
               else {
-                const current = schedule.find(w => today >= new Date(w.week_start) && today <= new Date(w.week_end));
-                if (current) week = current.week_number;
+                const current = schedule.find(w => {
+                  const weekStart = new Date(w.week_start);
+                  const weekEnd = new Date(w.week_end);
+                  const isInRange = today >= weekStart && today <= weekEnd;
+
+                  console.log(`Week ${w.week_number}:`, {
+                    week_start: w.week_start,
+                    week_end: w.week_end,
+                    weekStartDate: weekStart.toLocaleDateString('en-US'),
+                    weekEndDate: weekEnd.toLocaleDateString('en-US'),
+                    isInRange
+                  });
+
+                  return isInRange;
+                });
+
+                if (current) {
+                  week = current.week_number;
+                  console.log('✅ Found current week:', week);
+                } else {
+                  console.log('⚠️ No matching week found, defaulting to week 1');
+                }
               }
             }
+            console.log('🎯 Final selected week:', week);
             setCurrentWeek(week);
             // Fetch matchups for this default week will be triggered by another effect or called here
             fetchMatchups(week);
