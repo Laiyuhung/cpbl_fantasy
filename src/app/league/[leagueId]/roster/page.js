@@ -113,12 +113,23 @@ export default function RosterPage() {
         if (!playerToMove) return;
 
         setShowMoveModal(false);
+        setNotification(null); // Clear any existing notification
         setActionLoading(true); // Blur ON
 
         try {
             const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
             const managerId = cookie?.split('=')[1];
             if (!managerId) return;
+
+            console.log('='.repeat(80));
+            console.log('🎯 [Frontend] Roster Move Request');
+            console.log('Player ID:', playerToMove.player_id);
+            console.log('Player Name:', playerToMove.name);
+            console.log('Current Position:', playerToMove.position);
+            console.log('Target Position:', targetPos);
+            console.log('Game Date:', selectedDate);
+            console.log('⚠️  This will update roster for dates >= ' + selectedDate);
+            console.log('='.repeat(80));
 
             const res = await fetch(`/api/league/${leagueId}/roster/move`, {
                 method: 'POST',
@@ -134,6 +145,11 @@ export default function RosterPage() {
             });
 
             const data = await res.json();
+
+            console.log('='.repeat(80));
+            console.log('📡 [Frontend] API Response:', data);
+            console.log('='.repeat(80));
+
             if (data.success) {
                 // Construct Success Message
                 const updates = data.updates || [];
@@ -158,11 +174,14 @@ export default function RosterPage() {
                     }
                 }
 
+                console.log('✅ [Frontend] Move successful, refreshing roster...');
                 setNotification({ type: 'success', message: msg, details });
                 setTimeout(() => setNotification(null), 5000); // Auto dismiss
 
                 await refreshRoster(); // Wait for refresh
+                console.log('✅ [Frontend] Roster refreshed successfully');
             } else {
+                console.error('❌ [Frontend] Move failed:', data.error);
                 setError(data.error || 'Move failed');
                 setActionLoading(false);
                 setPlayerToMove(null);
@@ -170,7 +189,7 @@ export default function RosterPage() {
             }
 
         } catch (err) {
-            console.error(err);
+            console.error('❌ [Frontend] System Error:', err);
             setActionLoading(false);
             setError('System Error');
             setTimeout(() => setError(''), 3000);
@@ -428,36 +447,38 @@ export default function RosterPage() {
                 </div>
             )}
 
-            {/* Notification Toast */}
+            {/* Notification Toast - Centered */}
             {notification && (
-                <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-[70] animate-fade-in-down">
-                    <div className={`px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-md flex flex-col gap-1 items-center
-                        ${notification.type === 'success'
-                            ? 'bg-green-900/80 border-green-500/50 text-white'
-                            : 'bg-red-900/80 border-red-500/50 text-white'}
-                    `}>
-                        <div className="flex items-center gap-3">
-                            {notification.type === 'success' ? (
-                                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-300">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                </div>
-                            ) : (
-                                <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-300">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                <div className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none">
+                    <div className="pointer-events-auto animate-fade-in-down">
+                        <div className={`px-8 py-6 rounded-2xl shadow-2xl border-2 backdrop-blur-md flex flex-col gap-2 items-center min-w-[400px]
+                            ${notification.type === 'success'
+                                ? 'bg-green-900/90 border-green-500/70 text-white'
+                                : 'bg-red-900/90 border-red-500/70 text-white'}
+                        `}>
+                            <div className="flex items-center gap-4">
+                                {notification.type === 'success' ? (
+                                    <div className="w-12 h-12 rounded-full bg-green-500/30 flex items-center justify-center text-green-300">
+                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                    </div>
+                                ) : (
+                                    <div className="w-12 h-12 rounded-full bg-red-500/30 flex items-center justify-center text-red-300">
+                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </div>
+                                )}
+                                <span className="font-bold text-2xl tracking-wide">{notification.message}</span>
+                            </div>
+                            {notification.details && notification.details.length > 0 && (
+                                <div className="mt-3 space-y-2 w-full border-t border-white/20 pt-3">
+                                    {notification.details.map((line, idx) => (
+                                        <div key={idx} className="text-base font-mono opacity-90 flex items-center gap-3">
+                                            <span className="w-2 h-2 rounded-full bg-white/60"></span>
+                                            {line}
+                                        </div>
+                                    ))}
                                 </div>
                             )}
-                            <span className="font-bold text-lg tracking-wide">{notification.message}</span>
                         </div>
-                        {notification.details && notification.details.length > 0 && (
-                            <div className="mt-2 space-y-1 w-full border-t border-white/10 pt-2">
-                                {notification.details.map((line, idx) => (
-                                    <div key={idx} className="text-sm font-mono opacity-90 flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-white/50"></span>
-                                        {line}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </div>
             )}

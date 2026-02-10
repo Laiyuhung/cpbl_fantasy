@@ -12,7 +12,13 @@ export async function POST(request, { params }) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
         }
 
-        console.log(`[MoveRoster] Request: Player ${playerId} (${currentPosition} -> ${targetPosition}) on >= ${gameDate}`);
+        console.log('='.repeat(80));
+        console.log(`[MoveRoster] 🎯 Request Received`);
+        console.log(`[MoveRoster] Player: ${playerId}`);
+        console.log(`[MoveRoster] Position Change: ${currentPosition} -> ${targetPosition}`);
+        console.log(`[MoveRoster] Game Date: ${gameDate}`);
+        console.log(`[MoveRoster] ⚠️  Will update ALL dates >= ${gameDate}`);
+        console.log('='.repeat(80));
 
         // --- 1. Fetch League Settings (for limits) ---
         let naLimit = 0;
@@ -186,8 +192,15 @@ export async function POST(request, { params }) {
         }
 
         // --- 6. Execute Updates ---
-        // Apply to >= gameDate
+        // Apply to >= gameDate (IMPORTANT: This does NOT affect dates before gameDate)
+        console.log('\n' + '='.repeat(80));
+        console.log(`[MoveRoster] 📝 Executing Updates for dates >= ${gameDate}`);
+        console.log(`[MoveRoster] Updates to apply:`, updates);
+        console.log('='.repeat(80));
+
         for (const update of updates) {
+            console.log(`[MoveRoster] Updating ${update.player_id} to position ${update.new_position} for dates >= ${gameDate}`);
+
             const { error: updateError } = await supabase
                 .from('league_roster_positions')
                 .update({ position: update.new_position })
@@ -197,10 +210,17 @@ export async function POST(request, { params }) {
                 .gte('game_date', gameDate);
 
             if (updateError) {
-                console.error('Update Validation Error:', updateError);
+                console.error('❌ Update Error:', updateError);
                 return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
             }
+
+            console.log(`[MoveRoster] ✅ Successfully updated ${update.player_id}`);
         }
+
+        console.log('='.repeat(80));
+        console.log(`[MoveRoster] ✅ All updates completed successfully`);
+        console.log(`[MoveRoster] 🔒 Dates before ${gameDate} remain unchanged`);
+        console.log('='.repeat(80) + '\n');
 
         return NextResponse.json({ success: true, updates });
 
