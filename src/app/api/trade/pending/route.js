@@ -107,8 +107,8 @@ export async function GET(request) {
       .from('pending_trade')
       .select(`
         *,
-        initiator:managers!fk_pending_trade_initiator (nickname),
-        recipient:managers!fk_pending_trade_recipient (nickname)
+        initiator:managers!fk_pending_trade_initiator (name),
+        recipient:managers!fk_pending_trade_recipient (name)
       `) // Assuming nickname is in managers table. Join syntax might vary based on Supabase setup, but fk names help.
       // If foreign keys are set up correctly, Supabase can join.
       // The user provided FK names: fk_pending_trade_initiator, fk_pending_trade_recipient.
