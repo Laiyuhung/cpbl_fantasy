@@ -142,14 +142,37 @@ export async function GET(request) {
       const ids = Array.from(playerIds);
 
       if (ids.length > 0) {
+        // Fetch basic info from player_list
         const { data: playersData, error: playersError } = await supabase
-          .from('players')
-          .select('player_id, name, team, position, name_en')
+          .from('player_list')
+          .select('player_id, name, team, batter_or_pitcher')
+          .in('player_id', ids);
+
+        // Fetch positions from views
+        const { data: batterPos, error: bError } = await supabase
+          .from('v_batter_positions')
+          .select('player_id, position_list')
+          .in('player_id', ids);
+
+        const { data: pitcherPos, error: pError } = await supabase
+          .from('v_pitcher_positions')
+          .select('player_id, position_list')
           .in('player_id', ids);
 
         if (playersData) {
           const playerMap = {};
-          playersData.forEach(p => playerMap[p.player_id] = p);
+          const posMap = {};
+
+          if (batterPos) batterPos.forEach(p => posMap[p.player_id] = p.position_list);
+          if (pitcherPos) pitcherPos.forEach(p => posMap[p.player_id] = p.position_list);
+
+          playersData.forEach(p => {
+            let pos = posMap[p.player_id];
+            if (!pos) {
+              pos = p.batter_or_pitcher === 'pitcher' ? 'P' : 'Util';
+            }
+            playerMap[p.player_id] = { ...p, position: pos };
+          });
 
           trades.forEach(t => {
             t.initiator_players = (t.initiator_player_ids || []).map(id => playerMap[id] || { player_id: id, name: 'Unknown' });
