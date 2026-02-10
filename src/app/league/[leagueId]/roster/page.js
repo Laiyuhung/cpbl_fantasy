@@ -432,7 +432,7 @@ export default function RosterPage() {
         <div className="relative">
             {/* Blur Overlay Loader */}
             {actionLoading && (
-                <div className="fixed inset-0 z-[1100] bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                <div className="fixed inset-0 z-[100010] bg-black/40 backdrop-blur-sm flex items-center justify-center">
                     <div className="flex flex-col items-center gap-4">
                         <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                         <div className="text-white font-bold tracking-widest animate-pulse">UPDATING ROSTER...</div>
@@ -442,7 +442,7 @@ export default function RosterPage() {
 
             {/* Notification Toast - Centered */}
             {notification && (
-                <div className="fixed inset-0 z-[1200] flex items-center justify-center pointer-events-none">
+                <div className="fixed inset-0 z-[100020] flex items-center justify-center pointer-events-none">
                     <div className="pointer-events-auto animate-fade-in-down">
                         <div className={`px-8 py-6 rounded-2xl shadow-2xl border-2 backdrop-blur-md flex flex-col gap-2 items-center min-w-[400px]
                             ${notification.type === 'success'
@@ -829,7 +829,7 @@ export default function RosterPage() {
                 <LegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} batterStats={batterStatCategories} pitcherStats={pitcherStatCategories} />
 
                 {showInfoModal && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]" onClick={() => setShowInfoModal(false)}>
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100000]" onClick={() => setShowInfoModal(false)}>
                         <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-between p-6 border-b border-purple-500/20 flex-shrink-0">
                                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
