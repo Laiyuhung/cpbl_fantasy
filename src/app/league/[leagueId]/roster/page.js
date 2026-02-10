@@ -16,6 +16,11 @@ export default function RosterPage() {
     const [notification, setNotification] = useState(null); // { type: 'success'|'error', message: '', details: [] }
     const [date, setDate] = useState('');
 
+    // Date Selector State
+    const [scheduleData, setScheduleData] = useState([]);
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [availableDates, setAvailableDates] = useState([]);
+
     // Stats State
     const [timeWindow, setTimeWindow] = useState('Today');
     const [playerStats, setPlayerStats] = useState({});
@@ -81,15 +86,15 @@ export default function RosterPage() {
     const refreshRoster = async () => {
         const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
         const managerId = cookie?.split('=')[1];
-        if (!managerId) return;
+        if (!managerId || !selectedDate) return;
 
         // Note: We don't verify success here, handled in try/catch if needed, but simple fetch is fine
         try {
-            const res = await fetch(`/api/league/${leagueId}/roster?manager_id=${managerId}`);
+            const res = await fetch(`/api/league/${leagueId}/roster?manager_id=${managerId}&game_date=${selectedDate}`);
             const data = await res.json();
             if (data.success) {
                 setRoster(data.roster || []);
-                setDate(data.date);
+                setDate(data.date || selectedDate);
             }
         } catch (e) { console.error(e); }
         // Turn off loaders
@@ -172,14 +177,66 @@ export default function RosterPage() {
         }
     };
 
-    // Initial Load
+    // Fetch Schedule and Initialize Date
     useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                const response = await fetch(`/api/league/${leagueId}`);
+                const result = await response.json();
+
+                if (result.success && result.schedule) {
+                    setScheduleData(result.schedule);
+
+                    // Calculate all available dates from schedule
+                    const dates = [];
+                    result.schedule.forEach(week => {
+                        const start = new Date(week.week_start);
+                        const end = new Date(week.week_end);
+
+                        // Generate all dates in this week
+                        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                            dates.push(new Date(d).toISOString().split('T')[0]);
+                        }
+                    });
+
+                    setAvailableDates(dates);
+
+                    // Initialize selected date to today in Taiwan timezone
+                    if (dates.length > 0) {
+                        const now = new Date();
+                        const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                        const todayStr = taiwanTime.toISOString().split('T')[0];
+
+                        // Check if today is within available dates
+                        if (dates.includes(todayStr)) {
+                            setSelectedDate(todayStr);
+                        } else if (todayStr < dates[0]) {
+                            // Before season, use first date
+                            setSelectedDate(dates[0]);
+                        } else {
+                            // After season, use last date
+                            setSelectedDate(dates[dates.length - 1]);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to fetch schedule:', err);
+            }
+        };
+
+        fetchSchedule();
+    }, [leagueId]);
+
+    // Initial Load - fetch roster when selectedDate is set
+    useEffect(() => {
+        if (!selectedDate) return;
+
         const init = async () => {
             await refreshRoster();
             setLoading(false);
         };
         init();
-    }, [leagueId]);
+    }, [leagueId, selectedDate]);
 
     // Settings
     useEffect(() => {
@@ -435,8 +492,42 @@ export default function RosterPage() {
                         >
                             POS RULES
                         </button>
-                        <div className="text-purple-200 font-mono bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-500/30">
-                            Game Date: <span className="text-white font-bold">{date}</span>
+                        {/* Date Selector */}
+                        <div className="flex items-center gap-2 bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-500/30">
+                            <span className="text-purple-200 font-mono text-sm">Game Date:</span>
+                            <button
+                                onClick={() => {
+                                    const currentIndex = availableDates.indexOf(selectedDate);
+                                    if (currentIndex > 0) {
+                                        setSelectedDate(availableDates[currentIndex - 1]);
+                                    }
+                                }}
+                                disabled={!selectedDate || availableDates.indexOf(selectedDate) === 0}
+                                className="p-1 rounded bg-purple-600/50 hover:bg-purple-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white transition-colors"
+                                title="Previous Day"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <span className="text-white font-bold font-mono min-w-[100px] text-center">
+                                {selectedDate || date}
+                            </span>
+                            <button
+                                onClick={() => {
+                                    const currentIndex = availableDates.indexOf(selectedDate);
+                                    if (currentIndex < availableDates.length - 1) {
+                                        setSelectedDate(availableDates[currentIndex + 1]);
+                                    }
+                                }}
+                                disabled={!selectedDate || availableDates.indexOf(selectedDate) === availableDates.length - 1}
+                                className="p-1 rounded bg-purple-600/50 hover:bg-purple-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white transition-colors"
+                                title="Next Day"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>

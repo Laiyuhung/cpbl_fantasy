@@ -102,12 +102,13 @@ export default function LeaguePage() {
           if (status === 'post-draft & pre-season' || status === 'in season') {
             // Get current date in Taiwan timezone (UTC+8)
             const now = new Date();
-            const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+            // Convert to Taiwan time by adding 8 hours to UTC
+            const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
 
             console.log('🔍 Current Week Calculation:', {
               utcTime: now.toISOString(),
               taiwanTime: taiwanTime.toISOString(),
-              taiwanLocal: taiwanTime.toLocaleDateString('en-US'),
+              taiwanLocal: taiwanTime.toLocaleString('en-US', { timeZone: 'UTC' }),
               scheduleLength: result.schedule?.length
             });
 
@@ -122,10 +123,11 @@ export default function LeaguePage() {
                 week_end: schedule[0].week_end
               });
 
-              // Parse dates in Taiwan timezone for comparison
+              // Parse dates and convert to Taiwan timezone for comparison
               const getDateInTaiwan = (dateStr) => {
                 const date = new Date(dateStr);
-                return new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+                // Add 8 hours to convert UTC to Taiwan time
+                return new Date(date.getTime() + (8 * 60 * 60 * 1000));
               };
 
               const firstWeekStart = getDateInTaiwan(schedule[0].week_start);
@@ -147,15 +149,15 @@ export default function LeaguePage() {
                   const weekStart = getDateInTaiwan(w.week_start);
                   const weekEnd = getDateInTaiwan(w.week_end);
                   // Set end of day for week_end comparison
-                  weekEnd.setHours(23, 59, 59, 999);
+                  weekEnd.setUTCHours(23, 59, 59, 999);
                   const isInRange = taiwanTime >= weekStart && taiwanTime <= weekEnd;
 
                   console.log(`Week ${w.week_number}:`, {
                     week_start: w.week_start,
                     week_end: w.week_end,
-                    weekStartDate: weekStart.toLocaleDateString('en-US'),
-                    weekEndDate: weekEnd.toLocaleDateString('en-US'),
-                    taiwanNow: taiwanTime.toLocaleDateString('en-US'),
+                    weekStartTaiwan: weekStart.toISOString(),
+                    weekEndTaiwan: weekEnd.toISOString(),
+                    taiwanNow: taiwanTime.toISOString(),
                     isInRange
                   });
 
