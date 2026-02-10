@@ -434,24 +434,17 @@ export default function LeaguePage() {
                     </div>
 
                     {/* Main Content */}
-                    <div className="p-8">
-                      <div className="flex items-center justify-between gap-8">
+                    <div className="p-6">
+                      <div className="flex items-center justify-between gap-6">
                         {/* Team A */}
                         <div className="flex-1">
-                          <div className="flex items-center gap-4">
-                            {/* Team Avatar/Icon */}
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-2 border-purple-500/30 flex items-center justify-center">
-                              <span className="text-2xl font-black text-purple-300">
-                                {managerA?.nickname?.charAt(0)?.toUpperCase() || '?'}
-                              </span>
-                            </div>
-
+                          <div className="flex items-center justify-between gap-3">
                             {/* Team Info */}
                             <div className="flex-1">
-                              <div className="text-xl font-black text-white mb-1 group-hover:text-purple-300 transition-colors">
+                              <div className="text-lg font-black text-white group-hover:text-purple-300 transition-colors">
                                 {managerA?.nickname || 'Unknown'}
                               </div>
-                              <div className="text-sm text-slate-400 font-medium">
+                              <div className="text-xs text-slate-400 font-medium mt-0.5">
                                 {managerA?.managers?.name}
                               </div>
                             </div>
@@ -459,9 +452,9 @@ export default function LeaguePage() {
                             {/* Score A */}
                             {hasStarted && (
                               <div className="text-right">
-                                <div className={`text-5xl font-black tabular-nums ${scoreA > scoreB ? 'text-green-400' :
-                                    scoreA < scoreB ? 'text-slate-500' :
-                                      'text-cyan-300'
+                                <div className={`text-4xl font-black tabular-nums ${scoreA > scoreB ? 'text-green-400' :
+                                  scoreA < scoreB ? 'text-slate-500' :
+                                    'text-cyan-300'
                                   }`}>
                                   {scoreA.toFixed(1)}
                                 </div>
@@ -471,31 +464,24 @@ export default function LeaguePage() {
                         </div>
 
                         {/* VS Divider */}
-                        <div className="flex flex-col items-center px-6">
-                          <div className="w-px h-20 bg-gradient-to-b from-transparent via-purple-500/50 to-transparent"></div>
+                        <div className="flex flex-col items-center px-4">
+                          <div className="w-px h-16 bg-gradient-to-b from-transparent via-purple-500/50 to-transparent"></div>
                           <div className="absolute">
-                            <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-purple-500/30 flex items-center justify-center">
-                              <span className="text-sm font-black text-purple-400 uppercase tracking-wider">VS</span>
+                            <div className="w-10 h-10 rounded-full bg-slate-900 border-2 border-purple-500/30 flex items-center justify-center">
+                              <span className="text-xs font-black text-purple-400 uppercase tracking-wider">VS</span>
                             </div>
                           </div>
                         </div>
 
                         {/* Team B */}
                         <div className="flex-1">
-                          <div className="flex items-center gap-4 flex-row-reverse">
-                            {/* Team Avatar/Icon */}
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/30 flex items-center justify-center">
-                              <span className="text-2xl font-black text-cyan-300">
-                                {managerB?.nickname?.charAt(0)?.toUpperCase() || '?'}
-                              </span>
-                            </div>
-
+                          <div className="flex items-center justify-between gap-3 flex-row-reverse">
                             {/* Team Info */}
                             <div className="flex-1 text-right">
-                              <div className="text-xl font-black text-white mb-1 group-hover:text-cyan-300 transition-colors">
+                              <div className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors">
                                 {managerB?.nickname || 'Unknown'}
                               </div>
-                              <div className="text-sm text-slate-400 font-medium">
+                              <div className="text-xs text-slate-400 font-medium mt-0.5">
                                 {managerB?.managers?.name}
                               </div>
                             </div>
@@ -503,9 +489,9 @@ export default function LeaguePage() {
                             {/* Score B */}
                             {hasStarted && (
                               <div className="text-left">
-                                <div className={`text-5xl font-black tabular-nums ${scoreB > scoreA ? 'text-green-400' :
-                                    scoreB < scoreA ? 'text-slate-500' :
-                                      'text-cyan-300'
+                                <div className={`text-4xl font-black tabular-nums ${scoreB > scoreA ? 'text-green-400' :
+                                  scoreB < scoreA ? 'text-slate-500' :
+                                    'text-cyan-300'
                                   }`}>
                                   {scoreB.toFixed(1)}
                                 </div>
