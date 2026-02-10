@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
 import MoveModal from './MoveModal';
+import MyTradesModal from '../../../../components/MyTradesModal';
 
 export default function RosterPage() {
     const params = useParams();
@@ -40,6 +41,12 @@ export default function RosterPage() {
     const [showLegendModal, setShowLegendModal] = useState(false);
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [playerToMove, setPlayerToMove] = useState(null);
+
+    // Trade State
+    const [showMyTradesModal, setShowMyTradesModal] = useState(false);
+    const [tradeEndDate, setTradeEndDate] = useState(null);
+    const [myManagerId, setMyManagerId] = useState(null);
+    const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
 
     // Helpers
     const parseStatName = (stat) => {
@@ -185,6 +192,11 @@ export default function RosterPage() {
 
     // Fetch Schedule and Initialize Date
     useEffect(() => {
+        // Get Manager ID
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+        const id = cookie?.split('=')[1];
+        if (id) setMyManagerId(id);
+
         const fetchSchedule = async () => {
             try {
                 const response = await fetch(`/api/league/${leagueId}`);
@@ -192,6 +204,17 @@ export default function RosterPage() {
 
                 if (result.success && result.schedule) {
                     setScheduleData(result.schedule);
+                    if (result.league) {
+                        setTradeEndDate(result.league.trade_end_date);
+                        // Try to parse season year from start_scoring_on if needed, default to current logic
+                        if (result.league.start_scoring_on) {
+                            const parts = result.league.start_scoring_on.split('.');
+                            if (parts.length > 0) {
+                                const parsedYear = parseInt(parts[0]);
+                                if (!isNaN(parsedYear)) setSeasonYear(parsedYear);
+                            }
+                        }
+                    }
 
                     // Calculate all available dates from schedule
                     const dates = [];
@@ -420,6 +443,34 @@ export default function RosterPage() {
 
 
 
+    const isTradeDeadlinePassed = () => {
+        if (!tradeEndDate || tradeEndDate.trim().toLowerCase() === 'no trade deadline') {
+            console.log('Trade Deadline Check: No deadline set');
+            return false;
+        }
+
+        try {
+            const trimmedDate = tradeEndDate.trim();
+            let dateStr = trimmedDate;
+            if (!/\d{4}/.test(trimmedDate)) {
+                dateStr = `${trimmedDate}, ${seasonYear}`;
+            }
+
+            const deadline = new Date(dateStr);
+            if (isNaN(deadline.getTime())) return false;
+
+            deadline.setHours(23, 59, 59, 999);
+            const now = new Date();
+            const passed = now > deadline;
+
+            console.log(`Trade Deadline Check: ${passed ? 'Passed' : 'Active'} (Deadline: ${deadline.toISOString()}, Now: ${now.toISOString()})`);
+            return passed;
+        } catch (e) {
+            console.error('Error checking trade deadline:', e);
+            return false;
+        }
+    };
+
     if (error) {
         return (
             <div className="p-8 text-center text-red-300 bg-red-900/20 rounded-xl border border-red-500/30 mx-8 mt-8">
@@ -496,6 +547,14 @@ export default function RosterPage() {
                             <option value="2025 Season">2025 Season</option>
                         </select>
                         {/* Other buttons updated with shorter syntax for brevity but functionally same */}
+                        {!isTradeDeadlinePassed() && (
+                            <button
+                                onClick={() => setShowMyTradesModal(true)}
+                                className="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                            >
+                                MY TRADES
+                            </button>
+                        )}
                         <button
                             onClick={() => setShowLegendModal(true)}
                             className="px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
@@ -908,6 +967,13 @@ export default function RosterPage() {
                     rosterPositionsConfig={rosterPositionsConfig}
                     foreignerActiveLimit={foreignerActiveLimit}
                     onMove={handleMovePlayer}
+                />
+
+                <MyTradesModal
+                    isOpen={showMyTradesModal}
+                    onClose={() => setShowMyTradesModal(false)}
+                    leagueId={leagueId}
+                    managerId={myManagerId}
                 />
             </div>
         </div>
