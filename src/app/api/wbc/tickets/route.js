@@ -1,38 +1,45 @@
 import { NextResponse } from 'next/server';
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
+import * as cheerio from 'cheerio';
+
+// Vercel serverless function configuration
+export const maxDuration = 30; // Reduced since cheerio is much faster
+export const dynamic = 'force-dynamic';
+
+// In-memory cache to avoid scraping too frequently
+let cachedData = null;
+let cacheTimestamp = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export async function GET() {
-    let browser = null;
+    // Check cache first
+    const now = Date.now();
+    if (cachedData && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION)) {
+        return NextResponse.json({
+            ...cachedData,
+            cached: true,
+            cacheAge: Math.floor((now - cacheTimestamp) / 1000) + 's'
+        });
+    }
 
     try {
-        // Launch browser with serverless chromium for production, local chromium for dev
-        const isProduction = process.env.NODE_ENV === 'production';
-
-        browser = await puppeteer.launch({
-            args: isProduction ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'],
-            defaultViewport: chromium.defaultViewport,
-            executablePath: isProduction
-                ? await chromium.executablePath()
-                : process.platform === 'win32'
-                    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-                    : process.platform === 'darwin'
-                        ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-                        : '/usr/bin/google-chrome',
-            headless: chromium.headless,
-        });
-
         // Scrape both sites in parallel
         const [tradEadData, ticketJamData] = await Promise.all([
-            scrapeTradEad(browser),
-            scrapeTicketJam(browser)
+            scrapeTradEad(),
+            scrapeTicketJam()
         ]);
 
-        return NextResponse.json({
+        const responseData = {
             tradEad: tradEadData,
             ticketJam: ticketJamData,
-            timestamp: new Date().toISOString()
-        });
+            timestamp: new Date().toISOString(),
+            cached: false
+        };
+
+        // Update cache
+        cachedData = responseData;
+        cacheTimestamp = Date.now();
+
+        return NextResponse.json(responseData);
 
     } catch (error) {
         console.error('Error scraping tickets:', error);
@@ -40,77 +47,51 @@ export async function GET() {
             { error: 'Failed to scrape ticket data', details: error.message },
             { status: 500 }
         );
-    } finally {
-        if (browser) {
-            await browser.close();
-        }
     }
 }
 
-async function scrapeTradEad(browser) {
-    const page = await browser.newPage();
-
+async function scrapeTradEad() {
     try {
-        await page.goto('https://tradead.tixplus.jp/wbc2026/buy/bidding/listings/1517?order=1', {
-            waitUntil: 'networkidle2',
-            timeout: 30000
+        const response = await fetch('https://tradead.tixplus.jp/wbc2026/buy/bidding/listings/1517?order=1', {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
         });
 
-        // Wait for content to load
-        await page.waitForSelector('body', { timeout: 10000 });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-        // Extract ticket listings
-        const listings = await page.evaluate(() => {
-            const results = [];
+        const html = await response.text();
+        const $ = cheerio.load(html);
 
-            // Try to find ticket listing elements (adjust selectors based on actual page structure)
-            const listingElements = document.querySelectorAll('.listing-item, .ticket-item, [class*="listing"], [class*="ticket"]');
+        // Extract page title
+        const pageTitle = $('title').text().trim();
 
-            if (listingElements.length === 0) {
-                // If no specific listings found, try to get general info
-                const bodyText = document.body.innerText;
-                return [{
-                    rawContent: bodyText.substring(0, 500) // First 500 chars as fallback
-                }];
+        // Extract main content text (first 2000 characters)
+        const bodyText = $('body').text()
+            .replace(/\s+/g, ' ')
+            .trim()
+            .substring(0, 2000);
+
+        // Try to find specific ticket information
+        const listings = [];
+
+        // Look for common ticket listing patterns
+        $('[class*="listing"], [class*="ticket"], [class*="item"]').each((i, elem) => {
+            if (i < 10) { // Limit to first 10 items
+                const text = $(elem).text().replace(/\s+/g, ' ').trim();
+                if (text.length > 20 && text.length < 500) {
+                    listings.push(text);
+                }
             }
-
-            listingElements.forEach((element, index) => {
-                const listing = {};
-
-                // Extract text content
-                const text = element.innerText || element.textContent;
-
-                // Try to find price
-                const priceMatch = text.match(/[¥￥]\s*[\d,]+/);
-                if (priceMatch) {
-                    listing.price = priceMatch[0];
-                }
-
-                // Try to find quantity/availability
-                const quantityMatch = text.match(/(\d+)\s*(枚|tickets?|seats?)/i);
-                if (quantityMatch) {
-                    listing.quantity = quantityMatch[0];
-                }
-
-                // Try to find section/seat info
-                const sectionMatch = text.match(/(Section|座席|ブロック)[:\s]*([A-Z0-9]+)/i);
-                if (sectionMatch) {
-                    listing.section = sectionMatch[2];
-                }
-
-                // Add raw text if we found something
-                if (Object.keys(listing).length > 0 || index < 5) {
-                    listing.rawText = text.substring(0, 200);
-                    results.push(listing);
-                }
-            });
-
-            return results.length > 0 ? results : [{ message: 'No listings found' }];
         });
 
         return {
             success: true,
-            listings,
+            pageTitle,
+            bodyPreview: bodyText,
+            listings: listings.length > 0 ? listings : ['未找到具體票券列表'],
             scrapedAt: new Date().toISOString()
         };
 
@@ -119,84 +100,55 @@ async function scrapeTradEad(browser) {
         return {
             success: false,
             error: error.message,
+            pageTitle: 'Error',
+            bodyPreview: '',
             listings: []
         };
-    } finally {
-        await page.close();
     }
 }
 
-async function scrapeTicketJam(browser) {
-    const page = await browser.newPage();
-
+async function scrapeTicketJam() {
     try {
-        await page.goto('https://ticketjam.jp/tickets/wbc/event_groups/279318', {
-            waitUntil: 'networkidle2',
-            timeout: 30000
+        const response = await fetch('https://ticketjam.jp/tickets/wbc/event_groups/279318', {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
         });
 
-        // Wait for content to load
-        await page.waitForSelector('body', { timeout: 10000 });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-        // Extract event/ticket information
-        const events = await page.evaluate(() => {
-            const results = [];
+        const html = await response.text();
+        const $ = cheerio.load(html);
 
-            // Try to find event/ticket elements (adjust selectors based on actual page structure)
-            const eventElements = document.querySelectorAll('.event-item, .ticket-card, [class*="event"], [class*="ticket"]');
+        // Extract page title
+        const pageTitle = $('title').text().trim();
 
-            if (eventElements.length === 0) {
-                // If no specific events found, try to get general info
-                const bodyText = document.body.innerText;
-                return [{
-                    rawContent: bodyText.substring(0, 500) // First 500 chars as fallback
-                }];
+        // Extract main content text (first 2000 characters)
+        const bodyText = $('body').text()
+            .replace(/\s+/g, ' ')
+            .trim()
+            .substring(0, 2000);
+
+        // Try to find specific event/ticket information
+        const events = [];
+
+        // Look for common event/ticket patterns
+        $('[class*="event"], [class*="ticket"], [class*="card"], [class*="item"]').each((i, elem) => {
+            if (i < 10) { // Limit to first 10 items
+                const text = $(elem).text().replace(/\s+/g, ' ').trim();
+                if (text.length > 20 && text.length < 500) {
+                    events.push(text);
+                }
             }
-
-            eventElements.forEach((element, index) => {
-                const event = {};
-
-                // Extract text content
-                const text = element.innerText || element.textContent;
-
-                // Try to find event name/title
-                const titleElement = element.querySelector('h1, h2, h3, h4, .title, [class*="title"]');
-                if (titleElement) {
-                    event.title = titleElement.innerText.trim();
-                }
-
-                // Try to find price
-                const priceMatch = text.match(/[¥￥]\s*[\d,]+/);
-                if (priceMatch) {
-                    event.price = priceMatch[0];
-                }
-
-                // Try to find date
-                const dateMatch = text.match(/\d{4}[年/-]\d{1,2}[月/-]\d{1,2}/);
-                if (dateMatch) {
-                    event.date = dateMatch[0];
-                }
-
-                // Try to find availability status
-                if (text.includes('売り切れ') || text.includes('完売') || text.includes('sold out')) {
-                    event.status = 'Sold Out';
-                } else if (text.includes('販売中') || text.includes('available')) {
-                    event.status = 'Available';
-                }
-
-                // Add raw text if we found something
-                if (Object.keys(event).length > 0 || index < 5) {
-                    event.rawText = text.substring(0, 200);
-                    results.push(event);
-                }
-            });
-
-            return results.length > 0 ? results : [{ message: 'No events found' }];
         });
 
         return {
             success: true,
-            events,
+            pageTitle,
+            bodyPreview: bodyText,
+            events: events.length > 0 ? events : ['未找到具體活動列表'],
             scrapedAt: new Date().toISOString()
         };
 
@@ -205,9 +157,9 @@ async function scrapeTicketJam(browser) {
         return {
             success: false,
             error: error.message,
+            pageTitle: 'Error',
+            bodyPreview: '',
             events: []
         };
-    } finally {
-        await page.close();
     }
 }

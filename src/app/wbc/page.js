@@ -8,6 +8,8 @@ export default function WBCTicketsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
+    const [isCached, setIsCached] = useState(false);
+    const [cacheAge, setCacheAge] = useState(null);
 
     const fetchTicketData = async () => {
         setLoading(true);
@@ -23,6 +25,8 @@ export default function WBCTicketsPage() {
             setTradEadData(data.tradEad);
             setTicketJamData(data.ticketJam);
             setLastUpdated(new Date());
+            setIsCached(data.cached || false);
+            setCacheAge(data.cacheAge || null);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -48,6 +52,11 @@ export default function WBCTicketsPage() {
                     {lastUpdated && (
                         <p className="text-sm text-gray-400 mt-2">
                             Last updated: {lastUpdated.toLocaleString('zh-TW')}
+                            {isCached && cacheAge && (
+                                <span className="ml-2 text-yellow-400">
+                                    (Cached - {cacheAge} old)
+                                </span>
+                            )}
                         </p>
                     )}
                 </div>
@@ -110,22 +119,30 @@ export default function WBCTicketsPage() {
                                 <div className="animate-pulse text-gray-300">Loading TradEad data...</div>
                             </div>
                         ) : tradEadData ? (
-                            <div className="space-y-3">
-                                {tradEadData.listings && tradEadData.listings.length > 0 ? (
-                                    tradEadData.listings.map((listing, index) => (
-                                        <div key={index} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                                {Object.entries(listing).map(([key, value]) => (
-                                                    <div key={key}>
-                                                        <span className="text-gray-400">{key}:</span>
-                                                        <span className="text-white ml-2">{value}</span>
-                                                    </div>
-                                                ))}
+                            <div className="space-y-4">
+                                {tradEadData.pageTitle && (
+                                    <div className="bg-blue-500/20 rounded-lg p-3 border border-blue-500/30">
+                                        <p className="text-blue-200 text-sm font-semibold">頁面標題</p>
+                                        <p className="text-white">{tradEadData.pageTitle}</p>
+                                    </div>
+                                )}
+
+                                {tradEadData.listings && tradEadData.listings.length > 0 && (
+                                    <div className="space-y-2">
+                                        <p className="text-gray-300 text-sm font-semibold">票券資訊</p>
+                                        {tradEadData.listings.map((listing, index) => (
+                                            <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                                <p className="text-white text-sm">{listing}</p>
                                             </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-gray-300 text-center py-8">No listings found</p>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {tradEadData.bodyPreview && (
+                                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                        <p className="text-gray-300 text-xs font-semibold mb-2">頁面內容預覽</p>
+                                        <p className="text-gray-400 text-xs whitespace-pre-wrap">{tradEadData.bodyPreview}</p>
+                                    </div>
                                 )}
                             </div>
                         ) : (
@@ -155,22 +172,30 @@ export default function WBCTicketsPage() {
                                 <div className="animate-pulse text-gray-300">Loading TicketJam data...</div>
                             </div>
                         ) : ticketJamData ? (
-                            <div className="space-y-3">
-                                {ticketJamData.events && ticketJamData.events.length > 0 ? (
-                                    ticketJamData.events.map((event, index) => (
-                                        <div key={index} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                                {Object.entries(event).map(([key, value]) => (
-                                                    <div key={key}>
-                                                        <span className="text-gray-400">{key}:</span>
-                                                        <span className="text-white ml-2">{value}</span>
-                                                    </div>
-                                                ))}
+                            <div className="space-y-4">
+                                {ticketJamData.pageTitle && (
+                                    <div className="bg-blue-500/20 rounded-lg p-3 border border-blue-500/30">
+                                        <p className="text-blue-200 text-sm font-semibold">頁面標題</p>
+                                        <p className="text-white">{ticketJamData.pageTitle}</p>
+                                    </div>
+                                )}
+
+                                {ticketJamData.events && ticketJamData.events.length > 0 && (
+                                    <div className="space-y-2">
+                                        <p className="text-gray-300 text-sm font-semibold">活動資訊</p>
+                                        {ticketJamData.events.map((event, index) => (
+                                            <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                                <p className="text-white text-sm">{event}</p>
                                             </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-gray-300 text-center py-8">No events found</p>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {ticketJamData.bodyPreview && (
+                                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                        <p className="text-gray-300 text-xs font-semibold mb-2">頁面內容預覽</p>
+                                        <p className="text-gray-400 text-xs whitespace-pre-wrap">{ticketJamData.bodyPreview}</p>
+                                    </div>
                                 )}
                             </div>
                         ) : (
