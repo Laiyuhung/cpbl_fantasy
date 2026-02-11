@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, members = [] }) {
     const [trades, setTrades] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [processingId, setProcessingId] = useState(null);
+    const [processingAction, setProcessingAction] = useState(null); // 'tradeId-action'
     const [timeWindow, setTimeWindow] = useState('2026 Season');
     const [settings, setSettings] = useState({ roster_positions: {}, batter_stat_categories: [], pitcher_stat_categories: [] });
 
@@ -33,8 +33,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
     };
 
     const handleAction = async (tradeId, action) => {
-        if (processingId) return;
-        setProcessingId(tradeId);
+        if (processingAction) return;
+        setProcessingAction(`${tradeId}-${action}`);
         try {
             const res = await fetch('/api/trade/respond', {
                 method: 'POST',
@@ -56,7 +56,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
             console.error('Action error:', error);
             alert('Action error');
         } finally {
-            setProcessingId(null);
+            setProcessingAction(null);
         }
     };
 
@@ -164,7 +164,6 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                     ) : (
                         trades.map(trade => {
                             const isInitiator = trade.initiator_manager_id === managerId;
-                            const isProcessing = processingId === trade.id;
 
                             // Resolve nicknames (Prioritize backend enriched nickname, then local members)
                             const initMember = members.find(m => m.manager_id === trade.initiator_manager_id);
@@ -243,26 +242,26 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                             {isInitiator ? (
                                                 <button
                                                     onClick={() => handleAction(trade.id, 'cancel')}
-                                                    disabled={!!processingId}
-                                                    className={`px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-red-900/20 ${processingId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    disabled={!!processingAction}
+                                                    className={`px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-red-900/20 ${processingAction ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 >
-                                                    {isProcessing ? 'Processing...' : 'Cancel Request'}
+                                                    {processingAction === `${trade.id}-cancel` ? 'Processing...' : 'Cancel Request'}
                                                 </button>
                                             ) : (
                                                 <>
                                                     <button
                                                         onClick={() => handleAction(trade.id, 'reject')}
-                                                        disabled={!!processingId}
-                                                        className={`px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-red-900/20 ${processingId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        disabled={!!processingAction}
+                                                        className={`px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-red-900/20 ${processingAction ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     >
-                                                        {isProcessing ? 'Processing...' : 'Reject'}
+                                                        {processingAction === `${trade.id}-reject` ? 'Processing...' : 'Reject'}
                                                     </button>
                                                     <button
                                                         onClick={() => handleAction(trade.id, 'accept')}
-                                                        disabled={!!processingId}
-                                                        className={`px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-green-900/20 ${processingId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        disabled={!!processingAction}
+                                                        className={`px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-green-900/20 ${processingAction ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     >
-                                                        {isProcessing ? 'Processing...' : 'Accept Trade'}
+                                                        {processingAction === `${trade.id}-accept` ? 'Processing...' : 'Accept Trade'}
                                                     </button>
                                                 </>
                                             )}

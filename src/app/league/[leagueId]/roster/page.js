@@ -323,13 +323,12 @@ export default function RosterPage() {
         if (!leagueId || !myManagerId) return;
         const fetchTrades = async () => {
             try {
-                const res = await fetch(`/api/trade/pending?league_id=${leagueId}&manager_id=${myManagerId}`);
+                const res = await fetch(`/api/trade/count?league_id=${leagueId}&manager_id=${myManagerId}`);
                 const data = await res.json();
-                if (data.success && data.trades) {
-                    const pendingCount = data.trades.filter(t => t.status === 'pending').length;
-                    setPendingTradeCount(pendingCount);
+                if (data.success) {
+                    setPendingTradeCount(data.count);
                 }
-            } catch (err) { console.error('Failed to fetch pending trades:', err); }
+            } catch (err) { console.error('Failed to fetch pending trades count:', err); }
         };
         fetchTrades();
     }, [leagueId, myManagerId, showMyTradesModal]);
