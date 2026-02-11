@@ -84,19 +84,35 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
     const renderStats = (player) => {
         const stats = player.stats || {};
         const isPitcher = player.batter_or_pitcher === 'pitcher';
-        const categories = isPitcher ? settings.pitcher_stat_categories : settings.batter_stat_categories;
+        const originalCategories = isPitcher ? settings.pitcher_stat_categories : settings.batter_stat_categories;
 
-        if (!categories || categories.length === 0) return null;
+        if (!originalCategories) return null;
+
+        // Clone and ensure AB/IP are present
+        let categories = [...originalCategories];
+        if (isPitcher) {
+            if (!categories.some(c => c.includes('(IP)'))) {
+                categories.unshift('Innings Pitched (IP)');
+            }
+        } else {
+            if (!categories.some(c => c.includes('(AB)'))) {
+                categories.unshift('At Bats (AB)');
+            }
+        }
 
         return (
-            <div className="flex gap-2 mt-1 overflow-x-auto pb-1 scrollbar-hide">
+            <div className="flex flex-wrap gap-2 mt-1 pb-1">
                 {categories.map(cat => {
                     const key = getStatKey(cat);
                     const val = stats[key] !== undefined && stats[key] !== null ? stats[key] : '-';
+                    // Highlight AB and IP as non-scoring if they were added
+                    const isAdded = (isPitcher && cat.includes('(IP)') && !originalCategories.includes(cat)) ||
+                        (!isPitcher && cat.includes('(AB)') && !originalCategories.includes(cat));
+
                     return (
-                        <div key={cat} className="flex flex-col items-center min-w-[20px]">
-                            <span className="text-[9px] text-slate-500 uppercase">{getStatAbbr(cat)}</span>
-                            <span className={`text-[10px] font-mono ${val === 0 || val === '0' ? 'text-slate-600' : 'text-slate-300'}`}>
+                        <div key={cat} className="flex flex-col items-center min-w-[30px]">
+                            <span className={`text-[9px] uppercase ${isAdded ? 'text-slate-600' : 'text-slate-500'}`}>{getStatAbbr(cat)}</span>
+                            <span className={`text-[10px] font-mono ${val === 0 || val === '0' ? 'text-slate-600' : isAdded ? 'text-slate-500' : 'text-slate-300'}`}>
                                 {val}
                             </span>
                         </div>
@@ -227,8 +243,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                             {isInitiator ? (
                                                 <button
                                                     onClick={() => handleAction(trade.id, 'cancel')}
-                                                    disabled={isProcessing}
-                                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-red-900/20"
+                                                    disabled={!!processingId}
+                                                    className={`px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-red-900/20 ${processingId ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 >
                                                     {isProcessing ? 'Processing...' : 'Cancel Request'}
                                                 </button>
@@ -236,15 +252,15 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                                 <>
                                                     <button
                                                         onClick={() => handleAction(trade.id, 'reject')}
-                                                        disabled={isProcessing}
-                                                        className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-red-900/20"
+                                                        disabled={!!processingId}
+                                                        className={`px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-red-900/20 ${processingId ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     >
-                                                        {isProcessing ? '...' : 'Reject'}
+                                                        {isProcessing ? 'Processing...' : 'Reject'}
                                                     </button>
                                                     <button
                                                         onClick={() => handleAction(trade.id, 'accept')}
-                                                        disabled={isProcessing}
-                                                        className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-green-900/20"
+                                                        disabled={!!processingId}
+                                                        className={`px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg transition-colors shadow-lg shadow-green-900/20 ${processingId ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     >
                                                         {isProcessing ? 'Processing...' : 'Accept Trade'}
                                                     </button>

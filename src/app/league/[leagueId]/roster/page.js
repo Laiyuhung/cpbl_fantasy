@@ -47,6 +47,7 @@ export default function RosterPage() {
     const [tradeEndDate, setTradeEndDate] = useState(null);
     const [myManagerId, setMyManagerId] = useState(null);
     const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
+    const [pendingTradeCount, setPendingTradeCount] = useState(0);
 
     // Helpers
     const parseStatName = (stat) => {
@@ -317,6 +318,22 @@ export default function RosterPage() {
         fetchStats();
     }, [timeWindow]);
 
+    // Fetch Pending Trades Count
+    useEffect(() => {
+        if (!leagueId || !myManagerId) return;
+        const fetchTrades = async () => {
+            try {
+                const res = await fetch(`/api/trade/pending?league_id=${leagueId}&manager_id=${myManagerId}`);
+                const data = await res.json();
+                if (data.success && data.trades) {
+                    const pendingCount = data.trades.filter(t => t.status === 'pending').length;
+                    setPendingTradeCount(pendingCount);
+                }
+            } catch (err) { console.error('Failed to fetch pending trades:', err); }
+        };
+        fetchTrades();
+    }, [leagueId, myManagerId, showMyTradesModal]);
+
     const getPlayerStat = (playerId, statKey) => {
         if (!playerId || playerId === 'empty') return '-';
         const stats = playerStats[playerId];
@@ -550,9 +567,14 @@ export default function RosterPage() {
                         {!isTradeDeadlinePassed() && (
                             <button
                                 onClick={() => setShowMyTradesModal(true)}
-                                className="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                                className="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center gap-2 transition-colors text-xs font-bold tracking-wider"
                             >
-                                MY TRADES
+                                <span>MY TRADES</span>
+                                {pendingTradeCount > 0 && (
+                                    <span className="w-5 h-5 rounded-full bg-pink-500 text-white flex items-center justify-center text-[10px] font-bold shadow-lg">
+                                        {pendingTradeCount}
+                                    </span>
+                                )}
                             </button>
                         )}
                         <button
