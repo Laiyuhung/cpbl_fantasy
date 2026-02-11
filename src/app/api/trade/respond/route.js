@@ -60,62 +60,57 @@ export async function POST(request) {
         if (action === 'accept') {
             if (!isRecipient) return NextResponse.json({ success: false, error: 'Only recipient can accept' }, { status: 403 });
 
-            // EXECUTE TRADE
-            // We need to swap players.
-            // This requires a transaction or atomic operations.
-            // Supabase-js doesn't support transactions purely client-side easily without RPC.
-            // But we can do sequential updates and hope for the best, OR use a Postgres Function.
+            // Fetch league settings to determine review process
+            const { data: leagueSettings, error: settingsError } = await supabase
+                .from('league_settings')
+                .select('*')
+                .eq('league_id', trade.league_id)
+                .single();
 
-            // However, updating `ownership` table.
-            // Update initiator players -> recipient
-            // Update recipient players -> initiator
+            if (settingsError || !leagueSettings) {
+                console.error('Settings error:', settingsError);
+                return NextResponse.json({ success: false, error: 'League settings not found' }, { status: 404 });
+            }
 
-            // But we need to verify players are still owned by them?
-            // Yes, technically. If someone dropped a player, trade should fail or handle it.
-            // For now, let's assume valid.
+            const tradeReview = leagueSettings.trade_review || 'League votes';
+            const tradeRejectTimeStr = leagueSettings.trade_reject_time; // e.g. "1 day", "2 days"
+            const tradeRejectPercentage = leagueSettings.trade_reject_percentage || '50%';
 
-            // We really should use a stored procedure for safety, but user asked for backend logic here.
-            // I will implement sequential updates.
+            // Calculate process_at time
+            let processAt = new Date();
 
-            const initiatorPlayers = trade.initiator_player_ids; // array of uuids
-            const recipientPlayers = trade.recipient_player_ids;
+            // "抓league_settings.trade_reject_time傳換成小時加上去當作process_at (null視為0)"
+            let additionalHours = 0;
+            if (tradeRejectTimeStr) {
+                const daysMatch = tradeRejectTimeStr.match(/(\d+)\s*days?/);
+                if (daysMatch) {
+                    additionalHours = parseInt(daysMatch[1]) * 24;
+                }
+            }
 
-            // 1. Update initiator's players to be owned by recipient
-            // But what if they are now owned by someone else?
-            // We should check ownership first.
+            processAt.setHours(processAt.getHours() + additionalHours);
 
-            // Let's create an RPC or just do updates.
-            // Update ownership set manager_id = recipient where player_id in (...) AND manager_id = initiator
-
-            // Using Supabase:
-            const { error: err1 } = await supabase
-                .from('ownership')
-                .update({ manager_id: trade.recipient_manager_id })
-                .in('player_id', initiatorPlayers)
-                .eq('manager_id', trade.initiator_manager_id)
-                .eq('league_id', trade.league_id);
-
-            if (err1) throw err1;
-
-            // 2. Update recipient's players to be owned by initiator
-            const { error: err2 } = await supabase
-                .from('ownership')
-                .update({ manager_id: trade.initiator_manager_id })
-                .in('player_id', recipientPlayers)
-                .eq('manager_id', trade.recipient_manager_id)
-                .eq('league_id', trade.league_id);
-
-            if (err2) throw err2;
-
-            // 3. Update trade status
+            // Update pending_trade
+            // "然後不用trade_reject_time" -> We exclude trade_reject_time column update
+            // "status改成accepted & pending votes" -> status: 'accepted'
             const { error: updateError } = await supabase
                 .from('pending_trade')
-                .update({ status: 'accepted', updated_at: new Date() })
+                .update({
+                    status: 'accepted',
+                    updated_at: new Date(),
+                    accepted_at: new Date(),
+                    process_at: processAt,
+                    trade_review: tradeReview,
+                    trade_reject_percentage: tradeRejectPercentage
+                })
                 .eq('id', trade_id);
 
-            if (updateError) throw updateError;
+            if (updateError) {
+                console.error('Update pending_trade error:', updateError);
+                throw updateError;
+            }
 
-            return NextResponse.json({ success: true, status: 'accepted' });
+            return NextResponse.json({ success: true, status: 'accepted', message: 'Trade accepted and is pending review' });
         }
 
         return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });

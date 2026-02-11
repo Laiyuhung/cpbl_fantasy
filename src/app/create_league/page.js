@@ -81,7 +81,7 @@ const settingOptions = {
   'Waiver Players Time': ['0 days', '1 day', '2 days', '3 days', '4 days', '5 days', '6 days', '7 days'],
   'Allow minor players from waivers or free agents to be added directly to the minor slot': ['Yes', 'No'],
   'Trade Review': ['League votes', 'Commissioner reviews', 'No review'],
-  'Trade Reject Time': ['0 days', '1 day', '2 days', '3 days', '7 days'],
+  'Trade Reject Time': ['1 day', '2 days', '3 days'],
   'Trade Reject percentage needed': ['10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
   'Post Draft Waiver Time': ['1 day', '2 days', '3 days'],
   'Max Acquisitions per Week': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'No maximum'],
@@ -1038,6 +1038,7 @@ const CreateLeaguePage = () => {
                     <tbody>
                       {Object.entries(settings[section.key]).map(([key, value], index) => {
                         if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') return null;
+                        if (section.key === 'trading' && key === 'Trade Reject percentage needed' && settings.trading['Trade Review'] !== 'League votes') return null;
                         if (section.key === 'general' && settings.general['Draft Type'] !== 'Live Draft' && ['Live Draft Pick Time', 'Live Draft Time'].includes(key)) return null;
                         return (
                           <tr key={key} className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'} hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}>

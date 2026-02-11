@@ -80,7 +80,7 @@ const settingOptions = {
   'Waiver Players Time': ['0 days', '1 day', '2 days', '3 days', '4 days', '5 days', '6 days', '7 days'],
   'Allow minor players from waivers or free agents to be added directly to the minor slot': ['Yes', 'No'],
   'Trade Review': ['League votes', 'Commissioner reviews', 'No review'],
-  'Trade Reject Time': ['0 days', '1 day', '2 days', '3 days', '7 days'],
+  'Trade Reject Time': ['1 day', '2 days', '3 days'],
   'Trade Reject percentage needed': ['10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
   'Post Draft Waiver Time': ['1 day', '2 days', '3 days'],
   'Max Acquisitions per Week': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'No maximum'],
