@@ -1305,7 +1305,7 @@ export default function PlayersPage() {
                 ? 'bg-red-500/30 border-red-400/50 text-red-300'
                 : 'bg-emerald-500/30 border-emerald-400/50 text-emerald-300'
                 }`}>
-                {acquisitionData.week}: {acquisitionData.usage} / {acquisitionData.limit}
+                Add limit: {acquisitionData.usage} / {acquisitionData.limit} ({acquisitionData.week})
               </div>
             )}
           </div>
