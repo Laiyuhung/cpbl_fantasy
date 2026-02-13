@@ -8,6 +8,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
     const [settings, setSettings] = useState({ roster_positions: {}, batter_stat_categories: [], pitcher_stat_categories: [] });
     const [viewerRole, setViewerRole] = useState('member');
     const [tradeReviewSetting, setTradeReviewSetting] = useState('League votes');
+    const [vetoConfirmId, setVetoConfirmId] = useState(null);
 
     // Fetch trades when modal opens or timeWindow changes
     useEffect(() => {
@@ -64,17 +65,20 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
         }
     };
 
-    const handleVeto = async (tradeId) => {
-        if (processingAction) return;
-        if (!confirm('Are you sure you want to veto this trade?')) return;
+    const handleVeto = (tradeId) => {
+        setVetoConfirmId(tradeId);
+    };
 
-        setProcessingAction(`${tradeId}-veto`);
+    const executeVeto = async () => {
+        if (!vetoConfirmId || processingAction) return;
+        setProcessingAction(`${vetoConfirmId}-veto`);
+
         try {
             const res = await fetch('/api/trade/veto', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    trade_id: tradeId,
+                    trade_id: vetoConfirmId,
                     manager_id: managerId
                 })
             });
@@ -82,6 +86,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
             if (data.success) {
                 // Refresh to update votes
                 fetchTrades();
+                setVetoConfirmId(null);
             } else {
                 alert(data.error || 'Veto failed');
             }
@@ -160,7 +165,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100000]" onClick={onClose}>
             <div
-                className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col"
+                className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col relative overflow-hidden"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-6 border-b border-purple-500/20 flex-shrink-0">
@@ -213,7 +218,9 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                             <span className="mx-2 text-slate-500">➜</span>
                                             <span className="font-bold text-pink-300">{recNick}</span>
                                         </div>
-                                        <div className="text-xs text-slate-500">{new Date(trade.created_at).toLocaleDateString()}</div>
+                                        <div className="text-xs text-slate-500">
+                                            {new Date(trade.updated_at || trade.created_at).toLocaleString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </div>
                                     </div>
 
                                     {/* Players involved (simplified view) */}
@@ -305,7 +312,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                     {trade.status === 'accepted' && tradeReviewSetting !== 'No review' && (
                                         <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
                                             <div className="text-xs text-slate-500">
-                                                Avail. until {new Date(new Date(trade.accepted_at).getTime() + 48 * 60 * 60 * 1000).toLocaleString()}
+                                                Avail. until {new Date(new Date(trade.accepted_at).getTime() + 48 * 60 * 60 * 1000).toLocaleString('en-US')}
                                             </div>
                                             {(() => {
                                                 const hasVoted = (trade.veto_votes || []).includes(managerId);
@@ -328,8 +335,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                                             onClick={() => handleVeto(trade.id)}
                                                             disabled={hasVoted || !!processingAction}
                                                             className={`px-3 py-1 text-xs rounded border transition-colors ${hasVoted
-                                                                    ? 'bg-slate-700 text-slate-400 border-slate-600 cursor-default'
-                                                                    : 'bg-red-900/30 text-red-300 border-red-500/30 hover:bg-red-900/50'
+                                                                ? 'bg-slate-700 text-slate-400 border-slate-600 cursor-default'
+                                                                : 'bg-red-900/30 text-red-300 border-red-500/30 hover:bg-red-900/50'
                                                                 }`}
                                                         >
                                                             {hasVoted ? 'Vetoed' : 'Vote Veto'}
@@ -344,6 +351,47 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                         })
                     )}
                 </div>
+
+                {/* Veto Confirmation Overlay */}
+                {vetoConfirmId && (
+                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-6 z-[50] animate-fadeIn">
+                        <div className="bg-slate-800 rounded-xl p-6 border border-red-500/30 shadow-2xl max-w-sm w-full text-center relative overflow-hidden">
+                            {/* Warning glow */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600"></div>
+
+                            <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                                <span className="text-3xl">🗳️</span>
+                            </div>
+
+                            <h4 className="text-xl font-bold text-white mb-2">Confirm Veto Vote</h4>
+                            <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+                                Are you sure you want to vote to <span className="text-red-400 font-bold">veto</span> this trade?
+                                <br />If enough votes are cast, the trade will be cancelled.
+                            </p>
+
+                            <div className="flex gap-3 justify-center">
+                                <button
+                                    onClick={() => setVetoConfirmId(null)}
+                                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors font-medium text-sm w-24"
+                                    disabled={!!processingAction}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={executeVeto}
+                                    className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold shadow-lg shadow-red-900/20 transition-all transform active:scale-95 text-sm w-32 flex justify-center items-center"
+                                    disabled={!!processingAction}
+                                >
+                                    {processingAction ? (
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        'Confirm Veto'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
