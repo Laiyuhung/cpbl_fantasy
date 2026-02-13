@@ -41,9 +41,135 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
         }
     };
 
+    const validateAcceptRoster = async (trade) => {
+        // Fetch current rosters for both parties
+        try {
+            const [initRes, recRes] = await Promise.all([
+                fetch(`/api/league/${leagueId}/roster?manager_id=${trade.initiator_manager_id}`),
+                fetch(`/api/league/${leagueId}/roster?manager_id=${trade.recipient_manager_id}`)
+            ]);
+            const initData = await initRes.json();
+            const recData = await recRes.json();
+
+            if (!initData.success || !recData.success) {
+                return 'Failed to fetch roster data for validation.';
+            }
+
+            const initRoster = initData.roster || [];
+            const recRoster = recData.roster || [];
+
+            // Helper to calculate limits
+            const checkRosterLimits = (currentRoster, incomingPlayers, outgoingPlayers, sideName) => {
+                const incomingIds = incomingPlayers.map(p => p.player_id);
+                const outgoingIds = outgoingPlayers.map(p => p.player_id);
+
+                // 1. Filter out outgoing players
+                let projectedRoster = currentRoster.filter(p => !outgoingIds.includes(p.player_id));
+
+                // 2. Add incoming players (Assume they go to BN for safety, unless we want to be smarter)
+                // However, detailed validation logic in PlacePage uses BN assumption for checking Total Limit.
+                // For Active Limit, we only count non-NA/Minor slots.
+                // Incoming players are NEW to the roster, so they don't have a slot yet.
+                // We must assume they TAKE UP A SLOT.
+                // If the user has empty active slots, they might go there.
+                // If full, they go to BN.
+                // The safest check for "Active Limit" is:
+                // Count current Active players (excluding outgoing).
+                // Incoming players are assumed ACTIVE (BN is active) for the purpose of limit checking?
+                // Wait, if I receive a player, he goes to BN (or Empty).
+                // BN counts towards Active Limit?
+                // Let's look at PlayersPage logic:
+                // "Active Limit" counts all positions EXCEPT NA, Minor, DL, IL.
+                // BN IS an active position.
+                // So incoming players (assigned to BN by default) WILL count towards Active Limit.
+
+                const newPlayers = incomingPlayers.map(p => ({
+                    ...p,
+                    position: 'BN' // Default to BN (Active)
+                }));
+
+                projectedRoster = [...projectedRoster, ...newPlayers];
+
+                // Check Limits
+                const rosterConfig = settings.roster_positions || {};
+
+                // A. Total Limit
+                const totalLimit = Object.values(rosterConfig).reduce((sum, count) => sum + count, 0);
+                if (projectedRoster.length > totalLimit) {
+                    return `${sideName} Roster Size Exceeded (${projectedRoster.length}/${totalLimit})`;
+                }
+
+                // B. Active Limit
+                // Active = All slots except NA/Minor/DL/IL
+                const activeLimit = Object.entries(rosterConfig)
+                    .filter(([key]) => !['NA', 'MINOR', 'DL', 'IL'].includes(key.toUpperCase()))
+                    .reduce((sum, [_, count]) => sum + count, 0);
+
+                const activeCount = projectedRoster.filter(p => {
+                    const pos = (p.position || '').toUpperCase();
+                    return !['NA', 'MINOR', 'DL', 'IL'].includes(pos);
+                }).length;
+
+                if (activeCount > activeLimit) {
+                    return `${sideName} Active Roster Limit Exceeded (${activeCount}/${activeLimit}).`;
+                }
+
+                // C. Foreigner Limits
+                const foreignerOnTeamLimit = parseInt(settings.foreigner_on_team_limit) || 999;
+                const foreignerActiveLimit = parseInt(settings.foreigner_active_limit) || 999;
+
+                const foreigners = projectedRoster.filter(p => p.identity === 'Foreigner' || p.identity === 'foreign');
+                const foreignerCount = foreigners.length;
+
+                if (foreignerCount > foreignerOnTeamLimit) {
+                    return `${sideName} Foreigner (On Team) Limit Exceeded (${foreignerCount}/${foreignerOnTeamLimit})`;
+                }
+
+                const activeForeigners = foreigners.filter(p => {
+                    const pos = (p.position || '').toUpperCase();
+                    return !['NA', 'MINOR', 'DL', 'IL'].includes(pos);
+                });
+                const activeForeignerCount = activeForeigners.length;
+
+                if (activeForeignerCount > foreignerActiveLimit) {
+                    return `${sideName} Active Foreigner Limit Exceeded (${activeForeignerCount}/${foreignerActiveLimit})`;
+                }
+
+                return null;
+            };
+
+            // Check Initiator (receives recipient_players, loses initiator_players)
+            const initError = checkRosterLimits(initRoster, trade.recipient_players, trade.initiator_players, "Initiator");
+            if (initError) return initError;
+
+            // Check Recipient (receives initiator_players, loses recipient_players)
+            const recError = checkRosterLimits(recRoster, trade.initiator_players, trade.recipient_players, "Recipient");
+            if (recError) return recError;
+
+            return null; // Valid
+
+        } catch (e) {
+            console.error(e);
+            return 'Validation Error';
+        }
+    };
+
     const handleAction = async (tradeId, action) => {
         if (processingAction) return;
         setProcessingAction(`${tradeId}-${action}`);
+
+        if (action === 'accept') {
+            const trade = trades.find(t => t.id === tradeId);
+            if (trade) {
+                const error = await validateAcceptRoster(trade);
+                if (error) {
+                    alert('Cannot accept trade:\n' + error);
+                    setProcessingAction(null);
+                    return;
+                }
+            }
+        }
+
         try {
             const res = await fetch('/api/trade/respond', {
                 method: 'POST',

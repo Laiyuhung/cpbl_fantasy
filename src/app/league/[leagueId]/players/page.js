@@ -1139,11 +1139,26 @@ export default function PlayersPage() {
     if (status === 'on team') {
       // 檢查是否是自己的球員
       if (ownership.manager_id === myManagerId) {
+
+        // Check Trade Lock
+        if (activeTradePlayerIds.has(player.player_id)) {
+          return (
+            <button
+              onClick={() => alert('Player is involved in a pending or accepted trade and cannot be dropped.')}
+              className="w-8 h-8 rounded-full bg-slate-500 text-slate-300 flex items-center justify-center font-bold cursor-not-allowed border border-slate-400"
+              title="Player is locked in an active trade"
+            >
+              🔒
+            </button>
+          );
+        }
+
         // 紅色底的 -
         return (
           <button
             onClick={() => handleDropPlayer(player)}
             className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold hover:bg-red-700 transition-colors"
+            title="Drop Player"
           >
             −
           </button>
@@ -2254,7 +2269,25 @@ export default function PlayersPage() {
                       if (playerDetail.identity?.toLowerCase() !== 'foreigner') return null;
                     }
 
+                    const isLocked = activeTradePlayerIds.has(p.player_id);
                     const isSelected = dropCandidateID === p.player_id;
+
+                    if (isLocked) {
+                      return (
+                        <div key={p.player_id} className="flex items-center justify-between p-3 rounded-xl border border-slate-700 bg-slate-900/50 opacity-60 cursor-not-allowed">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-900 overflow-hidden grayscale">
+                              <img src={getPlayerPhoto(playerDetail)} className="w-full h-full object-cover" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
+                            </div>
+                            <div className="font-bold text-slate-400">{playerDetail.name}</div>
+                          </div>
+                          <div className="text-slate-500 font-bold text-xs flex items-center gap-1">
+                            🔒 <span className="hidden sm:inline">In Trade</span>
+                          </div>
+                        </div>
+                      )
+                    }
+
                     return (
                       <div
                         key={p.player_id}
