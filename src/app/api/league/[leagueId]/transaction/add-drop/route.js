@@ -134,8 +134,13 @@ export async function POST(request, { params }) {
             } else {
                 // Different Day -> Move to Waiver
                 // Calculate Off Waiver Date
+                // Logic: "X days" means X full days.
+                // Example: 5 days. Drop 2/13. Full days: 14, 15, 16, 17, 18. Available 2/19.
+                // Formula: Today + Days + 1. (If 0 days, immediate).
+                const addDays = waiverDays > 0 ? waiverDays + 1 : 0;
+
                 const offWaiverDate = new Date(now);
-                offWaiverDate.setDate(offWaiverDate.getDate() + waiverDays);
+                offWaiverDate.setDate(offWaiverDate.getDate() + addDays);
 
                 const { error: waiverError } = await supabase
                     .from('league_player_ownership')
