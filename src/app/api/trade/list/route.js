@@ -20,7 +20,7 @@ export async function GET(request) {
         // And status is pending or accepted
         const { data: trades, error } = await supabase
             .from('pending_trade')
-            .select('id, status, initiator_manager_id, recipient_manager_id, initiator_players, recipient_players')
+            .select('id, status, initiator_manager_id, recipient_manager_id, initiator_player_ids, recipient_player_ids')
             .eq('league_id', league_id)
             .or(`initiator_manager_id.eq.${manager_id},recipient_manager_id.eq.${manager_id}`)
             .in('status', ['pending', 'accepted']);

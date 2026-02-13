@@ -197,13 +197,13 @@ export default function PlayersPage() {
         const tradeIds = new Set();
         data.trades.forEach(t => {
           if (['pending', 'accepted'].includes(t.status)) {
-            // Add Sender Players
-            if (Array.isArray(t.sender_players)) {
-              t.sender_players.forEach(pid => tradeIds.add(pid));
+            // Add Sender Players (Initiator)
+            if (Array.isArray(t.initiator_player_ids)) {
+              t.initiator_player_ids.forEach(pid => tradeIds.add(pid));
             }
-            // Add Receiver Players
-            if (Array.isArray(t.receiver_players)) {
-              t.receiver_players.forEach(pid => tradeIds.add(pid));
+            // Add Receiver Players (Recipient)
+            if (Array.isArray(t.recipient_player_ids)) {
+              t.recipient_player_ids.forEach(pid => tradeIds.add(pid));
             }
           }
         });
@@ -219,7 +219,6 @@ export default function PlayersPage() {
     fetchActiveTrades();
   }, [leagueId, myManagerId]);
 
-  // Set default sort when categories are loaded
   // Set default sort when categories are loaded
   // useEffect removed to enforce Rank ASC default via initial state and button handlers
 
