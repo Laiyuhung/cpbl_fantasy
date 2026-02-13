@@ -40,10 +40,12 @@ export async function GET(request, { params }) {
         let usage = 0;
         let weekInfo = null;
         let isPreSeason = false;
+        let isOffSeason = false;
+        let dateRange = '';
 
         if (week1 && todayCommon < week1.week_start) {
             isPreSeason = true;
-            // Pre-season: usage counts don't matter / are free
+            dateRange = `Pre-season`;
         } else {
             // Find current week in schedule
             const { data: weekData } = await supabase
@@ -56,6 +58,13 @@ export async function GET(request, { params }) {
 
             if (weekData) {
                 weekInfo = weekData;
+
+                // Format Date Range: "MM/DD - MM/DD"
+                const startObj = new Date(weekData.week_start);
+                const endObj = new Date(weekData.week_end);
+                const startStr = `${startObj.getMonth() + 1}/${startObj.getDate()}`;
+                const endStr = `${endObj.getMonth() + 1}/${endObj.getDate()}`;
+                dateRange = `${weekData.week_label || `Week ${weekData.week_number}`} (${startStr} - ${endStr})`;
 
                 // 3. Count 'ADD' transactions in this week
                 const startTw = new Date(`${weekData.week_start}T00:00:00+08:00`);
@@ -73,17 +82,26 @@ export async function GET(request, { params }) {
                 if (!countError) {
                     usage = count || 0;
                 }
+            } else {
+                // Not Pre-season and No Week Data found -> Off-season
+                isOffSeason = true;
+                dateRange = 'Off-season';
             }
         }
 
-        const displayLimit = isPreSeason ? 'No maximum' : (limit === Infinity ? 'No maximum' : limit);
+        let displayLimit = limit === Infinity ? 'No Maximum' : limit;
+        if (isPreSeason) {
+            displayLimit = 'No Maximum';
+        } else if (isOffSeason) {
+            displayLimit = 0; // Off-season limit is 0
+        }
 
         return NextResponse.json({
             success: true,
             usage,
             limit: displayLimit,
-            remaining: displayLimit === 'No maximum' ? 'Unlimited' : Math.max(0, limit - usage),
-            week: isPreSeason ? 'Pre-season' : (weekInfo?.week_label || `Week ${weekInfo?.week_number || '?'}`)
+            remaining: displayLimit === 'No Maximum' ? 'Unlimited' : Math.max(0, displayLimit - usage),
+            week: dateRange // Using 'week' field to carry the formatted label
         });
 
     } catch (error) {

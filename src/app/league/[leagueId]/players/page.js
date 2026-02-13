@@ -1301,11 +1301,11 @@ export default function PlayersPage() {
               POS RULES
             </button>
             {acquisitionData && (
-              <div className={`mb-2 px-3 py-1 rounded-full border flex items-center justify-center transition-colors text-xs font-bold tracking-wider cursor-help ${acquisitionData.limit !== 'No maximum' && acquisitionData.usage >= acquisitionData.limit
+              <div className={`mb-2 px-3 py-1 rounded-full border flex items-center justify-center transition-colors text-xs font-bold tracking-wider ${acquisitionData.limit !== 'No Maximum' && acquisitionData.usage >= acquisitionData.limit
                 ? 'bg-red-500/30 border-red-400/50 text-red-300'
                 : 'bg-emerald-500/30 border-emerald-400/50 text-emerald-300'
-                }`} title={`Weekly Acquisitions (${acquisitionData.week})`}>
-                MOVES: {acquisitionData.usage} {acquisitionData.limit !== 'No maximum' ? `/ ${acquisitionData.limit}` : ''}
+                }`}>
+                {acquisitionData.week}: {acquisitionData.usage} / {acquisitionData.limit}
               </div>
             )}
           </div>
