@@ -58,11 +58,13 @@ export default function PlayersPage() {
   const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
   const [leagueSettings, setLeagueSettings] = useState({});
   const [tradeEndDate, setTradeEndDate] = useState(null);
+  const [isFetchingTradeData, setIsFetchingTradeData] = useState(false);
 
   // Fetch rosters for trade validation
   useEffect(() => {
     if (showTradeModal && myManagerId && tradeTargetManagerId) {
       const fetchTradeRosters = async () => {
+        setIsFetchingTradeData(true);
         try {
           const [myRes, theirRes] = await Promise.all([
             fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}`),
@@ -74,6 +76,8 @@ export default function PlayersPage() {
           if (theirData.success) setTradeTheirRoster(theirData.roster || []);
         } catch (e) {
           console.error("Failed to fetch trade rosters", e);
+        } finally {
+          setIsFetchingTradeData(false);
         }
       };
       fetchTradeRosters();
@@ -1157,10 +1161,18 @@ export default function PlayersPage() {
     const foreignerLimit = parseInt(settings.foreigner_on_team_limit) || 999;
 
     // Active Counts (Exclude NA and Minor)
-    const activePlayers = futureRosterWithIncoming.filter(p => !['NA', 'Minor'].includes(p.position));
+    const activePlayers = futureRosterWithIncoming.filter(p => {
+      const pos = (p.position || '').toUpperCase();
+      return !['NA', 'MINOR', 'DL', 'IL'].includes(pos);
+    });
     const activeCount = activePlayers.length;
+
+    // Calculate Active Limit (Sum of all slots except NA/Minor/DL/IL)
     const activeLimit = Object.entries(rosterConfig)
-      .filter(([key]) => !['Minor', 'NA'].includes(key))
+      .filter(([key]) => {
+        const k = key.toUpperCase();
+        return !['MINOR', 'NA', 'DL', 'IL'].includes(k);
+      })
       .reduce((sum, [_, count]) => sum + count, 0);
 
     const activeForeigners = activePlayers.filter(p => p.identity?.toLowerCase() === 'foreigner');
@@ -1203,172 +1215,181 @@ export default function PlayersPage() {
             </button>
           </div>
 
-          <div className="flex justify-between px-6 pt-4 pb-2 shrink-0">
-            <div className="font-bold text-purple-200">{myNick}</div>
-            <div className="font-bold text-pink-200">{theirNick}</div>
-          </div>
+          {isFetchingTradeData ? (
+            <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+              <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+              <div className="text-purple-200 font-bold">Loading rosters...</div>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between px-6 pt-4 pb-2 shrink-0">
+                <div className="font-bold text-purple-200">{myNick}</div>
+                <div className="font-bold text-pink-200">{theirNick}</div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-6 px-6 pb-2 flex-1 min-h-0 overflow-hidden">
-            <div className="flex flex-col h-full overflow-hidden">
-              <h3 className="text-purple-300 font-bold mb-2 sticky top-0 bg-slate-900/90 z-10 px-1 backdrop-blur-sm">My Players</h3>
-              <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
-                {myPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
-                {myPlayers.map(o => {
-                  const player = players.find(p => p.player_id === o.player_id);
-                  if (!player) return null;
-                  const isSelected = selectedMyPlayers.includes(o.player_id);
-                  const rosterEntry = tradeMyRoster.find(r => r.player_id === o.player_id);
-                  const currentSlot = rosterEntry?.position || '-';
+              <div className="grid grid-cols-2 gap-6 px-6 pb-2 flex-1 min-h-0 overflow-hidden">
+                <div className="flex flex-col h-full overflow-hidden">
+                  <h3 className="text-purple-300 font-bold mb-2 sticky top-0 bg-slate-900/90 z-10 px-1 backdrop-blur-sm">My Players</h3>
+                  <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                    {myPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
+                    {myPlayers.map(o => {
+                      const player = players.find(p => p.player_id === o.player_id);
+                      if (!player) return null;
+                      const isSelected = selectedMyPlayers.includes(o.player_id);
+                      const rosterEntry = tradeMyRoster.find(r => r.player_id === o.player_id);
+                      const currentSlot = rosterEntry?.position || '-';
 
-                  return (
-                    <label
-                      key={o.player_id}
-                      className={`
+                      return (
+                        <label
+                          key={o.player_id}
+                          className={`
                         flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer relative overflow-hidden shrink-0
                         ${isSelected
-                          ? 'bg-purple-600/20 border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
-                          : 'bg-slate-800/40 border-slate-700 hover:bg-slate-800/80 hover:border-slate-500'}
+                              ? 'bg-purple-600/20 border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                              : 'bg-slate-800/40 border-slate-700 hover:bg-slate-800/80 hover:border-slate-500'}
                       `}
-                    >
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={isSelected}
-                        onChange={e => {
-                          setSelectedMyPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
-                        }}
-                      />
-                      {/* Selection Indicator */}
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-slate-500'}`}>
-                        {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                      </div>
+                        >
+                          <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={isSelected}
+                            onChange={e => {
+                              setSelectedMyPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
+                            }}
+                          />
+                          {/* Selection Indicator */}
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-slate-500'}`}>
+                            {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
 
-                      {/* Photo */}
-                      <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden border border-slate-600 shrink-0">
-                        <img
-                          src={getPlayerPhoto(player)}
-                          alt={player.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => handleImageError(e, player)}
-                        />
-                      </div>
+                          {/* Photo */}
+                          <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden border border-slate-600 shrink-0">
+                            <img
+                              src={getPlayerPhoto(player)}
+                              alt={player.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => handleImageError(e, player)}
+                            />
+                          </div>
 
-                      {/* Info */}
-                      <div className="flex flex-col min-w-0">
-                        <div className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{player.name}</div>
-                        <div className="text-xs text-slate-400 flex items-center gap-1.5 truncate">
-                          <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
-                          <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                          <span>{filterPositions(player)}</span>
-                          <span className="text-yellow-400 font-bold ml-1">(@{currentSlot})</span>
-                        </div>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex flex-col h-full overflow-hidden">
-              <h3 className="text-pink-300 font-bold mb-2 sticky top-0 bg-slate-900/90 z-10 px-1 backdrop-blur-sm">Their Players</h3>
-              <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
-                {theirPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
-                {theirPlayers.map(o => {
-                  const player = players.find(p => p.player_id === o.player_id);
-                  if (!player) return null;
-                  const isSelected = selectedTheirPlayers.includes(o.player_id);
-                  const rosterEntry = tradeTheirRoster.find(r => r.player_id === o.player_id);
-                  const currentSlot = rosterEntry?.position || '-';
+                          {/* Info */}
+                          <div className="flex flex-col min-w-0">
+                            <div className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{player.name}</div>
+                            <div className="text-xs text-slate-400 flex items-center gap-1.5 truncate">
+                              <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
+                              <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                              <span>{filterPositions(player)}</span>
+                              <span className="text-yellow-400 font-bold ml-1">({currentSlot})</span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex flex-col h-full overflow-hidden">
+                  <h3 className="text-pink-300 font-bold mb-2 sticky top-0 bg-slate-900/90 z-10 px-1 backdrop-blur-sm">Their Players</h3>
+                  <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                    {theirPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
+                    {theirPlayers.map(o => {
+                      const player = players.find(p => p.player_id === o.player_id);
+                      if (!player) return null;
+                      const isSelected = selectedTheirPlayers.includes(o.player_id);
+                      const rosterEntry = tradeTheirRoster.find(r => r.player_id === o.player_id);
+                      const currentSlot = rosterEntry?.position || '-';
 
-                  return (
-                    <label
-                      key={o.player_id}
-                      className={`
+                      return (
+                        <label
+                          key={o.player_id}
+                          className={`
                         flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer relative overflow-hidden shrink-0
                         ${isSelected
-                          ? 'bg-pink-600/20 border-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.2)]'
-                          : 'bg-slate-800/40 border-slate-700 hover:bg-slate-800/80 hover:border-slate-500'}
+                              ? 'bg-pink-600/20 border-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.2)]'
+                              : 'bg-slate-800/40 border-slate-700 hover:bg-slate-800/80 hover:border-slate-500'}
                       `}
-                    >
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={isSelected}
-                        onChange={e => {
-                          setSelectedTheirPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
-                        }}
-                      />
-                      {/* Selection Indicator */}
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-pink-500 border-pink-500' : 'border-slate-500'}`}>
-                        {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                      </div>
+                        >
+                          <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={isSelected}
+                            onChange={e => {
+                              setSelectedTheirPlayers(val => e.target.checked ? [...val, o.player_id] : val.filter(id => id !== o.player_id));
+                            }}
+                          />
+                          {/* Selection Indicator */}
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-pink-500 border-pink-500' : 'border-slate-500'}`}>
+                            {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
 
-                      {/* Photo */}
-                      <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden border border-slate-600 shrink-0">
-                        <img
-                          src={getPlayerPhoto(player)}
-                          alt={player.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => handleImageError(e, player)}
-                        />
-                      </div>
+                          {/* Photo */}
+                          <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden border border-slate-600 shrink-0">
+                            <img
+                              src={getPlayerPhoto(player)}
+                              alt={player.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => handleImageError(e, player)}
+                            />
+                          </div>
 
-                      {/* Info */}
-                      <div className="flex flex-col min-w-0">
-                        <div className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{player.name}</div>
-                        <div className="text-xs text-slate-400 flex items-center gap-1.5 truncate">
-                          <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
-                          <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                          <span>{filterPositions(player)}</span>
-                          <span className="text-yellow-400 font-bold ml-1">(@{currentSlot})</span>
-                        </div>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Validation Errors */}
-          {
-            (myViolations.length > 0 || theirViolations.length > 0) && (
-              <div className="px-6 pb-2">
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                  <h4 className="text-red-300 font-bold text-sm mb-1">⚠ Roster Violations</h4>
-                  <ul className="text-xs text-red-200 list-disc list-inside space-y-0.5">
-                    {myViolations.map((v, i) => <li key={`my-${i}`}>You: {v}</li>)}
-                    {theirViolations.map((v, i) => <li key={`their-${i}`}>{theirNick}: {v}</li>)}
-                  </ul>
+                          {/* Info */}
+                          <div className="flex flex-col min-w-0">
+                            <div className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{player.name}</div>
+                            <div className="text-xs text-slate-400 flex items-center gap-1.5 truncate">
+                              <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
+                              <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                              <span>{filterPositions(player)}</span>
+                              <span className="text-yellow-400 font-bold ml-1">(@{currentSlot})</span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            )
-          }
 
-          <div className="flex justify-between items-center px-6 py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl shrink-0">
-            <div className="text-xs text-purple-200/60 italic">
-              * Received players are assumed to occupy Active (BN) slots.
-            </div>
-            <div className="flex gap-3">
-              <button
-                className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
-                onClick={() => setShowTradeModal(false)}
-                disabled={tradeLoading}
-              >Cancel</button>
-              <button
-                className={`px-6 py-2 rounded-lg font-bold shadow flex items-center gap-2 ${isValid && !tradeLoading
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                  }`}
-                onClick={handleSubmitTrade}
-                disabled={tradeLoading || !isValid}
-              >
-                {tradeLoading && (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                )}
-                {tradeLoading ? 'Submitting...' : 'Submit Trade'}
-              </button>
-            </div>
-          </div>
+              {/* Validation Errors */}
+              {
+                (myViolations.length > 0 || theirViolations.length > 0) && (
+                  <div className="px-6 pb-2">
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                      <h4 className="text-red-300 font-bold text-sm mb-1">⚠ Roster Violations</h4>
+                      <ul className="text-xs text-red-200 list-disc list-inside space-y-0.5">
+                        {myViolations.map((v, i) => <li key={`my-${i}`}>You: {v}</li>)}
+                        {theirViolations.map((v, i) => <li key={`their-${i}`}>{theirNick}: {v}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                )
+              }
+
+              <div className="flex justify-between items-center px-6 py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl shrink-0">
+                <div className="text-xs text-purple-200/60 italic">
+                  * Received players are assumed to occupy Active (BN) slots.
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
+                    onClick={() => setShowTradeModal(false)}
+                    disabled={tradeLoading}
+                  >Cancel</button>
+                  <button
+                    className={`px-6 py-2 rounded-lg font-bold shadow flex items-center gap-2 ${isValid && !tradeLoading
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                      }`}
+                    onClick={handleSubmitTrade}
+                    disabled={tradeLoading || !isValid}
+                  >
+                    {tradeLoading && (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                    {tradeLoading ? 'Submitting...' : 'Submit Trade'}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div >
       </div >
     );
