@@ -8,6 +8,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
     const [settings, setSettings] = useState({ roster_positions: {}, batter_stat_categories: [], pitcher_stat_categories: [] });
     const [viewerRole, setViewerRole] = useState('member');
     const [tradeReviewSetting, setTradeReviewSetting] = useState('League votes');
+    const [tradeRejectPercentage, setTradeRejectPercentage] = useState('50%');
+    const [totalMemberCount, setTotalMemberCount] = useState(0);
     const [vetoConfirmId, setVetoConfirmId] = useState(null);
 
     // Fetch trades when modal opens or timeWindow changes
@@ -29,6 +31,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                 }
                 if (data.viewer_role) setViewerRole(data.viewer_role);
                 if (data.trade_review) setTradeReviewSetting(data.trade_review);
+                if (data.trade_reject_percentage) setTradeRejectPercentage(data.trade_reject_percentage);
+                if (data.total_member_count) setTotalMemberCount(data.total_member_count);
             }
         } catch (error) {
             console.error('Failed to fetch trades:', error);
@@ -328,9 +332,17 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
 
                                                 if (!canVote) return null;
 
+                                                // Calculate Veto Target
+                                                let vetoTargetDisplay = '';
+                                                if (tradeReviewSetting === 'League votes') {
+                                                    const percentage = parseFloat(tradeRejectPercentage) || 50;
+                                                    const target = Math.ceil((totalMemberCount || 0) * (percentage / 100));
+                                                    vetoTargetDisplay = ` / ${target}`;
+                                                }
+
                                                 return (
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-slate-400">Votes: {voteCount}</span>
+                                                        <span className="text-xs text-slate-400">Votes: {voteCount}{vetoTargetDisplay}</span>
                                                         <button
                                                             onClick={() => handleVeto(trade.id)}
                                                             disabled={hasVoted || !!processingAction}

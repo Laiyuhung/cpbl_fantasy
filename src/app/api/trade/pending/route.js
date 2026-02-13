@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 // POST: 建立 pending trade
@@ -155,13 +155,14 @@ export async function GET(request) {
     const viewerRole = viewerMember?.role || 'member';
 
     // Fetch trade settings
-    const { data: tradeReviewSetting } = await supabase
+    const { data: tradeSettings } = await supabase
       .from('league_settings')
-      .select('trade_review')
+      .select('trade_review, trade_reject_percentage')
       .eq('league_id', league_id)
       .single();
 
-    const tradeReview = tradeReviewSetting?.trade_review || 'League votes';
+    const tradeReview = tradeSettings?.trade_review || 'League votes';
+    const tradeRejectPercentage = tradeSettings?.trade_reject_percentage || '50%';
 
     if (tradesError) {
       return NextResponse.json({ success: false, error: tradesError.message }, { status: 500 });
@@ -264,7 +265,9 @@ export async function GET(request) {
         pitcher_stat_categories: settings?.pitcher_stat_categories || []
       },
       viewer_role: viewerRole,
-      trade_review: tradeReview
+      trade_review: tradeReview,
+      trade_reject_percentage: tradeRejectPercentage,
+      total_member_count: members?.length || 0
     });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
