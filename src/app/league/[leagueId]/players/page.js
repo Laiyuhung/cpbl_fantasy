@@ -173,6 +173,7 @@ export default function PlayersPage() {
 
   // Fetch Acquisitions Count
   const [acquisitionData, setAcquisitionData] = useState(null);
+  const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
 
   const fetchAcquisitions = async () => {
     if (!myManagerId) return;
@@ -187,8 +188,35 @@ export default function PlayersPage() {
     }
   };
 
+  const fetchActiveTrades = async () => {
+    if (!myManagerId) return;
+    try {
+      const res = await fetch(`/api/trade/list?league_id=${leagueId}&manager_id=${myManagerId}`);
+      const data = await res.json();
+      if (data.success) {
+        const tradeIds = new Set();
+        data.trades.forEach(t => {
+          if (['pending', 'accepted'].includes(t.status)) {
+            // Add Sender Players
+            if (Array.isArray(t.sender_players)) {
+              t.sender_players.forEach(pid => tradeIds.add(pid));
+            }
+            // Add Receiver Players
+            if (Array.isArray(t.receiver_players)) {
+              t.receiver_players.forEach(pid => tradeIds.add(pid));
+            }
+          }
+        });
+        setActiveTradePlayerIds(tradeIds);
+      }
+    } catch (e) {
+      console.error("Failed to fetch active trades for validation", e);
+    }
+  };
+
   useEffect(() => {
     fetchAcquisitions();
+    fetchActiveTrades();
   }, [leagueId, myManagerId]);
 
   // Set default sort when categories are loaded
@@ -748,6 +776,9 @@ export default function PlayersPage() {
 
   const confirmAddDrop = async () => {
     if (!pendingAddPlayer || !dropCandidateID) return;
+
+    if (checkTradeInvolvement(dropCandidateID)) return;
+
     setIsAdding(true);
     try {
       const res = await fetch(`/api/league/${leagueId}/transaction/add-drop`, {
@@ -791,6 +822,14 @@ export default function PlayersPage() {
     }
   };
 
+  const checkTradeInvolvement = (playerId) => {
+    if (activeTradePlayerIds.has(playerId)) {
+      alert('Cannot drop player involved in a pending or accepted trade.');
+      return true;
+    }
+    return false;
+  };
+
   // 處理 DROP 球員
   const handleDropPlayer = async (player) => {
     if (!myManagerId) {
@@ -798,7 +837,8 @@ export default function PlayersPage() {
       return;
     }
 
-    // 顯示確認對話框
+    if (checkTradeInvolvement(player.player_id)) return;
+
     setPlayerToDrop(player);
     setShowConfirmDrop(true);
   };
@@ -1338,7 +1378,7 @@ export default function PlayersPage() {
                               <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
                               <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                               <span>{filterPositions(player)}</span>
-                              <span className="text-yellow-400 font-bold ml-1">(@{currentSlot})</span>
+                              <span className="text-yellow-400 font-bold ml-1">({currentSlot})</span>
                             </div>
                           </div>
                         </label>
