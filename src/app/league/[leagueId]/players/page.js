@@ -1217,6 +1217,9 @@ export default function PlayersPage() {
                   const player = players.find(p => p.player_id === o.player_id);
                   if (!player) return null;
                   const isSelected = selectedMyPlayers.includes(o.player_id);
+                  const rosterEntry = tradeMyRoster.find(r => r.player_id === o.player_id);
+                  const currentSlot = rosterEntry?.position || '-';
+
                   return (
                     <label
                       key={o.player_id}
@@ -1257,6 +1260,7 @@ export default function PlayersPage() {
                           <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
                           <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                           <span>{filterPositions(player)}</span>
+                          <span className="text-yellow-400 font-bold ml-1">(@{currentSlot})</span>
                         </div>
                       </div>
                     </label>
@@ -1272,6 +1276,9 @@ export default function PlayersPage() {
                   const player = players.find(p => p.player_id === o.player_id);
                   if (!player) return null;
                   const isSelected = selectedTheirPlayers.includes(o.player_id);
+                  const rosterEntry = tradeTheirRoster.find(r => r.player_id === o.player_id);
+                  const currentSlot = rosterEntry?.position || '-';
+
                   return (
                     <label
                       key={o.player_id}
@@ -1312,6 +1319,7 @@ export default function PlayersPage() {
                           <span className={`${getTeamColor(player.team)} font-bold`}>{getTeamAbbr(player.team)}</span>
                           <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                           <span>{filterPositions(player)}</span>
+                          <span className="text-yellow-400 font-bold ml-1">(@{currentSlot})</span>
                         </div>
                       </div>
                     </label>
