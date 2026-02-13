@@ -6,6 +6,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
     const [processingAction, setProcessingAction] = useState(null); // 'tradeId-action'
     const [timeWindow, setTimeWindow] = useState('2026 Season');
     const [settings, setSettings] = useState({ roster_positions: {}, batter_stat_categories: [], pitcher_stat_categories: [] });
+    const [viewerRole, setViewerRole] = useState('member');
+    const [tradeReviewSetting, setTradeReviewSetting] = useState('League votes');
 
     // Fetch trades when modal opens or timeWindow changes
     useEffect(() => {
@@ -24,6 +26,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                 if (data.settings) {
                     setSettings(data.settings);
                 }
+                if (data.viewer_role) setViewerRole(data.viewer_role);
+                if (data.trade_review) setTradeReviewSetting(data.trade_review);
             }
         } catch (error) {
             console.error('Failed to fetch trades:', error);
@@ -55,6 +59,35 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
         } catch (error) {
             console.error('Action error:', error);
             alert('Action error');
+        } finally {
+            setProcessingAction(null);
+        }
+    };
+
+    const handleVeto = async (tradeId) => {
+        if (processingAction) return;
+        if (!confirm('Are you sure you want to veto this trade?')) return;
+
+        setProcessingAction(`${tradeId}-veto`);
+        try {
+            const res = await fetch('/api/trade/veto', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trade_id: tradeId,
+                    manager_id: managerId
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Refresh to update votes
+                fetchTrades();
+            } else {
+                alert(data.error || 'Veto failed');
+            }
+        } catch (error) {
+            console.error('Veto error:', error);
+            alert('Veto error');
         } finally {
             setProcessingAction(null);
         }
@@ -265,6 +298,45 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                                     </button>
                                                 </>
                                             )}
+                                        </div>
+                                    )}
+
+                                    {/* Veto Button for Accepted Trades */}
+                                    {trade.status === 'accepted' && tradeReviewSetting !== 'No review' && (
+                                        <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
+                                            <div className="text-xs text-slate-500">
+                                                Avail. until {new Date(new Date(trade.accepted_at).getTime() + 48 * 60 * 60 * 1000).toLocaleString()}
+                                            </div>
+                                            {(() => {
+                                                const hasVoted = (trade.veto_votes || []).includes(managerId);
+                                                const voteCount = (trade.veto_votes || []).length;
+
+                                                // Check Permission
+                                                let canVote = false;
+                                                if (tradeReviewSetting === 'League votes') {
+                                                    canVote = true; // Everyone can vote
+                                                } else if (tradeReviewSetting === 'Commissioner reviews') {
+                                                    canVote = viewerRole === 'Commissioner';
+                                                }
+
+                                                if (!canVote) return null;
+
+                                                return (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-slate-400">Votes: {voteCount}</span>
+                                                        <button
+                                                            onClick={() => handleVeto(trade.id)}
+                                                            disabled={hasVoted || !!processingAction}
+                                                            className={`px-3 py-1 text-xs rounded border transition-colors ${hasVoted
+                                                                    ? 'bg-slate-700 text-slate-400 border-slate-600 cursor-default'
+                                                                    : 'bg-red-900/30 text-red-300 border-red-500/30 hover:bg-red-900/50'
+                                                                }`}
+                                                        >
+                                                            {hasVoted ? 'Vetoed' : 'Vote Veto'}
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                 </div>

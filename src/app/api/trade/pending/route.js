@@ -144,6 +144,25 @@ export async function GET(request) {
       .or(`status.eq.accepted,initiator_manager_id.eq.${manager_id},recipient_manager_id.eq.${manager_id}`)
       .order('created_at', { ascending: false });
 
+    // Fetch viewer's role
+    const { data: viewerMember } = await supabase
+      .from('league_members')
+      .select('role')
+      .eq('league_id', league_id)
+      .eq('manager_id', manager_id)
+      .single();
+
+    const viewerRole = viewerMember?.role || 'member';
+
+    // Fetch trade settings
+    const { data: tradeReviewSetting } = await supabase
+      .from('league_settings')
+      .select('trade_review')
+      .eq('league_id', league_id)
+      .single();
+
+    const tradeReview = tradeReviewSetting?.trade_review || 'League votes';
+
     if (tradesError) {
       return NextResponse.json({ success: false, error: tradesError.message }, { status: 500 });
     }
@@ -243,7 +262,9 @@ export async function GET(request) {
         roster_positions: settings?.roster_positions || {},
         batter_stat_categories: settings?.batter_stat_categories || [],
         pitcher_stat_categories: settings?.pitcher_stat_categories || []
-      }
+      },
+      viewer_role: viewerRole,
+      trade_review: tradeReview
     });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
