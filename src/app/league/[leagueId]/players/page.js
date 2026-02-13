@@ -142,6 +142,26 @@ export default function PlayersPage() {
     fetchData();
   }, [leagueId]);
 
+  // Fetch Acquisitions Count
+  const [acquisitionData, setAcquisitionData] = useState(null);
+
+  const fetchAcquisitions = async () => {
+    if (!myManagerId) return;
+    try {
+      const res = await fetch(`/api/league/${leagueId}/acquisitions?manager_id=${myManagerId}`);
+      const data = await res.json();
+      if (data.success) {
+        setAcquisitionData(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch acquisitions', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchAcquisitions();
+  }, [leagueId, myManagerId]);
+
   // Set default sort when categories are loaded
   // Set default sort when categories are loaded
   // useEffect removed to enforce Rank ASC default via initial state and button handlers
@@ -1280,6 +1300,14 @@ export default function PlayersPage() {
             >
               POS RULES
             </button>
+            {acquisitionData && (
+              <div className={`mb-2 px-3 py-1 rounded-full border flex items-center justify-center transition-colors text-xs font-bold tracking-wider cursor-help ${acquisitionData.limit !== 'No maximum' && acquisitionData.usage >= acquisitionData.limit
+                ? 'bg-red-500/30 border-red-400/50 text-red-300'
+                : 'bg-emerald-500/30 border-emerald-400/50 text-emerald-300'
+                }`} title={`Weekly Acquisitions (${acquisitionData.week})`}>
+                MOVES: {acquisitionData.usage} {acquisitionData.limit !== 'No maximum' ? `/ ${acquisitionData.limit}` : ''}
+              </div>
+            )}
           </div>
 
           {/* Filters */}

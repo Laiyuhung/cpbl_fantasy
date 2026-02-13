@@ -27,6 +27,48 @@ export async function POST(request, { params }) {
         const minorKey = Object.keys(rosterConfig).find(k => k.toLowerCase() === 'minor') || 'Minor';
         const naLimit = rosterConfig[minorKey] || 0;
         const waiverDays = settings?.waiver_period_days || 2; // Default 2 days
+        const maxAcquisitions = settings?.max_acquisitions_per_week !== 'No maximum' ? parseInt(settings.max_acquisitions_per_week) : Infinity;
+
+        // --- MAX ACQUISITIONS CHECK ---
+        if (maxAcquisitions !== Infinity) {
+            // Determine Current Week
+            const now = new Date();
+            const todayFallback = now.toISOString().split('T')[0];
+            // Use simple date comparison or query schedule_date
+            // To be consistent with acquisitions API, we should use schedule_date
+
+            // Note: Since we are inside a transaction, additional queries are fine.
+            const todayTw = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+
+            const { data: weekData } = await supabase
+                .from('schedule_date')
+                .select('*')
+                .lte('start', todayTw)
+                .gte('end', todayTw)
+                .single();
+
+            if (weekData) {
+                const startTw = new Date(`${weekData.start}T00:00:00+08:00`);
+                const endTw = new Date(`${weekData.end}T23:59:59.999+08:00`);
+
+                const { count, error: countError } = await supabase
+                    .from('transactions_2026')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('league_id', leagueId)
+                    .eq('manager_id', managerId)
+                    .eq('transaction_type', 'ADD')
+                    .gte('created_at', startTw.toISOString())
+                    .lte('created_at', endTw.toISOString());
+
+                if (!countError && count >= maxAcquisitions) {
+                    return NextResponse.json({
+                        success: false,
+                        error: `Weekly acquisition limit reached (${count}/${maxAcquisitions})`
+                    }, { status: 400 });
+                }
+            }
+        }
+        // ------------------------------
 
         const tradeGroupId = crypto.randomUUID();
 
