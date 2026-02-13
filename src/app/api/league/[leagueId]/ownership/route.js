@@ -24,7 +24,13 @@ export async function POST(req, { params }) {
       .single();
 
     const limitSetting = settings?.max_acquisitions_per_week;
-    const maxAcquisitions = (limitSetting && limitSetting !== 'No maximum') ? parseInt(limitSetting) : Infinity;
+    let maxAcquisitions = Infinity;
+    if (limitSetting) {
+      const parsed = parseInt(limitSetting);
+      if (!isNaN(parsed)) {
+        maxAcquisitions = parsed;
+      }
+    }
 
     // --- MAX ACQUISITIONS CHECK ---
     if (maxAcquisitions !== Infinity) {

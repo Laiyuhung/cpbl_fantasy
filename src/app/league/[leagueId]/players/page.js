@@ -531,6 +531,7 @@ export default function PlayersPage() {
       if (usage >= limit) {
         setErrorMessage(`Weekly acquisition limit reached (${usage}/${limit}). Cannot add player.`);
         setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
         return;
       }
     }
@@ -747,11 +748,13 @@ export default function PlayersPage() {
       } else {
         setErrorMessage(data.error);
         setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
       }
     } catch (e) {
       console.error(e);
       setErrorMessage('Transaction failed');
       setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
     } finally {
       setIsAdding(false);
       setPendingAddPlayer(null);

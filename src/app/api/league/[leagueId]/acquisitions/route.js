@@ -20,8 +20,9 @@ export async function GET(request, { params }) {
 
         const limitStr = settings?.max_acquisitions_per_week || 'No maximum';
         let limit = Infinity;
-        if (limitStr !== 'No maximum') {
-            limit = parseInt(limitStr);
+        const parsedLimit = parseInt(limitStr);
+        if (!isNaN(parsedLimit)) {
+            limit = parsedLimit;
         }
 
         // 2. Determine Current Week via league_schedule

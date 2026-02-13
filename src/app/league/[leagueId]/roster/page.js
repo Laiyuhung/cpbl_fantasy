@@ -174,6 +174,9 @@ export default function RosterPage() {
                     }
                 }
 
+                setNotification({ type: 'success', message: msg, details: details });
+                setTimeout(() => setNotification(null), 3000);
+
                 await refreshRoster(); // Wait for refresh
             } else {
                 console.error(data.error);
