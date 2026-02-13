@@ -174,6 +174,7 @@ export default function PlayersPage() {
   // Fetch Acquisitions Count
   const [acquisitionData, setAcquisitionData] = useState(null);
   const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
+  const [lockedPlayerAlert, setLockedPlayerAlert] = useState(null); // Name of locked player trying to be dropped
 
   const fetchAcquisitions = async () => {
     if (!myManagerId) return;
@@ -1143,8 +1144,11 @@ export default function PlayersPage() {
         if (activeTradePlayerIds.has(player.player_id)) {
           return (
             <button
-              onClick={() => alert('Player is involved in a pending or accepted trade and cannot be dropped.')}
-              className="w-8 h-8 rounded-full bg-slate-500 text-slate-300 flex items-center justify-center font-bold cursor-not-allowed border border-slate-400"
+              onClick={() => {
+                setLockedPlayerAlert(player.name);
+                setTimeout(() => setLockedPlayerAlert(null), 3000);
+              }}
+              className="w-8 h-8 rounded-full bg-slate-500/20 text-slate-400 flex items-center justify-center font-bold cursor-not-allowed border border-slate-500/50 hover:bg-slate-500/30 transition-colors"
               title="Player is locked in an active trade"
             >
               🔒
@@ -2172,6 +2176,31 @@ export default function PlayersPage() {
               <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
                 <div className="h-full bg-white/60 rounded-full animate-progress-bar" style={{ animationDuration: '4s' }}></div>
               </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Locked Player Notification */}
+      {
+        lockedPlayerAlert && (
+          <div className="fixed top-6 right-6 z-[100030] animate-slide-in-right">
+            <div className="bg-gradient-to-br from-slate-800/95 to-slate-900/95 border border-purple-500/50 rounded-2xl shadow-2xl p-5 max-w-sm transform transition-all duration-300 flex items-center gap-4">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30 shrink-0">
+                <span className="text-2xl">🔒</span>
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-lg">Trade Locked</h4>
+                <p className="text-slate-300 text-xs">
+                  <span className="text-purple-300 font-bold">{lockedPlayerAlert}</span> is involved in an active trade and cannot be dropped.
+                </p>
+              </div>
+              <button
+                onClick={() => setLockedPlayerAlert(null)}
+                className="ml-auto text-slate-500 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
           </div>
         )
