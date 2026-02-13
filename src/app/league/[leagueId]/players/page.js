@@ -55,8 +55,32 @@ export default function PlayersPage() {
   const [tradeSuccessMessage, setTradeSuccessMessage] = useState({ title: '', description: '' });
   const [showTradeErrorNotification, setShowTradeErrorNotification] = useState(false);
   const [tradeErrorMessage, setTradeErrorMessage] = useState({ title: '', description: '' });
-  const [tradeEndDate, setTradeEndDate] = useState(null);
   const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
+  const [leagueSettings, setLeagueSettings] = useState({});
+  const [tradeEndDate, setTradeEndDate] = useState(null);
+
+  // Fetch rosters for trade validation
+  useEffect(() => {
+    if (showTradeModal && myManagerId && tradeTargetManagerId) {
+      const fetchTradeRosters = async () => {
+        try {
+          const [myRes, theirRes] = await Promise.all([
+            fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}`),
+            fetch(`/api/league/${leagueId}/roster?manager_id=${tradeTargetManagerId}`)
+          ]);
+          const myData = await myRes.json();
+          const theirData = await theirRes.json();
+          if (myData.success) setTradeMyRoster(myData.roster || []);
+          if (theirData.success) setTradeTheirRoster(theirData.roster || []);
+        } catch (e) {
+          console.error("Failed to fetch trade rosters", e);
+        }
+      };
+      fetchTradeRosters();
+    }
+  }, [showTradeModal, myManagerId, tradeTargetManagerId, leagueId]);
+  const [tradeMyRoster, setTradeMyRoster] = useState([]);
+  const [tradeTheirRoster, setTradeTheirRoster] = useState([]);
 
   // Add & Drop State
   const [showAddDropModal, setShowAddDropModal] = useState(false);
@@ -130,6 +154,7 @@ export default function PlayersPage() {
         if (settingsData.success && settingsData.data) {
           setBatterStatCategories(settingsData.data.batter_stat_categories || []);
           setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
+          setLeagueSettings(settingsData.data || {});
         }
       } catch (err) {
         console.error('Unexpected error:', err);
@@ -1107,6 +1132,51 @@ export default function PlayersPage() {
     return null;
   };
 
+  // Trade Validation
+  const validateTradeRoster = (currentRoster, losingPlayerIds, gainingPlayerIds, settings) => {
+    // 1. Calculate future roster
+    const losingSet = new Set(losingPlayerIds);
+    const futureRoster = currentRoster.filter(p => !losingSet.has(p.player_id));
+
+    // gainingPlayerIds are just IDs, need player objects.
+    // Use `players` list to find info.
+    const gainingPlayers = players.filter(p => gainingPlayerIds.includes(p.player_id));
+
+    // Add gaining players to future roster. Assume they go to BN (Active).
+    const futureRosterWithIncoming = [
+      ...futureRoster,
+      ...gainingPlayers.map(p => ({ ...p, position: 'BN', identity: p.identity || 'local' }))
+    ];
+
+    // 2. Counts
+    const rosterConfig = settings.roster_positions || {};
+    const totalLimit = Object.values(rosterConfig).reduce((sum, count) => sum + count, 0);
+
+    const foreigners = futureRosterWithIncoming.filter(p => p.identity?.toLowerCase() === 'foreigner');
+    const foreignerCount = foreigners.length;
+    const foreignerLimit = parseInt(settings.foreigner_on_team_limit) || 999;
+
+    // Active Counts (Exclude NA and Minor)
+    const activePlayers = futureRosterWithIncoming.filter(p => !['NA', 'Minor'].includes(p.position));
+    const activeCount = activePlayers.length;
+    const activeLimit = Object.entries(rosterConfig)
+      .filter(([key]) => !['Minor', 'NA'].includes(key))
+      .reduce((sum, [_, count]) => sum + count, 0);
+
+    const activeForeigners = activePlayers.filter(p => p.identity?.toLowerCase() === 'foreigner');
+    const activeForeignerCount = activeForeigners.length;
+    const activeForeignerLimit = parseInt(settings.foreigner_active_limit) || 999;
+
+    // 3. Check violations
+    const violations = [];
+    if (futureRosterWithIncoming.length > totalLimit) violations.push(`Total Players: ${futureRosterWithIncoming.length}/${totalLimit}`);
+    if (activeCount > activeLimit) violations.push(`Active Players: ${activeCount}/${activeLimit}`);
+    if (foreignerCount > foreignerLimit) violations.push(`Foreign Players: ${foreignerCount}/${foreignerLimit}`);
+    if (activeForeignerCount > activeForeignerLimit) violations.push(`Active Foreigners: ${activeForeignerCount}/${activeForeignerLimit}`);
+
+    return violations;
+  };
+
   // Trade Modal
   const renderTradeModal = () => {
     if (!showTradeModal) return null;
@@ -1114,6 +1184,13 @@ export default function PlayersPage() {
     const theirPlayers = getTheirPlayers();
     const myNick = members.find(m => m.manager_id === myManagerId)?.nickname || 'You';
     const theirNick = members.find(m => m.manager_id === tradeTargetManagerId)?.nickname || 'Opponent';
+
+    // Validate
+    const myViolations = validateTradeRoster(tradeMyRoster, selectedMyPlayers, selectedTheirPlayers, leagueSettings);
+    const theirViolations = validateTradeRoster(tradeTheirRoster, selectedTheirPlayers, selectedMyPlayers, leagueSettings);
+
+    const isValid = myViolations.length === 0 && theirViolations.length === 0;
+
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
         <div className="bg-gradient-to-br from-purple-700/90 to-blue-800/90 border border-purple-400/40 rounded-2xl shadow-2xl w-full max-w-2xl relative max-h-[85vh] flex flex-col">
@@ -1243,25 +1320,49 @@ export default function PlayersPage() {
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 px-6 py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl shrink-0">
-            <button
-              className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
-              onClick={() => setShowTradeModal(false)}
-              disabled={tradeLoading}
-            >Cancel</button>
-            <button
-              className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              onClick={handleSubmitTrade}
-              disabled={tradeLoading}
-            >
-              {tradeLoading && (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              )}
-              {tradeLoading ? 'Submitting...' : 'Submit Trade'}
-            </button>
+
+          {/* Validation Errors */}
+          {
+            (myViolations.length > 0 || theirViolations.length > 0) && (
+              <div className="px-6 pb-2">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                  <h4 className="text-red-300 font-bold text-sm mb-1">⚠ Roster Violations</h4>
+                  <ul className="text-xs text-red-200 list-disc list-inside space-y-0.5">
+                    {myViolations.map((v, i) => <li key={`my-${i}`}>You: {v}</li>)}
+                    {theirViolations.map((v, i) => <li key={`their-${i}`}>{theirNick}: {v}</li>)}
+                  </ul>
+                </div>
+              </div>
+            )
+          }
+
+          <div className="flex justify-between items-center px-6 py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl shrink-0">
+            <div className="text-xs text-purple-200/60 italic">
+              * Received players are assumed to occupy Active (BN) slots.
+            </div>
+            <div className="flex gap-3">
+              <button
+                className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold"
+                onClick={() => setShowTradeModal(false)}
+                disabled={tradeLoading}
+              >Cancel</button>
+              <button
+                className={`px-6 py-2 rounded-lg font-bold shadow flex items-center gap-2 ${isValid && !tradeLoading
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                  }`}
+                onClick={handleSubmitTrade}
+                disabled={tradeLoading || !isValid}
+              >
+                {tradeLoading && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                )}
+                {tradeLoading ? 'Submitting...' : 'Submit Trade'}
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
     );
   };
 
