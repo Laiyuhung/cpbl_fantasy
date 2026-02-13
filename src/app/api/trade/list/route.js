@@ -19,7 +19,7 @@ export async function GET(request) {
         // Fetch trades where the user is initiator or recipient
         // And status is pending or accepted
         const { data: trades, error } = await supabase
-            .from('trades')
+            .from('pending_trade')
             .select('id, status, initiator_manager_id, recipient_manager_id, initiator_players, recipient_players')
             .eq('league_id', league_id)
             .or(`initiator_manager_id.eq.${manager_id},recipient_manager_id.eq.${manager_id}`)
