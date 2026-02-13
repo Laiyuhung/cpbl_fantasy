@@ -316,7 +316,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                     {trade.status === 'accepted' && tradeReviewSetting !== 'No review' && (
                                         <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
                                             <div className="text-xs text-slate-500">
-                                                Avail. until {new Date(new Date(trade.accepted_at).getTime() + 48 * 60 * 60 * 1000).toLocaleString('en-US')}
+                                                Proceed at {new Date(new Date(trade.accepted_at).getTime() + 48 * 60 * 60 * 1000).toLocaleString('en-US')} if no enough vetoes
                                             </div>
                                             {(() => {
                                                 const hasVoted = (trade.veto_votes || []).includes(managerId);
