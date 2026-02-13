@@ -75,8 +75,8 @@ export async function POST(request, { params }) {
                         .eq('league_id', leagueId)
                         .eq('manager_id', managerId)
                         .eq('transaction_type', 'ADD')
-                        .gte('created_at', startTw.toISOString())
-                        .lte('created_at', endTw.toISOString());
+                        .gte('transaction_time', startTw.toISOString())
+                        .lte('transaction_time', endTw.toISOString());
 
                     if (!countError && count >= maxAcquisitions) {
                         return NextResponse.json({

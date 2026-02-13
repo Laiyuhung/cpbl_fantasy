@@ -524,6 +524,16 @@ export default function PlayersPage() {
 
   // Pre-Check Logic
   const preCheckAddPlayer = async (player) => {
+    // 0. Check Acquisition Limit
+    if (acquisitionData && acquisitionData.limit !== 'No Maximum') {
+      const limit = parseInt(acquisitionData.limit);
+      const usage = parseInt(acquisitionData.usage);
+      if (usage >= limit) {
+        setErrorMessage(`Weekly acquisition limit reached (${usage}/${limit}). Cannot add player.`);
+        setShowError(true);
+        return;
+      }
+    }
     // 1. Fetch Roster & Settings for precise calculation
     try {
       setCheckingAdd(true);

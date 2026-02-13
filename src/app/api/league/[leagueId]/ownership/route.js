@@ -16,6 +16,67 @@ export async function POST(req, { params }) {
       );
     }
 
+    // 1. Fetch Settings
+    const { data: settings } = await supabase
+      .from('league_settings')
+      .select('roster_positions, foreigner_on_team_limit, foreigner_active_limit, max_acquisitions_per_week')
+      .eq('league_id', leagueId)
+      .single();
+
+    const limitSetting = settings?.max_acquisitions_per_week;
+    const maxAcquisitions = (limitSetting && limitSetting !== 'No maximum') ? parseInt(limitSetting) : Infinity;
+
+    // --- MAX ACQUISITIONS CHECK ---
+    if (maxAcquisitions !== Infinity) {
+      // Determine Current Week via league_schedule
+      const now = new Date();
+      const todayTw = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+
+      // Check Pre-season first (Before Week 1)
+      const { data: week1 } = await supabase
+        .from('league_schedule')
+        .select('week_start')
+        .eq('league_id', leagueId)
+        .eq('week_number', 1)
+        .single();
+
+      // If we have a schedule and today is before Week 1 start, it's Pre-season -> Unlimited
+      const isPreSeason = week1 && todayTw < week1.week_start;
+
+      if (!isPreSeason) {
+        // Not Pre-season, check limit
+        const { data: weekData } = await supabase
+          .from('league_schedule')
+          .select('*')
+          .eq('league_id', leagueId)
+          .lte('week_start', todayTw)
+          .gte('week_end', todayTw)
+          .single();
+
+        if (weekData) {
+          const startTw = new Date(`${weekData.week_start}T00:00:00+08:00`);
+          const endTw = new Date(`${weekData.week_end}T23:59:59.999+08:00`);
+
+          const { count, error: countError } = await supabase
+            .from('transactions_2026')
+            .select('*', { count: 'exact', head: true })
+            .eq('league_id', leagueId)
+            .eq('manager_id', manager_id)
+            .eq('transaction_type', 'ADD')
+            .gte('transaction_time', startTw.toISOString())
+            .lte('transaction_time', endTw.toISOString());
+
+          if (!countError && count >= maxAcquisitions) {
+            return NextResponse.json({
+              success: false,
+              error: `Weekly acquisition limit reached (${count}/${maxAcquisitions})`
+            }, { status: 400 });
+          }
+        }
+      }
+    }
+    // ------------------------------
+
     // 【執行前再次檢查】檢查該球員是否已在此聯盟中，避免多人同時操作衝突
     const { data: existing, error: checkError } = await supabase
       .from('league_player_ownership')
