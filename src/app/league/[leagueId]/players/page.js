@@ -1305,7 +1305,10 @@ export default function PlayersPage() {
                 ? 'bg-red-500/30 border-red-400/50 text-red-300'
                 : 'bg-emerald-500/30 border-emerald-400/50 text-emerald-300'
                 }`}>
-                Add limit: {acquisitionData.usage} / {acquisitionData.limit} ({acquisitionData.week})
+                {acquisitionData.week.includes('Pre-season') || acquisitionData.week.includes('Off-season')
+                  ? `Add limit: ${acquisitionData.limit} (${acquisitionData.week})`
+                  : `Add limit: ${acquisitionData.usage} / ${acquisitionData.limit} (${acquisitionData.week})`
+                }
               </div>
             )}
           </div>

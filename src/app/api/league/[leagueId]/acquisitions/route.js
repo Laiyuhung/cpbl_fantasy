@@ -64,7 +64,7 @@ export async function GET(request, { params }) {
                 const endObj = new Date(weekData.week_end);
                 const startStr = `${startObj.getMonth() + 1}/${startObj.getDate()}`;
                 const endStr = `${endObj.getMonth() + 1}/${endObj.getDate()}`;
-                dateRange = `${weekData.week_label || `Week ${weekData.week_number}`} (${startStr} - ${endStr})`;
+                dateRange = `${startStr} - ${endStr}`;
 
                 // 3. Count 'ADD' transactions in this week
                 const startTw = new Date(`${weekData.week_start}T00:00:00+08:00`);
