@@ -132,7 +132,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
             >
                 <div className="flex items-center justify-between p-6 border-b border-purple-500/20 flex-shrink-0">
                     <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                        <span className="text-2xl">⇌</span> My Pending Trades
+                        <span className="text-2xl">⇌</span> Trades
                     </h3>
                     <div className="flex items-center gap-4">
                         <select

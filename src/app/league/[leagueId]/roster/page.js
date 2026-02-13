@@ -571,7 +571,7 @@ export default function RosterPage() {
                                 onClick={() => setShowMyTradesModal(true)}
                                 className="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center gap-2 transition-colors text-xs font-bold tracking-wider"
                             >
-                                <span>MY TRADES</span>
+                                <span>TRADES</span>
                                 {pendingTradeCount > 0 && (
                                     <span className="w-5 h-5 rounded-full bg-pink-500 text-white flex items-center justify-center text-[10px] font-bold shadow-lg">
                                         {pendingTradeCount}
