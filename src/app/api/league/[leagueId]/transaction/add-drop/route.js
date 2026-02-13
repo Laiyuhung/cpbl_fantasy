@@ -19,14 +19,21 @@ export async function POST(request, { params }) {
         // 1. Fetch Settings
         const { data: settings } = await supabase
             .from('league_settings')
-            .select('roster_positions, foreigner_on_team_limit, foreigner_active_limit, waiver_period_days, max_acquisitions_per_week')
+            .select('roster_positions, foreigner_on_team_limit, foreigner_active_limit, waiver_players_unfreeze_time, max_acquisitions_per_week')
             .eq('league_id', leagueId)
             .single();
 
         const rosterConfig = settings?.roster_positions || {};
         const minorKey = Object.keys(rosterConfig).find(k => k.toLowerCase() === 'minor') || 'Minor';
         const naLimit = rosterConfig[minorKey] || 0;
-        const waiverDays = settings?.waiver_period_days || 2; // Default 2 days
+
+        let waiverDays = 2; // Default
+        if (settings?.waiver_players_unfreeze_time) {
+            const daysPart = parseInt(settings.waiver_players_unfreeze_time);
+            if (!isNaN(daysPart)) {
+                waiverDays = daysPart;
+            }
+        }
 
         const limitSetting = settings?.max_acquisitions_per_week;
         const maxAcquisitions = (limitSetting && limitSetting !== 'No maximum') ? parseInt(limitSetting) : Infinity;
