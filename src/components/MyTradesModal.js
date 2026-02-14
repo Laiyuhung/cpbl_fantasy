@@ -11,6 +11,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
     const [tradeRejectPercentage, setTradeRejectPercentage] = useState('50%');
     const [totalMemberCount, setTotalMemberCount] = useState(0);
     const [vetoConfirmId, setVetoConfirmId] = useState(null);
+    const [validationError, setValidationError] = useState(null);
 
     // Fetch trades when modal opens or timeWindow changes
     useEffect(() => {
@@ -138,12 +139,18 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                 return null;
             };
 
+            // Resolve nicknames for error messages
+            const initMember = members.find(m => m.manager_id === trade.initiator_manager_id);
+            const recMember = members.find(m => m.manager_id === trade.recipient_manager_id);
+            const initNick = trade.initiator?.nickname || initMember?.nickname || trade.initiator?.name || 'Initiator';
+            const recNick = trade.recipient?.nickname || recMember?.nickname || trade.recipient?.name || 'Recipient';
+
             // Check Initiator (receives recipient_players, loses initiator_players)
-            const initError = checkRosterLimits(initRoster, trade.recipient_players, trade.initiator_players, "Initiator");
+            const initError = checkRosterLimits(initRoster, trade.recipient_players, trade.initiator_players, initNick);
             if (initError) return initError;
 
             // Check Recipient (receives initiator_players, loses recipient_players)
-            const recError = checkRosterLimits(recRoster, trade.initiator_players, trade.recipient_players, "Recipient");
+            const recError = checkRosterLimits(recRoster, trade.initiator_players, trade.recipient_players, recNick);
             if (recError) return recError;
 
             return null; // Valid
@@ -163,7 +170,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
             if (trade) {
                 const error = await validateAcceptRoster(trade);
                 if (error) {
-                    alert('Cannot accept trade:\n' + error);
+                    setValidationError(error);
                     setProcessingAction(null);
                     return;
                 }
@@ -349,7 +356,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                             <span className="font-bold text-pink-300">{recNick}</span>
                                         </div>
                                         <div className="text-xs text-slate-500">
-                                            {new Date(trade.updated_at || trade.created_at).toLocaleString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            {new Date(trade.updated_at || trade.created_at).toLocaleString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     </div>
 
@@ -531,6 +538,31 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                     </div>
                 )}
             </div>
+            {/* Validation Error Modal */}
+            {validationError && (
+                <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-6 z-[60] animate-fadeIn">
+                    <div className="bg-slate-800 rounded-xl p-6 border border-red-500/50 shadow-2xl max-w-sm w-full text-center relative overflow-hidden">
+                        {/* Error glow */}
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-pink-600 to-red-600"></div>
+
+                        <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                            <span className="text-3xl">⚠️</span>
+                        </div>
+
+                        <h4 className="text-xl font-bold text-white mb-2">Trade Validation Failed</h4>
+                        <p className="text-slate-300 text-sm mb-6 leading-relaxed whitespace-pre-line">
+                            {validationError}
+                        </p>
+
+                        <button
+                            onClick={() => setValidationError(null)}
+                            className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors font-medium text-sm w-full"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
