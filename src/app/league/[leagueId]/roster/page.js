@@ -735,23 +735,23 @@ export default function RosterPage() {
                                 >
                                     <span>TRADES</span>
                                     {pendingTradeCount > 0 && (
-                                        <span className="w-5 h-5 rounded-full bg-pink-500 text-white flex items-center justify-center text-[10px] font-bold shadow-lg">
+                                        <span className="w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[8px] font-bold shadow-lg">
                                             {pendingTradeCount}
                                         </span>
                                     )}
                                 </button>
                             )}
                             <button
-                                onClick={() => setShowLegendModal(true)}
-                                className="px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
-                            >
-                                LEGEND
-                            </button>
-                            <button
                                 onClick={() => setShowWaiverModal(true)}
                                 className="px-3 py-1 rounded-full bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
                             >
                                 WAIVER
+                            </button>
+                            <button
+                                onClick={() => setShowLegendModal(true)}
+                                className="px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                            >
+                                LEGEND
                             </button>
                             <button
                                 onClick={() => setShowInfoModal(true)}

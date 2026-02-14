@@ -199,16 +199,7 @@ export default function Navbar() {
           >
             HOME
           </Link>
-          <Link
-            href="/roster"
-            className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
-            onClick={(e) => {
-              e.preventDefault()
-              window.location.href = '/roster'
-            }}
-          >
-            ROSTER
-          </Link>
+
 
 
 
@@ -353,7 +344,7 @@ export default function Navbar() {
 
             <div className="overflow-y-auto h-[calc(100%-180px)] p-4 space-y-1">
               <Link href="/home" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/home'; }}>HOME</Link>
-              <Link href="/roster" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/roster'; }}>ROSTER</Link>
+
 
               <div className="border-t border-blue-500/30 mt-4 pt-4">
                 <div className="text-xs text-blue-300/70 mb-3 px-4 font-semibold tracking-wider">MY LEAGUES</div>
