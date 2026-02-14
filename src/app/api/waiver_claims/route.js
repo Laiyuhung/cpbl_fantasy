@@ -10,6 +10,12 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
+    let offWaiverDate = null;
+    if (off_waiver) {
+      // 確保只存日期 (YYYY-MM-DD)，忽略時間
+      offWaiverDate = new Date(off_waiver).toISOString().split('T')[0];
+    }
+
     // 取得目前該 manager 在該 off_waiver 日期的最大 priority
     // 如果 off_waiver 為 null (照理說 waiver claims 應該都有 off_waiver)，則只看 null? 
     // 假設前端傳來的 off_waiver 格式正確
@@ -20,8 +26,9 @@ export async function POST(request) {
       .eq('league_id', league_id)
       .eq('manager_id', manager_id);
 
-    if (off_waiver) {
-      query = query.eq('off_waiver', off_waiver);
+    if (offWaiverDate) {
+      // 查詢同一天的 priority
+      query = query.eq('off_waiver', offWaiverDate);
     } else {
       query = query.is('off_waiver', null);
     }
@@ -47,7 +54,7 @@ export async function POST(request) {
           manager_id,
           player_id,
           drop_player_id: drop_player_id || null,
-          off_waiver: off_waiver || null,
+          off_waiver: offWaiverDate || null,
           personal_priority: nextPriority
         },
       ])
