@@ -220,7 +220,7 @@ export default function WaiverModal({ isOpen, onClose, leagueId, managerId }) {
 
                 <div className="p-4 bg-slate-900 border-t border-purple-500/30 text-center">
                     <p className="text-xs text-slate-500">
-                        Claims are processed daily at 1:00 TW time. Higher priority claims are processed first.
+                        Claims are processed daily at 1AM - 2AM TW time.
                     </p>
                 </div>
             </div>
