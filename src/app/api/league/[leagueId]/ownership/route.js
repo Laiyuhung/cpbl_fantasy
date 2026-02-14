@@ -504,6 +504,42 @@ export async function DELETE(req, { params }) {
         message: 'Player dropped (same day add & drop)',
         action: 'deleted'
       });
+    } else if (waiverDays === 0) {
+      console.log('→ Waiver Time is 0, performing Instant Drop (Delete)...');
+      // Waiver Time = 0 -> Instant Drop (Delete record, return to FA)
+      const { error: deleteError } = await supabase
+        .from('league_player_ownership')
+        .delete()
+        .eq('id', ownership.id);
+
+      if (deleteError) {
+        console.error('Delete ownership error (Instant Drop):', deleteError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to drop player', details: deleteError.message },
+          { status: 500 }
+        );
+      }
+
+      // Record DROP transaction
+      const { error: transError } = await supabase
+        .from('transactions_2026')
+        .insert({
+          league_id: leagueId,
+          player_id: player_id,
+          manager_id: manager_id,
+          transaction_type: 'DROP',
+          transaction_time: now.toISOString()
+        });
+
+      if (transError) {
+        console.error('Failed to log transaction:', transError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Player dropped (Instant Drop)',
+        action: 'deleted'
+      });
     } else {
       console.log('→ Different day detected, setting to Waiver...');
       // 非同日 -> 設為 Waiver，off_waiver = 台灣今天 + waiver_players_unfreeze_time 天

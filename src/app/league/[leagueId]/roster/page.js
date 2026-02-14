@@ -553,195 +553,213 @@ export default function RosterPage() {
                     <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
                         My Roster
                     </h1>
-                    <div className="flex items-center gap-4">
-                        <select
-                            value={timeWindow}
-                            onChange={(e) => setTimeWindow(e.target.value)}
-                            className="px-3 py-1 bg-slate-800/60 border border-purple-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                        >
-                            <option value="Today">Today</option>
-                            <option value="Yesterday">Yesterday</option>
-                            <option value="Last 7 Days">Last 7 Days</option>
-                            <option value="Last 14 Days">Last 14 Days</option>
-                            <option value="Last 30 Days">Last 30 Days</option>
-                            <option value="2026 Season">2026 Season</option>
-                            <option value="2025 Season">2025 Season</option>
-                        </select>
-
-                        {/* Date Selector */}
-                        <div className="flex items-center gap-2 bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-500/30">
-                            <button
-                                onClick={() => {
-                                    const currentIndex = availableDates.indexOf(selectedDate);
-                                    if (currentIndex > 0) {
-                                        setSelectedDate(availableDates[currentIndex - 1]);
-                                    }
-                                }}
-                                disabled={!selectedDate || availableDates.indexOf(selectedDate) === 0}
-                                className="p-1 rounded bg-purple-600/50 hover:bg-purple-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white transition-colors"
-                                title="Previous Day"
+                    <div className="flex flex-col items-end gap-3">
+                        <div className="flex items-center gap-4">
+                            <select
+                                value={timeWindow}
+                                onChange={(e) => setTimeWindow(e.target.value)}
+                                className="px-3 py-1 bg-slate-800/60 border border-purple-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
+                                <option value="Today">Today</option>
+                                <option value="Yesterday">Yesterday</option>
+                                <option value="Last 7 Days">Last 7 Days</option>
+                                <option value="Last 14 Days">Last 14 Days</option>
+                                <option value="Last 30 Days">Last 30 Days</option>
+                                <option value="2026 Season">2026 Season</option>
+                                <option value="2025 Season">2025 Season</option>
+                            </select>
 
-                            <div className="relative">
+                            {/* Date Selector */}
+                            <div className="flex items-center gap-2 bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-500/30">
                                 <button
                                     onClick={() => {
-                                        if (!showDatePicker) {
-                                            // Initialize view to selected date or today
-                                            let initDate = new Date();
-                                            // Adjust to Taiwan time if needed, but local browser time is usually fine for UI logic
-                                            // Use selectedDate to focus the calendar
-                                            if (selectedDate) {
-                                                const [y, m, d] = selectedDate.split('-').map(Number);
-                                                initDate = new Date(y, m - 1, d);
-                                            }
-                                            setViewDate(initDate);
+                                        const currentIndex = availableDates.indexOf(selectedDate);
+                                        if (currentIndex > 0) {
+                                            setSelectedDate(availableDates[currentIndex - 1]);
                                         }
-                                        setShowDatePicker(!showDatePicker);
                                     }}
-                                    className="flex items-center gap-2 px-3 py-1 hover:bg-purple-600/30 rounded transition-colors cursor-pointer group"
+                                    disabled={!selectedDate || availableDates.indexOf(selectedDate) === 0}
+                                    className="p-1 rounded bg-purple-600/50 hover:bg-purple-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white transition-colors"
+                                    title="Previous Day"
                                 >
-                                    <svg className="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                     </svg>
-                                    <span className="text-white font-bold font-mono min-w-[100px] text-center group-hover:text-purple-100 transition-colors relative">
-                                        {selectedDate || date}
-                                    </span>
-                                    {(() => {
-                                        const now = new Date();
-                                        const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-                                        const todayStr = taiwanTime.toISOString().split('T')[0];
-                                        const isToday = selectedDate === todayStr;
-                                        return isToday ? (
-                                            <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30 text-xs font-bold">
-                                                TODAY
-                                            </span>
-                                        ) : null;
-                                    })()}
                                 </button>
 
-                                {showDatePicker && (
-                                    <>
-                                        <div className="fixed inset-0 z-[890]" onClick={() => setShowDatePicker(false)} />
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[900] bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px]">
-                                            {/* Header */}
-                                            <div className="flex justify-between items-center mb-4">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        const newDate = new Date(viewDate);
-                                                        newDate.setMonth(newDate.getMonth() - 1);
-                                                        setViewDate(newDate);
-                                                    }}
-                                                    className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                                                </button>
-                                                <span className="text-white font-bold text-sm">
-                                                    {viewDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => {
+                                            if (!showDatePicker) {
+                                                let initDate = new Date();
+                                                if (selectedDate) {
+                                                    const [y, m, d] = selectedDate.split('-').map(Number);
+                                                    initDate = new Date(y, m - 1, d);
+                                                }
+                                                setViewDate(initDate);
+                                            }
+                                            setShowDatePicker(!showDatePicker);
+                                        }}
+                                        className="flex items-center gap-2 px-3 py-1 hover:bg-purple-600/30 rounded transition-colors cursor-pointer group"
+                                    >
+                                        <svg className="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-white font-bold font-mono min-w-[100px] text-center group-hover:text-purple-100 transition-colors relative">
+                                            {selectedDate || date}
+                                        </span>
+                                        {(() => {
+                                            const now = new Date();
+                                            const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                                            const todayStr = taiwanTime.toISOString().split('T')[0];
+                                            const isToday = selectedDate === todayStr;
+                                            return isToday ? (
+                                                <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30 text-xs font-bold">
+                                                    TODAY
                                                 </span>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        const newDate = new Date(viewDate);
-                                                        newDate.setMonth(newDate.getMonth() + 1);
-                                                        setViewDate(newDate);
-                                                    }}
-                                                    className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                                                </button>
+                                            ) : null;
+                                        })()}
+                                    </button>
+
+                                    {showDatePicker && (
+                                        <>
+                                            <div className="fixed inset-0 z-[890]" onClick={() => setShowDatePicker(false)} />
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[900] bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px]">
+                                                {/* Header */}
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const newDate = new Date(viewDate);
+                                                            newDate.setMonth(newDate.getMonth() - 1);
+                                                            setViewDate(newDate);
+                                                        }}
+                                                        className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                                    </button>
+                                                    <span className="text-white font-bold text-sm">
+                                                        {viewDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                                                    </span>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const newDate = new Date(viewDate);
+                                                            newDate.setMonth(newDate.getMonth() + 1);
+                                                            setViewDate(newDate);
+                                                        }}
+                                                        className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                                    </button>
+                                                </div>
+
+                                                {/* Days Header */}
+                                                <div className="grid grid-cols-7 mb-2">
+                                                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                                                        <div key={d} className="text-center text-xs font-bold text-slate-500">{d}</div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Calendar Grid */}
+                                                <div className="grid grid-cols-7 gap-1">
+                                                    {/* Empty Cells */}
+                                                    {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() }).map((_, i) => (
+                                                        <div key={`empty-${i}`} />
+                                                    ))}
+
+                                                    {/* Days */}
+                                                    {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
+                                                        const day = i + 1;
+                                                        const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                                        const isAvailable = availableDates.includes(dateStr);
+                                                        const isSelected = selectedDate === dateStr;
+                                                        const now = new Date();
+                                                        const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                                                        const todayStr = taiwanTime.toISOString().split('T')[0];
+                                                        const isToday = dateStr === todayStr;
+
+                                                        return (
+                                                            <button
+                                                                key={dateStr}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (isAvailable) {
+                                                                        setSelectedDate(dateStr);
+                                                                        setShowDatePicker(false);
+                                                                    }
+                                                                }}
+                                                                disabled={!isAvailable}
+                                                                className={`
+                                                                    h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all
+                                                                    ${isSelected ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50 scale-110' : ''}
+                                                                    ${!isSelected && isToday ? 'border border-green-500 text-green-400' : ''}
+                                                                    ${!isSelected && !isToday && isAvailable ? 'text-slate-300 hover:bg-purple-500/20 hover:text-white' : ''}
+                                                                    ${!isAvailable ? 'text-slate-700 cursor-not-allowed opacity-50' : ''}
+                                                                `}
+                                                            >
+                                                                {day}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
+                                        </>
+                                    )}
+                                </div>
 
-                                            {/* Days Header */}
-                                            <div className="grid grid-cols-7 mb-2">
-                                                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                                                    <div key={d} className="text-center text-xs font-bold text-slate-500">{d}</div>
-                                                ))}
-                                            </div>
-
-                                            {/* Calendar Grid */}
-                                            <div className="grid grid-cols-7 gap-1">
-                                                {/* Empty Cells */}
-                                                {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() }).map((_, i) => (
-                                                    <div key={`empty-${i}`} />
-                                                ))}
-
-                                                {/* Days */}
-                                                {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
-                                                    const day = i + 1;
-                                                    const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                                    const isAvailable = availableDates.includes(dateStr);
-                                                    const isSelected = selectedDate === dateStr;
-
-                                                    const now = new Date();
-                                                    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-                                                    const todayStr = taiwanTime.toISOString().split('T')[0];
-                                                    const isToday = dateStr === todayStr;
-
-                                                    return (
-                                                        <button
-                                                            key={dateStr}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (isAvailable) {
-                                                                    setSelectedDate(dateStr);
-                                                                    setShowDatePicker(false);
-                                                                }
-                                                            }}
-                                                            disabled={!isAvailable}
-                                                            className={`
-                                                                h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all
-                                                                ${isSelected ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50 scale-110' : ''}
-                                                                ${!isSelected && isToday ? 'border border-green-500 text-green-400' : ''}
-                                                                ${!isSelected && !isToday && isAvailable ? 'text-slate-300 hover:bg-purple-500/20 hover:text-white' : ''}
-                                                                ${!isAvailable ? 'text-slate-700 cursor-not-allowed opacity-50' : ''}
-                                                            `}
-                                                        >
-                                                            {day}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
+                                <button
+                                    onClick={() => {
+                                        const currentIndex = availableDates.indexOf(selectedDate);
+                                        if (currentIndex < availableDates.length - 1) {
+                                            setSelectedDate(availableDates[currentIndex + 1]);
+                                        }
+                                    }}
+                                    disabled={!selectedDate || availableDates.indexOf(selectedDate) === availableDates.length - 1}
+                                    className="p-1 rounded bg-purple-600/50 hover:bg-purple-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white transition-colors"
+                                    title="Next Day"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
                             </div>
-
-                            <button
-                                onClick={() => {
-                                    const currentIndex = availableDates.indexOf(selectedDate);
-                                    if (currentIndex < availableDates.length - 1) {
-                                        setSelectedDate(availableDates[currentIndex + 1]);
-                                    }
-                                }}
-                                disabled={!selectedDate || availableDates.indexOf(selectedDate) === availableDates.length - 1}
-                                className="p-1 rounded bg-purple-600/50 hover:bg-purple-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white transition-colors"
-                                title="Next Day"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
                         </div>
 
-                        {/* WAIVER Button */}
-                        <button
-                            onClick={() => setShowWaiverModal(true)}
-                            className="px-3 py-1 rounded-full bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
-                        >
-                            WAIVER
-                        </button>
-
-                        <button
-                            onClick={() => setShowInfoModal(true)}
-                            className="px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
-                        >
-                            POS RULES
-                        </button>
+                        {/* Buttons Row */}
+                        <div className="flex items-center gap-2">
+                            {!isTradeDeadlinePassed() && (
+                                <button
+                                    onClick={() => setShowMyTradesModal(true)}
+                                    className="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center gap-2 transition-colors text-xs font-bold tracking-wider"
+                                >
+                                    <span>TRADES</span>
+                                    {pendingTradeCount > 0 && (
+                                        <span className="w-5 h-5 rounded-full bg-pink-500 text-white flex items-center justify-center text-[10px] font-bold shadow-lg">
+                                            {pendingTradeCount}
+                                        </span>
+                                    )}
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setShowLegendModal(true)}
+                                className="px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                            >
+                                LEGEND
+                            </button>
+                            <button
+                                onClick={() => setShowWaiverModal(true)}
+                                className="px-3 py-1 rounded-full bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                            >
+                                WAIVER
+                            </button>
+                            <button
+                                onClick={() => setShowInfoModal(true)}
+                                className="px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                            >
+                                POS RULES
+                            </button>
+                        </div>
                     </div>
                 </div>
 

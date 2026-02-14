@@ -127,8 +127,10 @@ export async function POST(request, { params }) {
 
             const isSameDay = todayIso === acquiredIso;
 
-            if (isSameDay) {
-                // Same Day -> Delete Ownership (Treat as FA Drop / Undo)
+
+
+            if (isSameDay || waiverDays === 0) {
+                // Same Day OR Waiver Time 0 -> Delete Ownership (Treat as FA Drop / Undo)
                 const { error: ownError } = await supabase
                     .from('league_player_ownership')
                     .delete()
