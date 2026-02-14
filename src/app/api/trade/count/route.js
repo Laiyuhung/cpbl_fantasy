@@ -21,7 +21,7 @@ export async function GET(request) {
             .from('pending_trade')
             .select('*', { count: 'exact', head: true })
             .eq('league_id', league_id)
-            .eq('status', 'pending')
+            .in('status', ['pending', 'accepted'])
             .or(`initiator_manager_id.eq.${manager_id},recipient_manager_id.eq.${manager_id}`);
 
         if (error) {
