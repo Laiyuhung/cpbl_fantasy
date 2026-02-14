@@ -174,7 +174,7 @@ export async function POST(request) {
       scoring_type: settings.general['Scoring Type'],
 
       // Acquisitions
-      trade_end_date: settings.acquisitions['Trade End Date'],
+      trade_end_date: settings.acquisitions['Trade Deadline'],
       max_acquisitions_per_week: settings.acquisitions['Max Acquisitions per Week'],
 
       // Waivers
@@ -407,7 +407,7 @@ export async function PUT(request) {
       max_teams: parseInt(settings.general['Max Teams']),
       scoring_type: settings.general['Scoring Type'],
 
-      trade_end_date: settings.acquisitions['Trade End Date'],
+      trade_end_date: settings.acquisitions['Trade Deadline'],
       max_acquisitions_per_week: settings.acquisitions['Max Acquisitions per Week'],
 
       waiver_players_unfreeze_time: settings.waivers['Waiver Players Time'],

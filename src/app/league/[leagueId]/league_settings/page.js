@@ -1144,7 +1144,7 @@ export default function LeagueSettingsPage() {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
-                  <div className="text-purple-300/70 text-sm mb-2">Trade End Date</div>
+                  <div className="text-purple-300/70 text-sm mb-2">Trade Deadline</div>
                   <div className="text-white font-semibold">{leagueSettings.trade_end_date || 'Not set'}</div>
                 </div>
                 <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">

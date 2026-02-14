@@ -253,7 +253,7 @@ export default function JoinLeaguePage() {
                   <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_reject_percentage || 'N/A'}</p>
                 </div>
                 <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Trade End Date</span>
+                  <span className="text-purple-400 text-sm font-medium">Trade Deadline</span>
                   <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_end_date || 'N/A'}</p>
                 </div>
               </div>

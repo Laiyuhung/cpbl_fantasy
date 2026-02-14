@@ -16,7 +16,7 @@ const initialSettings = {
     'Scoring Type': 'Head-to-Head',
   },
   acquisitions: {
-    'Trade End Date': 'August 7, 2025',
+    'Trade Deadline': 'August 7, 2025',
     'Max Acquisitions per Week': '6',
   },
   waivers: {
@@ -77,7 +77,7 @@ const settingOptions = {
   'Live Draft Pick Time': ['30 Seconds', '1 Minute', '2 Minutes', '3 Minutes'],
   'Max Teams': ['4', '6', '8', '10'],
   'Scoring Type': ['Head-to-Head', 'Head-to-Head One Win', 'Head-to-Head Fantasy Points'],
-  'Trade End Date': ['No trade deadline', 'June 15, 2026', 'July 1, 2026', 'July 15, 2026', 'August 1, 2026', 'August 7, 2026', 'August 15, 2026', 'August 30, 2026'],
+  'Trade Deadline': ['No trade deadline', 'June 15, 2026', 'July 1, 2026', 'July 15, 2026', 'August 1, 2026', 'August 7, 2026', 'August 15, 2026', 'August 30, 2026'],
   'Waiver Players Time': ['0 days', '1 day', '2 days', '3 days', '4 days', '5 days', '6 days', '7 days'],
   'Allow minor players from waivers or free agents to be added directly to the minor slot': ['Yes', 'No'],
   'Trade Review': ['League votes', 'Commissioner reviews', 'No review'],
@@ -816,7 +816,7 @@ const CreateLeaguePage = () => {
       if (!settings.general['Live Draft Pick Time']) errors.push('❌ Live Draft Pick Time is required');
       if (!settings.general['Live Draft Time']) errors.push('❌ Live Draft Time is required');
     }
-    if (!settings.acquisitions['Trade End Date']) errors.push('❌ Trade End Date is required');
+    if (!settings.acquisitions['Trade Deadline']) errors.push('❌ Trade Deadline is required');
     if (!settings.acquisitions['Max Acquisitions per Week']) errors.push('❌ Max Acquisitions per Week is required');
     if (!settings.waivers['Waiver Players Time']) errors.push('❌ Waiver Players Time is required');
     if (!settings.waivers['Post Draft Waiver Time']) errors.push('❌ Post Draft Waiver Time is required');
