@@ -176,11 +176,6 @@ export default function PlayersPage() {
   const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
   const [lockedPlayerAlert, setLockedPlayerAlert] = useState(null); // Name of locked player trying to be dropped
 
-  // Waiver Management State
-  const [showWaiverModal, setShowWaiverModal] = useState(false);
-  const [waiverClaims, setWaiverClaims] = useState([]);
-  const [isWaiverModalLoading, setIsWaiverModalLoading] = useState(false);
-
   const fetchAcquisitions = async () => {
     if (!myManagerId) return;
     try {
@@ -219,78 +214,6 @@ export default function PlayersPage() {
       console.error("Failed to fetch active trades for validation", e);
     }
   };
-
-  const fetchWaiverClaims = async () => {
-    if (!myManagerId) return;
-    setIsWaiverModalLoading(true);
-    try {
-      const res = await fetch(`/api/waiver_claims/manage?league_id=${leagueId}&manager_id=${myManagerId}`);
-      const data = await res.json();
-      if (data.success) {
-        setWaiverClaims(data.data || []);
-      }
-    } catch (e) {
-      console.error('Failed to fetch waiver claims', e);
-    } finally {
-      setIsWaiverModalLoading(false);
-    }
-  };
-
-  const handleCancelClaim = async (claimId) => {
-    if (!confirm('Are you sure you want to cancel this waiver claim?')) return;
-    try {
-      const res = await fetch('/api/waiver_claims/manage', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: claimId })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setWaiverSuccessMsg('Claim cancelled successfully');
-        setShowWaiverSuccess(true);
-        setTimeout(() => setShowWaiverSuccess(false), 3000);
-        fetchWaiverClaims(); // Refresh list
-      } else {
-        alert('Failed to cancel claim: ' + data.error);
-      }
-    } catch (e) {
-      console.error('Error cancelling claim:', e);
-    }
-  };
-
-  const handleReorderClaims = async (orderedClaims) => {
-    // Optimistic update
-    setWaiverClaims(orderedClaims);
-
-    // Create payload: { id, personal_priority }
-    // Recalculate priority based on index (1-based)
-    const updatePayload = orderedClaims.map((claim, index) => ({
-      id: claim.id,
-      personal_priority: index + 1
-    }));
-
-    try {
-      const res = await fetch('/api/waiver_claims/manage', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order: updatePayload })
-      });
-      const data = await res.json();
-      if (!data.success) {
-        alert('Failed to reorder claims: ' + data.error);
-        fetchWaiverClaims(); // Revert on error
-      }
-    } catch (e) {
-      console.error('Error reordering claims:', e);
-      fetchWaiverClaims(); // Revert on error
-    }
-  };
-
-  useEffect(() => {
-    if (showWaiverModal) {
-      fetchWaiverClaims();
-    }
-  }, [showWaiverModal]);
 
   useEffect(() => {
     fetchAcquisitions();
@@ -1329,170 +1252,6 @@ export default function PlayersPage() {
     return violations;
   };
 
-  // Waiver Management Modal
-  const renderWaiverModal = () => {
-    if (!showWaiverModal) return null;
-
-    // Group claims by date
-    const groupedClaims = {};
-    waiverClaims.forEach(claim => {
-      const date = claim.off_waiver || 'Unknown Date';
-      if (!groupedClaims[date]) groupedClaims[date] = [];
-      groupedClaims[date].push(claim);
-    });
-
-    // Sort dates
-    const sortedDates = Object.keys(groupedClaims).sort();
-
-    const handleMoveClaim = (claim, direction, date) => {
-      const claimsInDate = [...groupedClaims[date]];
-      const index = claimsInDate.findIndex(c => c.id === claim.id);
-      if (index === -1) return;
-
-      if (direction === 'up' && index > 0) {
-        // Swap with previous
-        const temp = claimsInDate[index];
-        claimsInDate[index] = claimsInDate[index - 1];
-        claimsInDate[index - 1] = temp;
-      } else if (direction === 'down' && index < claimsInDate.length - 1) {
-        // Swap with next
-        const temp = claimsInDate[index];
-        claimsInDate[index] = claimsInDate[index + 1];
-        claimsInDate[index + 1] = temp;
-      } else {
-        return; // No move
-      }
-
-      // Reconstruct entire waiverClaims list with new order
-      // We need to preserve the relative order of other dates
-      // And update the priorities of the modified date group
-      // Actually, simply updating the local priority of these two might be enough?
-      // But we generally want a full clean list. 
-      // Let's just create a new list where this date's claims are replaced by the new order.
-
-      // But wait, personal_priority is global. If I swap two in one date, I just swap their priorities.
-      // Assuming contiguous priorities is not strictly enforced by DB constraint, but good for UI.
-      // Let's just swap the 'personal_priority' values of the two swapped claims.
-
-      // Actually, better to just map the whole list to new priorities 1..N based on date then order.
-      // Or just swap the priorities of the two involved claims?
-      // Using swap is safest if ids are stable.
-
-      const newWaiverClaims = [...waiverClaims];
-      // Find the two swapped items in the main list
-      // This is tricky if we only have the sorted subset.
-
-      // Easister approach:
-      // 1. Update the grouped array (claimsInDate is already updated)
-      // 2. Flatten the grouped arrays back to a list (preserving date order)
-      // 3. Send the full list to be re-prioritized by the backend?
-      // Backend expects {id, personal_priority}.
-      // If we re-sort locally, we can assign priorities 1..N to the whole list?
-      // Or just valid priorities within the date?
-      // Realistically, for today's processing, only relative order matters.
-      // But let's assume we want to update the backend with the new explicit order.
-
-      // Strategy: Flatten groups back to list, assign priority = index + 1
-      const newFlatList = [];
-      sortedDates.forEach(d => {
-        if (d === date) {
-          newFlatList.push(...claimsInDate);
-        } else {
-          newFlatList.push(...groupedClaims[d]);
-        }
-      });
-
-      handleReorderClaims(newFlatList);
-    };
-
-    return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fadeIn">
-        <div className="bg-slate-900 border border-purple-500/30 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh]">
-          <div className="p-4 border-b border-purple-500/20 bg-purple-900/20 flex justify-between items-center rounded-t-2xl">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span className="text-2xl">📋</span> Waiver Claims
-            </h2>
-            <button onClick={() => setShowWaiverModal(false)} className="text-purple-300 hover:text-white text-2xl">×</button>
-          </div>
-
-          <div className="p-4 overflow-y-auto custom-scrollbar flex-1">
-            {isWaiverModalLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : waiverClaims.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 italic">
-                No pending waiver claims.
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {sortedDates.map(date => (
-                  <div key={date}>
-                    <h3 className="text-purple-300 text-sm font-bold uppercase tracking-wider mb-2 border-b border-purple-500/20 pb-1">
-                      Waiver Date: {date}
-                    </h3>
-                    <div className="space-y-2">
-                      {groupedClaims[date].map((claim, index) => (
-                        <div key={claim.id} className="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between border border-slate-700">
-                          <div className="flex items-center gap-3">
-                            <span className="text-slate-500 font-mono text-sm w-4 text-center">{index + 1}</span>
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
-                                <span className="text-green-400 font-bold text-sm">+ {claim.player?.name}</span>
-                                <span className="text-xs text-slate-500">
-                                  ({claim.player?.team ? getTeamAbbr(claim.player?.team) : '-'})
-                                </span>
-                              </div>
-                              {claim.drop_player && (
-                                <div className="flex items-center gap-2 text-xs">
-                                  <span className="text-red-400 font-bold">- {claim.drop_player?.name}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex flex-col gap-1">
-                              <button
-                                onClick={() => handleMoveClaim(claim, 'up', date)}
-                                disabled={index === 0}
-                                className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
-                              >
-                                ▲
-                              </button>
-                              <button
-                                onClick={() => handleMoveClaim(claim, 'down', date)}
-                                disabled={index === groupedClaims[date].length - 1}
-                                className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
-                              >
-                                ▼
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => handleCancelClaim(claim.id)}
-                              className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors ml-2"
-                              title="Cancel Claim"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="p-4 border-t border-purple-500/20 bg-slate-900/50 rounded-b-2xl">
-            <p className="text-xs text-slate-400 text-center">
-              Claims are processed daily. You can reorder priorities for claims on the same date.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // Trade Modal
   const renderTradeModal = () => {
     if (!showTradeModal) return null;
@@ -1741,11 +1500,11 @@ export default function PlayersPage() {
               LEGEND
             </button>
             <button
-              onClick={() => setShowWaiverModal(true)}
+              onClick={() => setShowInfoModal(true)}
               className="mb-2 px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
-              title="Manage Waiver Claims"
+              title="Position Eligibility Rules"
             >
-              WAIVER
+              POS RULES
             </button>
             {acquisitionData && (
               <div className={`mb-2 px-3 py-1 rounded-full border flex items-center justify-center transition-colors text-xs font-bold tracking-wider ${acquisitionData.limit !== 'No Maximum' && acquisitionData.usage >= acquisitionData.limit
@@ -1815,16 +1574,6 @@ export default function PlayersPage() {
                 </select>
               </div>
             </div>
-            <button
-              onClick={() => setShowInfoModal(true)}
-              className="mt-4 w-full px-3 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-purple-500/30 text-purple-300 flex items-center justify-center transition-colors text-sm font-bold tracking-wider gap-2"
-              title="Position Eligibility Rules"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              POSITION RULES
-            </button>
           </div>
         </div>
 
@@ -2265,8 +2014,6 @@ export default function PlayersPage() {
           </div>
         )
       }
-
-      {renderWaiverModal()}
 
       {/* Trade Modal */}
       {renderTradeModal()}

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
 import MoveModal from './MoveModal';
 import MyTradesModal from '../../../../components/MyTradesModal';
+import WaiverModal from '../../../../components/WaiverModal';
 
 export default function RosterPage() {
     const params = useParams();
@@ -39,6 +40,7 @@ export default function RosterPage() {
     // Modals
     const [showInfoModal, setShowInfoModal] = useState(false);
     const [showLegendModal, setShowLegendModal] = useState(false);
+    const [showWaiverModal, setShowWaiverModal] = useState(false);
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [playerToMove, setPlayerToMove] = useState(null);
 
@@ -565,32 +567,7 @@ export default function RosterPage() {
                             <option value="2026 Season">2026 Season</option>
                             <option value="2025 Season">2025 Season</option>
                         </select>
-                        {/* Other buttons updated with shorter syntax for brevity but functionally same */}
-                        {!isTradeDeadlinePassed() && (
-                            <button
-                                onClick={() => setShowMyTradesModal(true)}
-                                className="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center gap-2 transition-colors text-xs font-bold tracking-wider"
-                            >
-                                <span>TRADES</span>
-                                {pendingTradeCount > 0 && (
-                                    <span className="w-5 h-5 rounded-full bg-pink-500 text-white flex items-center justify-center text-[10px] font-bold shadow-lg">
-                                        {pendingTradeCount}
-                                    </span>
-                                )}
-                            </button>
-                        )}
-                        <button
-                            onClick={() => setShowLegendModal(true)}
-                            className="px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
-                        >
-                            LEGEND
-                        </button>
-                        <button
-                            onClick={() => setShowInfoModal(true)}
-                            className="px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
-                        >
-                            POS RULES
-                        </button>
+
                         {/* Date Selector */}
                         <div className="flex items-center gap-2 bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-500/30">
                             <button
@@ -750,6 +727,21 @@ export default function RosterPage() {
                                 </svg>
                             </button>
                         </div>
+
+                        {/* WAIVER Button */}
+                        <button
+                            onClick={() => setShowWaiverModal(true)}
+                            className="px-3 py-1 rounded-full bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                        >
+                            WAIVER
+                        </button>
+
+                        <button
+                            onClick={() => setShowInfoModal(true)}
+                            className="px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                        >
+                            POS RULES
+                        </button>
                     </div>
                 </div>
 
@@ -1000,6 +992,13 @@ export default function RosterPage() {
                     managerId={myManagerId}
                 />
             </div>
-        </div>
+            {/* Waiver Modal */}
+            <WaiverModal
+                isOpen={showWaiverModal}
+                onClose={() => setShowWaiverModal(false)}
+                leagueId={leagueId}
+                managerId={myManagerId}
+            />
+        </div >
     );
 }
