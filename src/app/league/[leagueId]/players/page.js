@@ -851,6 +851,10 @@ export default function PlayersPage() {
       let res, data;
       if (waiverMode) {
         // Waiver申請
+        // Find the ownership record to get off_waiver date
+        const targetOwnership = ownerships.find(o => o.player_id === playerToAdd.player_id);
+        const offWaiver = targetOwnership?.off_waiver;
+
         res = await fetch('/api/waiver_claims', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -858,7 +862,8 @@ export default function PlayersPage() {
             league_id: leagueId,
             manager_id: myManagerId,
             player_id: playerToAdd.player_id,
-            drop_player_id: waiverDropPlayerId || null
+            drop_player_id: waiverDropPlayerId || null,
+            off_waiver: offWaiver
           })
         });
         data = await res.json();
