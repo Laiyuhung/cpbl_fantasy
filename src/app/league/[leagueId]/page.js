@@ -91,47 +91,59 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding, part
 
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
         {matchups.map((m, i) => m.note ? (
-          <div key={i} className="md:col-span-2 flex items-center justify-center p-4 bg-blue-500/5 border border-dashed border-blue-500/20 rounded-2xl">
-            <span className="text-sm font-bold text-blue-300/60 uppercase tracking-widest flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div key={i} className="md:col-span-2 flex items-center justify-center p-4 bg-purple-500/5 border border-dashed border-purple-500/20 rounded-2xl">
+            <span className="text-sm font-black text-purple-300/60 uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2 / 1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {m.note}
             </span>
           </div>
         ) : (
-          <div key={i} className={`relative group overflow-hidden bg-slate-900/40 backdrop-blur-sm border rounded-2xl p-5 hover:border-purple-500/30 transition-all ${m.tbd ? 'border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.05)]' : 'border-white/5'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity ${m.tbd ? 'from-blue-500/5 via-transparent to-purple-500/5' : 'from-purple-500/5 via-transparent to-cyan-500/5'}`}></div>
-            <div className="relative flex items-center justify-between">
-              {m.m && (
-                <div className="absolute left-0 -top-1">
-                  <span className="text-[10px] font-black text-purple-500/50 italic tracking-widest">{m.m}</span>
-                </div>
-              )}
-              <div className="flex-1 flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg bg-slate-800 border flex items-center justify-center text-[10px] font-black ${m.tbd ? 'border-blue-500/30 text-blue-400' : 'border-white/10 text-white/40'}`}>
-                    {m.tbd ? '?' : 'S'}
+          <div key={i} className={`relative group overflow-hidden bg-slate-900/60 backdrop-blur-md border transition-all duration-300 ${m.tbd ? 'border-blue-500/30' : 'border-white/10'} rounded-3xl shadow-xl hover:shadow-purple-500/10`}>
+            {/* Card Header with Match ID */}
+            {m.m && (
+              <div className="bg-purple-500/10 border-b border-purple-500/20 px-5 py-2.5 flex items-center justify-between">
+                <span className="text-[10px] font-black text-purple-300 uppercase tracking-[0.2em]">{m.m} Matchup</span>
+                {m.tbd && (
+                  <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest px-2 py-0.5 bg-blue-500/10 rounded-full border border-blue-500/20">Reseeding</span>
+                )}
+              </div>
+            )}
+
+            <div className="p-6 relative">
+              <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity ${m.tbd ? 'from-blue-500/5 via-transparent to-transparent' : 'from-purple-500/5 via-transparent to-transparent'}`}></div>
+              <div className="relative flex items-center justify-between">
+                <div className="flex-1 flex flex-col gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl bg-slate-800 border flex items-center justify-center text-xs font-black ${m.tbd ? 'border-blue-500/30 text-blue-400' : 'border-white/10 text-white/40'}`}>
+                      {m.tbd ? '?' : 'S'}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-black text-white/20 tracking-tighter">Team One</span>
+                      <span className={`text-base font-black ${m.tbd ? 'text-blue-200/80 italic' : 'text-white'}`}>{m.a}</span>
+                    </div>
                   </div>
-                  <span className={`text-sm font-bold ${m.tbd ? 'text-blue-200/80 italic' : 'text-white/80'}`}>{m.a}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg bg-slate-800 border flex items-center justify-center text-[10px] font-black ${m.tbd ? 'border-blue-500/30 text-blue-400' : 'border-white/10 text-white/40'}`}>
-                    {m.tbd ? '?' : 'S'}
+
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl bg-slate-800 border flex items-center justify-center text-xs font-black ${m.tbd ? 'border-blue-500/30 text-blue-400' : 'border-white/10 text-white/40'}`}>
+                      {m.tbd ? '?' : 'S'}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-black text-white/20 tracking-tighter">Team Two</span>
+                      <span className={`text-base font-black ${m.tbd ? 'text-blue-200/80 italic' : 'text-white'}`}>{m.b}</span>
+                    </div>
                   </div>
-                  <span className={`text-sm font-bold ${m.tbd ? 'text-blue-200/80 italic' : 'text-white/80'}`}>{m.b}</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-2 px-6">
+                  <div className="w-px h-10 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+                  <div className={`w-10 h-10 rounded-full border flex items-center justify-center scale-90 ${m.tbd ? 'border-blue-500/20 bg-blue-500/5' : 'border-purple-500/20 bg-purple-500/5'}`}>
+                    <span className={`text-[10px] font-black uppercase italic ${m.tbd ? 'text-blue-400' : 'text-purple-400'}`}>VS</span>
+                  </div>
+                  <div className="w-px h-10 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-2 px-4">
-                <div className="w-px h-8 bg-white/10"></div>
-                <span className={`text-[10px] font-black uppercase italic ${m.tbd ? 'text-blue-400' : 'text-purple-400'}`}>VS</span>
-                <div className="w-px h-8 bg-white/10"></div>
-              </div>
-              {m.tbd && (
-                <div className="absolute -right-1 -bottom-1">
-                  <div className="px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/30 rounded text-[8px] font-black text-blue-400 uppercase tracking-tighter">Reseeding</div>
-                </div>
-              )}
             </div>
           </div>
         ))}
@@ -172,26 +184,41 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
     );
   };
 
-  const Node = ({ label, seed, active, x, y, isBye }) => {
-    const effectiveBye = isBye || isSeedBye(seed);
+  const MatchupBox = ({ m1, m2, label, active, x, y, isReseedingRound }) => {
+    const isM1Bye = isSeedBye(m1.seed) || m1.isBye;
+    const isM2Bye = isSeedBye(m2.seed) || m2.isBye;
+    const isHighestLowest = isReseedingRound && isReseeding;
+
     return (
       <div
-        className={`absolute -translate-x-1/2 -translate-y-1/2 w-32 px-3 py-2 rounded-xl border backdrop-blur-md transition-all duration-500 ${active
-          ? 'bg-purple-500/20 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-          : 'bg-slate-900/40 border-white/5'
-          } ${effectiveBye ? 'opacity-40 grayscale-[0.5]' : ''}`}
+        className={`absolute -translate-x-1/2 -translate-y-1/2 min-w-[160px] bg-slate-900/60 backdrop-blur-xl border ${active ? 'border-purple-500/50 shadow-[0_0_25px_rgba(168,85,247,0.15)] ring-1 ring-purple-500/20' : 'border-white/10 shadow-lg shadow-black/40'} rounded-2xl p-1 transition-all duration-500 group overflow-hidden`}
         style={{ left: `${x}%`, top: `${y}%` }}
       >
-        <div className="flex items-center gap-2">
-          <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-black ${active ? 'bg-purple-500/30 text-purple-300' : 'bg-slate-800 text-white/40'}`}>
-            {seed || '?'}
-          </div>
-          <div className="flex flex-col">
-            <span className={`text-[9px] font-black uppercase tracking-tighter ${active ? 'text-purple-400' : 'text-white/20'}`}>
-              {effectiveBye ? 'Bye' : label}
+        <div className="px-3 py-1 bg-white/5 flex items-center justify-between border-b border-white/5 mb-1">
+          <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'text-purple-400' : 'text-white/30'}`}>{label}</span>
+          {active && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></div>}
+        </div>
+
+        <div className="space-y-0.5">
+          {/* Team 1 */}
+          <div className={`px-2 py-1.5 flex items-center gap-2 rounded-lg transition-colors ${isM1Bye ? 'opacity-30' : ''}`}>
+            <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[8px] font-black ${isM1Bye ? 'bg-slate-800 text-white/20' : 'bg-purple-500/30 text-purple-300'}`}>
+              {m1.seed || '?'}
+            </div>
+            <span className={`text-[10px] font-bold truncate flex-1 ${isHighestLowest ? 'text-blue-300 italic' : 'text-white/80'}`}>
+              {isHighestLowest ? (m1.seed === 1 ? 'Highest Remaining' : '2nd High Remaining') : (isM1Bye ? 'Bye' : `Seed ${m1.seed}`)}
             </span>
-            <span className={`text-[10px] font-bold truncate max-w-[80px] ${active ? 'text-white' : 'text-white/60'}`}>
-              {effectiveBye ? (seed > participantCount ? 'No Team' : 'Top Seed') : 'Seed'} {seed}
+          </div>
+
+          <div className="h-px bg-white/5 mx-2"></div>
+
+          {/* Team 2 */}
+          <div className={`px-2 py-1.5 flex items-center gap-2 rounded-lg transition-colors ${isM2Bye ? 'opacity-30' : ''}`}>
+            <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[8px] font-black ${isM2Bye ? 'bg-slate-800 text-white/20' : 'bg-blue-500/30 text-blue-300'}`}>
+              {m2.seed || '?'}
+            </div>
+            <span className={`text-[10px] font-bold truncate flex-1 ${isHighestLowest ? 'text-blue-300 italic' : 'text-white/80'}`}>
+              {isHighestLowest ? (m2.seed === 4 ? 'Lowest Remaining' : '2nd Low Remaining') : (isM2Bye ? 'Bye' : `Seed ${m2.seed}`)}
             </span>
           </div>
         </div>
@@ -202,71 +229,61 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
   const renderBracket = () => {
     if (numTeams === 2) {
       return (
-        <div className="relative w-full h-[200px] mt-8 overflow-hidden">
-          {/* Finals */}
-          <Node x={30} y={35} label="Final" seed={1} active={currentWeekLabel === 'Final'} participantCount={participantCount} />
-          <Node x={30} y={65} label="Final" seed={2} active={currentWeekLabel === 'Final'} participantCount={participantCount} />
-
-          <Connector start={{ x: 30, y: 50 }} end={{ x: 70, y: 50 }} active={false} />
-
-          {/* Champion */}
-          <Node x={70} y={50} label="Champion" seed="Winner" active={false} />
+        <div className="relative w-full h-[300px] mt-8">
+          <MatchupBox
+            x={50} y={50} label="The Final" active={currentWeekLabel === 'Final'}
+            m1={{ seed: 1 }} m2={{ seed: 2 }}
+          />
         </div>
       );
     }
 
     if (numTeams === 4) {
       return (
-        <div className="relative w-full h-[300px] mt-8 overflow-hidden">
+        <div className="relative w-full h-[400px] mt-8">
           {/* Semifinals */}
-          <Node x={20} y={25} label="M1" seed={1} active={currentWeekLabel === 'Semifinal'} participantCount={participantCount} />
-          <Node x={20} y={45} label="M1" seed={4} active={currentWeekLabel === 'Semifinal'} participantCount={participantCount} />
-          <Node x={20} y={65} label="M2" seed={2} active={currentWeekLabel === 'Semifinal'} participantCount={participantCount} />
-          <Node x={20} y={85} label="M2" seed={3} active={currentWeekLabel === 'Semifinal'} participantCount={participantCount} />
+          <MatchupBox x={20} y={30} label="M1" active={currentWeekLabel === 'Semifinal'} m1={{ seed: 1 }} m2={{ seed: 4 }} />
+          <MatchupBox x={20} y={70} label="M2" active={currentWeekLabel === 'Semifinal'} m1={{ seed: 2 }} m2={{ seed: 3 }} />
 
-          <Connector start={{ x: 20, y: 35 }} end={{ x: 50, y: 35 }} active={currentWeekLabel === 'Final'} />
-          <Connector start={{ x: 20, y: 75 }} end={{ x: 50, y: 75 }} active={currentWeekLabel === 'Final'} />
+          <Connector start={{ x: 20, y: 30 }} end={{ x: 60, y: 50 }} active={currentWeekLabel === 'Final'} />
+          <Connector start={{ x: 20, y: 70 }} end={{ x: 60, y: 50 }} active={currentWeekLabel === 'Final'} />
 
           {/* Finals */}
-          <Node x={50} y={35} label="Final" seed="Winner M1" active={currentWeekLabel === 'Final'} />
-          <Node x={50} y={75} label="Final" seed="Winner M2" active={currentWeekLabel === 'Final'} />
-
-          <Connector start={{ x: 50, y: 55 }} end={{ x: 80, y: 55 }} active={false} />
-
-          {/* Champion */}
-          <Node x={80} y={55} label="Champion" seed="Winner" active={false} />
+          <MatchupBox x={60} y={50} label="Final" active={currentWeekLabel === 'Final'} isReseedingRound={true}
+            m1={{ seed: currentWeekLabel === 'Final' && !isReseeding ? 'Winner M1' : 1 }}
+            m2={{ seed: currentWeekLabel === 'Final' && !isReseeding ? 'Winner M2' : 4 }}
+          />
         </div>
       );
     }
 
     if (numTeams === 6) {
       return (
-        <div className="relative w-full h-[400px] mt-8 overflow-hidden">
-          {/* Quarterfinals */}
-          <Node x={15} y={15} label="Bye" seed={1} isBye={true} participantCount={participantCount} />
-          <Node x={15} y={40} label="M1" seed={3} active={currentWeekLabel === 'Quarterfinal'} participantCount={participantCount} />
-          <Node x={15} y={55} label="M1" seed={6} active={currentWeekLabel === 'Quarterfinal'} participantCount={participantCount} />
-          <Node x={15} y={75} label="M2" seed={4} active={currentWeekLabel === 'Quarterfinal'} participantCount={participantCount} />
-          <Node x={15} y={90} label="M2" seed={5} active={currentWeekLabel === 'Quarterfinal'} participantCount={participantCount} />
-          <Node x={15} y={30} label="Bye" seed={2} isBye={true} participantCount={participantCount} />
+        <div className="relative w-full h-[500px] mt-8">
+          {/* Round 1 (Quarterfinals) */}
+          <MatchupBox x={15} y={15} label="Seeds 1 & 2 Bye" m1={{ seed: 1, isBye: true }} m2={{ seed: 2, isBye: true }} />
+          <MatchupBox x={15} y={45} label="M1" active={currentWeekLabel === 'Quarterfinal'} m1={{ seed: 3 }} m2={{ seed: 6 }} />
+          <MatchupBox x={15} y={75} label="M2" active={currentWeekLabel === 'Quarterfinal'} m1={{ seed: 4 }} m2={{ seed: 5 }} />
 
           {/* Semifinals */}
-          <Node x={45} y={22.5} label="SF1" seed="1" active={currentWeekLabel === 'Semifinal'} />
-          <Node x={45} y={47.5} label="SF1" seed="Winner M2" active={currentWeekLabel === 'Semifinal'} />
-          <Node x={45} y={67.5} label="SF2" seed="2" active={currentWeekLabel === 'Semifinal'} />
-          <Node x={45} y={82.5} label="SF2" seed="Winner M1" active={currentWeekLabel === 'Semifinal'} />
+          <MatchupBox x={50} y={30} label="SF1" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true}
+            m1={{ seed: 1 }} m2={{ seed: !isReseeding ? 'Winner M2' : 4 }}
+          />
+          <MatchupBox x={50} y={70} label="SF2" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true}
+            m1={{ seed: 2 }} m2={{ seed: !isReseeding ? 'Winner M1' : 3 }}
+          />
 
           {/* Final */}
-          <Node x={75} y={35} label="Final" seed="Winner SF1" active={currentWeekLabel === 'Final'} />
-          <Node x={75} y={75} label="Final" seed="Winner SF2" active={currentWeekLabel === 'Final'} />
+          <MatchupBox x={85} y={50} label="Final" active={currentWeekLabel === 'Final'} isReseedingRound={true}
+            m1={{ seed: 'SF1 Winner' }} m2={{ seed: 'SF2 Winner' }}
+          />
 
-          {/* Connectors */}
           {!isReseeding && (
             <>
-              <Connector start={{ x: 15, y: 47.5 }} end={{ x: 45, y: 47.5 }} />
-              <Connector start={{ x: 15, y: 82.5 }} end={{ x: 45, y: 82.5 }} />
-              <Connector start={{ x: 45, y: 35 }} end={{ x: 75, y: 35 }} />
-              <Connector start={{ x: 45, y: 75 }} end={{ x: 75, y: 75 }} />
+              <Connector start={{ x: 15, y: 45 }} end={{ x: 50, y: 70 }} />
+              <Connector start={{ x: 15, y: 75 }} end={{ x: 50, y: 30 }} />
+              <Connector start={{ x: 50, y: 30 }} end={{ x: 85, y: 50 }} />
+              <Connector start={{ x: 50, y: 70 }} end={{ x: 85, y: 50 }} />
             </>
           )}
         </div>
@@ -275,40 +292,32 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
 
     if (numTeams === 8) {
       return (
-        <div className="relative w-full h-[500px] mt-8 overflow-hidden">
-          {/* Quarterfinals */}
-          <Node x={12.5} y={12.5} label="M1" seed={1} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
-          <Node x={12.5} y={22.5} label="M1" seed={8} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
-          <Node x={12.5} y={37.5} label="M2" seed={4} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
-          <Node x={12.5} y={47.5} label="M2" seed={5} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
-          <Node x={12.5} y={62.5} label="M3" seed={2} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
-          <Node x={12.5} y={72.5} label="M3" seed={7} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
-          <Node x={12.5} y={87.5} label="M4" seed={3} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
-          <Node x={12.5} y={97.5} label="M4" seed={6} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+        <div className="relative w-full h-[600px] mt-8">
+          {/* Round 1 */}
+          <MatchupBox x={12.5} y={15} label="M1" active={currentWeekLabel === 'Round 1'} m1={{ seed: 1 }} m2={{ seed: 8 }} />
+          <MatchupBox x={12.5} y={40} label="M2" active={currentWeekLabel === 'Round 1'} m1={{ seed: 4 }} m2={{ seed: 5 }} />
+          <MatchupBox x={12.5} y={65} label="M3" active={currentWeekLabel === 'Round 1'} m1={{ seed: 2 }} m2={{ seed: 7 }} />
+          <MatchupBox x={12.5} y={90} label="M4" active={currentWeekLabel === 'Round 1'} m1={{ seed: 3 }} m2={{ seed: 6 }} />
 
           {/* Semifinals */}
-          <Node x={37.5} y={17.5} label="SF1" seed="Winner M1" active={currentWeekLabel === 'Quarterfinal'} />
-          <Node x={37.5} y={42.5} label="SF1" seed="Winner M2" active={currentWeekLabel === 'Quarterfinal'} />
-          <Node x={37.5} y={67.5} label="SF2" seed="Winner M3" active={currentWeekLabel === 'Quarterfinal'} />
-          <Node x={37.5} y={92.5} label="SF2" seed="Winner M4" active={currentWeekLabel === 'Quarterfinal'} />
+          <MatchupBox x={37.5} y={27.5} label="SF1" active={currentWeekLabel === 'Quarterfinal'} isReseedingRound={true} m1={{ seed: 1 }} m2={{ seed: 4 }} />
+          <MatchupBox x={37.5} y={77.5} label="SF2" active={currentWeekLabel === 'Quarterfinal'} isReseedingRound={true} m1={{ seed: 2 }} m2={{ seed: 3 }} />
 
-          {/* Semifinals Round 2 */}
-          <Node x={62.5} y={30} label="Final Prep" seed="Winner SF1" active={currentWeekLabel === 'Semifinal'} />
-          <Node x={62.5} y={80} label="Final Prep" seed="Winner SF2" active={currentWeekLabel === 'Semifinal'} />
+          {/* Final Prelim */}
+          <MatchupBox x={62.5} y={52.5} label="Final Stage" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true} m1={{ seed: 1 }} m2={{ seed: 2 }} />
 
           {/* Final */}
-          <Node x={87.5} y={55} label="Final" seed="TBD" active={currentWeekLabel === 'Final'} />
+          <MatchupBox x={87.5} y={52.5} label="Champion" active={currentWeekLabel === 'Final'} m1={{ seed: 'Winner' }} m2={{ seed: '!' }} />
 
-          {/* Connectors */}
           {!isReseeding && (
             <>
-              <Connector start={{ x: 12.5, y: 17.5 }} end={{ x: 37.5, y: 17.5 }} active={currentWeekLabel === 'Quarterfinal'} />
-              <Connector start={{ x: 12.5, y: 42.5 }} end={{ x: 37.5, y: 42.5 }} active={currentWeekLabel === 'Quarterfinal'} />
-              <Connector start={{ x: 12.5, y: 67.5 }} end={{ x: 37.5, y: 67.5 }} active={currentWeekLabel === 'Quarterfinal'} />
-              <Connector start={{ x: 12.5, y: 92.5 }} end={{ x: 37.5, y: 92.5 }} active={currentWeekLabel === 'Quarterfinal'} />
-              <Connector start={{ x: 37.5, y: 30 }} end={{ x: 62.5, y: 30 }} active={currentWeekLabel === 'Semifinal'} />
-              <Connector start={{ x: 37.5, y: 80 }} end={{ x: 62.5, y: 80 }} active={currentWeekLabel === 'Semifinal'} />
-              <Connector start={{ x: 62.5, y: 55 }} end={{ x: 87.5, y: 55 }} active={currentWeekLabel === 'Final'} />
+              <Connector start={{ x: 12.5, y: 15 }} end={{ x: 37.5, y: 27.5 }} />
+              <Connector start={{ x: 12.5, y: 40 }} end={{ x: 37.5, y: 27.5 }} />
+              <Connector start={{ x: 12.5, y: 65 }} end={{ x: 37.5, y: 77.5 }} />
+              <Connector start={{ x: 12.5, y: 90 }} end={{ x: 37.5, y: 77.5 }} />
+              <Connector start={{ x: 37.5, y: 27.5 }} end={{ x: 62.5, y: 52.5 }} />
+              <Connector start={{ x: 37.5, y: 77.5 }} end={{ x: 62.5, y: 52.5 }} />
+              <Connector start={{ x: 62.5, y: 52.5 }} end={{ x: 87.5, y: 52.5 }} />
             </>
           )}
         </div>
