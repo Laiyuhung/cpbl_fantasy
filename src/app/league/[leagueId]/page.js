@@ -107,7 +107,7 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) =>
                 <div className="w-px h-8 bg-white/10"></div>
               </div>
               {m.m && (
-                <div className="absolute right-3 bottom-3 w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
+                <div className="absolute left-1.5 top-1.5 w-7 h-7 bg-purple-500/20 rounded flex items-center justify-center border border-purple-500/30">
                   <span className="text-[9px] font-black text-purple-300">{m.m}</span>
                 </div>
               )}
