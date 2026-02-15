@@ -731,7 +731,7 @@ export default function LeaguePage() {
           ) : matchups.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 bg-white/5 rounded-3xl border border-white/10 border-dashed">
               <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-2xl opacity-20">⚾</div>
-              <p className="text-white/40 font-bold uppercase tracking-widest text-sm">No matchups scheduled for this week</p>
+              <p className="text-white/40 font-bold uppercase tracking-widest text-sm">No matchups scheduled yet</p>
             </div>
           ) : (
             <div className="space-y-6">
