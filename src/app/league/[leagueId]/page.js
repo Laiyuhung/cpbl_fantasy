@@ -6,18 +6,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
 
 // Playoff Bracket Projection Component
-const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) => {
+const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding, participantCount }) => {
   const getProjectedMatchups = (type, label) => {
     const teamsMatch = type?.match(/^(\d+) teams/);
     const numTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
     const isReseeding = playoffReseeding === 'Yes';
 
+    const getSeedLabel = (seedNum) => {
+      if (typeof seedNum === 'number' && seedNum > participantCount) return 'Bye';
+      return `${seedNum}${seedNum === 1 ? 'st' : seedNum === 2 ? 'nd' : seedNum === 3 ? 'rd' : 'th'} Seed`;
+    };
+
     if (numTeams === 2) {
-      if (label === 'Final') return [{ a: '1st Seed', b: '2nd Seed' }];
+      if (label === 'Final') return [{ a: getSeedLabel(1), b: getSeedLabel(2) }];
     }
 
     if (numTeams === 4) {
-      if (label === 'Semifinal') return [{ a: '1st Seed', b: '4th Seed', m: 'M1' }, { a: '2nd Seed', b: '3rd Seed', m: 'M2' }];
+      if (label === 'Semifinal') return [
+        { a: getSeedLabel(1), b: getSeedLabel(4), m: 'M1' },
+        { a: getSeedLabel(2), b: getSeedLabel(3), m: 'M2' }
+      ];
       if (label === 'Final') {
         if (isReseeding) return [{ a: 'Highest Remaining Seed', b: 'Lowest Remaining Seed', tbd: true }];
         return [{ a: 'Winner of M1', b: 'Winner of M2' }];
@@ -25,10 +33,14 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) =>
     }
 
     if (numTeams === 6) {
-      if (label === 'Quarterfinal') return [{ a: '3rd Seed', b: '6th Seed', m: 'M1' }, { a: '4th Seed', b: '5th Seed', m: 'M2' }, { note: '1st & 2nd Seeds have a Bye' }];
+      if (label === 'Quarterfinal') return [
+        { a: getSeedLabel(3), b: getSeedLabel(6), m: 'M1' },
+        { a: getSeedLabel(4), b: getSeedLabel(5), m: 'M2' },
+        { note: '1st & 2nd Seeds have a Bye' }
+      ];
       if (label === 'Semifinal') {
-        if (isReseeding) return [{ a: '1st Seed', b: 'Lowest Remaining Seed', tbd: true }, { a: '2nd Seed', b: 'Highest Remaining Seed', tbd: true }];
-        return [{ a: '1st Seed', b: 'Winner of M2', m: 'M3' }, { a: '2nd Seed', b: 'Winner of M1', m: 'M4' }];
+        if (isReseeding) return [{ a: getSeedLabel(1), b: 'Lowest Remaining Seed', tbd: true }, { a: getSeedLabel(2), b: 'Highest Remaining Seed', tbd: true }];
+        return [{ a: getSeedLabel(1), b: 'Winner of M2', m: 'M3' }, { a: getSeedLabel(2), b: 'Winner of M1', m: 'M4' }];
       }
       if (label === 'Final') {
         if (isReseeding) return [{ a: 'Highest Remaining Seed', b: 'Lowest Remaining Seed', tbd: true }];
@@ -38,8 +50,12 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) =>
 
     if (numTeams >= 8) {
       const isInitialRound = label === 'First Round' || label === 'Round 1';
-      if (isInitialRound) return [{ a: '1st Seed', b: '8th Seed', m: 'M1' }, { a: '4th Seed', b: '5th Seed', m: 'M2' }, { a: '2nd Seed', b: '7th Seed', m: 'M3' }, { a: '3rd Seed', b: '6th Seed', m: 'M4' }];
-
+      if (isInitialRound) return [
+        { a: getSeedLabel(1), b: getSeedLabel(8), m: 'M1' },
+        { a: getSeedLabel(4), b: getSeedLabel(5), m: 'M2' },
+        { a: getSeedLabel(2), b: getSeedLabel(7), m: 'M3' },
+        { a: getSeedLabel(3), b: getSeedLabel(6), m: 'M4' }
+      ];
       if (label === 'Quarterfinal') {
         if (isReseeding) return [{ a: 'Highest Remaining', b: 'Lowest Remaining', tbd: true }, { a: '2nd Highest', b: '2nd Lowest', tbd: true }];
         return [{ a: 'Winner of M1', b: 'Winner of M2', m: 'M5' }, { a: 'Winner of M3', b: 'Winner of M4', m: 'M6' }];
@@ -87,6 +103,11 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) =>
           <div key={i} className={`relative group overflow-hidden bg-slate-900/40 backdrop-blur-sm border rounded-2xl p-5 hover:border-purple-500/30 transition-all ${m.tbd ? 'border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.05)]' : 'border-white/5'}`}>
             <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity ${m.tbd ? 'from-blue-500/5 via-transparent to-purple-500/5' : 'from-purple-500/5 via-transparent to-cyan-500/5'}`}></div>
             <div className="relative flex items-center justify-between">
+              {m.m && (
+                <div className="absolute left-0 -top-1">
+                  <span className="text-[10px] font-black text-purple-500/50 italic tracking-widest">{m.m}</span>
+                </div>
+              )}
               <div className="flex-1 flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-lg bg-slate-800 border flex items-center justify-center text-[10px] font-black ${m.tbd ? 'border-blue-500/30 text-blue-400' : 'border-white/10 text-white/40'}`}>
@@ -106,11 +127,6 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) =>
                 <span className={`text-[10px] font-black uppercase italic ${m.tbd ? 'text-blue-400' : 'text-purple-400'}`}>VS</span>
                 <div className="w-px h-8 bg-white/10"></div>
               </div>
-              {m.m && (
-                <div className="absolute left-1.5 top-1.5 w-7 h-7 bg-purple-500/20 rounded flex items-center justify-center border border-purple-500/30">
-                  <span className="text-[9px] font-black text-purple-300">{m.m}</span>
-                </div>
-              )}
               {m.tbd && (
                 <div className="absolute -right-1 -bottom-1">
                   <div className="px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/30 rounded text-[8px] font-black text-blue-400 uppercase tracking-tighter">Reseeding</div>
@@ -119,6 +135,212 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) =>
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+};
+
+// Playoff Tree Diagram Component
+const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount }) => {
+  const teamsMatch = playoffType?.match(/^(\d+) teams/);
+  const numTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
+  const isReseeding = playoffReseeding === 'Yes';
+
+  const isSeedBye = (seed) => {
+    if (typeof seed !== 'number') return false;
+    return seed > participantCount;
+  };
+
+  const Connector = ({ start, end, active }) => {
+    if (isReseeding) return null;
+    return (
+      <div className={`absolute border-gray-700/50 ${active ? 'border-purple-500/50' : ''}`} style={start.y === end.y ? {
+        top: `${start.y}%`,
+        left: `${start.x}%`,
+        width: `${end.x - start.x}%`,
+        borderTopWidth: '2px',
+      } : {
+        top: `${Math.min(start.y, end.y)}%`,
+        left: `${start.x}%`,
+        width: `${end.x - start.x}%`,
+        height: `${Math.abs(end.y - start.y)}%`,
+        borderTopWidth: start.y < end.y ? '2px' : '0',
+        borderBottomWidth: start.y > end.y ? '2px' : '0',
+        borderRightWidth: '2px',
+        borderRadius: '0 8px 8px 0',
+      }}></div>
+    );
+  };
+
+  const Node = ({ label, seed, active, x, y, isBye }) => {
+    const effectiveBye = isBye || isSeedBye(seed);
+    return (
+      <div
+        className={`absolute -translate-x-1/2 -translate-y-1/2 w-32 px-3 py-2 rounded-xl border backdrop-blur-md transition-all duration-500 ${active
+          ? 'bg-purple-500/20 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+          : 'bg-slate-900/40 border-white/5'
+          } ${effectiveBye ? 'opacity-40 grayscale-[0.5]' : ''}`}
+        style={{ left: `${x}%`, top: `${y}%` }}
+      >
+        <div className="flex items-center gap-2">
+          <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-black ${active ? 'bg-purple-500/30 text-purple-300' : 'bg-slate-800 text-white/40'}`}>
+            {seed || '?'}
+          </div>
+          <div className="flex flex-col">
+            <span className={`text-[9px] font-black uppercase tracking-tighter ${active ? 'text-purple-400' : 'text-white/20'}`}>
+              {effectiveBye ? 'Bye' : label}
+            </span>
+            <span className={`text-[10px] font-bold truncate max-w-[80px] ${active ? 'text-white' : 'text-white/60'}`}>
+              {effectiveBye ? (seed > participantCount ? 'No Team' : 'Top Seed') : 'Seed'} {seed}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderBracket = () => {
+    if (numTeams === 2) {
+      return (
+        <div className="relative w-full h-[200px] mt-8 overflow-hidden">
+          {/* Finals */}
+          <Node x={30} y={35} label="Final" seed={1} active={currentWeekLabel === 'Final'} participantCount={participantCount} />
+          <Node x={30} y={65} label="Final" seed={2} active={currentWeekLabel === 'Final'} participantCount={participantCount} />
+
+          <Connector start={{ x: 30, y: 50 }} end={{ x: 70, y: 50 }} active={false} />
+
+          {/* Champion */}
+          <Node x={70} y={50} label="Champion" seed="Winner" active={false} />
+        </div>
+      );
+    }
+
+    if (numTeams === 4) {
+      return (
+        <div className="relative w-full h-[300px] mt-8 overflow-hidden">
+          {/* Semifinals */}
+          <Node x={20} y={25} label="M1" seed={1} active={currentWeekLabel === 'Semifinal'} participantCount={participantCount} />
+          <Node x={20} y={45} label="M1" seed={4} active={currentWeekLabel === 'Semifinal'} participantCount={participantCount} />
+          <Node x={20} y={65} label="M2" seed={2} active={currentWeekLabel === 'Semifinal'} participantCount={participantCount} />
+          <Node x={20} y={85} label="M2" seed={3} active={currentWeekLabel === 'Semifinal'} participantCount={participantCount} />
+
+          <Connector start={{ x: 20, y: 35 }} end={{ x: 50, y: 35 }} active={currentWeekLabel === 'Final'} />
+          <Connector start={{ x: 20, y: 75 }} end={{ x: 50, y: 75 }} active={currentWeekLabel === 'Final'} />
+
+          {/* Finals */}
+          <Node x={50} y={35} label="Final" seed="Winner M1" active={currentWeekLabel === 'Final'} />
+          <Node x={50} y={75} label="Final" seed="Winner M2" active={currentWeekLabel === 'Final'} />
+
+          <Connector start={{ x: 50, y: 55 }} end={{ x: 80, y: 55 }} active={false} />
+
+          {/* Champion */}
+          <Node x={80} y={55} label="Champion" seed="Winner" active={false} />
+        </div>
+      );
+    }
+
+    if (numTeams === 6) {
+      return (
+        <div className="relative w-full h-[400px] mt-8 overflow-hidden">
+          {/* Quarterfinals */}
+          <Node x={15} y={15} label="Bye" seed={1} isBye={true} participantCount={participantCount} />
+          <Node x={15} y={40} label="M1" seed={3} active={currentWeekLabel === 'Quarterfinal'} participantCount={participantCount} />
+          <Node x={15} y={55} label="M1" seed={6} active={currentWeekLabel === 'Quarterfinal'} participantCount={participantCount} />
+          <Node x={15} y={75} label="M2" seed={4} active={currentWeekLabel === 'Quarterfinal'} participantCount={participantCount} />
+          <Node x={15} y={90} label="M2" seed={5} active={currentWeekLabel === 'Quarterfinal'} participantCount={participantCount} />
+          <Node x={15} y={30} label="Bye" seed={2} isBye={true} participantCount={participantCount} />
+
+          {/* Semifinals */}
+          <Node x={45} y={22.5} label="SF1" seed="1" active={currentWeekLabel === 'Semifinal'} />
+          <Node x={45} y={47.5} label="SF1" seed="Winner M2" active={currentWeekLabel === 'Semifinal'} />
+          <Node x={45} y={67.5} label="SF2" seed="2" active={currentWeekLabel === 'Semifinal'} />
+          <Node x={45} y={82.5} label="SF2" seed="Winner M1" active={currentWeekLabel === 'Semifinal'} />
+
+          {/* Final */}
+          <Node x={75} y={35} label="Final" seed="Winner SF1" active={currentWeekLabel === 'Final'} />
+          <Node x={75} y={75} label="Final" seed="Winner SF2" active={currentWeekLabel === 'Final'} />
+
+          {/* Connectors */}
+          {!isReseeding && (
+            <>
+              <Connector start={{ x: 15, y: 47.5 }} end={{ x: 45, y: 47.5 }} />
+              <Connector start={{ x: 15, y: 82.5 }} end={{ x: 45, y: 82.5 }} />
+              <Connector start={{ x: 45, y: 35 }} end={{ x: 75, y: 35 }} />
+              <Connector start={{ x: 45, y: 75 }} end={{ x: 75, y: 75 }} />
+            </>
+          )}
+        </div>
+      );
+    }
+
+    if (numTeams === 8) {
+      return (
+        <div className="relative w-full h-[500px] mt-8 overflow-hidden">
+          {/* Quarterfinals */}
+          <Node x={12.5} y={12.5} label="M1" seed={1} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+          <Node x={12.5} y={22.5} label="M1" seed={8} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+          <Node x={12.5} y={37.5} label="M2" seed={4} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+          <Node x={12.5} y={47.5} label="M2" seed={5} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+          <Node x={12.5} y={62.5} label="M3" seed={2} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+          <Node x={12.5} y={72.5} label="M3" seed={7} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+          <Node x={12.5} y={87.5} label="M4" seed={3} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+          <Node x={12.5} y={97.5} label="M4" seed={6} active={currentWeekLabel === 'First Round' || currentWeekLabel === 'Round 1'} participantCount={participantCount} />
+
+          {/* Semifinals */}
+          <Node x={37.5} y={17.5} label="SF1" seed="Winner M1" active={currentWeekLabel === 'Quarterfinal'} />
+          <Node x={37.5} y={42.5} label="SF1" seed="Winner M2" active={currentWeekLabel === 'Quarterfinal'} />
+          <Node x={37.5} y={67.5} label="SF2" seed="Winner M3" active={currentWeekLabel === 'Quarterfinal'} />
+          <Node x={37.5} y={92.5} label="SF2" seed="Winner M4" active={currentWeekLabel === 'Quarterfinal'} />
+
+          {/* Semifinals Round 2 */}
+          <Node x={62.5} y={30} label="Final Prep" seed="Winner SF1" active={currentWeekLabel === 'Semifinal'} />
+          <Node x={62.5} y={80} label="Final Prep" seed="Winner SF2" active={currentWeekLabel === 'Semifinal'} />
+
+          {/* Final */}
+          <Node x={87.5} y={55} label="Final" seed="TBD" active={currentWeekLabel === 'Final'} />
+
+          {/* Connectors */}
+          {!isReseeding && (
+            <>
+              <Connector start={{ x: 12.5, y: 17.5 }} end={{ x: 37.5, y: 17.5 }} active={currentWeekLabel === 'Quarterfinal'} />
+              <Connector start={{ x: 12.5, y: 42.5 }} end={{ x: 37.5, y: 42.5 }} active={currentWeekLabel === 'Quarterfinal'} />
+              <Connector start={{ x: 12.5, y: 67.5 }} end={{ x: 37.5, y: 67.5 }} active={currentWeekLabel === 'Quarterfinal'} />
+              <Connector start={{ x: 12.5, y: 92.5 }} end={{ x: 37.5, y: 92.5 }} active={currentWeekLabel === 'Quarterfinal'} />
+              <Connector start={{ x: 37.5, y: 30 }} end={{ x: 62.5, y: 30 }} active={currentWeekLabel === 'Semifinal'} />
+              <Connector start={{ x: 37.5, y: 80 }} end={{ x: 62.5, y: 80 }} active={currentWeekLabel === 'Semifinal'} />
+              <Connector start={{ x: 62.5, y: 55 }} end={{ x: 87.5, y: 55 }} active={currentWeekLabel === 'Final'} />
+            </>
+          )}
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="w-full bg-slate-950/20 border border-white/5 rounded-[2.5rem] p-8 mt-12 overflow-x-auto">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-white uppercase tracking-wider">Playoff Bracket</h2>
+            <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
+              {playoffReseeding === 'Yes' ? 'Reseeding Active - Pairings Refresh Each Round' : 'Fixed Bracket Progression'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></div>
+          <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{currentWeekLabel} Stage</span>
+        </div>
+      </div>
+
+      <div className="min-w-[800px]">
+        {renderBracket()}
       </div>
     </div>
   );
@@ -641,6 +863,7 @@ export default function LeaguePage() {
                   playoffType={leagueSettings?.playoffs}
                   roundLabel={weekDetails?.week_label}
                   playoffReseeding={leagueSettings?.playoff_reseeding}
+                  participantCount={members.length}
                 />
               </div>
             ) : (
@@ -736,6 +959,16 @@ export default function LeaguePage() {
                 );
               })}
             </div>
+          )}
+
+          {/* New Bracket Diagram Section */}
+          {weekDetails?.week_type === 'playoffs' && (
+            <PlayoffTreeDiagram
+              playoffType={leagueSettings?.playoffs}
+              playoffReseeding={leagueSettings?.playoff_reseeding}
+              currentWeekLabel={weekDetails?.week_label}
+              participantCount={members.length}
+            />
           )}
 
           {/* STANDINGS Section */}
