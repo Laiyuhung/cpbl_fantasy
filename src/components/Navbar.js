@@ -189,19 +189,55 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden lg:flex items-center space-x-1">
-          <Link
-            href="/home"
-            className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200"
-            onClick={(e) => {
-              e.preventDefault()
-              window.location.href = '/home'
-            }}
-          >
-            HOME
-          </Link>
-
-
-
+          {currentLeague ? (
+            <>
+              <a
+                href={`/league/${currentLeague.league_id}`}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname === `/league/${currentLeague.league_id}`
+                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                  : 'hover:bg-white/10 hover:text-cyan-300'
+                  }`}
+              >
+                Overview
+              </a>
+              <a
+                href={`/league/${currentLeague.league_id}/players`}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/players')
+                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                  : 'hover:bg-white/10 hover:text-cyan-300'
+                  }`}
+              >
+                Players
+              </a>
+              <a
+                href={`/league/${currentLeague.league_id}/roster`}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/roster')
+                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                  : 'hover:bg-white/10 hover:text-cyan-300'
+                  }`}
+              >
+                My Roster
+              </a>
+              <a
+                href={`/league/${currentLeague.league_id}/matchups`}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/matchups')
+                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                  : 'hover:bg-white/10 hover:text-cyan-300'
+                  }`}
+              >
+                Matchups
+              </a>
+              <a
+                href={`/league/${currentLeague.league_id}/league_settings`}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings')
+                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                  : 'hover:bg-white/10 hover:text-cyan-300'
+                  }`}
+              >
+                League Settings
+              </a>
+            </>
+          ) : null}
 
           <div className="relative league-dropdown">
             <button
@@ -266,17 +302,6 @@ export default function Navbar() {
               </div>
             )}
           </div>
-
-          {userId === '2' && (
-            <>
-              <Link href="/bulk-insert" className="px-4 py-2 rounded-lg font-medium text-sm bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-all duration-200">
-                資料登錄
-              </Link>
-              <Link href="/matchup_debug" className="px-4 py-2 rounded-lg font-medium text-sm bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-all duration-200">
-                Debug
-              </Link>
-            </>
-          )}
         </div>
 
         <div className="hidden lg:flex items-center space-x-3">
@@ -343,7 +368,46 @@ export default function Navbar() {
             </div>
 
             <div className="overflow-y-auto h-[calc(100%-180px)] p-4 space-y-1">
-              <Link href="/home" className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/home'; }}>HOME</Link>
+              {currentLeague ? (
+                <>
+                  <div className="text-xs text-blue-300/70 mb-3 px-4 font-semibold tracking-wider">LEAGUE NAV</div>
+                  <Link
+                    href={`/league/${currentLeague.league_id}`}
+                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname === `/league/${currentLeague.league_id}` ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}`; }}
+                  >
+                    Overview
+                  </Link>
+                  <Link
+                    href={`/league/${currentLeague.league_id}/players`}
+                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/players') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/players`; }}
+                  >
+                    Players
+                  </Link>
+                  <Link
+                    href={`/league/${currentLeague.league_id}/roster`}
+                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/roster') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/roster`; }}
+                  >
+                    My Roster
+                  </Link>
+                  <Link
+                    href={`/league/${currentLeague.league_id}/matchups`}
+                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/matchups') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/matchups`; }}
+                  >
+                    Matchups
+                  </Link>
+                  <Link
+                    href={`/league/${currentLeague.league_id}/league_settings`}
+                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/league_settings`; }}
+                  >
+                    League Settings
+                  </Link>
+                </>
+              ) : null}
 
 
               <div className="border-t border-blue-500/30 mt-4 pt-4">
