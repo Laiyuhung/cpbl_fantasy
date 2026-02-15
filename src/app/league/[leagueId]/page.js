@@ -63,21 +63,16 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) =>
 
   return (
     <div className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col items-center gap-3 mb-4">
-        <div className="px-4 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full">
-          <span className="text-xs font-black text-purple-300 uppercase tracking-widest">Bracket Projection</span>
+      <div className="flex flex-col items-center gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
+            <span className="text-xs font-black text-purple-300 uppercase tracking-widest">Bracket Projection</span>
+          </div>
+          <div className="px-4 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
+            <span className="text-xs font-black text-cyan-300 uppercase tracking-widest">{roundLabel}</span>
+          </div>
         </div>
 
-        {playoffReseeding === 'Yes' && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider">
-              Playoff Reseeding Enabled: Pairings determined by seed after each round
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -112,7 +107,7 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) =>
                 <div className="w-px h-8 bg-white/10"></div>
               </div>
               {m.m && (
-                <div className="absolute -right-2 -top-2 w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
+                <div className="absolute right-3 bottom-3 w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
                   <span className="text-[9px] font-black text-purple-300">{m.m}</span>
                 </div>
               )}
