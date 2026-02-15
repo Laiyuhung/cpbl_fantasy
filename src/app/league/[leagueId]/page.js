@@ -6,14 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
 
 // Playoff Bracket Projection Component
-const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding, participantCount }) => {
+const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding, participantCount, realMatchups, members }) => {
   const getProjectedMatchups = (type, label) => {
     const teamsMatch = type?.match(/^(\d+) teams/);
     const numTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
     const isReseeding = playoffReseeding === 'Yes';
 
-    const getSeedLabel = (seedNum) => {
+    const getSeedName = (seedNum) => {
       if (typeof seedNum === 'number' && seedNum > participantCount) return 'Bye';
+
+      // Try to find if this seed has a real team assigned in members
+      const member = members?.find(m => m.seed === seedNum);
+      if (member) return member.nickname || member.manager_name;
+
       return `${seedNum}${seedNum === 1 ? 'st' : seedNum === 2 ? 'nd' : seedNum === 3 ? 'rd' : 'th'} Seed`;
     };
 
@@ -151,10 +156,16 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding, part
 };
 
 // Playoff Tree Diagram Component
-const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount }) => {
+const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members }) => {
   const teamsMatch = playoffType?.match(/^(\d+) teams/);
   const numTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
   const isReseeding = playoffReseeding === 'Yes';
+
+  const getTeamNameBySeed = (seed) => {
+    if (typeof seed !== 'number') return seed;
+    const member = members?.find(m => m.seed === seed);
+    return member ? (member.nickname || member.manager_name) : `Seed ${seed}`;
+  };
 
   const isSeedBye = (seed) => {
     if (typeof seed !== 'number') return false;
@@ -183,9 +194,9 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
   };
 
   const MatchupBox = ({ m1, m2, label, active, x, y, isReseedingRound }) => {
-    const isM1Bye = isSeedBye(m1.seed) || m1.isBye;
-    const isM2Bye = isSeedBye(m2.seed) || m2.isBye;
     const isHighestLowest = isReseedingRound && isReseeding;
+    const isM1Bye = (isSeedBye(m1.seed) || m1.isBye) && !isHighestLowest;
+    const isM2Bye = (isSeedBye(m2.seed) || m2.isBye) && !isHighestLowest;
 
     return (
       <div
@@ -204,7 +215,9 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
               {m1.seed || '?'}
             </div>
             <span className={`text-sm font-black truncate flex-1 tracking-tight ${isHighestLowest ? 'text-blue-300 italic' : 'text-white'}`}>
-              {isHighestLowest ? (m1.seed === 1 ? 'HIGHEST REMAINING' : '2ND HIGHEST') : (isM1Bye ? 'BYE' : `SEED ${m1.seed}`)}
+              {isHighestLowest
+                ? (m1.seed === 1 ? 'HIGHEST REMAINING' : '2ND HIGHEST')
+                : (isM1Bye ? 'BYE' : getTeamNameBySeed(m1.seed).toUpperCase())}
             </span>
           </div>
 
@@ -216,7 +229,9 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
               {m2.seed || '?'}
             </div>
             <span className={`text-sm font-black truncate flex-1 tracking-tight ${isHighestLowest ? 'text-blue-300 italic' : 'text-white'}`}>
-              {isHighestLowest ? (m2.seed === 4 ? 'LOWEST REMAINING' : '2ND LOWEST') : (isM2Bye ? 'BYE' : `SEED ${m2.seed}`)}
+              {isHighestLowest
+                ? (m2.seed === 4 ? 'LOWEST REMAINING' : '2ND LOWEST')
+                : (isM2Bye ? 'BYE' : getTeamNameBySeed(m2.seed).toUpperCase())}
             </span>
           </div>
         </div>
@@ -871,6 +886,8 @@ export default function LeaguePage() {
                   roundLabel={weekDetails?.week_label}
                   playoffReseeding={leagueSettings?.playoff_reseeding}
                   participantCount={members.length}
+                  realMatchups={matchups}
+                  members={members}
                 />
               </div>
             ) : (
@@ -975,6 +992,8 @@ export default function LeaguePage() {
               playoffReseeding={leagueSettings?.playoff_reseeding}
               currentWeekLabel={weekDetails?.week_label}
               participantCount={members.length}
+              realMatchups={matchups}
+              members={members}
             />
           )}
 
