@@ -5,6 +5,130 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
 
+// Playoff Bracket Projection Component
+const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding }) => {
+  const getProjectedMatchups = (type, label) => {
+    const teamsMatch = type?.match(/^(\d+) teams/);
+    const numTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
+    const isReseeding = playoffReseeding === 'Yes';
+
+    if (numTeams === 2) {
+      if (label === 'Final') return [{ a: '1st Seed', b: '2nd Seed' }];
+    }
+
+    if (numTeams === 4) {
+      if (label === 'Semifinal') return [{ a: '1st Seed', b: '4th Seed', m: 'M1' }, { a: '2nd Seed', b: '3rd Seed', m: 'M2' }];
+      if (label === 'Final') {
+        if (isReseeding) return [{ a: 'Highest Remaining Seed', b: 'Lowest Remaining Seed', tbd: true }];
+        return [{ a: 'Winner of M1', b: 'Winner of M2' }];
+      }
+    }
+
+    if (numTeams === 6) {
+      if (label === 'Quarterfinal') return [{ a: '3rd Seed', b: '6th Seed', m: 'M1' }, { a: '4th Seed', b: '5th Seed', m: 'M2' }, { note: '1st & 2nd Seeds have a Bye' }];
+      if (label === 'Semifinal') {
+        if (isReseeding) return [{ a: '1st Seed', b: 'Lowest Remaining Seed', tbd: true }, { a: '2nd Seed', b: 'Highest Remaining Seed', tbd: true }];
+        return [{ a: '1st Seed', b: 'Winner of M2', m: 'M3' }, { a: '2nd Seed', b: 'Winner of M1', m: 'M4' }];
+      }
+      if (label === 'Final') {
+        if (isReseeding) return [{ a: 'Highest Remaining Seed', b: 'Lowest Remaining Seed', tbd: true }];
+        return [{ a: 'Winner of M3', b: 'Winner of M4' }];
+      }
+    }
+
+    if (numTeams >= 8) {
+      const isInitialRound = label === 'First Round' || label === 'Round 1';
+      if (isInitialRound) return [{ a: '1st Seed', b: '8th Seed', m: 'M1' }, { a: '4th Seed', b: '5th Seed', m: 'M2' }, { a: '2nd Seed', b: '7th Seed', m: 'M3' }, { a: '3rd Seed', b: '6th Seed', m: 'M4' }];
+
+      if (label === 'Quarterfinal') {
+        if (isReseeding) return [{ a: 'Highest Remaining', b: 'Lowest Remaining', tbd: true }, { a: '2nd Highest', b: '2nd Lowest', tbd: true }];
+        return [{ a: 'Winner of M1', b: 'Winner of M2', m: 'M5' }, { a: 'Winner of M3', b: 'Winner of M4', m: 'M6' }];
+      }
+      if (label === 'Semifinal') {
+        if (isReseeding) return [{ a: 'Highest Remaining', b: 'Lowest Remaining', tbd: true }];
+        return [{ a: 'Winner of M5', b: 'Winner of M6', m: 'M7' }];
+      }
+      if (label === 'Final') {
+        if (isReseeding) return [{ a: 'Highest Remaining', b: 'Lowest Remaining', tbd: true }];
+        return [{ a: 'Winner of M7', b: 'TBD' }];
+      }
+    }
+
+    return null;
+  };
+
+  const matchups = getProjectedMatchups(playoffType, roundLabel);
+
+  if (!matchups) return null;
+
+  return (
+    <div className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col items-center gap-3 mb-4">
+        <div className="px-4 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full">
+          <span className="text-xs font-black text-purple-300 uppercase tracking-widest">Bracket Projection</span>
+        </div>
+
+        {playoffReseeding === 'Yes' && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider">
+              Playoff Reseeding Enabled: Pairings determined by seed after each round
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {matchups.map((m, i) => m.note ? (
+          <div key={i} className="md:col-span-2 flex items-center justify-center p-4 bg-blue-500/5 border border-dashed border-blue-500/20 rounded-2xl">
+            <span className="text-sm font-bold text-blue-300/60 uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {m.note}
+            </span>
+          </div>
+        ) : (
+          <div key={i} className={`relative group overflow-hidden bg-slate-900/40 backdrop-blur-sm border rounded-2xl p-5 hover:border-purple-500/30 transition-all ${m.tbd ? 'border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.05)]' : 'border-white/5'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity ${m.tbd ? 'from-blue-500/5 via-transparent to-purple-500/5' : 'from-purple-500/5 via-transparent to-cyan-500/5'}`}></div>
+            <div className="relative flex items-center justify-between">
+              <div className="flex-1 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg bg-slate-800 border flex items-center justify-center text-[10px] font-black ${m.tbd ? 'border-blue-500/30 text-blue-400' : 'border-white/10 text-white/40'}`}>
+                    {m.tbd ? '?' : 'S'}
+                  </div>
+                  <span className={`text-sm font-bold ${m.tbd ? 'text-blue-200/80 italic' : 'text-white/80'}`}>{m.a}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg bg-slate-800 border flex items-center justify-center text-[10px] font-black ${m.tbd ? 'border-blue-500/30 text-blue-400' : 'border-white/10 text-white/40'}`}>
+                    {m.tbd ? '?' : 'S'}
+                  </div>
+                  <span className={`text-sm font-bold ${m.tbd ? 'text-blue-200/80 italic' : 'text-white/80'}`}>{m.b}</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-2 px-4">
+                <div className="w-px h-8 bg-white/10"></div>
+                <span className={`text-[10px] font-black uppercase italic ${m.tbd ? 'text-blue-400' : 'text-purple-400'}`}>VS</span>
+                <div className="w-px h-8 bg-white/10"></div>
+              </div>
+              {m.m && (
+                <div className="absolute -right-2 -top-2 w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
+                  <span className="text-[9px] font-black text-purple-300">{m.m}</span>
+                </div>
+              )}
+              {m.tbd && (
+                <div className="absolute -right-1 -bottom-1">
+                  <div className="px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/30 rounded text-[8px] font-black text-blue-400 uppercase tracking-tighter">Reseeding</div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function LeaguePage() {
   const params = useParams();
   const leagueId = params.leagueId;
@@ -516,11 +640,21 @@ export default function LeaguePage() {
               <span className="text-purple-300 font-bold tracking-widest uppercase text-sm">Loading Matchups...</span>
             </div>
           ) : matchups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
-              <div className="text-6xl mb-4">🏟️</div>
-              <h3 className="text-xl font-bold text-white mb-2">No Matchups Scheduled</h3>
-              <p className="text-slate-400">There are no games scheduled for this week.</p>
-            </div>
+            weekDetails?.week_type === 'playoffs' ? (
+              <div className="flex flex-col items-center justify-center p-8 bg-white/5 rounded-3xl border border-white/10">
+                <PlayoffBracketDisplay
+                  playoffType={leagueSettings?.playoffs}
+                  roundLabel={weekDetails?.week_label}
+                  playoffReseeding={leagueSettings?.playoff_reseeding}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
+                <div className="text-6xl mb-4">🏟️</div>
+                <h3 className="text-xl font-bold text-white mb-2">No Matchups Scheduled</h3>
+                <p className="text-slate-400">There are no games scheduled for this week.</p>
+              </div>
+            )
           ) : (
             <div className="space-y-6">
               {matchups.map((matchup) => {
