@@ -120,8 +120,7 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding, part
                       {m.tbd ? '?' : 'S'}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-black text-white/20 tracking-tighter">Team One</span>
-                      <span className={`text-base font-black ${m.tbd ? 'text-blue-200/80 italic' : 'text-white'}`}>{m.a}</span>
+                      <span className={`text-lg font-black ${m.tbd ? 'text-blue-200/80 italic' : 'text-white'}`}>{m.a}</span>
                     </div>
                   </div>
 
@@ -130,8 +129,7 @@ const PlayoffBracketDisplay = ({ playoffType, roundLabel, playoffReseeding, part
                       {m.tbd ? '?' : 'S'}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-black text-white/20 tracking-tighter">Team Two</span>
-                      <span className={`text-base font-black ${m.tbd ? 'text-blue-200/80 italic' : 'text-white'}`}>{m.b}</span>
+                      <span className={`text-lg font-black ${m.tbd ? 'text-blue-200/80 italic' : 'text-white'}`}>{m.b}</span>
                     </div>
                   </div>
                 </div>
@@ -191,34 +189,34 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
 
     return (
       <div
-        className={`absolute -translate-x-1/2 -translate-y-1/2 min-w-[160px] bg-slate-900/60 backdrop-blur-xl border ${active ? 'border-purple-500/50 shadow-[0_0_25px_rgba(168,85,247,0.15)] ring-1 ring-purple-500/20' : 'border-white/10 shadow-lg shadow-black/40'} rounded-2xl p-1 transition-all duration-500 group overflow-hidden`}
+        className={`absolute -translate-x-1/2 -translate-y-1/2 min-w-[220px] bg-slate-900/80 backdrop-blur-xl border ${active ? 'border-purple-500 ring-2 ring-purple-500/20 shadow-[0_0_40px_rgba(168,85,247,0.3)]' : 'border-white/10 shadow-2xl shadow-black/60'} rounded-2xl p-1.5 transition-all duration-500 group overflow-hidden`}
         style={{ left: `${x}%`, top: `${y}%` }}
       >
-        <div className="px-3 py-1 bg-white/5 flex items-center justify-between border-b border-white/5 mb-1">
-          <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'text-purple-400' : 'text-white/30'}`}>{label}</span>
-          {active && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></div>}
+        <div className="px-4 py-1.5 bg-white/5 flex items-center justify-between border-b border-white/5 mb-1.5">
+          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${active ? 'text-purple-400' : 'text-white/30'}`}>{label}</span>
+          {active && <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shadow-[0_0_10px_rgba(168,85,247,0.8)]"></div>}
         </div>
 
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {/* Team 1 */}
-          <div className={`px-2 py-1.5 flex items-center gap-2 rounded-lg transition-colors ${isM1Bye ? 'opacity-30' : ''}`}>
-            <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[8px] font-black ${isM1Bye ? 'bg-slate-800 text-white/20' : 'bg-purple-500/30 text-purple-300'}`}>
+          <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM1Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM1Bye ? 'bg-slate-800 text-white/20' : 'bg-purple-500/30 text-purple-300 border border-purple-500/20'}`}>
               {m1.seed || '?'}
             </div>
-            <span className={`text-[10px] font-bold truncate flex-1 ${isHighestLowest ? 'text-blue-300 italic' : 'text-white/80'}`}>
-              {isHighestLowest ? (m1.seed === 1 ? 'Highest Remaining' : '2nd High Remaining') : (isM1Bye ? 'Bye' : `Seed ${m1.seed}`)}
+            <span className={`text-sm font-black truncate flex-1 tracking-tight ${isHighestLowest ? 'text-blue-300 italic' : 'text-white'}`}>
+              {isHighestLowest ? (m1.seed === 1 ? 'HIGHEST REMAINING' : '2ND HIGHEST') : (isM1Bye ? 'BYE' : `SEED ${m1.seed}`)}
             </span>
           </div>
 
-          <div className="h-px bg-white/5 mx-2"></div>
+          <div className="h-px bg-white/5 mx-3"></div>
 
           {/* Team 2 */}
-          <div className={`px-2 py-1.5 flex items-center gap-2 rounded-lg transition-colors ${isM2Bye ? 'opacity-30' : ''}`}>
-            <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[8px] font-black ${isM2Bye ? 'bg-slate-800 text-white/20' : 'bg-blue-500/30 text-blue-300'}`}>
+          <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM2Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM2Bye ? 'bg-slate-800 text-white/20' : 'bg-blue-500/30 text-blue-300 border border-blue-500/20'}`}>
               {m2.seed || '?'}
             </div>
-            <span className={`text-[10px] font-bold truncate flex-1 ${isHighestLowest ? 'text-blue-300 italic' : 'text-white/80'}`}>
-              {isHighestLowest ? (m2.seed === 4 ? 'Lowest Remaining' : '2nd Low Remaining') : (isM2Bye ? 'Bye' : `Seed ${m2.seed}`)}
+            <span className={`text-sm font-black truncate flex-1 tracking-tight ${isHighestLowest ? 'text-blue-300 italic' : 'text-white'}`}>
+              {isHighestLowest ? (m2.seed === 4 ? 'LOWEST REMAINING' : '2ND LOWEST') : (isM2Bye ? 'BYE' : `SEED ${m2.seed}`)}
             </span>
           </div>
         </div>

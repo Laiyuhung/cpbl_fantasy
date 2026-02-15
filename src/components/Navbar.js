@@ -198,7 +198,7 @@ export default function Navbar() {
                   : 'hover:bg-white/10 hover:text-cyan-300'
                   }`}
               >
-                Overview
+                OVERVIEW
               </a>
               <a
                 href={`/league/${currentLeague.league_id}/players`}
@@ -207,7 +207,7 @@ export default function Navbar() {
                   : 'hover:bg-white/10 hover:text-cyan-300'
                   }`}
               >
-                Players
+                PLAYERS
               </a>
               <a
                 href={`/league/${currentLeague.league_id}/roster`}
@@ -216,7 +216,7 @@ export default function Navbar() {
                   : 'hover:bg-white/10 hover:text-cyan-300'
                   }`}
               >
-                My Roster
+                ROSTER
               </a>
               <a
                 href={`/league/${currentLeague.league_id}/matchups`}
@@ -225,7 +225,7 @@ export default function Navbar() {
                   : 'hover:bg-white/10 hover:text-cyan-300'
                   }`}
               >
-                Matchups
+                MATCHUPS
               </a>
               <a
                 href={`/league/${currentLeague.league_id}/league_settings`}
@@ -234,7 +234,7 @@ export default function Navbar() {
                   : 'hover:bg-white/10 hover:text-cyan-300'
                   }`}
               >
-                League Settings
+                LEAGUE SETTINGS
               </a>
             </>
           ) : null}
@@ -376,35 +376,35 @@ export default function Navbar() {
                     className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname === `/league/${currentLeague.league_id}` ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}`; }}
                   >
-                    Overview
+                    OVERVIEW
                   </Link>
                   <Link
                     href={`/league/${currentLeague.league_id}/players`}
                     className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/players') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/players`; }}
                   >
-                    Players
+                    PLAYERS
                   </Link>
                   <Link
                     href={`/league/${currentLeague.league_id}/roster`}
                     className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/roster') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/roster`; }}
                   >
-                    My Roster
+                    ROSTER
                   </Link>
                   <Link
                     href={`/league/${currentLeague.league_id}/matchups`}
                     className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/matchups') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/matchups`; }}
                   >
-                    Matchups
+                    MATCHUPS
                   </Link>
                   <Link
                     href={`/league/${currentLeague.league_id}/league_settings`}
                     className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/league_settings`; }}
                   >
-                    League Settings
+                    LEAGUE SETTINGS
                   </Link>
                 </>
               ) : null}
