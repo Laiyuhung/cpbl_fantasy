@@ -1056,9 +1056,9 @@ export default function LeaguePage() {
                       <div className="flex flex-col gap-4">
                         {group.items.map((item) => {
                           const isTrade = item.transaction_type === 'TRADE';
-                          // For trades, find the "other" manager in the group to show as recipient
+                          // For trades, the "to" label should point to the acquiring manager (the one in the transaction record)
                           const recipientNickname = isTrade
-                            ? group.items.find(i => i.manager_id !== item.manager_id)?.manager?.nickname
+                            ? item.manager?.nickname
                             : null;
 
                           return (
@@ -1182,8 +1182,8 @@ export default function LeaguePage() {
 
                       {/* Middle: Status Result */}
                       <div className="shrink-0 flex justify-center px-4">
-                        <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${w.status?.toLowerCase() === 'success' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
-                          'bg-red-500/10 text-red-400 border border-red-500/20'
+                        <span className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${w.status?.toLowerCase().includes('success') ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                          'bg-red-500/10 text-red-500 border border-red-500/20'
                           }`}>
                           {w.status}
                         </span>
