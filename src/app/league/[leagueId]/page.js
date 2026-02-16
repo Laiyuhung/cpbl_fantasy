@@ -295,6 +295,9 @@ export default function LeaguePage() {
   const [matchupsLoading, setMatchupsLoading] = useState(true);
   const [standings, setStandings] = useState([]);
   const [standingsLoading, setStandingsLoading] = useState(true);
+  const [transactions, setTransactions] = useState([]);
+  const [waiverResults, setWaiverResults] = useState([]);
+  const [transLoading, setTransLoading] = useState(true);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -463,6 +466,24 @@ export default function LeaguePage() {
     };
 
     fetchStandings();
+
+    const fetchTransactions = async () => {
+      setTransLoading(true);
+      try {
+        const response = await fetch(`/api/league/${leagueId}/transactions`);
+        const result = await response.json();
+        if (result.success) {
+          setTransactions(result.transactions || []);
+          setWaiverResults(result.waivers || []);
+        }
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      } finally {
+        setTransLoading(false);
+      }
+    };
+
+    fetchTransactions();
   }, [leagueId]);
 
   const handleWeekChange = (direction) => {
@@ -965,6 +986,109 @@ export default function LeaguePage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* TRANSACTIONS Section */}
+          <div className="mt-12">
+            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
+              Recent Transactions
+            </h2>
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden">
+              {transLoading ? (
+                <div className="flex items-center justify-center p-12">
+                  <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm">No recent transactions.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-white/5 border-b border-white/5">
+                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Time</th>
+                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Type</th>
+                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Player</th>
+                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Manager</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {transactions.map((t) => (
+                        <tr key={t.transaction_id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 text-xs font-bold text-slate-400">
+                            {new Date(t.transaction_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${t.transaction_type === 'Add' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                                t.transaction_type === 'Drop' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                  t.transaction_type === 'Trade' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                                    'bg-slate-700/40 text-slate-400'
+                              }`}>
+                              {t.transaction_type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm font-black text-white">{t.player?.name}</td>
+                          <td className="px-6 py-4 text-sm font-bold text-slate-300">{t.manager?.nickname}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* WAIVER RESULTS Section */}
+          <div className="mt-12">
+            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
+              Waiver Results
+            </h2>
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden">
+              {transLoading ? (
+                <div className="flex items-center justify-center p-12">
+                  <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : waiverResults.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm">No waiver results found.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-white/5 border-b border-white/5">
+                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Date</th>
+                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Claim</th>
+                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Status</th>
+                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Manager</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {waiverResults.map((w) => (
+                        <tr key={w.id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 text-xs font-bold text-slate-400">
+                            {new Date(w.off_waiver).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-black text-green-400">+ {w.player?.name}</span>
+                              {w.drop_player && (
+                                <span className="text-xs font-bold text-red-500/70">- {w.drop_player?.name}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${w.status === 'successful' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                                'bg-red-500/10 text-red-400 border border-red-500/20'
+                              }`}>
+                              {w.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm font-bold text-slate-300">{w.manager?.nickname}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
