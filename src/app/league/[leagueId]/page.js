@@ -1182,7 +1182,7 @@ export default function LeaguePage() {
 
                       {/* Middle: Status Result */}
                       <div className="shrink-0 flex justify-center px-4">
-                        <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${w.status?.toLowerCase() === 'successful' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
+                        <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${w.status?.toLowerCase() === 'success' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
                           'bg-red-500/10 text-red-400 border border-red-500/20'
                           }`}>
                           {w.status}
