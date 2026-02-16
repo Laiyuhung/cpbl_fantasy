@@ -1066,9 +1066,6 @@ export default function LeaguePage() {
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                                {item.transaction_type === 'Drop' || item.transaction_type === 'WAIVER DROP' ? 'To Waivers' : ''}
-                              </span>
                             </div>
                           </div>
                         ))}
@@ -1077,7 +1074,7 @@ export default function LeaguePage() {
                       {/* Right: Manager and Time */}
                       <div className="text-right flex-shrink-0 ml-8">
                         <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
-                          {group.items.some(i => i.transaction_type === 'Trade') ? (
+                          {group.items.some(i => i.transaction_type === 'TRADE') ? (
                             <>
                               {group.manager?.nickname}
                               <span className="mx-2 text-slate-500 font-normal">⇌</span>
