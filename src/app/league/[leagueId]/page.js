@@ -500,7 +500,13 @@ export default function LeaguePage() {
           id: t.trade_group_id,
           manager: t.manager,
           time: t.transaction_time,
-          items: group
+          items: group.sort((a, b) => {
+            const typeA = (a.transaction_type || '').toUpperCase();
+            const typeB = (b.transaction_type || '').toUpperCase();
+            if (typeA.includes('ADD') && typeB.includes('DROP')) return -1;
+            if (typeA.includes('DROP') && typeB.includes('ADD')) return 1;
+            return 0;
+          })
         });
       } else {
         const sameGroup = transactions.filter(item =>
@@ -513,7 +519,13 @@ export default function LeaguePage() {
           id: t.transaction_id,
           manager: t.manager,
           time: t.transaction_time,
-          items: sameGroup
+          items: sameGroup.sort((a, b) => {
+            const typeA = (a.transaction_type || '').toUpperCase();
+            const typeB = (b.transaction_type || '').toUpperCase();
+            if (typeA.includes('ADD') && typeB.includes('DROP')) return -1;
+            if (typeA.includes('DROP') && typeB.includes('ADD')) return 1;
+            return 0;
+          })
         });
       }
     });
@@ -1075,7 +1087,9 @@ export default function LeaguePage() {
                                   )}
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                                  {item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP' ? 'To Waivers' : ''}
+                                  {item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP' ? 'To Waivers' :
+                                    item.transaction_type === 'ADD' ? 'From FA' :
+                                      item.transaction_type === 'WAIVER ADD' ? 'From Waivers' : ''}
                                 </span>
                               </div>
                             </div>
@@ -1140,25 +1154,35 @@ export default function LeaguePage() {
                           <div className="w-6 flex justify-center flex-shrink-0">
                             <span className="text-2xl font-black text-green-500 leading-none">+</span>
                           </div>
-                          <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
-                            {w.player?.name}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                              {w.player?.name}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                              From Waivers
+                            </span>
+                          </div>
                         </div>
                         {w.drop_player && (
                           <div className="flex items-center gap-5">
                             <div className="w-6 flex justify-center flex-shrink-0">
                               <span className="text-2xl font-black text-red-500 leading-none">-</span>
                             </div>
-                            <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
-                              {w.drop_player?.name}
-                            </span>
+                            <div className="flex flex-col">
+                              <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                {w.drop_player?.name}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                                To Waivers
+                              </span>
+                            </div>
                           </div>
                         )}
                       </div>
 
                       {/* Middle: Status Result */}
                       <div className="shrink-0 flex justify-center px-4">
-                        <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${w.status === 'successful' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
+                        <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${w.status?.toLowerCase() === 'successful' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
                           'bg-red-500/10 text-red-400 border border-red-500/20'
                           }`}>
                           {w.status}
