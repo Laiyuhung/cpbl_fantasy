@@ -824,7 +824,7 @@ export default function LeaguePage() {
                                   {managerB?.nickname || 'Unknown'}
                                 </div>
                                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
-                                  {managerB?.managers?.name || 'Unknown'} | {recordB || '0-0-0'}
+                                  {recordB || '0-0-0'} | {managerB?.managers?.name || 'Unknown'}
                                 </div>
                               </div>
                             </div>

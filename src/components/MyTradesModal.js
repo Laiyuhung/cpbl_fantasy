@@ -373,7 +373,9 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                         <div className="flex gap-4 mt-2">
                                             <div className="flex-1 bg-purple-900/10 p-2 rounded">
                                                 <div className="text-xs font-bold text-purple-400 mb-1 border-b border-purple-500/20 pb-1">
-                                                    Sending ({trade.initiator_players?.length || 0})
+                                                    {isInitiator ? 'You sending' :
+                                                        trade.recipient_manager_id === managerId ? 'You receiving' :
+                                                            `${recNick} received`} ({trade.initiator_players?.length || 0})
                                                 </div>
                                                 <div className="space-y-3 pt-1">
                                                     {trade.initiator_players?.map(p => (
@@ -389,7 +391,9 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                             </div>
                                             <div className="flex-1 bg-pink-900/10 p-2 rounded">
                                                 <div className="text-xs font-bold text-pink-400 mb-1 border-b border-pink-500/20 pb-1">
-                                                    Receiving ({trade.recipient_players?.length || 0})
+                                                    {isInitiator ? 'You receiving' :
+                                                        trade.recipient_manager_id === managerId ? 'You sending' :
+                                                            `${initNick} received`} ({trade.recipient_players?.length || 0})
                                                 </div>
                                                 <div className="space-y-3 pt-1">
                                                     {trade.recipient_players?.map(p => (
