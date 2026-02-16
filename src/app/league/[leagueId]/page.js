@@ -1060,7 +1060,7 @@ export default function LeaguePage() {
                                 <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
                                   {item.player?.name}
                                 </span>
-                                {item.transaction_type === 'Trade' && item.traded_to_manager && (
+                                {item.transaction_type === 'TRADE' && item.traded_to_manager && (
                                   <span className="text-xs font-bold text-slate-500 tracking-tight italic">
                                     to {item.traded_to_manager.nickname}
                                   </span>
