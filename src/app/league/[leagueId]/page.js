@@ -1042,47 +1042,63 @@ export default function LeaguePage() {
                     <div key={group.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all duration-300">
                       {/* Left: Icons and Players */}
                       <div className="flex flex-col gap-4">
-                        {group.items.map((item) => (
-                          <div key={item.transaction_id} className="flex items-center gap-5">
-                            <div className="w-6 flex justify-center flex-shrink-0">
-                              {(item.transaction_type === 'ADD' || item.transaction_type === 'WAIVER ADD') ? (
-                                <span className={`text-2xl font-black leading-none ${item.transaction_type === 'WAIVER ADD' ? 'text-yellow-500' : 'text-green-500'}`}>+</span>
-                              ) : (item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP') ? (
-                                <span className="text-2xl font-black text-red-500 leading-none">-</span>
-                              ) : item.transaction_type === 'TRADE' ? (
-                                <span className="text-2xl font-normal text-blue-400 leading-none">⇌</span>
-                              ) : (
-                                <span className="text-2xl font-black text-slate-500/50 leading-none">•</span>
-                              )}
-                            </div>
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
-                                <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
-                                  {item.player?.name}
-                                </span>
-                                {item.transaction_type === 'TRADE' && item.traded_to_manager && (
-                                  <span className="text-xs font-bold text-slate-500 tracking-tight italic">
-                                    to {item.traded_to_manager.nickname}
-                                  </span>
+                        {group.items.map((item) => {
+                          const isTrade = item.transaction_type === 'TRADE';
+                          // For trades, find the "other" manager in the group to show as recipient
+                          const recipientNickname = isTrade
+                            ? group.items.find(i => i.manager_id !== item.manager_id)?.manager?.nickname
+                            : null;
+
+                          return (
+                            <div key={item.transaction_id} className="flex items-center gap-5">
+                              <div className="w-6 flex justify-center flex-shrink-0">
+                                {(item.transaction_type === 'ADD' || item.transaction_type === 'WAIVER ADD') ? (
+                                  <span className={`text-2xl font-black leading-none ${item.transaction_type === 'WAIVER ADD' ? 'text-yellow-500' : 'text-green-500'}`}>+</span>
+                                ) : (item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP') ? (
+                                  <span className="text-2xl font-black text-red-500 leading-none">-</span>
+                                ) : isTrade ? (
+                                  <span className="text-2xl font-normal text-blue-400 leading-none">⇌</span>
+                                ) : (
+                                  <span className="text-2xl font-black text-slate-500/50 leading-none">•</span>
                                 )}
                               </div>
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                    {item.player?.name}
+                                  </span>
+                                  {isTrade && recipientNickname && (
+                                    <span className="text-xs font-bold text-slate-500 tracking-tight italic flex items-center gap-1">
+                                      <span className="text-blue-500/50">⇌</span>
+                                      to {recipientNickname}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                                  {item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP' ? 'To Waivers' : ''}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       {/* Right: Manager and Time */}
                       <div className="text-right flex-shrink-0 ml-8">
                         <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
-                          {group.items.some(i => i.transaction_type === 'TRADE') ? (
-                            <>
-                              {group.manager?.nickname}
-                              <span className="mx-2 text-slate-500 font-normal">⇌</span>
-                              {group.items.find(i => i.traded_to_manager)?.traded_to_manager?.nickname}
-                            </>
-                          ) : (
-                            group.manager?.nickname
-                          )}
+                          {(() => {
+                            const nicknames = [...new Set(group.items.map(i => i.manager?.nickname).filter(Boolean))];
+                            if (nicknames.length > 1) {
+                              return (
+                                <span className="flex items-center gap-2 justify-end">
+                                  {nicknames[0]}
+                                  <span className="text-slate-500 font-normal">⇌</span>
+                                  {nicknames[1]}
+                                </span>
+                              );
+                            }
+                            return group.manager?.nickname;
+                          })()}
                         </div>
                         <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
                           {new Date(group.time).toLocaleString('en-US', {
