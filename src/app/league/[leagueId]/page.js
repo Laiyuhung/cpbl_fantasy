@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
@@ -485,6 +485,41 @@ export default function LeaguePage() {
 
     fetchTransactions();
   }, [leagueId]);
+
+  const groupedTransactions = useMemo(() => {
+    const groups = [];
+    const processedIds = new Set();
+
+    transactions.forEach((t) => {
+      if (processedIds.has(t.transaction_id)) return;
+
+      if (t.trade_group_id) {
+        const group = transactions.filter(item => item.trade_group_id === t.trade_group_id);
+        group.forEach(item => processedIds.add(item.transaction_id));
+        groups.push({
+          id: t.trade_group_id,
+          manager: t.manager,
+          time: t.transaction_time,
+          items: group
+        });
+      } else {
+        const sameGroup = transactions.filter(item =>
+          !item.trade_group_id &&
+          item.manager_id === t.manager_id &&
+          item.transaction_time === t.transaction_time
+        );
+        sameGroup.forEach(item => processedIds.add(item.transaction_id));
+        groups.push({
+          id: t.transaction_id,
+          manager: t.manager,
+          time: t.transaction_time,
+          items: sameGroup
+        });
+      }
+    });
+
+    return groups;
+  }, [transactions]);
 
   const handleWeekChange = (direction) => {
     const maxWeek = scheduleData.length > 0 ? scheduleData[scheduleData.length - 1].week_number : 1;
@@ -1098,7 +1133,7 @@ export default function LeaguePage() {
                       {/* Middle: Status Result */}
                       <div className="flex-1 flex justify-center px-4">
                         <span className={`px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${w.status === 'successful' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
-                            'bg-red-500/10 text-red-400 border border-red-500/20'
+                          'bg-red-500/10 text-red-400 border border-red-500/20'
                           }`}>
                           {w.status}
                         </span>
