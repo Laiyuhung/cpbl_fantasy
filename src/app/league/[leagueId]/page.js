@@ -25,7 +25,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
   const Connector = ({ start, end, active }) => {
     if (isReseeding) return null;
     return (
-      <div className={`absolute border-gray-700/50 ${active ? 'border-purple-500/50' : ''}`} style={start.y === end.y ? {
+      <div className={`absolute border-white/20 transition-colors duration-500 ${active ? 'border-purple-500/80 z-10' : 'z-0'}`} style={start.y === end.y ? {
         top: `${start.y}%`,
         left: `${start.x}%`,
         width: `${end.x - start.x}%`,
@@ -62,7 +62,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
 
     return (
       <div
-        className={`absolute -translate-x-1/2 -translate-y-1/2 min-w-[220px] bg-slate-900/80 backdrop-blur-xl border ${active ? 'border-purple-500 ring-2 ring-purple-500/20 shadow-[0_0_40px_rgba(168,85,247,0.3)]' : 'border-white/10 shadow-2xl shadow-black/60'} rounded-2xl p-1.5 transition-all duration-500 group overflow-hidden`}
+        className={`absolute -translate-x-1/2 -translate-y-1/2 min-w-[220px] bg-[#0f172a] border ${active ? 'border-purple-500 ring-2 ring-purple-500/20 shadow-[0_0_40px_rgba(168,85,247,0.3)]' : 'border-white/10 shadow-2xl shadow-black/60'} rounded-2xl p-1.5 transition-all duration-500 group overflow-hidden z-20`}
         style={{ left: `${x}%`, top: `${y}%` }}
       >
         <div className="px-4 py-1.5 bg-white/5 flex items-center justify-between border-b border-white/5 mb-1.5">
@@ -73,7 +73,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
         <div className="space-y-1">
           {/* Team 1 */}
           <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM1Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM1Bye ? 'bg-slate-800 text-white/20' : 'bg-purple-500/30 text-purple-300 border border-purple-500/20'}`}>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM1Bye ? 'bg-slate-800 text-white/20' : 'bg-purple-600 text-white shadow-lg shadow-purple-900/40'}`}>
               {typeof m1.seed === 'number' ? m1.seed : '?'}
             </div>
             <span className={`text-sm font-black truncate flex-1 tracking-tight ${(isReseeding && !isFirstRound) ? 'text-blue-300 italic' : 'text-white'}`}>
@@ -85,7 +85,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
 
           {/* Team 2 */}
           <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM2Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM2Bye ? 'bg-slate-800 text-white/20' : 'bg-blue-500/30 text-blue-300 border border-blue-500/20'}`}>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM2Bye ? 'bg-slate-800 text-white/20' : 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'}`}>
               {typeof m2.seed === 'number' ? m2.seed : '?'}
             </div>
             <span className={`text-sm font-black truncate flex-1 tracking-tight ${(isReseeding && !isFirstRound) ? 'text-blue-300 italic' : 'text-white'}`}>
@@ -774,11 +774,7 @@ export default function LeaguePage() {
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-4 flex-1">
                               {/* Team Rank A */}
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-black border transition-all ${rankA === 1 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]' :
-                                  rankA === 2 ? 'bg-slate-400/20 text-slate-300 border-slate-400/30' :
-                                    rankA === 3 ? 'bg-orange-600/20 text-orange-300 border-orange-600/30' :
-                                      'bg-slate-800 text-white/40 border-white/5'
-                                }`}>
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black bg-slate-800 text-slate-300 border border-white/10 shadow-lg">
                                 {rankA || '?'}
                               </div>
                               {/* Team Info A */}
@@ -786,11 +782,8 @@ export default function LeaguePage() {
                                 <div className="text-lg font-black text-white group-hover:text-purple-300 transition-colors leading-tight">
                                   {managerA?.nickname || 'Unknown'}
                                 </div>
-                                <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mt-1">
-                                  {recordA || '0-0-0'}
-                                </div>
-                                <div className="text-[10px] text-slate-400/60 font-medium mt-0.5">
-                                  {managerA?.managers?.name}
+                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
+                                  {managerA?.managers?.name || 'Unknown'} | {recordA || '0-0-0'}
                                 </div>
                               </div>
                             </div>
@@ -822,11 +815,7 @@ export default function LeaguePage() {
                           <div className="flex items-center justify-between gap-3 flex-row-reverse">
                             <div className="flex items-center gap-4 flex-1 flex-row-reverse">
                               {/* Team Rank B */}
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-black border transition-all ${rankB === 1 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]' :
-                                  rankB === 2 ? 'bg-slate-400/20 text-slate-300 border-slate-400/30' :
-                                    rankB === 3 ? 'bg-orange-600/20 text-orange-300 border-orange-600/30' :
-                                      'bg-slate-800 text-white/40 border-white/5'
-                                }`}>
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black bg-slate-800 text-slate-300 border border-white/10 shadow-lg">
                                 {rankB || '?'}
                               </div>
                               {/* Team Info B */}
@@ -834,11 +823,8 @@ export default function LeaguePage() {
                                 <div className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors leading-tight">
                                   {managerB?.nickname || 'Unknown'}
                                 </div>
-                                <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mt-1">
-                                  {recordB || '0-0-0'}
-                                </div>
-                                <div className="text-[10px] text-slate-400/60 font-medium mt-0.5">
-                                  {managerB?.managers?.name}
+                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
+                                  {managerB?.managers?.name || 'Unknown'} | {recordB || '0-0-0'}
                                 </div>
                               </div>
                             </div>
