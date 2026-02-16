@@ -1045,11 +1045,11 @@ export default function LeaguePage() {
                         {group.items.map((item) => (
                           <div key={item.transaction_id} className="flex items-center gap-5">
                             <div className="w-6 flex justify-center flex-shrink-0">
-                              {(item.transaction_type === 'Add' || item.transaction_type === 'WAIVER ADD') ? (
+                              {(item.transaction_type === 'ADD' || item.transaction_type === 'WAIVER ADD') ? (
                                 <span className={`text-2xl font-black leading-none ${item.transaction_type === 'WAIVER ADD' ? 'text-yellow-500' : 'text-green-500'}`}>+</span>
-                              ) : (item.transaction_type === 'Drop' || item.transaction_type === 'WAIVER DROP') ? (
+                              ) : (item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP') ? (
                                 <span className="text-2xl font-black text-red-500 leading-none">-</span>
-                              ) : item.transaction_type === 'Trade' ? (
+                              ) : item.transaction_type === 'TRADE' ? (
                                 <span className="text-2xl font-normal text-blue-400 leading-none">⇌</span>
                               ) : (
                                 <span className="text-2xl font-black text-slate-500/50 leading-none">•</span>
