@@ -409,8 +409,8 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                             </div>
                                         </div>
                                         <div className="mt-2 text-right">
-                                            <span className={`text-xs px-2 py-0.5 rounded border ${trade.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' :
-                                                trade.status === 'accepted' ? 'bg-green-500/10 text-green-500 border-green-500/30' :
+                                            <span className={`text-xs px-2 py-0.5 rounded border ${(trade.status === 'accepted' || trade.status === 'processed') ? 'bg-green-500/10 text-green-500 border-green-500/30' :
+                                                trade.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' :
                                                     'bg-red-500/10 text-red-500 border-red-500/30'
                                                 }`}>
                                                 {trade.status.toUpperCase()}

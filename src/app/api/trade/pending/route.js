@@ -141,7 +141,6 @@ export async function GET(request) {
         recipient:managers!fk_pending_trade_recipient (name)
       `)
       .eq('league_id', league_id)
-      .or(`status.eq.accepted,initiator_manager_id.eq.${manager_id},recipient_manager_id.eq.${manager_id}`)
       .order('created_at', { ascending: false });
 
     // Fetch viewer's role
@@ -172,7 +171,7 @@ export async function GET(request) {
 
     // Filter trades logic
     const filteredTrades = (trades || []).filter(t => { // Safety check or handle after error check
-      if (t.status === 'pending' || t.status === 'accepted') return true;
+      if (t.status === 'pending' || t.status === 'accepted' || t.status === 'processed') return true;
       const updatedAt = t.updated_at ? new Date(t.updated_at) : new Date(t.created_at);
       return updatedAt > fortyEightHoursAgo;
     });
