@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
                 .select('*')
                 .eq('league_id', leagueId)
                 .not('status', 'in', '("pending","canceled")')
-                .lte('off_waiver', new Date().toISOString().split('T')[0])
+                .lte('off_waiver', new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString().split('T')[0])
                 .order('updated_at', { ascending: false }),
             supabase
                 .from('league_members')

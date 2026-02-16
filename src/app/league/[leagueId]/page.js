@@ -988,61 +988,80 @@ export default function LeaguePage() {
             )}
           </div>
 
-          {/* TRANSACTIONS Section */}
+          {/* Recent Transactions Section */}
           <div className="mt-12">
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
-              Recent Transactions
-            </h2>
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-4 mb-6 border-b border-white/5 pb-2">
+              <h2 className="text-xl font-black text-white uppercase tracking-widest">Recent Transactions</h2>
+            </div>
+
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
               {transLoading ? (
                 <div className="flex items-center justify-center p-12">
                   <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              ) : transactions.length === 0 ? (
+              ) : groupedTransactions.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 text-sm">No recent transactions.</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-white/5 border-b border-white/5">
-                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Time</th>
-                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Type</th>
-                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Player</th>
-                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Manager</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {transactions.map((t) => (
-                        <tr key={t.transaction_id} className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 text-xs font-bold text-slate-400">
-                            {new Date(t.transaction_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${t.transaction_type === 'Add' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                t.transaction_type === 'Drop' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                  t.transaction_type === 'Trade' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
-                                    'bg-slate-700/40 text-slate-400'
-                              }`}>
-                              {t.transaction_type}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm font-black text-white">{t.player?.name}</td>
-                          <td className="px-6 py-4 text-sm font-bold text-slate-300">{t.manager?.nickname}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="divide-y divide-white/5">
+                  {groupedTransactions.map((group) => (
+                    <div key={group.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all duration-300">
+                      {/* Left: Icons and Players */}
+                      <div className="flex flex-col gap-4">
+                        {group.items.map((item) => (
+                          <div key={item.transaction_id} className="flex items-center gap-5">
+                            <div className="w-6 flex justify-center flex-shrink-0">
+                              {item.transaction_type === 'Add' ? (
+                                <span className="text-2xl font-black text-green-500 leading-none">+</span>
+                              ) : item.transaction_type === 'WAIVER ADD' ? (
+                                <span className="text-2xl font-black text-yellow-500 leading-none">+</span>
+                              ) : item.transaction_type === 'Drop' ? (
+                                <span className="text-2xl font-black text-red-500 leading-none">-</span>
+                              ) : item.transaction_type === 'Trade' ? (
+                                <span className="text-2xl font-normal text-blue-400 leading-none">⇌</span>
+                              ) : (
+                                <span className="text-2xl font-black text-slate-500/50 leading-none">•</span>
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                {item.player?.name}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                                {item.transaction_type === 'Drop' ? 'To Waivers' : 'Free Agent'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Right: Manager and Time */}
+                      <div className="text-right flex-shrink-0 ml-8">
+                        <div className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
+                          {group.manager?.nickname}
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                          {new Date(group.time).toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
 
-          {/* WAIVER RESULTS Section */}
+          {/* Waiver Results Section */}
           <div className="mt-12">
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
-              Waiver Results
-            </h2>
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-4 mb-6 border-b border-white/5 pb-2">
+              <h2 className="text-xl font-black text-white uppercase tracking-widest">Waiver Results</h2>
+            </div>
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
               {transLoading ? (
                 <div className="flex items-center justify-center p-12">
                   <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
@@ -1050,42 +1069,53 @@ export default function LeaguePage() {
               ) : waiverResults.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 text-sm">No waiver results found.</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-white/5 border-b border-white/5">
-                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Date</th>
-                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Claim</th>
-                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Status</th>
-                        <th className="px-6 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">Manager</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {waiverResults.map((w) => (
-                        <tr key={w.id} className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 text-xs font-bold text-slate-400">
-                            {new Date(w.off_waiver).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-black text-green-400">+ {w.player?.name}</span>
-                              {w.drop_player && (
-                                <span className="text-xs font-bold text-red-500/70">- {w.drop_player?.name}</span>
-                              )}
+                <div className="divide-y divide-white/5">
+                  {waiverResults.map((w) => (
+                    <div key={w.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all duration-300">
+
+                      {/* Left: Icons and Players */}
+                      <div className="flex flex-col gap-3 min-w-[200px]">
+                        <div className="flex items-center gap-5">
+                          <div className="w-6 flex justify-center flex-shrink-0">
+                            <span className="text-2xl font-black text-green-500 leading-none">+</span>
+                          </div>
+                          <span className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                            {w.player?.name}
+                          </span>
+                        </div>
+                        {w.drop_player && (
+                          <div className="flex items-center gap-5">
+                            <div className="w-6 flex justify-center flex-shrink-0">
+                              <span className="text-2xl font-black text-red-500 leading-none">-</span>
                             </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${w.status === 'successful' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                'bg-red-500/10 text-red-400 border border-red-500/20'
-                              }`}>
-                              {w.status}
+                            <span className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                              {w.drop_player?.name}
                             </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm font-bold text-slate-300">{w.manager?.nickname}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Middle: Status Result */}
+                      <div className="flex-1 flex justify-center px-4">
+                        <span className={`px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${w.status === 'successful' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
+                            'bg-red-500/10 text-red-400 border border-red-500/20'
+                          }`}>
+                          {w.status}
+                        </span>
+                      </div>
+
+                      {/* Right: Manager and Date */}
+                      <div className="text-right flex-shrink-0 ml-8">
+                        <div className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
+                          {w.manager?.nickname}
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                          {new Date(w.off_waiver).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </div>
+                      </div>
+
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
