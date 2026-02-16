@@ -43,10 +43,22 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
     );
   };
 
-  const MatchupBox = ({ m1, m2, label, active, x, y, isReseedingRound }) => {
-    const isHighestLowest = isReseedingRound && isReseeding;
-    const isM1Bye = (isSeedBye(m1.seed) || m1.isBye) && !isHighestLowest;
-    const isM2Bye = (isSeedBye(m2.seed) || m2.isBye) && !isHighestLowest;
+  const MatchupBox = ({ m1, m2, label, active, x, y, isReseedingRound, isFirstRound }) => {
+    const isM1Bye = (isSeedBye(m1.seed) || m1.isBye);
+    const isM2Bye = (isSeedBye(m2.seed) || m2.isBye);
+
+    const renderTeamName = (team) => {
+      if (isReseeding && !isFirstRound) {
+        return 'TBD';
+      }
+
+      if (typeof team.seed === 'string') return team.seed.toUpperCase();
+
+      if (isM1Bye && team === m1) return 'BYE';
+      if (isM2Bye && team === m2) return 'BYE';
+
+      return getTeamNameBySeed(team.seed).toUpperCase();
+    };
 
     return (
       <div
@@ -62,12 +74,10 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
           {/* Team 1 */}
           <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM1Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM1Bye ? 'bg-slate-800 text-white/20' : 'bg-purple-500/30 text-purple-300 border border-purple-500/20'}`}>
-              {m1.seed || '?'}
+              ?
             </div>
-            <span className={`text-sm font-black truncate flex-1 tracking-tight ${isHighestLowest ? 'text-blue-300 italic' : 'text-white'}`}>
-              {isHighestLowest
-                ? (m1.seed === 1 ? 'HIGHEST REMAINING' : '2ND HIGHEST')
-                : (isM1Bye ? 'BYE' : getTeamNameBySeed(m1.seed).toUpperCase())}
+            <span className={`text-sm font-black truncate flex-1 tracking-tight ${(isReseeding && !isFirstRound) ? 'text-blue-300 italic' : 'text-white'}`}>
+              {renderTeamName(m1)}
             </span>
           </div>
 
@@ -76,12 +86,10 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
           {/* Team 2 */}
           <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM2Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM2Bye ? 'bg-slate-800 text-white/20' : 'bg-blue-500/30 text-blue-300 border border-blue-500/20'}`}>
-              {m2.seed || '?'}
+              ?
             </div>
-            <span className={`text-sm font-black truncate flex-1 tracking-tight ${isHighestLowest ? 'text-blue-300 italic' : 'text-white'}`}>
-              {isHighestLowest
-                ? (m2.seed === 4 ? 'LOWEST REMAINING' : '2ND LOWEST')
-                : (isM2Bye ? 'BYE' : getTeamNameBySeed(m2.seed).toUpperCase())}
+            <span className={`text-sm font-black truncate flex-1 tracking-tight ${(isReseeding && !isFirstRound) ? 'text-blue-300 italic' : 'text-white'}`}>
+              {renderTeamName(m2)}
             </span>
           </div>
         </div>
@@ -95,7 +103,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
         <div className="relative w-full h-[300px] mt-8">
           <MatchupBox
             x={50} y={50} label="The Final" active={currentWeekLabel === 'Final'}
-            m1={{ seed: 1 }} m2={{ seed: 2 }}
+            m1={{ seed: 1 }} m2={{ seed: 2 }} isFirstRound={true}
           />
         </div>
       );
@@ -105,16 +113,16 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
       return (
         <div className="relative w-full h-[400px] mt-8">
           {/* Semifinals */}
-          <MatchupBox x={20} y={30} label="M1" active={currentWeekLabel === 'Semifinal'} m1={{ seed: 1 }} m2={{ seed: 4 }} />
-          <MatchupBox x={20} y={70} label="M2" active={currentWeekLabel === 'Semifinal'} m1={{ seed: 2 }} m2={{ seed: 3 }} />
+          <MatchupBox x={20} y={30} label="M1" active={currentWeekLabel === 'Semifinal'} m1={{ seed: 1 }} m2={{ seed: 4 }} isFirstRound={true} />
+          <MatchupBox x={20} y={70} label="M2" active={currentWeekLabel === 'Semifinal'} m1={{ seed: 2 }} m2={{ seed: 3 }} isFirstRound={true} />
 
           <Connector start={{ x: 20, y: 30 }} end={{ x: 60, y: 50 }} active={currentWeekLabel === 'Final'} />
           <Connector start={{ x: 20, y: 70 }} end={{ x: 60, y: 50 }} active={currentWeekLabel === 'Final'} />
 
           {/* Finals */}
           <MatchupBox x={60} y={50} label="Final" active={currentWeekLabel === 'Final'} isReseedingRound={true}
-            m1={{ seed: currentWeekLabel === 'Final' && !isReseeding ? 'Winner M1' : 1 }}
-            m2={{ seed: currentWeekLabel === 'Final' && !isReseeding ? 'Winner M2' : 4 }}
+            m1={{ seed: !isReseeding ? 'M1 Winner' : 1 }}
+            m2={{ seed: !isReseeding ? 'M2 Winner' : 4 }}
           />
         </div>
       );
@@ -124,16 +132,16 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
       return (
         <div className="relative w-full h-[500px] mt-8">
           {/* Round 1 (Quarterfinals) */}
-          <MatchupBox x={15} y={15} label="Seeds 1 & 2 Bye" m1={{ seed: 1, isBye: true }} m2={{ seed: 2, isBye: true }} />
-          <MatchupBox x={15} y={45} label="M1" active={currentWeekLabel === 'Quarterfinal'} m1={{ seed: 3 }} m2={{ seed: 6 }} />
-          <MatchupBox x={15} y={75} label="M2" active={currentWeekLabel === 'Quarterfinal'} m1={{ seed: 4 }} m2={{ seed: 5 }} />
+          <MatchupBox x={15} y={15} label="Seeds 1 & 2 Bye" m1={{ seed: 1, isBye: true }} m2={{ seed: 2, isBye: true }} isFirstRound={true} />
+          <MatchupBox x={15} y={45} label="M1" active={currentWeekLabel === 'Quarterfinal'} m1={{ seed: 3 }} m2={{ seed: 6 }} isFirstRound={true} />
+          <MatchupBox x={15} y={75} label="M2" active={currentWeekLabel === 'Quarterfinal'} m1={{ seed: 4 }} m2={{ seed: 5 }} isFirstRound={true} />
 
           {/* Semifinals */}
           <MatchupBox x={50} y={30} label="SF1" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true}
-            m1={{ seed: 1 }} m2={{ seed: !isReseeding ? 'Winner M2' : 4 }}
+            m1={{ seed: 1 }} m2={{ seed: !isReseeding ? 'M2 Winner' : 4 }}
           />
           <MatchupBox x={50} y={70} label="SF2" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true}
-            m1={{ seed: 2 }} m2={{ seed: !isReseeding ? 'Winner M1' : 3 }}
+            m1={{ seed: 2 }} m2={{ seed: !isReseeding ? 'M1 Winner' : 3 }}
           />
 
           {/* Final */}
@@ -157,17 +165,17 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
       return (
         <div className="relative w-full h-[600px] mt-8">
           {/* Round 1 */}
-          <MatchupBox x={12.5} y={15} label="M1" active={currentWeekLabel === 'Round 1'} m1={{ seed: 1 }} m2={{ seed: 8 }} />
-          <MatchupBox x={12.5} y={40} label="M2" active={currentWeekLabel === 'Round 1'} m1={{ seed: 4 }} m2={{ seed: 5 }} />
-          <MatchupBox x={12.5} y={65} label="M3" active={currentWeekLabel === 'Round 1'} m1={{ seed: 2 }} m2={{ seed: 7 }} />
-          <MatchupBox x={12.5} y={90} label="M4" active={currentWeekLabel === 'Round 1'} m1={{ seed: 3 }} m2={{ seed: 6 }} />
+          <MatchupBox x={12.5} y={15} label="M1" active={currentWeekLabel === 'Round 1'} m1={{ seed: 1 }} m2={{ seed: 8 }} isFirstRound={true} />
+          <MatchupBox x={12.5} y={40} label="M2" active={currentWeekLabel === 'Round 1'} m1={{ seed: 4 }} m2={{ seed: 5 }} isFirstRound={true} />
+          <MatchupBox x={12.5} y={65} label="M3" active={currentWeekLabel === 'Round 1'} m1={{ seed: 2 }} m2={{ seed: 7 }} isFirstRound={true} />
+          <MatchupBox x={12.5} y={90} label="M4" active={currentWeekLabel === 'Round 1'} m1={{ seed: 3 }} m2={{ seed: 6 }} isFirstRound={true} />
 
           {/* Semifinals */}
-          <MatchupBox x={37.5} y={27.5} label="SF1" active={currentWeekLabel === 'Quarterfinal'} isReseedingRound={true} m1={{ seed: 1 }} m2={{ seed: 4 }} />
-          <MatchupBox x={37.5} y={77.5} label="SF2" active={currentWeekLabel === 'Quarterfinal'} isReseedingRound={true} m1={{ seed: 2 }} m2={{ seed: 3 }} />
+          <MatchupBox x={37.5} y={27.5} label="SF1" active={currentWeekLabel === 'Quarterfinal'} isReseedingRound={true} m1={{ seed: !isReseeding ? 'M1 Winner' : 1 }} m2={{ seed: !isReseeding ? 'M2 Winner' : 4 }} />
+          <MatchupBox x={37.5} y={77.5} label="SF2" active={currentWeekLabel === 'Quarterfinal'} isReseedingRound={true} m1={{ seed: !isReseeding ? 'M3 Winner' : 2 }} m2={{ seed: !isReseeding ? 'M4 Winner' : 3 }} />
 
           {/* Final Prelim */}
-          <MatchupBox x={62.5} y={52.5} label="Final Stage" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true} m1={{ seed: 1 }} m2={{ seed: 2 }} />
+          <MatchupBox x={62.5} y={52.5} label="Final Stage" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true} m1={{ seed: 'SF1 Winner' }} m2={{ seed: 'SF2 Winner' }} />
 
           {/* Final */}
           <MatchupBox x={87.5} y={52.5} label="Champion" active={currentWeekLabel === 'Final'} m1={{ seed: 'Winner' }} m2={{ seed: '!' }} />
@@ -757,13 +765,19 @@ export default function LeaguePage() {
                         {/* Team A */}
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-3">
-                            {/* Team Info */}
-                            <div className="flex-1">
-                              <div className="text-lg font-black text-white group-hover:text-purple-300 transition-colors">
-                                {managerA?.nickname || 'Unknown'}
+                            <div className="flex items-center gap-3 flex-1">
+                              {/* Team Rank A */}
+                              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-white/40 border border-white/5">
+                                {standings.find(s => s.manager_id === managerA?.manager_id)?.rank || '?'}
                               </div>
-                              <div className="text-xs text-slate-400 font-medium mt-0.5">
-                                {managerA?.managers?.name}
+                              {/* Team Info A */}
+                              <div className="flex-1">
+                                <div className="text-lg font-black text-white group-hover:text-purple-300 transition-colors">
+                                  {managerA?.nickname || 'Unknown'} | {standings.find(s => s.manager_id === managerA?.manager_id)?.record_display || '0-0-0'}
+                                </div>
+                                <div className="text-xs text-slate-400 font-medium mt-0.5">
+                                  {managerA?.managers?.name}
+                                </div>
                               </div>
                             </div>
 
@@ -792,13 +806,19 @@ export default function LeaguePage() {
                         {/* Team B */}
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-3 flex-row-reverse">
-                            {/* Team Info */}
-                            <div className="flex-1 text-right">
-                              <div className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors">
-                                {managerB?.nickname || 'Unknown'}
+                            <div className="flex items-center gap-3 flex-1 flex-row-reverse">
+                              {/* Team Rank B */}
+                              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-white/40 border border-white/5">
+                                {standings.find(s => s.manager_id === managerB?.manager_id)?.rank || '?'}
                               </div>
-                              <div className="text-xs text-slate-400 font-medium mt-0.5">
-                                {managerB?.managers?.name}
+                              {/* Team Info B */}
+                              <div className="flex-1 text-right">
+                                <div className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors">
+                                  {managerB?.nickname || 'Unknown'} | {standings.find(s => s.manager_id === managerB?.manager_id)?.record_display || '0-0-0'}
+                                </div>
+                                <div className="text-xs text-slate-400 font-medium mt-0.5">
+                                  {managerB?.managers?.name}
+                                </div>
                               </div>
                             </div>
 
