@@ -1045,11 +1045,9 @@ export default function LeaguePage() {
                         {group.items.map((item) => (
                           <div key={item.transaction_id} className="flex items-center gap-5">
                             <div className="w-6 flex justify-center flex-shrink-0">
-                              {item.transaction_type === 'Add' ? (
-                                <span className="text-2xl font-black text-green-500 leading-none">+</span>
-                              ) : item.transaction_type === 'WAIVER ADD' ? (
-                                <span className="text-2xl font-black text-yellow-500 leading-none">+</span>
-                              ) : item.transaction_type === 'Drop' ? (
+                              {(item.transaction_type === 'Add' || item.transaction_type === 'WAIVER ADD') ? (
+                                <span className={`text-2xl font-black leading-none ${item.transaction_type === 'WAIVER ADD' ? 'text-yellow-500' : 'text-green-500'}`}>+</span>
+                              ) : (item.transaction_type === 'Drop' || item.transaction_type === 'WAIVER DROP') ? (
                                 <span className="text-2xl font-black text-red-500 leading-none">-</span>
                               ) : item.transaction_type === 'Trade' ? (
                                 <span className="text-2xl font-normal text-blue-400 leading-none">⇌</span>
@@ -1058,11 +1056,18 @@ export default function LeaguePage() {
                               )}
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
-                                {item.player?.name}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                  {item.player?.name}
+                                </span>
+                                {item.transaction_type === 'Trade' && item.traded_to_manager && (
+                                  <span className="text-xs font-bold text-slate-500 tracking-tight italic">
+                                    to {item.traded_to_manager.nickname}
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                                {item.transaction_type === 'Drop' ? 'To Waivers' : 'Free Agent'}
+                                {item.transaction_type === 'Drop' || item.transaction_type === 'WAIVER DROP' ? 'To Waivers' : ''}
                               </span>
                             </div>
                           </div>
@@ -1071,10 +1076,18 @@ export default function LeaguePage() {
 
                       {/* Right: Manager and Time */}
                       <div className="text-right flex-shrink-0 ml-8">
-                        <div className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
-                          {group.manager?.nickname}
+                        <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
+                          {group.items.some(i => i.transaction_type === 'Trade') ? (
+                            <>
+                              {group.manager?.nickname}
+                              <span className="mx-2 text-slate-500 font-normal">⇌</span>
+                              {group.items.find(i => i.traded_to_manager)?.traded_to_manager?.nickname}
+                            </>
+                          ) : (
+                            group.manager?.nickname
+                          )}
                         </div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                        <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
                           {new Date(group.time).toLocaleString('en-US', {
                             month: 'short',
                             day: 'numeric',
@@ -1114,7 +1127,7 @@ export default function LeaguePage() {
                           <div className="w-6 flex justify-center flex-shrink-0">
                             <span className="text-2xl font-black text-green-500 leading-none">+</span>
                           </div>
-                          <span className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                          <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
                             {w.player?.name}
                           </span>
                         </div>
@@ -1123,7 +1136,7 @@ export default function LeaguePage() {
                             <div className="w-6 flex justify-center flex-shrink-0">
                               <span className="text-2xl font-black text-red-500 leading-none">-</span>
                             </div>
-                            <span className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                            <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
                               {w.drop_player?.name}
                             </span>
                           </div>
@@ -1131,8 +1144,8 @@ export default function LeaguePage() {
                       </div>
 
                       {/* Middle: Status Result */}
-                      <div className="flex-1 flex justify-center px-4">
-                        <span className={`px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${w.status === 'successful' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
+                      <div className="shrink-0 flex justify-center px-4">
+                        <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${w.status === 'successful' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
                           'bg-red-500/10 text-red-400 border border-red-500/20'
                           }`}>
                           {w.status}
@@ -1141,10 +1154,10 @@ export default function LeaguePage() {
 
                       {/* Right: Manager and Date */}
                       <div className="text-right flex-shrink-0 ml-8">
-                        <div className="text-sm font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
+                        <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
                           {w.manager?.nickname}
                         </div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                        <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
                           {new Date(w.off_waiver).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
                       </div>
@@ -1155,8 +1168,8 @@ export default function LeaguePage() {
               )}
             </div>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
     );
   }
 
