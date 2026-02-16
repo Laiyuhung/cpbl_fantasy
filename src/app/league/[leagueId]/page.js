@@ -74,7 +74,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
           {/* Team 1 */}
           <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM1Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM1Bye ? 'bg-slate-800 text-white/20' : 'bg-purple-500/30 text-purple-300 border border-purple-500/20'}`}>
-              ?
+              {typeof m1.seed === 'number' ? m1.seed : '?'}
             </div>
             <span className={`text-sm font-black truncate flex-1 tracking-tight ${(isReseeding && !isFirstRound) ? 'text-blue-300 italic' : 'text-white'}`}>
               {renderTeamName(m1)}
@@ -86,7 +86,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
           {/* Team 2 */}
           <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM2Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM2Bye ? 'bg-slate-800 text-white/20' : 'bg-blue-500/30 text-blue-300 border border-blue-500/20'}`}>
-              ?
+              {typeof m2.seed === 'number' ? m2.seed : '?'}
             </div>
             <span className={`text-sm font-black truncate flex-1 tracking-tight ${(isReseeding && !isFirstRound) ? 'text-blue-300 italic' : 'text-white'}`}>
               {renderTeamName(m2)}
@@ -757,6 +757,13 @@ export default function LeaguePage() {
                 const scoreA = matchup.score_a !== null ? parseFloat(matchup.score_a) : 0;
                 const scoreB = matchup.score_b !== null ? parseFloat(matchup.score_b) : 0;
 
+                const teamAStandings = standings.find(s => s.manager_id === managerA?.manager_id);
+                const teamBStandings = standings.find(s => s.manager_id === managerB?.manager_id);
+                const rankA = teamAStandings?.rank;
+                const rankB = teamBStandings?.rank;
+                const recordA = teamAStandings?.record_display;
+                const recordB = teamBStandings?.record_display;
+
                 return (
                   <div key={matchup.id} className="group relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-white/10 hover:border-purple-500/40 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(168,85,247,0.15)]">
                     {/* Main Content */}
@@ -765,17 +772,24 @@ export default function LeaguePage() {
                         {/* Team A */}
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 flex-1">
+                            <div className="flex items-center gap-4 flex-1">
                               {/* Team Rank A */}
-                              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-white/40 border border-white/5">
-                                {standings.find(s => s.manager_id === managerA?.manager_id)?.rank || '?'}
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-black border transition-all ${rankA === 1 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]' :
+                                  rankA === 2 ? 'bg-slate-400/20 text-slate-300 border-slate-400/30' :
+                                    rankA === 3 ? 'bg-orange-600/20 text-orange-300 border-orange-600/30' :
+                                      'bg-slate-800 text-white/40 border-white/5'
+                                }`}>
+                                {rankA || '?'}
                               </div>
                               {/* Team Info A */}
                               <div className="flex-1">
-                                <div className="text-lg font-black text-white group-hover:text-purple-300 transition-colors">
-                                  {managerA?.nickname || 'Unknown'} | {standings.find(s => s.manager_id === managerA?.manager_id)?.record_display || '0-0-0'}
+                                <div className="text-lg font-black text-white group-hover:text-purple-300 transition-colors leading-tight">
+                                  {managerA?.nickname || 'Unknown'}
                                 </div>
-                                <div className="text-xs text-slate-400 font-medium mt-0.5">
+                                <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mt-1">
+                                  {recordA || '0-0-0'}
+                                </div>
+                                <div className="text-[10px] text-slate-400/60 font-medium mt-0.5">
                                   {managerA?.managers?.name}
                                 </div>
                               </div>
@@ -806,17 +820,24 @@ export default function LeaguePage() {
                         {/* Team B */}
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-3 flex-row-reverse">
-                            <div className="flex items-center gap-3 flex-1 flex-row-reverse">
+                            <div className="flex items-center gap-4 flex-1 flex-row-reverse">
                               {/* Team Rank B */}
-                              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-white/40 border border-white/5">
-                                {standings.find(s => s.manager_id === managerB?.manager_id)?.rank || '?'}
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-black border transition-all ${rankB === 1 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]' :
+                                  rankB === 2 ? 'bg-slate-400/20 text-slate-300 border-slate-400/30' :
+                                    rankB === 3 ? 'bg-orange-600/20 text-orange-300 border-orange-600/30' :
+                                      'bg-slate-800 text-white/40 border-white/5'
+                                }`}>
+                                {rankB || '?'}
                               </div>
                               {/* Team Info B */}
                               <div className="flex-1 text-right">
-                                <div className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors">
-                                  {managerB?.nickname || 'Unknown'} | {standings.find(s => s.manager_id === managerB?.manager_id)?.record_display || '0-0-0'}
+                                <div className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors leading-tight">
+                                  {managerB?.nickname || 'Unknown'}
                                 </div>
-                                <div className="text-xs text-slate-400 font-medium mt-0.5">
+                                <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mt-1">
+                                  {recordB || '0-0-0'}
+                                </div>
+                                <div className="text-[10px] text-slate-400/60 font-medium mt-0.5">
                                   {managerB?.managers?.name}
                                 </div>
                               </div>
