@@ -197,6 +197,9 @@ export default function ProfilePage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-700 rounded-md shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-slate-800 text-white sm:text-sm"
                             />
+                            <p className="mt-1 text-xs text-slate-500">
+                                Note: Changing your email will require verification. Please check your inbox and spam folder.
+                            </p>
                         </div>
 
                         <div>

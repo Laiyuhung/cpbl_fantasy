@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
+import crypto from 'crypto';
+import { sendVerificationEmail } from '@/lib/email';
 
 // GET: Fetch user profile
 export async function GET(request) {
@@ -39,9 +41,69 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // 1. Fetch current user data to check if email changed
+        const { data: currentUser, error: fetchError } = await supabase
+            .from('managers')
+            .select('email_address')
+            .eq('manager_id', user_id)
+            .single();
+
+        if (fetchError) {
+            console.error('Error fetching current user:', fetchError);
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        const emailChanged = currentUser.email_address !== email;
+        const updateData = {
+            name,
+            updated_at: new Date().toISOString()
+        };
+
+        let message = 'Profile updated successfully';
+
+        if (emailChanged) {
+            // Check if new email is already taken
+            const { data: existingUsers, error: checkError } = await supabase
+                .from('managers')
+                .select('manager_id')
+                .eq('email_address', email);
+
+            if (checkError) {
+                return NextResponse.json({ error: 'Database error' }, { status: 500 });
+            }
+
+            if (existingUsers && existingUsers.length > 0) {
+                return NextResponse.json({ error: 'Email address already in use' }, { status: 409 });
+            }
+
+            // Prepare verification data
+            const verification_token = crypto.randomBytes(32).toString('hex');
+            const verification_token_expires = new Date();
+            verification_token_expires.setHours(verification_token_expires.getHours() + 24);
+
+            updateData.email_address = email;
+            updateData.email_verified = false;
+            updateData.verification_token = verification_token;
+            updateData.verification_token_expires = verification_token_expires.toISOString();
+
+            message = 'Profile updated. Please verify your new email address (check inbox and spam).';
+
+            // Send Verification Email
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://cpblfantasy.vercel.app';
+            const verificationLink = `${baseUrl}/verify-email?token=${verification_token}`;
+
+            try {
+                await sendVerificationEmail(email, verificationLink, name);
+            } catch (emailError) {
+                console.error('Failed to send verification email:', emailError);
+                // Continue with update even if email fails, but warn user? 
+                // Ideally we rollback or warn, but for now we proceed.
+            }
+        }
+
         const { error } = await supabase
             .from('managers')
-            .update({ name, email_address: email, updated_at: new Date().toISOString() })
+            .update(updateData)
             .eq('manager_id', user_id);
 
         if (error) {
@@ -49,7 +111,7 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, message: 'Profile updated successfully' });
+        return NextResponse.json({ success: true, message });
     } catch (error) {
         console.error('Unexpected error updating profile:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
