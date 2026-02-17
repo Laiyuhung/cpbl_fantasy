@@ -83,20 +83,95 @@ export default function HomePage() {
                       <div
                         key={league.league_id}
                         onClick={() => router.push(`/league/${league.league_id}`)}
-                        className="group bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 hover:border-purple-400/60 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                        className="group bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 hover:border-purple-400/60 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden"
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-2xl font-bold text-white group-hover:text-purple-300 transition-colors mb-2">
-                              {league.league_name}
-                            </h3>
-                            <p className="text-purple-300/70 text-sm">
-                              Your team: <span className="font-semibold text-purple-300">{league.nickname}</span>
-                            </p>
+                        {/* Connection Line decoration */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-purple-500/10 transition-colors"></div>
+
+                        <div className="flex flex-col gap-4 relative z-10">
+                          {/* Header: Name and Status */}
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="text-2xl font-black text-white group-hover:text-purple-300 transition-colors mb-1">
+                                {league.league_name}
+                              </h3>
+                              <p className="text-purple-300/70 text-sm font-medium">
+                                Your Team: <span className="text-white">{league.nickname}</span>
+                              </p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${league.status === 'in season' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                                league.status === 'pre-draft' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                                  league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                                    'bg-slate-700/40 text-slate-400 border-slate-600'
+                              }`}>
+                              {league.status?.replace('-', ' ') || 'Unknown'}
+                            </span>
                           </div>
-                          <svg className="w-8 h-8 text-purple-400 group-hover:text-purple-300 group-hover:translate-x-2 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
+
+                          <div className="h-px bg-white/5 w-full"></div>
+
+                          {/* Body: Contextual Info */}
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Left: Team Stats / Draft Time */}
+                            <div>
+                              {league.status === 'pre-draft' ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Draft Time</span>
+                                  <span className="text-white font-mono font-semibold">
+                                    {league.draft_time ? new Date(league.draft_time).toLocaleString('zh-TW', {
+                                      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                    }) : 'TBD'}
+                                  </span>
+                                </div>
+                              ) : league.stats ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Rank & Record</span>
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-black text-yellow-400">#{league.stats.rank}</span>
+                                    <span className="text-sm font-bold text-slate-300">
+                                      ({league.stats.win}-{league.stats.loss}-{league.stats.tie})
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Season</span>
+                                  <span className="text-white font-bold">{league.season_year || 2024}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right: Current Matchup */}
+                            <div>
+                              {(league.status === 'in season' || league.status === 'playoffs') && league.matchup ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                    Week {league.matchup.week} Matchup
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-lg font-black ${league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' :
+                                        league.matchup.myScore < league.matchup.opponentScore ? 'text-red-400' : 'text-slate-300'
+                                      }`}>
+                                      {league.matchup.myScore}
+                                    </span>
+                                    <span className="text-xs text-slate-500 font-bold">vs</span>
+                                    <span className="text-lg font-black text-slate-400">
+                                      {league.matchup.opponentScore}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs text-slate-400 truncate max-w-[120px]">
+                                    @ {league.matchup.opponentName}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-end justify-end h-full">
+                                  <span className="text-purple-400/50 text-xs font-bold group-hover:text-purple-400 transition-colors flex items-center gap-1">
+                                    Enter League <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
