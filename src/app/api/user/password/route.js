@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabase';
+import supabaseAdmin from '@/lib/supabaseAdmin';
 import bcrypt from 'bcryptjs';
 
 export async function PUT(request) {
@@ -12,7 +12,7 @@ export async function PUT(request) {
         }
 
         // 1. Fetch current password hash
-        const { data: user, error: fetchError } = await supabase
+        const { data: user, error: fetchError } = await supabaseAdmin
             .from('managers')
             .select('password')
             .eq('manager_id', user_id)
@@ -33,7 +33,7 @@ export async function PUT(request) {
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
         // 4. Update password and force re-login (optional: set must_change_password to false if it was true)
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
             .from('managers')
             .update({
                 password: hashedPassword,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabase';
+import supabaseAdmin from '@/lib/supabaseAdmin';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '@/lib/email';
 
@@ -13,7 +13,7 @@ export async function GET(request) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
         }
 
-        const { data: user, error } = await supabase
+        const { data: user, error } = await supabaseAdmin
             .from('managers')
             .select('name, email_address')
             .eq('manager_id', userId)
@@ -42,7 +42,7 @@ export async function PUT(request) {
         }
 
         // 1. Fetch current user data to check if email changed
-        const { data: currentUser, error: fetchError } = await supabase
+        const { data: currentUser, error: fetchError } = await supabaseAdmin
             .from('managers')
             .select('email_address')
             .eq('manager_id', user_id)
@@ -63,7 +63,7 @@ export async function PUT(request) {
 
         if (emailChanged) {
             // Check if new email is already taken
-            const { data: existingUsers, error: checkError } = await supabase
+            const { data: existingUsers, error: checkError } = await supabaseAdmin
                 .from('managers')
                 .select('manager_id')
                 .eq('email_address', email);
@@ -101,14 +101,14 @@ export async function PUT(request) {
             }
         }
 
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
             .from('managers')
             .update(updateData)
             .eq('manager_id', user_id);
 
         if (error) {
             console.error('Error updating profile:', error);
-            return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
+            return NextResponse.json({ error: 'Failed to update profile', details: error.message, code: error.code }, { status: 500 });
         }
 
         return NextResponse.json({ success: true, message });
