@@ -1,12 +1,11 @@
-﻿'use client'
+﻿'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
-import CpblScheduleWidget from '@/components/CpblScheduleWidget'
+import CpblScheduleWidget from '@/components/CpblScheduleWidget';
 
 export default function HomePage() {
-  const router = useRouter()
   const [leagues, setLeagues] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -92,9 +91,9 @@ export default function HomePage() {
                               {league.league_name}
                             </h3>
                             <span className={`shrink-0 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${league.status === 'in season' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                league.status === 'pre-draft' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                  league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                    'bg-slate-700/40 text-slate-400 border-slate-600'
+                              league.status === 'pre-draft' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                  'bg-slate-700/40 text-slate-400 border-slate-600'
                               }`}>
                               {league.status?.replace('-', ' ') || 'Unknown'}
                             </span>
@@ -136,13 +135,13 @@ export default function HomePage() {
                               {/* Center: Score */}
                               <div className="flex items-center justify-center gap-2 shrink-0 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-white/5">
                                 <span className={`text-xl font-black tabular-nums ${league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' :
-                                    league.matchup.myScore < league.matchup.opponentScore ? 'text-white' : 'text-white'
+                                  league.matchup.myScore < league.matchup.opponentScore ? 'text-white' : 'text-white'
                                   }`}>
                                   {league.matchup.myScore}
                                 </span>
                                 <span className="text-[10px] font-bold text-slate-600 uppercase">vs</span>
                                 <span className={`text-xl font-black tabular-nums ${league.matchup.opponentScore > league.matchup.myScore ? 'text-green-400' :
-                                    league.matchup.opponentScore < league.matchup.myScore ? 'text-white' : 'text-white'
+                                  league.matchup.opponentScore < league.matchup.myScore ? 'text-white' : 'text-white'
                                   }`}>
                                   {league.matchup.opponentScore}
                                 </span>
