@@ -19,7 +19,7 @@ export async function POST(request) {
         console.log(`[CPBL Schedule API] Inserting ${schedules.length} rows...`);
 
         const { data, error } = await supabaseAdmin
-            .from('cpbl_schedule')
+            .from('cpbl_schedule_2026')
             .insert(schedules)
             .select();
 
