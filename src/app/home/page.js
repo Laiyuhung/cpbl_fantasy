@@ -100,9 +100,9 @@ export default function HomePage() {
                               </p>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${league.status === 'in season' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
-                                league.status === 'pre-draft' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-                                  league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
-                                    'bg-slate-700/40 text-slate-400 border-slate-600'
+                              league.status === 'pre-draft' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                                league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                                  'bg-slate-700/40 text-slate-400 border-slate-600'
                               }`}>
                               {league.status?.replace('-', ' ') || 'Unknown'}
                             </span>
@@ -123,27 +123,28 @@ export default function HomePage() {
                                     }) : 'TBD'}
                                   </span>
                                 </div>
-                              ) : league.stats ? (
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Rank & Record</span>
-                                  <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-black text-yellow-400">#{league.stats.rank}</span>
-                                    <span className="text-sm font-bold text-slate-300">
-                                      ({league.stats.win}-{league.stats.loss}-{league.stats.tie})
-                                    </span>
-                                  </div>
-                                </div>
                               ) : (
                                 <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Season</span>
-                                  <span className="text-white font-bold">{league.season_year || 2024}</span>
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Rank & Record</span>
+                                  {league.stats ? (
+                                    <div className="flex items-baseline gap-2">
+                                      <span className="text-2xl font-black text-yellow-400">#{league.stats.rank}</span>
+                                      <span className="text-sm font-bold text-slate-300">
+                                        ({league.stats.wins}-{league.stats.losses}-{league.stats.ties})
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="text-slate-400 text-sm italic">
+                                      No stats yet
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
 
                             {/* Right: Current Matchup */}
                             <div>
-                              {(league.status === 'in season' || league.status === 'playoffs') && league.matchup ? (
+                              {league.matchup ? (
                                 <div className="flex flex-col">
                                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                     Week {league.matchup.week} Matchup
@@ -159,7 +160,7 @@ export default function HomePage() {
                                       {league.matchup.opponentScore}
                                     </span>
                                   </div>
-                                  <span className="text-xs text-slate-400 truncate max-w-[120px]">
+                                  <span className="text-xs text-slate-400 truncate max-w-[120px]" title={league.matchup.opponentName}>
                                     @ {league.matchup.opponentName}
                                   </span>
                                 </div>

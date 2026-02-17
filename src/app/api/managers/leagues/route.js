@@ -55,13 +55,13 @@ export async function POST(request) {
       let stats = null;
       let currentMatchup = null;
 
-      const activeStatuses = ['in season', 'post-draft & pre-season', 'playoffs', 'post-season', 'finished'];
+      const activeStatuses = ['in season', 'post-draft & pre-season', 'playoffs', 'finished'];
 
       if (activeStatuses.includes(status)) {
         // Fetch User's Standing
         const { data: standing } = await supabase
           .from('v_league_standings')
-          .select('rank, win, loss, tie')
+          .select('rank, wins, losses, ties, win_pct')
           .eq('league_id', leagueId)
           .eq('manager_id', user_id)
           .single();
