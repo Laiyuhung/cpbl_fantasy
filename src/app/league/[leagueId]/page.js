@@ -298,6 +298,8 @@ export default function LeaguePage() {
   const [transactions, setTransactions] = useState([]);
   const [waiverResults, setWaiverResults] = useState([]);
   const [transLoading, setTransLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('transactions'); // 'transactions' | 'waivers'
+  const [viewAll, setViewAll] = useState(false);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -1035,10 +1037,23 @@ export default function LeaguePage() {
             )}
           </div>
 
-          {/* Recent Transactions Section */}
+          {/* Transactions & Waivers Tabbed Section */}
           <div className="mt-12">
-            <div className="flex items-center gap-4 mb-6 border-b border-white/5 pb-2">
-              <h2 className="text-xl font-black text-white uppercase tracking-widest">Recent Transactions</h2>
+            <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-2">
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => { setActiveTab('transactions'); setViewAll(false); }}
+                  className={`text-xl font-black uppercase tracking-widest transition-colors ${activeTab === 'transactions' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
+                >
+                  Recent Transactions
+                </button>
+                <button
+                  onClick={() => { setActiveTab('waivers'); setViewAll(false); }}
+                  className={`text-xl font-black uppercase tracking-widest transition-colors ${activeTab === 'waivers' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
+                >
+                  Waiver Results
+                </button>
+              </div>
             </div>
 
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
@@ -1046,162 +1061,176 @@ export default function LeaguePage() {
                 <div className="flex items-center justify-center p-12">
                   <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              ) : groupedTransactions.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-sm">No recent transactions.</div>
               ) : (
-                <div className="divide-y divide-white/5">
-                  {groupedTransactions.map((group) => (
-                    <div key={group.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all duration-300">
-                      {/* Left: Icons and Players */}
-                      <div className="flex flex-col gap-4">
-                        {group.items.map((item) => {
-                          const isTrade = item.transaction_type === 'TRADE';
-                          // For trades, the "to" label should point to the acquiring manager (the one in the transaction record)
-                          const recipientNickname = isTrade
-                            ? item.manager?.nickname
-                            : null;
+                <>
+                  {activeTab === 'transactions' && (
+                    groupedTransactions.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400 text-sm">No recent transactions.</div>
+                    ) : (
+                      <div className="divide-y divide-white/5">
+                        {(viewAll ? groupedTransactions : groupedTransactions.slice(0, 5)).map((group) => (
+                          <div key={group.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all duration-300">
+                            {/* Left: Icons and Players */}
+                            <div className="flex flex-col gap-4">
+                              {group.items.map((item) => {
+                                const isTrade = item.transaction_type === 'TRADE';
+                                // For trades, the "to" label should point to the acquiring manager (the one in the transaction record)
+                                const recipientNickname = isTrade
+                                  ? item.manager?.nickname
+                                  : null;
 
-                          return (
-                            <div key={item.transaction_id} className="flex items-center gap-5">
-                              <div className="w-6 flex justify-center flex-shrink-0">
-                                {(item.transaction_type === 'ADD' || item.transaction_type === 'WAIVER ADD') ? (
-                                  <span className={`text-2xl font-black leading-none ${item.transaction_type === 'WAIVER ADD' ? 'text-yellow-500' : 'text-green-500'}`}>+</span>
-                                ) : (item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP') ? (
-                                  <span className="text-2xl font-black text-red-500 leading-none">-</span>
-                                ) : isTrade ? (
-                                  <span className="text-2xl font-normal text-blue-400 leading-none">⇌</span>
-                                ) : (
-                                  <span className="text-2xl font-black text-slate-500/50 leading-none">•</span>
-                                )}
+                                return (
+                                  <div key={item.transaction_id} className="flex items-center gap-5">
+                                    <div className="w-6 flex justify-center flex-shrink-0">
+                                      {(item.transaction_type === 'ADD' || item.transaction_type === 'WAIVER ADD') ? (
+                                        <span className={`text-2xl font-black leading-none ${item.transaction_type === 'WAIVER ADD' ? 'text-yellow-500' : 'text-green-500'}`}>+</span>
+                                      ) : (item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP') ? (
+                                        <span className="text-2xl font-black text-red-500 leading-none">-</span>
+                                      ) : isTrade ? (
+                                        <span className="text-2xl font-normal text-blue-400 leading-none">⇌</span>
+                                      ) : (
+                                        <span className="text-2xl font-black text-slate-500/50 leading-none">•</span>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                          {item.player?.name}
+                                        </span>
+                                        {isTrade && recipientNickname && (
+                                          <span className="text-xs font-bold text-slate-500 tracking-tight italic flex items-center gap-1">
+                                            <span className="text-blue-500/50">⇌</span>
+                                            to {recipientNickname}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                                        {item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP' ? 'To Waivers' :
+                                          item.transaction_type === 'ADD' ? 'From FA' :
+                                            item.transaction_type === 'WAIVER ADD' ? 'From Waivers' : ''}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Right: Manager and Time */}
+                            <div className="text-right flex-shrink-0 ml-8">
+                              <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
+                                {(() => {
+                                  const nicknames = [...new Set(group.items.map(i => i.manager?.nickname).filter(Boolean))];
+                                  if (nicknames.length > 1) {
+                                    return (
+                                      <span className="flex items-center gap-2 justify-end">
+                                        {nicknames[0]}
+                                        <span className="text-slate-500 font-normal">⇌</span>
+                                        {nicknames[1]}
+                                      </span>
+                                    );
+                                  }
+                                  return group.manager?.nickname;
+                                })()}
                               </div>
-                              <div className="flex flex-col">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
-                                    {item.player?.name}
-                                  </span>
-                                  {isTrade && recipientNickname && (
-                                    <span className="text-xs font-bold text-slate-500 tracking-tight italic flex items-center gap-1">
-                                      <span className="text-blue-500/50">⇌</span>
-                                      to {recipientNickname}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                                  {item.transaction_type === 'DROP' || item.transaction_type === 'WAIVER DROP' ? 'To Waivers' :
-                                    item.transaction_type === 'ADD' ? 'From FA' :
-                                      item.transaction_type === 'WAIVER ADD' ? 'From Waivers' : ''}
-                                </span>
+                              <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
+                                {new Date(group.time).toLocaleString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  hour12: true
+                                })}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Right: Manager and Time */}
-                      <div className="text-right flex-shrink-0 ml-8">
-                        <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
-                          {(() => {
-                            const nicknames = [...new Set(group.items.map(i => i.manager?.nickname).filter(Boolean))];
-                            if (nicknames.length > 1) {
-                              return (
-                                <span className="flex items-center gap-2 justify-end">
-                                  {nicknames[0]}
-                                  <span className="text-slate-500 font-normal">⇌</span>
-                                  {nicknames[1]}
-                                </span>
-                              );
-                            }
-                            return group.manager?.nickname;
-                          })()}
-                        </div>
-                        <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
-                          {new Date(group.time).toLocaleString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Waiver Results Section */}
-          <div className="mt-12">
-            <div className="flex items-center gap-4 mb-6 border-b border-white/5 pb-2">
-              <h2 className="text-xl font-black text-white uppercase tracking-widest">Waiver Results</h2>
-            </div>
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
-              {transLoading ? (
-                <div className="flex items-center justify-center p-12">
-                  <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : waiverResults.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-sm">No waiver results found.</div>
-              ) : (
-                <div className="divide-y divide-white/5">
-                  {waiverResults.map((w) => (
-                    <div key={w.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all duration-300">
-
-                      {/* Left: Icons and Players */}
-                      <div className="flex flex-col gap-3 min-w-[200px]">
-                        <div className="flex items-center gap-5">
-                          <div className="w-6 flex justify-center flex-shrink-0">
-                            <span className="text-2xl font-black text-green-500 leading-none">+</span>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
-                              {w.player?.name}
-                            </span>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                              From Waivers
-                            </span>
-                          </div>
-                        </div>
-                        {w.drop_player && (
-                          <div className="flex items-center gap-5">
-                            <div className="w-6 flex justify-center flex-shrink-0">
-                              <span className="text-2xl font-black text-red-500 leading-none">-</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
-                                {w.drop_player?.name}
-                              </span>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                                To Waivers
-                              </span>
-                            </div>
+                        ))}
+                        {groupedTransactions.length > 5 && (
+                          <div className="px-6 py-3 text-center border-t border-white/5">
+                            <button
+                              onClick={() => setViewAll(!viewAll)}
+                              className="text-xs font-bold text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors"
+                            >
+                              {viewAll ? 'Show Less' : 'View All'}
+                            </button>
                           </div>
                         )}
                       </div>
+                    )
+                  )}
 
-                      {/* Middle: Status Result */}
-                      <div className="shrink-0 flex justify-center px-4">
-                        <span className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider ${w.status?.toLowerCase().includes('success') ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
-                          'bg-red-500/10 text-red-500 border border-red-500/20'
-                          }`}>
-                          {w.status}
-                        </span>
+                  {activeTab === 'waivers' && (
+                    waiverResults.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400 text-sm">No waiver results found.</div>
+                    ) : (
+                      <div className="divide-y divide-white/5">
+                        {(viewAll ? waiverResults : waiverResults.slice(0, 5)).map((w) => (
+                          <div key={w.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all duration-300">
+                            {/* Left: Icons and Players */}
+                            <div className="flex flex-col gap-3 min-w-[200px]">
+                              <div className="flex items-center gap-5">
+                                <div className="w-6 flex justify-center flex-shrink-0">
+                                  <span className="text-2xl font-black text-green-500 leading-none">+</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                    {w.player?.name}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                                    From Waivers
+                                  </span>
+                                </div>
+                              </div>
+                              {w.drop_player && (
+                                <div className="flex items-center gap-5">
+                                  <div className="w-6 flex justify-center flex-shrink-0">
+                                    <span className="text-2xl font-black text-red-500 leading-none">-</span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                      {w.drop_player?.name}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                                      To Waivers
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Middle: Status Result */}
+                            <div className="shrink-0 flex justify-center px-4">
+                              <span className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider ${w.status?.toLowerCase().includes('success') ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                                'bg-red-500/10 text-red-500 border border-red-500/20'
+                                }`}>
+                                {w.status}
+                              </span>
+                            </div>
+
+                            {/* Right: Manager and Date */}
+                            <div className="text-right flex-shrink-0 ml-8">
+                              <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
+                                {w.manager?.nickname}
+                              </div>
+                              <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
+                                {new Date(w.off_waiver).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {waiverResults.length > 5 && (
+                          <div className="px-6 py-3 text-center border-t border-white/5">
+                            <button
+                              onClick={() => setViewAll(!viewAll)}
+                              className="text-xs font-bold text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors"
+                            >
+                              {viewAll ? 'Show Less' : 'View All'}
+                            </button>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Right: Manager and Date */}
-                      <div className="text-right flex-shrink-0 ml-8">
-                        <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
-                          {w.manager?.nickname}
-                        </div>
-                        <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
-                          {new Date(w.off_waiver).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </div>
-                      </div>
-
-                    </div>
-                  ))}
-                </div>
+                    )
+                  )}
+                </>
               )}
             </div>
           </div>
