@@ -708,7 +708,8 @@ export default function LeaguePage() {
           {/* MATCHUPS Section Header with Week Selector */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider">
+              <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2 h-6 bg-purple-500 rounded-full"></span>
                 Matchups
               </h2>
 
@@ -939,7 +940,8 @@ export default function LeaguePage() {
 
           {/* STANDINGS Section */}
           <div className="mt-12">
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-wider mb-4">
+            <h2 className="text-xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2 h-6 bg-cyan-500 rounded-full"></span>
               Standings
             </h2>
 
@@ -1076,21 +1078,21 @@ export default function LeaguePage() {
 
           {/* Transactions & Waivers Tabbed Section */}
           <div className="mt-12">
-            <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-2">
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={() => { setActiveTab('transactions'); setViewAll(false); }}
-                  className={`text-xl font-black uppercase tracking-widest transition-colors ${activeTab === 'transactions' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
-                >
-                  Recent Transactions
-                </button>
-                <button
-                  onClick={() => { setActiveTab('waivers'); setViewAll(false); }}
-                  className={`text-xl font-black uppercase tracking-widest transition-colors ${activeTab === 'waivers' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
-                >
-                  Waiver Results
-                </button>
-              </div>
+            <div className="flex items-center gap-8 mb-6 border-b border-white/5 pb-2">
+              <button
+                onClick={() => { setActiveTab('transactions'); setViewAll(false); }}
+                className={`text-xl font-black uppercase tracking-wider flex items-center gap-2 transition-all ${activeTab === 'transactions' ? 'text-white opacity-100' : 'text-white/40 hover:text-white/70'}`}
+              >
+                <span className={`w-2 h-6 rounded-full transition-all ${activeTab === 'transactions' ? 'bg-blue-500' : 'bg-transparent'}`}></span>
+                Recent Transactions
+              </button>
+              <button
+                onClick={() => { setActiveTab('waivers'); setViewAll(false); }}
+                className={`text-xl font-black uppercase tracking-wider flex items-center gap-2 transition-all ${activeTab === 'waivers' ? 'text-white opacity-100' : 'text-white/40 hover:text-white/70'}`}
+              >
+                <span className={`w-2 h-6 rounded-full transition-all ${activeTab === 'waivers' ? 'bg-orange-500' : 'bg-transparent'}`}></span>
+                Waiver Results
+              </button>
             </div>
 
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden shadow-2xl">

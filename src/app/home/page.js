@@ -7,22 +7,48 @@ import CpblScheduleWidget from '@/components/CpblScheduleWidget'
 
 export default function HomePage() {
   const router = useRouter()
-  // ... (rest of state items are fine) ...
-
   const [leagues, setLeagues] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // ... logic ...
-  }, [])
-  // ... (keeping fetch logic same) ...
+    const fetchLeagues = async () => {
+      try {
+        const getCookie = (name) => {
+          const value = `; ${document.cookie}`;
+          const parts = value.split(`; ${name}=`);
+          if (parts.length === 2) return parts.pop().split(';').shift();
+        };
+        const userId = getCookie('user_id');
+
+        if (!userId) {
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch('/api/managers/leagues', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId }),
+        });
+
+        const data = await res.json();
+        if (data.leagues) {
+          setLeagues(data.leagues);
+        }
+      } catch (error) {
+        console.error('Failed to fetch leagues:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeagues();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
-          <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent">Home</h1>
-        </div>
+
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Column: League List */}
