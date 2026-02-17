@@ -977,13 +977,13 @@ export default function LeaguePage() {
                           <td className="px-6 py-4">
                             <div className="flex flex-col">
                               <span className="font-black text-white text-base leading-tight">
+                                {team.nickname}
+                              </span>
+                              <span className="text-xs font-bold text-slate-500 tracking-tight mt-0.5">
                                 {(() => {
                                   const member = getManagerDetails(team.manager_id);
                                   return member?.managers?.name || 'Unknown';
                                 })()}
-                              </span>
-                              <span className="text-xs font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                                {team.nickname}
                               </span>
                             </div>
                           </td>
@@ -1028,13 +1028,13 @@ export default function LeaguePage() {
                           </span>
                           <div className="flex flex-col">
                             <span className="font-black text-white text-base leading-tight">
+                              {team.nickname}
+                            </span>
+                            <span className="text-xs font-bold text-slate-500 tracking-tight mt-0.5">
                               {(() => {
                                 const member = getManagerDetails(team.manager_id);
                                 return member?.managers?.name || 'Unknown';
                               })()}
-                            </span>
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                              {team.nickname}
                             </span>
                           </div>
                         </div>

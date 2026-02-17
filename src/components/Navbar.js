@@ -315,19 +315,42 @@ export default function Navbar() {
             </div>
           )}
           {userName && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-sm font-bold">
-                {userName.charAt(0).toUpperCase()}
+            <div className="relative group">
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-500/20">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm font-medium">{userName}</span>
+                <svg className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 text-white rounded-xl shadow-2xl border border-blue-500/30 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-blue-500/20 transition-colors border-b border-white/5"
+                >
+                  <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="text-sm font-medium">Profile Settings</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-red-300 hover:text-red-200 transition-colors text-left"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span className="text-sm font-medium">Logout</span>
+                </button>
               </div>
-              <span className="text-sm font-medium">{userName}</span>
             </div>
           )}
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all duration-200 border border-red-500/30"
-          >
-            Logout
-          </button>
         </div>
 
         <div className="lg:hidden flex items-center">
