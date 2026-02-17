@@ -80,24 +80,21 @@ export default function HomePage() {
                 ) : (
                   <div className="space-y-4">
                     {leagues.map((league) => (
-                      <div
+                      <Link
                         key={league.league_id}
-                        onClick={() => router.push(`/league/${league.league_id}`)}
-                        className="group bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 hover:border-purple-400/60 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden"
+                        href={`/league/${league.league_id}`}
+                        className="block group relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-white/10 hover:border-purple-500/40 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(168,85,247,0.15)] h-full"
                       >
-                        {/* Connection Line decoration */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-purple-500/10 transition-colors"></div>
-
-                        <div className="flex flex-col gap-4 relative z-10">
+                        <div className="p-5 h-full flex flex-col">
                           {/* Header: League Name */}
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+                            <h3 className="text-xl font-black text-white group-hover:text-purple-300 transition-colors truncate pr-2">
                               {league.league_name}
                             </h3>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${league.status === 'in season' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                              league.status === 'pre-draft' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                  'bg-slate-700/40 text-slate-400 border-slate-600'
+                            <span className={`shrink-0 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${league.status === 'in season' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                league.status === 'pre-draft' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                  league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                    'bg-slate-700/40 text-slate-400 border-slate-600'
                               }`}>
                               {league.status?.replace('-', ' ') || 'Unknown'}
                             </span>
@@ -105,7 +102,7 @@ export default function HomePage() {
 
                           {/* Content */}
                           {league.status === 'pre-draft' ? (
-                            <div className="flex flex-col items-center justify-center py-2">
+                            <div className="flex flex-col items-center justify-center flex-1 py-2">
                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Draft Time</span>
                               <span className="text-white font-mono font-bold text-lg">
                                 {league.draft_time ? new Date(league.draft_time).toLocaleString('en-US', {
@@ -114,17 +111,17 @@ export default function HomePage() {
                               </span>
                             </div>
                           ) : league.matchup ? (
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-center gap-6 mt-1">
                               {/* Left: My Team */}
-                              <div className="flex-1 text-left">
-                                <div className="font-bold text-base text-blue-300 truncate mb-1">
+                              <div className="text-right w-[35%]">
+                                <div className="font-bold text-base text-blue-300 truncate leading-tight">
                                   {league.nickname}
                                 </div>
                                 {league.stats && (
-                                  <div className="text-sm font-bold text-slate-300 font-mono">
+                                  <div className="text-xs font-bold text-slate-400 font-mono mt-0.5">
                                     {league.stats.wins}-{league.stats.losses}-{league.stats.ties}
-                                    <span className="text-slate-500 mx-1">|</span>
-                                    <span className="text-slate-400 text-xs">
+                                    <span className="text-slate-600 mx-1">|</span>
+                                    <span className="text-slate-500">
                                       {league.stats.rank}{
                                         (league.stats.rank % 100 >= 11 && league.stats.rank % 100 <= 13) ? 'th' :
                                           (league.stats.rank % 10 === 1) ? 'st' :
@@ -137,24 +134,28 @@ export default function HomePage() {
                               </div>
 
                               {/* Center: Score */}
-                              <div className="px-2 flex items-center justify-center gap-1.5 shrink-0 min-w-[80px]">
-                                <span className="text-2xl font-black text-white">
+                              <div className="flex items-center justify-center gap-2 shrink-0 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-white/5">
+                                <span className={`text-xl font-black tabular-nums ${league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' :
+                                    league.matchup.myScore < league.matchup.opponentScore ? 'text-white' : 'text-white'
+                                  }`}>
                                   {league.matchup.myScore}
                                 </span>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase pt-1">vs</span>
-                                <span className="text-2xl font-black text-white">
+                                <span className="text-[10px] font-bold text-slate-600 uppercase">vs</span>
+                                <span className={`text-xl font-black tabular-nums ${league.matchup.opponentScore > league.matchup.myScore ? 'text-green-400' :
+                                    league.matchup.opponentScore < league.matchup.myScore ? 'text-white' : 'text-white'
+                                  }`}>
                                   {league.matchup.opponentScore}
                                 </span>
                               </div>
 
                               {/* Right: Opponent */}
-                              <div className="flex-1 text-right">
-                                <div className="font-bold text-base text-blue-300 truncate mb-1">
+                              <div className="text-left w-[35%]">
+                                <div className="font-bold text-base text-blue-300 truncate leading-tight">
                                   {league.matchup.opponentName}
                                 </div>
                                 {league.matchup.opponentStats ? (
-                                  <div className="text-sm font-bold text-slate-300 font-mono">
-                                    <span className="text-slate-400 text-xs">
+                                  <div className="text-xs font-bold text-slate-400 font-mono mt-0.5">
+                                    <span className="text-slate-500">
                                       {league.matchup.opponentStats.rank}{
                                         (league.matchup.opponentStats.rank % 100 >= 11 && league.matchup.opponentStats.rank % 100 <= 13) ? 'th' :
                                           (league.matchup.opponentStats.rank % 10 === 1) ? 'st' :
@@ -162,11 +163,11 @@ export default function HomePage() {
                                               (league.matchup.opponentStats.rank % 10 === 3) ? 'rd' : 'th'
                                       }
                                     </span>
-                                    <span className="text-slate-500 mx-1">|</span>
+                                    <span className="text-slate-600 mx-1">|</span>
                                     {league.matchup.opponentStats.wins}-{league.matchup.opponentStats.losses}-{league.matchup.opponentStats.ties}
                                   </div>
                                 ) : (
-                                  <div className="text-sm font-bold text-slate-300 font-mono">
+                                  <div className="text-xs font-bold text-slate-400 font-mono mt-0.5">
                                     0-0-0
                                   </div>
                                 )}
@@ -178,7 +179,7 @@ export default function HomePage() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
