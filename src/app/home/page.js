@@ -20,7 +20,7 @@ export default function HomePage() {
         const userId = getCookie('user_id');
 
         if (!userId) {
-          setLoading(false);
+          setLoading(false); //
           return;
         }
 
