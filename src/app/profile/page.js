@@ -28,6 +28,16 @@ export default function ProfilePage() {
     // Messages
     const [message, setMessage] = useState({ type: '', text: '' });
 
+    // Auto-dismiss success messages
+    useEffect(() => {
+        if (message.text && message.type === 'success') {
+            const timer = setTimeout(() => {
+                setMessage({ type: '', text: '' });
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
+
     useEffect(() => {
         const fetchUser = async () => {
             const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
@@ -172,25 +182,24 @@ export default function ProfilePage() {
         );
     }
 
-    // Auto-dismiss success messages
-    useEffect(() => {
-        if (message.text && message.type === 'success') {
-            const timer = setTimeout(() => {
-                setMessage({ type: '', text: '' });
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [message]);
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4 sm:px-6 lg:px-8">
             {/* Centered Alert Modal */}
+            {/* Centered Alert Modal within z-[9999] container */}
             {message.text && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto" onClick={() => setMessage({ type: '', text: '' })}></div>
-                    <div className={`relative pointer-events-auto transform transition-all animate-bounce-in px-8 py-6 rounded-2xl shadow-2xl border flex flex-col items-center gap-4 max-w-sm w-full mx-4 ${message.type === 'success'
-                            ? 'bg-slate-900/90 border-green-500/50 text-green-400'
-                            : 'bg-slate-900/90 border-red-500/50 text-red-400'
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 pointer-events-none">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity duration-300"
+                        onClick={() => setMessage({ type: '', text: '' })}
+                    />
+
+                    {/* Modal Content */}
+                    <div className={`relative pointer-events-auto transform transition-all duration-300 scale-100 px-8 py-6 rounded-2xl shadow-2xl border flex flex-col items-center gap-4 max-w-sm w-full ${message.type === 'success'
+                        ? 'bg-slate-900/95 border-green-500/50 text-green-400'
+                        : 'bg-slate-900/95 border-red-500/50 text-red-400'
                         }`}>
                         <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 ${message.type === 'success' ? 'border-green-500/30 bg-green-500/20' : 'border-red-500/30 bg-red-500/20'
                             }`}>
@@ -200,11 +209,11 @@ export default function ProfilePage() {
                                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
                             )}
                         </div>
-                        <div className="text-center">
-                            <h3 className="text-xl font-bold text-white mb-1">
+                        <div className="text-center w-full">
+                            <h3 className="text-xl font-bold text-white mb-2">
                                 {message.type === 'success' ? 'Success!' : 'Error'}
                             </h3>
-                            <p className="text-lg font-medium opacity-90">{message.text}</p>
+                            <p className="text-lg font-medium opacity-90 break-words">{message.text}</p>
                         </div>
                     </div>
                 </div>

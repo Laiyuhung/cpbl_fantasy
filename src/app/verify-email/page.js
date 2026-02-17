@@ -31,6 +31,7 @@ function VerifyEmailContent() {
 
           // Update auth state across tabs/components
           window.dispatchEvent(new Event('auth-changed'));
+          localStorage.setItem('auth-event', Date.now());
 
           // Redirect to home after 3 seconds
           setTimeout(() => {

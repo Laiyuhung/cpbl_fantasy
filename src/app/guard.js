@@ -43,8 +43,7 @@ export default function GuardLayout({ children }) {
       return;
     }
 
-    if (loggedIn) {
-      // Fetch verification status
+    const checkVerificationStatus = () => {
       const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
       const uid = cookie?.split('=')[1];
       if (uid) {
@@ -67,9 +66,22 @@ export default function GuardLayout({ children }) {
           })
           .catch(() => { });
       }
+    };
+
+    if (loggedIn) {
+      checkVerificationStatus();
+
+      // Listen for auth changes (e.g. verified in another tab or this tab)
+      window.addEventListener('auth-changed', checkVerificationStatus);
+      window.addEventListener('storage', checkVerificationStatus);
     } else {
       setIsRestricted(false);
     }
+
+    return () => {
+      window.removeEventListener('auth-changed', checkVerificationStatus);
+      window.removeEventListener('storage', checkVerificationStatus);
+    };
   }, [pathname, router])
 
   if (!isReady) return null

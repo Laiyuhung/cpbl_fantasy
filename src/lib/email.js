@@ -68,7 +68,7 @@ export async function sendVerificationEmail(to, verificationLink, userName) {
               <p>Thank you for registering with CPBL Fantasy. To complete your registration, please verify your email address by clicking the button below:</p>
               
               <div style="text-align: center;">
-                <a href="${verificationLink}" class="button">Verify Email Address</a>
+                <a href="${verificationLink}" class="button" style="color: #ffffff !important;">Verify Email Address</a>
               </div>
               
               <p>Or copy and paste this link into your browser:</p>
