@@ -27,11 +27,10 @@ export async function POST(request) {
         league_settings (
           league_id,
           league_name,
-          draft_time,
-          season_year
-        ),
-        league_statuses (
-          status
+          live_draft_time,
+          league_statuses (
+            status
+          )
         )
       `)
       .eq('manager_id', user_id);
@@ -47,7 +46,11 @@ export async function POST(request) {
     // 2. Fetch additional data for each league (Standings & Matchups)
     const enrichedLeagues = await Promise.all(leagueMembers.map(async (member) => {
       const leagueId = member.league_id;
-      const status = member.league_statuses?.status || 'unknown';
+      // Handle array or object return from Supabase relations
+      const statusData = member.league_settings?.league_statuses;
+      // It might be an array or object depending on Supabase detection, verify typically array if 1:many or object if 1:1 detected
+      // Safest to handle both or access property safely
+      const status = (Array.isArray(statusData) ? statusData[0]?.status : statusData?.status) || 'unknown';
 
       let stats = null;
       let currentMatchup = null;
@@ -140,8 +143,8 @@ export async function POST(request) {
         nickname: member.nickname,
         role: member.role,
         status: status,
-        draft_time: member.league_settings?.draft_time,
-        season_year: member.league_settings?.season_year,
+        draft_time: member.league_settings?.live_draft_time,
+        season_year: 2025, // Hardcoded as it's not in DB
         stats: stats,
         matchup: currentMatchup
       };
