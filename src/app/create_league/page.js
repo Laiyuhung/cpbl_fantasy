@@ -1058,7 +1058,30 @@ const CreateLeaguePage = () => {
                                 </div>
                               ) : isDateTimeField(key) ? (
                                 <div>
-                                  <input type="datetime-local" min={minDraftDateTime()} value={value} onChange={(e) => handleSettingChange(section.key, key, e.target.value)} disabled={settings.general['Draft Type'] !== 'Live Draft'} className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-700/40 ${(settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '')) || dateValidationErrors.draftTimeError ? 'border-red-500 bg-red-900/30' : 'border-purple-500/30'}`} />
+                                  <div className="flex bg-slate-800/60 border rounded-md border-purple-500/30 overflow-hidden relative">
+                                    <input
+                                      type="datetime-local"
+                                      min={minDraftDateTime()}
+                                      value={value}
+                                      onChange={(e) => handleSettingChange(section.key, key, e.target.value)}
+                                      disabled={settings.general['Draft Type'] !== 'Live Draft'}
+                                      className={`w-full px-3 py-2 bg-transparent text-white focus:outline-none focus:ring-0 appearance-none spin-button-none ${settings.general['Draft Type'] !== 'Live Draft' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                      style={{ colorScheme: 'dark' }}
+                                    />
+                                  </div>
+                                  {settings.general['Draft Type'] === 'Live Draft' && value && (
+                                    <div className="mt-2 text-sm text-purple-300 font-mono pl-1 flex items-center gap-2">
+                                      <span className="text-purple-400">🇺🇸</span>
+                                      {new Date(value).toLocaleString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        hour12: true
+                                      })}
+                                    </div>
+                                  )}
                                   {settings.general['Draft Type'] === 'Live Draft' && (!value || value.trim() === '') && <p className="text-red-600 text-sm mt-1">required</p>}
                                   {settings.general['Draft Type'] === 'Live Draft' && value && dateValidationErrors.draftTimeError && <p className="text-red-600 text-sm mt-1">{dateValidationErrors.draftTimeError}</p>}
                                 </div>
