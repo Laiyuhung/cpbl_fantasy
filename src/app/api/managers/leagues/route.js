@@ -110,8 +110,6 @@ export async function POST(request) {
                 score_b,
                 manager_id_a,
                 manager_id_b,
-                winner_manager_id,
-                is_tie,
                 week_number
             `)
           .eq('league_id', leagueId)
@@ -154,8 +152,10 @@ export async function POST(request) {
           const isManagerA = targetMatchupData.manager_id_a === user_id;
           const opponentId = isManagerA ? targetMatchupData.manager_id_b : targetMatchupData.manager_id_a;
 
-          // Get opponent nickname
+          // Get opponent nickname and stats
           let opponentName = 'Unknown';
+          let opponentStats = null;
+
           if (opponentId) {
             const { data: opponentMember } = await supabase
               .from('league_members')
@@ -164,6 +164,18 @@ export async function POST(request) {
               .eq('manager_id', opponentId)
               .single();
             if (opponentMember) opponentName = opponentMember.nickname;
+
+            // Fetch Opponent's Standing
+            const { data: oppStanding } = await supabase
+              .from('v_league_standings')
+              .select('rank, wins, losses, ties')
+              .eq('league_id', leagueId)
+              .eq('manager_id', opponentId)
+              .single();
+
+            if (oppStanding) {
+              opponentStats = oppStanding;
+            }
           } else {
             opponentName = 'Bye';
           }
@@ -172,6 +184,7 @@ export async function POST(request) {
             myScore: isManagerA ? (targetMatchupData.score_a || 0) : (targetMatchupData.score_b || 0),
             opponentScore: isManagerA ? (targetMatchupData.score_b || 0) : (targetMatchupData.score_a || 0),
             opponentName: opponentName,
+            opponentStats: opponentStats,
             week: targetMatchupData.week_number
           };
         }

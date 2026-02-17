@@ -89,97 +89,78 @@ export default function HomePage() {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-purple-500/10 transition-colors"></div>
 
                         <div className="flex flex-col gap-4 relative z-10">
-                          {/* Header: Name and Status */}
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h3 className="text-2xl font-black text-white group-hover:text-purple-300 transition-colors mb-1">
-                                {league.league_name}
-                              </h3>
-                              <p className="text-purple-300/70 text-sm font-medium">
-                                Your Team: <span className="text-white">{league.nickname}</span>
-                              </p>
-                            </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${league.status === 'in season' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
-                              league.status === 'pre-draft' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-                                league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
-                                  'bg-slate-700/40 text-slate-400 border-slate-600'
+                          {/* Header: League Name */}
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+                              {league.league_name}
+                            </h3>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${league.status === 'in season' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                league.status === 'pre-draft' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                  league.status === 'post-season' || league.status === 'playoffs' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                    'bg-slate-700/40 text-slate-400 border-slate-600'
                               }`}>
                               {league.status?.replace('-', ' ') || 'Unknown'}
                             </span>
                           </div>
 
-                          <div className="h-px bg-white/5 w-full"></div>
-
-                          {/* Body: Contextual Info */}
-                          <div className="grid grid-cols-2 gap-4">
-                            {/* Left: Team Stats / Draft Time */}
-                            <div>
-                              {league.status === 'pre-draft' ? (
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Draft Time</span>
-                                  <span className="text-white font-mono font-semibold">
-                                    {league.draft_time ? new Date(league.draft_time).toLocaleString('zh-TW', {
-                                      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                                    }) : 'TBD'}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Rank & Record</span>
-                                  {league.stats ? (
-                                    <div className="flex items-baseline gap-2">
-                                      <span className="text-xl font-bold text-white">
-                                        {league.stats.wins}-{league.stats.losses}-{league.stats.ties}
-                                      </span>
-                                      <span className="text-sm font-medium text-slate-400">
-                                        | {league.stats.rank}{
-                                          (league.stats.rank % 100 >= 11 && league.stats.rank % 100 <= 13) ? 'th' :
-                                            (league.stats.rank % 10 === 1) ? 'st' :
-                                              (league.stats.rank % 10 === 2) ? 'nd' :
-                                                (league.stats.rank % 10 === 3) ? 'rd' : 'th'
-                                        }
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <div className="text-slate-400 text-sm italic">
-                                      No stats yet
-                                    </div>
-                                  )}
-                                </div>
-                              )}
+                          {/* Content */}
+                          {league.status === 'pre-draft' ? (
+                            <div className="flex flex-col items-center justify-center py-2">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Draft Time</span>
+                              <span className="text-white font-mono font-bold text-lg">
+                                {league.draft_time ? new Date(league.draft_time).toLocaleString('zh-TW', {
+                                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                }) : 'TBD'}
+                              </span>
                             </div>
+                          ) : league.matchup ? (
+                            <div className="flex items-center justify-between">
+                              {/* Left: My Team */}
+                              <div className="flex-1 text-left">
+                                <div className="font-bold text-base text-blue-400 truncate mb-0.5">
+                                  {league.nickname}
+                                </div>
+                                {league.stats && (
+                                  <div className="text-xs text-slate-500 font-mono">
+                                    {league.stats.wins}-{league.stats.losses}-{league.stats.ties}
+                                  </div>
+                                )}
+                              </div>
 
-                            {/* Right: Current Matchup */}
-                            <div>
-                              {league.matchup ? (
-                                <div className="flex flex-col justify-center h-full gap-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-bold text-slate-500 uppercase">vs</span>
-                                    <span className="text-sm font-bold text-white truncate max-w-[140px]" title={league.matchup.opponentName}>
-                                      {league.matchup.opponentName}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-xl font-black ${league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' :
-                                        league.matchup.myScore < league.matchup.opponentScore ? 'text-red-400' : 'text-slate-300'
-                                      }`}>
-                                      {league.matchup.myScore}
-                                    </span>
-                                    <span className="text-sm font-bold text-slate-500">:</span>
-                                    <span className="text-xl font-black text-slate-400">
-                                      {league.matchup.opponentScore}
-                                    </span>
-                                  </div>
+                              {/* Center: Score */}
+                              <div className="px-4 flex items-center gap-3">
+                                <span className={`text-2xl font-black ${league.matchup.myScore > league.matchup.opponentScore ? 'text-white' : 'text-slate-400'
+                                  }`}>
+                                  {league.matchup.myScore}
+                                </span>
+                                <span className="text-xs font-bold text-slate-600 uppercase">vs</span>
+                                <span className={`text-2xl font-black ${league.matchup.opponentScore > league.matchup.myScore ? 'text-white' : 'text-slate-400'
+                                  }`}>
+                                  {league.matchup.opponentScore}
+                                </span>
+                              </div>
+
+                              {/* Right: Opponent */}
+                              <div className="flex-1 text-right">
+                                <div className="font-bold text-base text-blue-400 truncate mb-0.5">
+                                  {league.matchup.opponentName}
                                 </div>
-                              ) : (
-                                <div className="flex flex-col items-end justify-end h-full">
-                                  <span className="text-purple-400/50 text-xs font-bold group-hover:text-purple-400 transition-colors flex items-center gap-1">
-                                    Enter League <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                                  </span>
-                                </div>
-                              )}
+                                {league.matchup.opponentStats ? (
+                                  <div className="text-xs text-slate-500 font-mono">
+                                    {league.matchup.opponentStats.wins}-{league.matchup.opponentStats.losses}-{league.matchup.opponentStats.ties}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-slate-500 font-mono">
+                                    0-0-0
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="text-center text-slate-500 text-sm py-2">
+                              Waiting for season start...
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
