@@ -60,6 +60,25 @@ export async function GET(request, { params }) {
             if (weekData) {
                 weekInfo = weekData;
 
+                // Check for multi-week period (e.g. All Star or Playoffs)
+                const { count: scheduleWeeksCount, error: weekCountError } = await supabase
+                    .from('schedule_date')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('week_start', weekData.week_start)
+                    .lte('week_start', weekData.week_end); // Count weeks starting in this period
+
+                if (weekCountError) {
+                    console.error('[Acquisitions API] Error counting schedule weeks:', weekCountError);
+                }
+
+                // Default to 1 if count is 0 or undefined
+                const multiplier = (scheduleWeeksCount && scheduleWeeksCount > 0) ? scheduleWeeksCount : 1;
+
+                // Update limit if it's not Infinity
+                if (limit !== Infinity) {
+                    limit = limit * multiplier;
+                }
+
                 // Format Date Range: "MM/DD - MM/DD"
                 const startObj = new Date(weekData.week_start);
                 const endObj = new Date(weekData.week_end);
