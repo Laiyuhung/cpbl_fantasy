@@ -22,8 +22,8 @@ export default function CpblScheduleAdmin() {
 
     // Teams List
     const teams = [
-        'CTBC Brothers', 'Uni-Lions', 'Rakuten Monkeys',
-        'Fubon Guardians', 'Wei Chuan Dragons', 'TSG Hawks'
+        '統一獅', '中信兄弟', '樂天桃猿',
+        '富邦悍將', '味全龍', '台鋼雄鷹'
     ];
 
     // --- Handlers ---
@@ -331,8 +331,8 @@ export default function CpblScheduleAdmin() {
                                 onClick={handleSubmit}
                                 disabled={loading}
                                 className={`w-full py-4 text-lg rounded-lg font-bold text-white transition-all duration-200 shadow-xl ${loading
-                                        ? 'bg-purple-500/50 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transform hover:-translate-y-1'
+                                    ? 'bg-purple-500/50 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transform hover:-translate-y-1'
                                     }`}
                             >
                                 {loading ? 'Inserting Games...' : `Insert All ${games.length} Games`}
