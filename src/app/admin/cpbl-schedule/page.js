@@ -30,6 +30,16 @@ export default function CpblScheduleAdmin() {
         '富邦悍將', '味全龍', '台鋼雄鷹'
     ];
 
+    const teamColors = {
+        '統一獅': 'text-orange-400',       // Orange
+        '中信兄弟': 'text-yellow-400',     // Yellow
+        '樂天桃猿': 'text-red-400',        // Wine Red / Maroon (using standard red-400/500 usually fits, or custom hex if needed)
+        // User said "Wine Red", maybe 'text-rose-500' or similar? Let's try 'text-red-400' for now as it pops on dark.
+        '富邦悍將': 'text-blue-400',       // Blue
+        '味全龍': 'text-red-500',          // Red
+        '台鋼雄鷹': 'text-green-500',      // Dark Green
+    };
+
     // --- Data Fetching ---
     const fetchSchedule = async () => {
         setFetching(true);
@@ -350,8 +360,8 @@ export default function CpblScheduleAdmin() {
                                 onClick={handleSubmit}
                                 disabled={loading}
                                 className={`w-full py-4 text-lg rounded-lg font-bold text-white transition-all duration-200 shadow-xl ${loading
-                                        ? 'bg-purple-500/50 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transform hover:-translate-y-1'
+                                    ? 'bg-purple-500/50 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transform hover:-translate-y-1'
                                     }`}
                             >
                                 {loading ? 'Inserting Games...' : `Insert All ${games.length} Games`}
@@ -385,11 +395,11 @@ export default function CpblScheduleAdmin() {
                                     <span>{game.date} {game.time}</span>
                                 </div>
                                 <div className="flex justify-between items-center font-medium text-sm">
-                                    <span className={game.away === '統一獅' ? 'text-orange-400' : 'text-slate-200'}>
+                                    <span className={teamColors[game.away] || 'text-slate-200'}>
                                         {game.away}
                                     </span>
                                     <span className="text-slate-500 text-xs">@</span>
-                                    <span className={game.home === '統一獅' ? 'text-orange-400' : 'text-slate-200'}>
+                                    <span className={teamColors[game.home] || 'text-slate-200'}>
                                         {game.home}
                                     </span>
                                 </div>
