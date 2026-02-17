@@ -15,7 +15,7 @@ export async function GET(request) {
 
         const { data: user, error } = await supabaseAdmin
             .from('managers')
-            .select('name, email_address')
+            .select('name, email_address, email_verified')
             .eq('manager_id', userId)
             .single();
 

@@ -11,7 +11,7 @@ export async function POST() {
 
   const { data, error } = await supabase
     .from('managers')
-    .select('name')
+    .select('name, email_verified')
     .eq('manager_id', user_id)
     .single()
 
@@ -19,5 +19,5 @@ export async function POST() {
     return Response.json({ error: '找不到帳號' }, { status: 404 })
   }
 
-  return Response.json({ name: data.name })
+  return Response.json({ name: data.name, email_verified: data.email_verified })
 }

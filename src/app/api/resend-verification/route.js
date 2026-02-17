@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabase';
+import supabaseAdmin from '@/lib/supabaseAdmin';
 import { sendVerificationEmail } from '@/lib/email';
 import crypto from 'crypto';
 
@@ -12,17 +12,13 @@ export async function POST(request) {
         }
 
         // 1. Check user status
-        const { data: user, error: userError } = await supabase
+        const { data: user, error: userError } = await supabaseAdmin
             .from('managers')
             .select('manager_id, name, email_verified, verification_email_sent_count, last_verification_email_sent_at')
             .eq('email_address', email)
             .single();
 
         if (userError || !user) {
-            // Return success even if user not found to prevent enumeration, or return specific error if prefer UX
-            // For this user context, specific error is fine usually, but let's stick to "If account exists..." style or just generic.
-            // Given the previous code returns specifics, let's return "User not found" for debugging ease if needed, or stick to safe.
-            // Let's go with returning 404 for clear feedback as requested by user effectively.
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
@@ -30,26 +26,29 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Email already verified' }, { status: 200 });
         }
 
-        // 2. Rate Limiting Logic
+        // 2. Rate Limiting Logic (Taiwan Time)
         const MAX_DAILY_EMAILS = 5;
-        const now = new Date();
-        const lastSent = user.last_verification_email_sent_at ? new Date(user.last_verification_email_sent_at) : null;
+        const taiwanTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' });
+        const nowInTaiwan = new Date(taiwanTime);
+        const lastSent = user.last_verification_email_sent_at ? new Date(new Date(user.last_verification_email_sent_at).toLocaleString('en-US', { timeZone: 'Asia/Taipei' })) : null;
 
         let newCount = user.verification_email_sent_count || 0;
 
         // Reset count if last sent was on a different day
         if (lastSent) {
-            const isSameDay = now.getDate() === lastSent.getDate() &&
-                now.getMonth() === lastSent.getMonth() &&
-                now.getFullYear() === lastSent.getFullYear();
+            const isSameDay = nowInTaiwan.getDate() === lastSent.getDate() &&
+                nowInTaiwan.getMonth() === lastSent.getMonth() &&
+                nowInTaiwan.getFullYear() === lastSent.getFullYear();
             if (!isSameDay) {
                 newCount = 0;
             }
+        } else {
+            newCount = 0;
         }
 
         if (newCount >= MAX_DAILY_EMAILS) {
             return NextResponse.json({
-                error: 'Daily verification email limit reached. Please try again tomorrow.'
+                error: 'Daily verification email limit reached (5/day). Please try again tomorrow.'
             }, { status: 429 });
         }
 
@@ -59,13 +58,13 @@ export async function POST(request) {
         verification_token_expires.setHours(verification_token_expires.getHours() + 24);
 
         // 4. Update user record
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
             .from('managers')
             .update({
                 verification_token,
                 verification_token_expires: verification_token_expires.toISOString(),
                 verification_email_sent_count: newCount + 1,
-                last_verification_email_sent_at: now.toISOString()
+                last_verification_email_sent_at: new Date().toISOString()
             })
             .eq('manager_id', user.manager_id);
 

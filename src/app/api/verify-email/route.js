@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabase';
+import supabase from '@/lib/supabaseAdmin';
 
 export async function GET(request) {
   try {
@@ -39,10 +39,10 @@ export async function GET(request) {
     // Check if already verified
     if (user.email_verified) {
       return NextResponse.json(
-        { 
-          success: true, 
+        {
+          success: true,
           message: 'Email already verified',
-          alreadyVerified: true 
+          alreadyVerified: true
         },
         { status: 200 }
       );
@@ -51,7 +51,7 @@ export async function GET(request) {
     // Check if token expired
     const now = new Date();
     const expiresAt = new Date(user.verification_token_expires);
-    
+
     if (now > expiresAt) {
       return NextResponse.json(
         { error: 'Verification token has expired. Please request a new verification email.' },
