@@ -172,8 +172,44 @@ export default function ProfilePage() {
         );
     }
 
+    // Auto-dismiss success messages
+    useEffect(() => {
+        if (message.text && message.type === 'success') {
+            const timer = setTimeout(() => {
+                setMessage({ type: '', text: '' });
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4 sm:px-6 lg:px-8">
+            {/* Centered Alert Modal */}
+            {message.text && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto" onClick={() => setMessage({ type: '', text: '' })}></div>
+                    <div className={`relative pointer-events-auto transform transition-all animate-bounce-in px-8 py-6 rounded-2xl shadow-2xl border flex flex-col items-center gap-4 max-w-sm w-full mx-4 ${message.type === 'success'
+                            ? 'bg-slate-900/90 border-green-500/50 text-green-400'
+                            : 'bg-slate-900/90 border-red-500/50 text-red-400'
+                        }`}>
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 ${message.type === 'success' ? 'border-green-500/30 bg-green-500/20' : 'border-red-500/30 bg-red-500/20'
+                            }`}>
+                            {message.type === 'success' ? (
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                            ) : (
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                            )}
+                        </div>
+                        <div className="text-center">
+                            <h3 className="text-xl font-bold text-white mb-1">
+                                {message.type === 'success' ? 'Success!' : 'Error'}
+                            </h3>
+                            <p className="text-lg font-medium opacity-90">{message.text}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="max-w-md mx-auto space-y-8">
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300">
@@ -183,27 +219,6 @@ export default function ProfilePage() {
                         Manage your account information
                     </p>
                 </div>
-
-                {message.text && (
-                    <div className={`rounded-md p-4 animate-fade-in ${message.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                        <div className="flex">
-                            <div className="flex-shrink-0">
-                                {message.type === 'success' ? (
-                                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                ) : (
-                                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                    </svg>
-                                )}
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium">{message.text}</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Name Update Form */}
                 <div className="bg-slate-800/60 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-purple-500/20">
