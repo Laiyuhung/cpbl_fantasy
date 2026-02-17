@@ -24,8 +24,9 @@ export async function POST(request) {
             .select();
 
         if (error) {
-            console.error('[CPBL Schedule API] Insert Error:', error);
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+            console.error('[CPBL Schedule API] Insert Error:', JSON.stringify(error, null, 2));
+            console.error('Payload was:', JSON.stringify(schedules, null, 2));
+            return NextResponse.json({ success: false, error: error.message || 'Unknown DB Error', details: error }, { status: 500 });
         }
 
         return NextResponse.json({ success: true, count: data.length });
