@@ -57,3 +57,31 @@ export async function GET(request) {
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function PUT(request) {
+    try {
+        const body = await request.json();
+        const { uuid, updates } = body;
+
+        if (!uuid || !updates) {
+            return NextResponse.json({ success: false, error: 'Missing uuid or updates' }, { status: 400 });
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('cpbl_schedule_2026')
+            .update(updates)
+            .eq('uuid', uuid)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('[CPBL Schedule API] Update Error:', error);
+            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, data });
+    } catch (error) {
+        console.error('[CPBL Schedule API] Server Error:', error);
+        return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+    }
+}

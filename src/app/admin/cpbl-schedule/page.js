@@ -19,9 +19,12 @@ export default function CpblScheduleAdmin() {
 
     // Existing Schedule (Sidebar)
     const [existingSchedule, setExistingSchedule] = useState([]);
+    const [editingId, setEditingId] = useState(null); // UUID of game being edited
+    const [editForm, setEditForm] = useState({}); // Form data for editing
 
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
 
     // Teams List
@@ -31,13 +34,12 @@ export default function CpblScheduleAdmin() {
     ];
 
     const teamColors = {
-        '統一獅': 'text-orange-400',       // Orange
-        '中信兄弟': 'text-yellow-400',     // Yellow
-        '樂天桃猿': 'text-red-400',        // Wine Red / Maroon (using standard red-400/500 usually fits, or custom hex if needed)
-        // User said "Wine Red", maybe 'text-rose-500' or similar? Let's try 'text-red-400' for now as it pops on dark.
-        '富邦悍將': 'text-blue-400',       // Blue
-        '味全龍': 'text-red-500',          // Red
-        '台鋼雄鷹': 'text-green-500',      // Dark Green
+        '統一獅': 'text-orange-400',
+        '中信兄弟': 'text-yellow-400',
+        '樂天桃猿': 'text-red-400',
+        '富邦悍將': 'text-blue-400',
+        '味全龍': 'text-red-500',
+        '台鋼雄鷹': 'text-green-500',
     };
 
     // --- Data Fetching ---
@@ -86,14 +88,12 @@ export default function CpblScheduleAdmin() {
             gameDate.setDate(gameDate.getDate() + i);
             const dateStr = gameDate.toISOString().split('T')[0];
 
-            // Use the day of the week to guess time (e.g. Sat/Sun = 17:05)
-            // 0 = Sunday, 6 = Saturday
             const day = gameDate.getDay();
             let defaultTime = config.time;
             if (day === 0 || day === 6) {
-                defaultTime = '17:05'; // Weekend default
+                defaultTime = '17:05';
             } else {
-                defaultTime = '18:35'; // Weekday default (from config)
+                defaultTime = '18:35';
             }
 
             generatedGames.push({
@@ -134,7 +134,6 @@ export default function CpblScheduleAdmin() {
 
             if (data.success) {
                 setMessage(`Successfully inserted ${data.count} games!`);
-                // Prepare for next series:
                 const lastGame = games[games.length - 1];
                 const nextNo = parseInt(lastGame.game_no) + 1;
 
@@ -142,8 +141,8 @@ export default function CpblScheduleAdmin() {
                     ...prev,
                     startGameNo: nextNo,
                 }));
-                setGames([]); // Go back to config mode
-                fetchSchedule(); // Refresh sidebar
+                setGames([]);
+                fetchSchedule();
             } else {
                 setMessage(`Error: ${data.error}`);
             }
@@ -156,12 +155,53 @@ export default function CpblScheduleAdmin() {
         }
     };
 
+    // --- Sidebar Editing Handlers ---
+
+    const startEditing = (game) => {
+        setEditingId(game.uuid);
+        setEditForm({ ...game });
+    };
+
+    const cancelEditing = () => {
+        setEditingId(null);
+        setEditForm({});
+    };
+
+    const handleEditChange = (field, value) => {
+        setEditForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    const saveEdit = async () => {
+        setSaving(true);
+        try {
+            const res = await fetch('/api/admin/cpbl-schedule', {
+                method: 'PUT', // We added PUT support to the API
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uuid: editingId, updates: editForm })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                // Update local state to reflect change without full refresh
+                setExistingSchedule(prev => prev.map(g => g.uuid === editingId ? { ...g, ...editForm } : g));
+                setEditingId(null);
+            } else {
+                alert(`Update failed: ${data.error}`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Update failed');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     // --- Render ---
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-4 md:p-8 flex flex-col md:flex-row gap-8">
 
-            {/* MAIN CONTENT (Insert Form) */}
+            {/* MAIN CONTENT (Insert Form) - Left Side */}
             <div className="flex-1 max-w-4xl">
                 <h1 className="text-3xl font-bold mb-6 text-purple-400">CPBL Schedule Bulk Insert</h1>
 
@@ -360,8 +400,8 @@ export default function CpblScheduleAdmin() {
                                 onClick={handleSubmit}
                                 disabled={loading}
                                 className={`w-full py-4 text-lg rounded-lg font-bold text-white transition-all duration-200 shadow-xl ${loading
-                                    ? 'bg-purple-500/50 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transform hover:-translate-y-1'
+                                        ? 'bg-purple-500/50 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transform hover:-translate-y-1'
                                     }`}
                             >
                                 {loading ? 'Inserting Games...' : `Insert All ${games.length} Games`}
@@ -371,8 +411,8 @@ export default function CpblScheduleAdmin() {
                 )}
             </div>
 
-            {/* SIDEBAR (Existing Schedule) */}
-            <div className="w-full md:w-80 bg-slate-800 p-4 rounded-xl border border-slate-700 h-fit max-h-[calc(100vh-2rem)] overflow-y-auto">
+            {/* SIDEBAR (Existing Schedule) - Right Side */}
+            <div className="w-full md:w-96 bg-slate-800 p-4 rounded-xl border border-slate-700 h-fit max-h-[calc(100vh-2rem)] overflow-y-auto ml-auto">
                 <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-700">
                     <h3 className="text-lg font-bold text-white">Recent Games</h3>
                     <button
@@ -389,23 +429,117 @@ export default function CpblScheduleAdmin() {
                 ) : (
                     <div className="space-y-3">
                         {existingSchedule.map((game) => (
-                            <div key={game.uuid || game.id} className="bg-slate-700/50 p-3 rounded border border-slate-600 hover:bg-slate-700 transition-colors">
-                                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                                    <span>#{game.game_no}</span>
-                                    <span>{game.date} {game.time}</span>
-                                </div>
-                                <div className="flex justify-between items-center font-medium text-sm">
-                                    <span className={teamColors[game.away] || 'text-slate-200'}>
-                                        {game.away}
-                                    </span>
-                                    <span className="text-slate-500 text-xs">@</span>
-                                    <span className={teamColors[game.home] || 'text-slate-200'}>
-                                        {game.home}
-                                    </span>
-                                </div>
-                                <div className="text-xs text-slate-500 mt-1 truncate">
-                                    {game.stadium}
-                                </div>
+                            <div key={game.uuid || game.id} className="bg-slate-700/50 p-3 rounded border border-slate-600 hover:bg-slate-700 transition-colors relative group">
+                                {editingId === game.uuid ? (
+                                    // EDIT MODE
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="number"
+                                                className="w-16 bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                value={editForm.game_no}
+                                                onChange={(e) => handleEditChange('game_no', e.target.value)}
+                                            />
+                                            <input
+                                                type="date"
+                                                className="flex-1 bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                value={editForm.date}
+                                                onChange={(e) => handleEditChange('date', e.target.value)}
+                                            />
+                                            <input
+                                                type="time"
+                                                className="w-20 bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                value={editForm.time}
+                                                onChange={(e) => handleEditChange('time', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <select
+                                                className="flex-1 bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                value={editForm.away}
+                                                onChange={(e) => handleEditChange('away', e.target.value)}
+                                            >
+                                                {teams.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                            <span className="text-xs self-center">@</span>
+                                            <select
+                                                className="flex-1 bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                value={editForm.home}
+                                                onChange={(e) => handleEditChange('home', e.target.value)}
+                                            >
+                                                {teams.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="flex gap-2 text-xs text-slate-300 items-center">
+                                            <label>Postponed:</label>
+                                            <input
+                                                type="checkbox"
+                                                checked={editForm.is_postponed || false}
+                                                onChange={(e) => handleEditChange('is_postponed', e.target.checked)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                value={editForm.stadium}
+                                                onChange={(e) => handleEditChange('stadium', e.target.value)}
+                                                placeholder="Stadium"
+                                            />
+                                        </div>
+                                        <div className="flex gap-2 justify-end mt-2">
+                                            <button
+                                                onClick={cancelEditing}
+                                                className="px-2 py-1 text-xs bg-slate-600 rounded hover:bg-slate-500"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={saveEdit}
+                                                disabled={saving}
+                                                className="px-2 py-1 text-xs bg-green-600 rounded hover:bg-green-500 text-white font-bold"
+                                            >
+                                                {saving ? '...' : 'Save'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    // VIEW MODE
+                                    <>
+                                        <div className="flex justify-between text-xs text-slate-400 mb-1">
+                                            <span>#{game.game_no}</span>
+                                            <div className="flex gap-2">
+                                                <span>{game.date} {game.time}</span>
+                                                {/* Edit Button (Visible on Hover) */}
+                                                <button
+                                                    onClick={() => startEditing(game)}
+                                                    className="opacity-0 group-hover:opacity-100 text-purple-400 hover:text-purple-300 transition-opacity"
+                                                >
+                                                    Edit
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center font-medium text-sm">
+                                            <span className={`flex-1 text-left ${teamColors[game.away] || 'text-slate-200'}`}>
+                                                {game.away}
+                                            </span>
+                                            <span className="text-slate-500 text-xs px-2">@</span>
+                                            <span className={`flex-1 text-right ${teamColors[game.home] || 'text-slate-200'}`}>
+                                                {game.home}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center mt-1">
+                                            <div className="text-xs text-slate-500 truncate max-w-[150px]">
+                                                {game.stadium}
+                                            </div>
+                                            {game.is_postponed && (
+                                                <span className="text-xs bg-red-900/50 text-red-300 px-1.5 py-0.5 rounded border border-red-800">
+                                                    Postponed
+                                                </span>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>
