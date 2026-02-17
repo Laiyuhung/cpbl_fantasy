@@ -137,7 +137,7 @@ export default function HomePage() {
                                             (league.stats.rank % 10 === 1) ? 'st' :
                                               (league.stats.rank % 10 === 2) ? 'nd' :
                                                 (league.stats.rank % 10 === 3) ? 'rd' : 'th'
-                                        } place
+                                        }
                                       </span>
                                     </div>
                                   ) : (
@@ -152,24 +152,24 @@ export default function HomePage() {
                             {/* Right: Current Matchup */}
                             <div>
                               {league.matchup ? (
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Week {league.matchup.week} Matchup
-                                  </span>
+                                <div className="flex flex-col justify-center h-full gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-bold text-slate-500 uppercase">vs</span>
+                                    <span className="text-sm font-bold text-white truncate max-w-[140px]" title={league.matchup.opponentName}>
+                                      {league.matchup.opponentName}
+                                    </span>
+                                  </div>
                                   <div className="flex items-center gap-2">
-                                    <span className={`text-lg font-black ${league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' :
-                                      league.matchup.myScore < league.matchup.opponentScore ? 'text-red-400' : 'text-slate-300'
+                                    <span className={`text-xl font-black ${league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' :
+                                        league.matchup.myScore < league.matchup.opponentScore ? 'text-red-400' : 'text-slate-300'
                                       }`}>
                                       {league.matchup.myScore}
                                     </span>
-                                    <span className="text-xs text-slate-500 font-bold">vs</span>
-                                    <span className="text-lg font-black text-slate-400">
+                                    <span className="text-sm font-bold text-slate-500">:</span>
+                                    <span className="text-xl font-black text-slate-400">
                                       {league.matchup.opponentScore}
                                     </span>
                                   </div>
-                                  <span className="text-xs text-slate-400 truncate max-w-[120px]" title={league.matchup.opponentName}>
-                                    @ {league.matchup.opponentName}
-                                  </span>
                                 </div>
                               ) : (
                                 <div className="flex flex-col items-end justify-end h-full">

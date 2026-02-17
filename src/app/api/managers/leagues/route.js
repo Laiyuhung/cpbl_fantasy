@@ -104,12 +104,14 @@ export async function POST(request) {
 
         // Fetch ALL matchups for this user to decide which one to show
         const { data: userMatchups } = await supabase
-          .from('matchups')
+          .from('league_matchups')
           .select(`
                 score_a,
                 score_b,
                 manager_id_a,
                 manager_id_b,
+                winner_manager_id,
+                is_tie,
                 week_number
             `)
           .eq('league_id', leagueId)
