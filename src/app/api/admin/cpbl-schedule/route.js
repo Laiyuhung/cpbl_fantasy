@@ -36,3 +36,24 @@ export async function POST(request) {
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function GET(request) {
+    try {
+        // Fetch recent schedule items, ordered by game_no desc to see what's newly added
+        const { data, error } = await supabaseAdmin
+            .from('cpbl_schedule_2026')
+            .select('*')
+            .order('game_no', { ascending: false })
+            .limit(50);
+
+        if (error) {
+            console.error('[CPBL Schedule API] Fetch Error:', error);
+            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, data });
+    } catch (error) {
+        console.error('[CPBL Schedule API] Server Error:', error);
+        return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+    }
+}

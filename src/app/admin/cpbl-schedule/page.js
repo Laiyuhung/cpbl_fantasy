@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function CpblScheduleAdmin() {
     // Stage 1: Series Configuration
@@ -17,7 +17,11 @@ export default function CpblScheduleAdmin() {
     // Stage 2: Generated Games (Editable)
     const [games, setGames] = useState([]);
 
+    // Existing Schedule (Sidebar)
+    const [existingSchedule, setExistingSchedule] = useState([]);
+
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
     const [message, setMessage] = useState('');
 
     // Teams List
@@ -25,6 +29,26 @@ export default function CpblScheduleAdmin() {
         '統一獅', '中信兄弟', '樂天桃猿',
         '富邦悍將', '味全龍', '台鋼雄鷹'
     ];
+
+    // --- Data Fetching ---
+    const fetchSchedule = async () => {
+        setFetching(true);
+        try {
+            const res = await fetch('/api/admin/cpbl-schedule');
+            const data = await res.json();
+            if (data.success) {
+                setExistingSchedule(data.data || []);
+            }
+        } catch (err) {
+            console.error('Failed to fetch schedule:', err);
+        } finally {
+            setFetching(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSchedule();
+    }, []);
 
     // --- Handlers ---
 
@@ -59,17 +83,13 @@ export default function CpblScheduleAdmin() {
             if (day === 0 || day === 6) {
                 defaultTime = '17:05'; // Weekend default
             } else {
-                defaultTime = '18:35'; // Weekday default (from config, usually)
+                defaultTime = '18:35'; // Weekday default (from config)
             }
-            // Ideally use user input config.time as base, but let's be smart if user didn't change it from default
-            // If user explicitly set something else, respect it? 
-            // Let's just use config.time as the base default for all, user can edit.
-            // Actually, let's stick to config.time to avoid confusion.
 
             generatedGames.push({
                 date: dateStr,
                 game_no: startNo + i,
-                time: config.time,
+                time: defaultTime,
                 home: config.homeTeam,
                 away: config.awayTeam,
                 stadium: config.stadium
@@ -105,18 +125,15 @@ export default function CpblScheduleAdmin() {
             if (data.success) {
                 setMessage(`Successfully inserted ${data.count} games!`);
                 // Prepare for next series:
-                // Start Date = Last Date + 1? Or just clear?
-                // Start Game No = Last Game No + 1
                 const lastGame = games[games.length - 1];
                 const nextNo = parseInt(lastGame.game_no) + 1;
 
                 setConfig(prev => ({
                     ...prev,
                     startGameNo: nextNo,
-                    // Keep teams/stadium as they might play another series nearby? 
-                    // Or keep them.
                 }));
                 setGames([]); // Go back to config mode
+                fetchSchedule(); // Refresh sidebar
             } else {
                 setMessage(`Error: ${data.error}`);
             }
@@ -132,8 +149,10 @@ export default function CpblScheduleAdmin() {
     // --- Render ---
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white p-8">
-            <div className="max-w-4xl mx-auto">
+        <div className="min-h-screen bg-slate-900 text-white p-4 md:p-8 flex flex-col md:flex-row gap-8">
+
+            {/* MAIN CONTENT (Insert Form) */}
+            <div className="flex-1 max-w-4xl">
                 <h1 className="text-3xl font-bold mb-6 text-purple-400">CPBL Schedule Bulk Insert</h1>
 
                 {message && (
@@ -331,8 +350,8 @@ export default function CpblScheduleAdmin() {
                                 onClick={handleSubmit}
                                 disabled={loading}
                                 className={`w-full py-4 text-lg rounded-lg font-bold text-white transition-all duration-200 shadow-xl ${loading
-                                    ? 'bg-purple-500/50 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transform hover:-translate-y-1'
+                                        ? 'bg-purple-500/50 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transform hover:-translate-y-1'
                                     }`}
                             >
                                 {loading ? 'Inserting Games...' : `Insert All ${games.length} Games`}
@@ -341,6 +360,48 @@ export default function CpblScheduleAdmin() {
                     </div>
                 )}
             </div>
+
+            {/* SIDEBAR (Existing Schedule) */}
+            <div className="w-full md:w-80 bg-slate-800 p-4 rounded-xl border border-slate-700 h-fit max-h-[calc(100vh-2rem)] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-700">
+                    <h3 className="text-lg font-bold text-white">Recent Games</h3>
+                    <button
+                        onClick={fetchSchedule}
+                        className="text-xs text-blue-400 hover:text-blue-300"
+                        disabled={fetching}
+                    >
+                        {fetching ? '...' : 'Refresh'}
+                    </button>
+                </div>
+
+                {existingSchedule.length === 0 ? (
+                    <p className="text-slate-500 text-sm text-center py-4">No games found.</p>
+                ) : (
+                    <div className="space-y-3">
+                        {existingSchedule.map((game) => (
+                            <div key={game.uuid || game.id} className="bg-slate-700/50 p-3 rounded border border-slate-600 hover:bg-slate-700 transition-colors">
+                                <div className="flex justify-between text-xs text-slate-400 mb-1">
+                                    <span>#{game.game_no}</span>
+                                    <span>{game.date} {game.time}</span>
+                                </div>
+                                <div className="flex justify-between items-center font-medium text-sm">
+                                    <span className={game.away === '統一獅' ? 'text-orange-400' : 'text-slate-200'}>
+                                        {game.away}
+                                    </span>
+                                    <span className="text-slate-500 text-xs">@</span>
+                                    <span className={game.home === '統一獅' ? 'text-orange-400' : 'text-slate-200'}>
+                                        {game.home}
+                                    </span>
+                                </div>
+                                <div className="text-xs text-slate-500 mt-1 truncate">
+                                    {game.stadium}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
         </div>
     );
 }
