@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import supabaseAdmin from '@/lib/supabaseAdmin';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 export async function PUT(request) {
     try {
@@ -37,14 +37,13 @@ export async function PUT(request) {
             .from('managers')
             .update({
                 password: hashedPassword,
-                updated_at: new Date().toISOString(),
                 // verification_token: null // Optional: Invalidate any tokens if you have session management logic
             })
             .eq('manager_id', user_id);
 
         if (updateError) {
             console.error('Error updating password:', updateError);
-            return NextResponse.json({ error: 'Failed to update password' }, { status: 500 });
+            return NextResponse.json({ error: 'Failed to update password', details: updateError.message, code: updateError.code }, { status: 500 });
         }
 
         return NextResponse.json({ success: true, message: 'Password updated successfully. Please log in again.' });

@@ -54,8 +54,7 @@ export default function ProfilePage() {
         fetchUser();
     }, [router]);
 
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault();
+    const handleProfileUpdate = async (updatePayload) => {
         setSaving(true);
         setMessage({ type: '', text: '' });
 
@@ -66,12 +65,12 @@ export default function ProfilePage() {
             const res = await fetch('/api/user/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: uid, name, email })
+                body: JSON.stringify({ user_id: uid, ...updatePayload })
             });
             const data = await res.json();
 
             if (data.success) {
-                setMessage({ type: 'success', text: 'Profile updated successfully!' });
+                setMessage({ type: 'success', text: data.message || 'Updated successfully!' });
                 // Dispatch event to update Navbar
                 window.dispatchEvent(new Event('auth-changed'));
             } else {
@@ -134,19 +133,19 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md mx-auto space-y-8">
                 <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300">
                         Profile Settings
                     </h2>
-                    <p className="mt-2 text-center text-sm text-slate-400">
+                    <p className="mt-2 text-center text-sm text-purple-200">
                         Manage your account information
                     </p>
                 </div>
 
                 {message.text && (
-                    <div className={`rounded-md p-4 ${message.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                    <div className={`rounded-md p-4 animate-fade-in ${message.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                         <div className="flex">
                             <div className="flex-shrink-0">
                                 {message.type === 'success' ? (
@@ -166,12 +165,19 @@ export default function ProfilePage() {
                     </div>
                 )}
 
-                <div className="bg-slate-900 shadow rounded-lg p-6 border border-slate-800">
-                    <h3 className="text-lg leading-6 font-medium text-white mb-4">Basic Information</h3>
-                    <form onSubmit={handleProfileUpdate} className="space-y-6">
+                {/* Name Update Form */}
+                <div className="bg-slate-800/60 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-purple-500/20">
+                    <h3 className="text-lg leading-6 font-bold text-white mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        Update Name
+                    </h3>
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        handleProfileUpdate({ name });
+                    }} className="space-y-4">
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-slate-300">
-                                Name
+                                Display Name
                             </label>
                             <input
                                 id="name"
@@ -180,13 +186,32 @@ export default function ProfilePage() {
                                 required
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-700 rounded-md shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-slate-800 text-white sm:text-sm"
+                                className="mt-1 block w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-white sm:text-sm transition-all"
                             />
                         </div>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-all"
+                        >
+                            {saving ? 'Saving...' : 'Update Name'}
+                        </button>
+                    </form>
+                </div>
 
+                {/* Email Update Form */}
+                <div className="bg-slate-800/60 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-purple-500/20">
+                    <h3 className="text-lg leading-6 font-bold text-white mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                        Update Email
+                    </h3>
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        handleProfileUpdate({ email });
+                    }} className="space-y-4">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-slate-300">
-                                Email address
+                                Email Address
                             </label>
                             <input
                                 id="email"
@@ -195,28 +220,29 @@ export default function ProfilePage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-700 rounded-md shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-slate-800 text-white sm:text-sm"
+                                className="mt-1 block w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white sm:text-sm transition-all"
                             />
-                            <p className="mt-1 text-xs text-slate-500">
-                                Note: Changing your email will require verification. Please check your inbox and spam folder.
+                            <p className="mt-2 text-xs text-slate-400 bg-slate-900/50 p-2 rounded border border-slate-700/50">
+                                ℹ️ Changing email requires verification. A limit of 5 verification emails per day applies.
                             </p>
                         </div>
-
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                            >
-                                {saving ? 'Saving...' : 'Update Profile'}
-                            </button>
-                        </div>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all"
+                        >
+                            {saving ? 'Saving...' : 'Update Email'}
+                        </button>
                     </form>
                 </div>
 
-                <div className="bg-slate-900 shadow rounded-lg p-6 border border-slate-800">
-                    <h3 className="text-lg leading-6 font-medium text-white mb-4">Change Password</h3>
-                    <form onSubmit={handlePasswordChange} className="space-y-6">
+                {/* Password Change Form */}
+                <div className="bg-slate-800/60 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-purple-500/20">
+                    <h3 className="text-lg leading-6 font-bold text-white mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        Change Password
+                    </h3>
+                    <form onSubmit={handlePasswordChange} className="space-y-4">
                         <div>
                             <label htmlFor="current-password" className="block text-sm font-medium text-slate-300">
                                 Current Password
@@ -228,7 +254,7 @@ export default function ProfilePage() {
                                 required
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
-                                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-700 rounded-md shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-slate-800 text-white sm:text-sm"
+                                className="mt-1 block w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-white sm:text-sm transition-all"
                             />
                         </div>
 
@@ -244,7 +270,7 @@ export default function ProfilePage() {
                                 minLength={6}
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-700 rounded-md shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-slate-800 text-white sm:text-sm"
+                                className="mt-1 block w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-white sm:text-sm transition-all"
                             />
                         </div>
 
@@ -260,7 +286,7 @@ export default function ProfilePage() {
                                 minLength={6}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-700 rounded-md shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-slate-800 text-white sm:text-sm"
+                                className="mt-1 block w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-white sm:text-sm transition-all"
                             />
                         </div>
 
@@ -268,7 +294,7 @@ export default function ProfilePage() {
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-all"
                             >
                                 {saving ? 'Updating...' : 'Change Password'}
                             </button>

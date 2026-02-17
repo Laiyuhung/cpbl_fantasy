@@ -37,14 +37,14 @@ export async function PUT(request) {
         const body = await request.json();
         const { user_id, name, email } = body;
 
-        if (!user_id || !name || !email) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        if (!user_id) {
+            return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
         }
 
-        // 1. Fetch current user data to check if email changed
+        // 1. Fetch current user data
         const { data: currentUser, error: fetchError } = await supabaseAdmin
             .from('managers')
-            .select('email_address')
+            .select('name, email_address, verification_email_sent_count, last_verification_email_sent_at')
             .eq('manager_id', user_id)
             .single();
 
@@ -53,16 +53,18 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const emailChanged = currentUser.email_address !== email;
-        const updateData = {
-            name,
-            updated_at: new Date().toISOString()
-        };
-
+        const updateData = {};
         let message = 'Profile updated successfully';
+        let emailUpdateSuccess = false;
 
-        if (emailChanged) {
-            // Check if new email is already taken
+        // --- Handle Name Update ---
+        if (name && name !== currentUser.name) {
+            updateData.name = name;
+        }
+
+        // --- Handle Email Update ---
+        if (email && email !== currentUser.email_address) {
+            // Check availability
             const { data: existingUsers, error: checkError } = await supabaseAdmin
                 .from('managers')
                 .select('manager_id')
@@ -76,6 +78,27 @@ export async function PUT(request) {
                 return NextResponse.json({ error: 'Email address already in use' }, { status: 409 });
             }
 
+            // --- Rate Limiting Logic ---
+            const taiwanTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' });
+            const nowInTaiwan = new Date(taiwanTime);
+
+            let currentCount = currentUser.verification_email_sent_count || 0;
+            const lastSent = currentUser.last_verification_email_sent_at ? new Date(new Date(currentUser.last_verification_email_sent_at).toLocaleString('en-US', { timeZone: 'Asia/Taipei' })) : null;
+
+            // Check if last sent was "today" in Taiwan
+            const isSameDay = lastSent &&
+                lastSent.getFullYear() === nowInTaiwan.getFullYear() &&
+                lastSent.getMonth() === nowInTaiwan.getMonth() &&
+                lastSent.getDate() === nowInTaiwan.getDate();
+
+            if (!isSameDay) {
+                currentCount = 0;
+            }
+
+            if (currentCount >= 5) {
+                return NextResponse.json({ error: 'Daily email verification limit reached (5/day). Please try again tomorrow.' }, { status: 429 });
+            }
+
             // Prepare verification data
             const verification_token = crypto.randomBytes(32).toString('hex');
             const verification_token_expires = new Date();
@@ -85,20 +108,25 @@ export async function PUT(request) {
             updateData.email_verified = false;
             updateData.verification_token = verification_token;
             updateData.verification_token_expires = verification_token_expires.toISOString();
+            updateData.verification_email_sent_count = currentCount + 1;
+            updateData.last_verification_email_sent_at = new Date().toISOString(); // Store UTC for timestamp
 
             message = 'Profile updated. Please verify your new email address (check inbox and spam).';
+            emailUpdateSuccess = true;
 
             // Send Verification Email
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://cpblfantasy.vercel.app';
             const verificationLink = `${baseUrl}/verify-email?token=${verification_token}`;
 
             try {
-                await sendVerificationEmail(email, verificationLink, name);
+                await sendVerificationEmail(email, verificationLink, name || currentUser.name || 'Manager');
             } catch (emailError) {
                 console.error('Failed to send verification email:', emailError);
-                // Continue with update even if email fails, but warn user? 
-                // Ideally we rollback or warn, but for now we proceed.
             }
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json({ success: true, message: 'No changes made.' });
         }
 
         const { error } = await supabaseAdmin
