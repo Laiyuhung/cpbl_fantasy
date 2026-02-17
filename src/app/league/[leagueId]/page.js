@@ -852,8 +852,8 @@ export default function LeaguePage() {
                                 <div className="text-lg font-black text-white group-hover:text-purple-300 transition-colors leading-tight">
                                   {managerA?.nickname || 'Unknown'}
                                 </div>
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
-                                  {managerA?.managers?.name || 'Unknown'} | {recordA || '0-0-0'}
+                                <div className="text-xs font-bold text-yellow-400 uppercase tracking-wider mt-1">
+                                  {recordA || '0-0-0'}
                                 </div>
                               </div>
                             </div>
@@ -893,8 +893,8 @@ export default function LeaguePage() {
                                 <div className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors leading-tight">
                                   {managerB?.nickname || 'Unknown'}
                                 </div>
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
-                                  {recordB || '0-0-0'} | {managerB?.managers?.name || 'Unknown'}
+                                <div className="text-xs font-bold text-yellow-400 uppercase tracking-wider mt-1">
+                                  {recordB || '0-0-0'}
                                 </div>
                               </div>
                             </div>
@@ -975,7 +975,17 @@ export default function LeaguePage() {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="font-bold text-white">{team.nickname}</div>
+                            <div className="flex flex-col">
+                              <span className="font-black text-white text-base leading-tight">
+                                {(() => {
+                                  const member = getManagerDetails(team.manager_id);
+                                  return member?.managers?.name || 'Unknown';
+                                })()}
+                              </span>
+                              <span className="text-xs font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                                {team.nickname}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span className="font-mono text-cyan-300 font-semibold">{team.record_display}</span>
@@ -1016,7 +1026,17 @@ export default function LeaguePage() {
                             }`}>
                             {team.rank}
                           </span>
-                          <div className="font-bold text-white">{team.nickname}</div>
+                          <div className="flex flex-col">
+                            <span className="font-black text-white text-base leading-tight">
+                              {(() => {
+                                const member = getManagerDetails(team.manager_id);
+                                return member?.managers?.name || 'Unknown';
+                              })()}
+                            </span>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                              {team.nickname}
+                            </span>
+                          </div>
                         </div>
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
                           team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
