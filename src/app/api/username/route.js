@@ -19,5 +19,18 @@ export async function POST() {
     return Response.json({ error: '找不到帳號' }, { status: 404 })
   }
 
-  return Response.json({ name: data.name, email_verified: data.email_verified })
+  // Check if user is an admin
+  const { data: adminData } = await supabase
+    .from('admin')
+    .select('manager_id')
+    .eq('manager_id', user_id)
+    .single()
+
+  const is_admin = !!adminData
+
+  return Response.json({
+    name: data.name,
+    email_verified: data.email_verified,
+    is_admin
+  })
 }

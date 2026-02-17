@@ -9,6 +9,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [leagues, setLeagues] = useState([])
   const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false)
@@ -79,6 +80,7 @@ export default function Navbar() {
         if (data?.name) {
           setUserId(uid)
           setUserName(data.name)
+          setIsAdmin(data.is_admin || false)
           fetchLeagues(uid)
         } else {
           router.push('/login')
@@ -107,16 +109,19 @@ export default function Navbar() {
           if (data?.name) {
             setUserId(uid)
             setUserName(data.name)
+            setIsAdmin(data.is_admin || false)
             fetchLeagues(uid)
           } else {
             setUserId('')
             setUserName('')
+            setIsAdmin(false)
             setLeagues([])
           }
         })
         .catch(() => {
           setUserId('')
           setUserName('')
+          setIsAdmin(false)
           setLeagues([])
         })
     }
@@ -155,6 +160,7 @@ export default function Navbar() {
     // 在登出時清除 userId 並跳轉到登錄頁面
     setUserId('')  // 更新 userId
     setUserName('')  // 清空用戶名稱
+    setIsAdmin(false)
     setLeagues([])  // 清空 leagues
     localStorage.removeItem('user_id')  // 清除 localStorage 中的 user_id
     router.push('/login')
@@ -317,9 +323,9 @@ export default function Navbar() {
           {userName && (
             <div className="relative group">
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-500/20">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-xs font-bold shadow-lg shadow-blue-500/20">
                   {userName.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm font-medium">{userName}</span>
@@ -339,6 +345,17 @@ export default function Navbar() {
                   </svg>
                   <span className="text-sm font-medium">Profile Settings</span>
                 </Link>
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-blue-500/20 transition-colors border-b border-white/5"
+                  >
+                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    <span className="text-sm font-medium">Admin Dashboard</span>
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-red-300 hover:text-red-200 transition-colors text-left"
@@ -459,6 +476,18 @@ export default function Navbar() {
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-500/30 bg-slate-900/50">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 mb-2 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-all duration-200 font-medium border border-purple-500/30"
+                  onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/admin'; }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Admin Dashboard
+                </Link>
+              )}
               <button onClick={handleLogout} className="w-full px-4 py-3 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all duration-200 font-medium border border-red-500/30">
                 Logout
               </button>

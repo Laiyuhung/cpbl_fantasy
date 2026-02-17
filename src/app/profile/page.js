@@ -28,9 +28,9 @@ export default function ProfilePage() {
     // Messages
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    // Auto-dismiss success messages
+    // Auto-dismiss all messages
     useEffect(() => {
-        if (message.text && message.type === 'success') {
+        if (message.text) {
             const timer = setTimeout(() => {
                 setMessage({ type: '', text: '' });
             }, 3000);
