@@ -55,8 +55,9 @@ export async function POST(request) {
       let stats = null;
       let currentMatchup = null;
 
-      // Only fetch stats and matchups if the league is active (in season or playoffs)
-      if (status === 'in season' || status === 'post-draft & pre-season' || status === 'playoffs') {
+      const activeStatuses = ['in season', 'post-draft & pre-season', 'playoffs', 'post-season', 'finished'];
+
+      if (activeStatuses.includes(status)) {
         // Fetch User's Standing
         const { data: standing } = await supabase
           .from('v_league_standings')
@@ -101,38 +102,65 @@ export async function POST(request) {
           }
         }
 
-        // Fetch Current Matchup
-        const { data: matchup } = await supabase
+        // Fetch ALL matchups for this user to decide which one to show
+        const { data: userMatchups } = await supabase
           .from('matchups')
           .select(`
                 score_a,
                 score_b,
                 manager_id_a,
-                manager_id_b
+                manager_id_b,
+                week_number
             `)
           .eq('league_id', leagueId)
-          .eq('week_number', currentWeekNumber)
           .or(`manager_id_a.eq.${user_id},manager_id_b.eq.${user_id}`)
-          .single();
+          .order('week_number', { ascending: false }); // Latest first
 
-        if (matchup) {
+        let targetMatchupData = null;
+
+        if (userMatchups && userMatchups.length > 0) {
+          if (status === 'post-draft & pre-season') {
+            // Show Week 1
+            targetMatchupData = userMatchups.find(m => m.week_number === 1);
+          } else if (status === 'in season') {
+            // Show Current Week
+            targetMatchupData = userMatchups.find(m => m.week_number === currentWeekNumber);
+          } else if (status === 'playoffs' || status === 'post-season') {
+            // Show Current Week if exists, otherwise assume eliminated and show Latest
+            targetMatchupData = userMatchups.find(m => m.week_number === currentWeekNumber) || userMatchups[0];
+          } else if (status === 'finished') {
+            // Show Latest (Last played)
+            targetMatchupData = userMatchups[0];
+          }
+
+          // Fallback: if in-season but no current match (e.g. bye, or error), maybe show latest?
+          // For now, adhere to "in season -> current week" strictness, unless missing then maybe null is correct (e.g. bye).
+        }
+
+        if (targetMatchupData) {
           // Identify opponent
-          const isManagerA = matchup.manager_id_a === user_id;
-          const opponentId = isManagerA ? matchup.manager_id_b : matchup.manager_id_a;
+          const isManagerA = targetMatchupData.manager_id_a === user_id;
+          const opponentId = isManagerA ? targetMatchupData.manager_id_b : targetMatchupData.manager_id_a;
 
           // Get opponent nickname
-          const { data: opponentMember } = await supabase
-            .from('league_members')
-            .select('nickname')
-            .eq('league_id', leagueId)
-            .eq('manager_id', opponentId)
-            .single();
+          let opponentName = 'Unknown';
+          if (opponentId) {
+            const { data: opponentMember } = await supabase
+              .from('league_members')
+              .select('nickname')
+              .eq('league_id', leagueId)
+              .eq('manager_id', opponentId)
+              .single();
+            if (opponentMember) opponentName = opponentMember.nickname;
+          } else {
+            opponentName = 'Bye'; // Or leave as Unknown/Empty if needed
+          }
 
           currentMatchup = {
-            myScore: isManagerA ? (matchup.score_a || 0) : (matchup.score_b || 0),
-            opponentScore: isManagerA ? (matchup.score_b || 0) : (matchup.score_a || 0),
-            opponentName: opponentMember?.nickname || 'Unknown',
-            week: currentWeekNumber
+            myScore: isManagerA ? (targetMatchupData.score_a || 0) : (targetMatchupData.score_b || 0),
+            opponentScore: isManagerA ? (targetMatchupData.score_b || 0) : (targetMatchupData.score_a || 0),
+            opponentName: opponentName,
+            week: targetMatchupData.week_number
           };
         }
       }
@@ -144,7 +172,6 @@ export async function POST(request) {
         role: member.role,
         status: status,
         draft_time: member.league_settings?.live_draft_time,
-        season_year: 2025, // Hardcoded as it's not in DB
         stats: stats,
         matchup: currentMatchup
       };
