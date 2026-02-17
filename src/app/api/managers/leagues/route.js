@@ -120,21 +120,31 @@ export async function POST(request) {
 
         if (userMatchups && userMatchups.length > 0) {
           if (status === 'post-draft & pre-season') {
-            // Show Week 1
+            // Try Week 1
             targetMatchupData = userMatchups.find(m => m.week_number === 1);
           } else if (status === 'in season') {
-            // Show Current Week
+            // Try Current Week
             targetMatchupData = userMatchups.find(m => m.week_number === currentWeekNumber);
           } else if (status === 'playoffs' || status === 'post-season') {
-            // Show Current Week if exists, otherwise assume eliminated and show Latest
-            targetMatchupData = userMatchups.find(m => m.week_number === currentWeekNumber) || userMatchups[0];
+            // Try Current Week
+            targetMatchupData = userMatchups.find(m => m.week_number === currentWeekNumber);
           } else if (status === 'finished') {
-            // Show Latest (Last played)
+            // Show Latest (Last played) - userMatchups is ordered desc
             targetMatchupData = userMatchups[0];
           }
 
-          // Fallback: if in-season but no current match (e.g. bye, or error), maybe show latest?
-          // For now, adhere to "in season -> current week" strictness, unless missing then maybe null is correct (e.g. bye).
+          // FALLBACK: If specific logic returned nothing (e.g. bye week, or currentWeek mismatch),
+          // find the matchup closest to currentWeekNumber
+          if (!targetMatchupData) {
+            targetMatchupData = userMatchups.reduce((prev, curr) => {
+              return (Math.abs(curr.week_number - currentWeekNumber) < Math.abs(prev.week_number - currentWeekNumber) ? curr : prev);
+            });
+          }
+
+          // If still nothing (shouldn't happen if length > 0), default to latest
+          if (!targetMatchupData) {
+            targetMatchupData = userMatchups[0];
+          }
         }
 
         if (targetMatchupData) {
@@ -153,7 +163,7 @@ export async function POST(request) {
               .single();
             if (opponentMember) opponentName = opponentMember.nickname;
           } else {
-            opponentName = 'Bye'; // Or leave as Unknown/Empty if needed
+            opponentName = 'Bye';
           }
 
           currentMatchup = {

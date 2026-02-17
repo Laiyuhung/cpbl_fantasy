@@ -128,9 +128,16 @@ export default function HomePage() {
                                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Rank & Record</span>
                                   {league.stats ? (
                                     <div className="flex items-baseline gap-2">
-                                      <span className="text-2xl font-black text-yellow-400">#{league.stats.rank}</span>
-                                      <span className="text-sm font-bold text-slate-300">
-                                        ({league.stats.wins}-{league.stats.losses}-{league.stats.ties})
+                                      <span className="text-xl font-bold text-white">
+                                        {league.stats.wins}-{league.stats.losses}-{league.stats.ties}
+                                      </span>
+                                      <span className="text-sm font-medium text-slate-400">
+                                        | {league.stats.rank}{
+                                          (league.stats.rank % 100 >= 11 && league.stats.rank % 100 <= 13) ? 'th' :
+                                            (league.stats.rank % 10 === 1) ? 'st' :
+                                              (league.stats.rank % 10 === 2) ? 'nd' :
+                                                (league.stats.rank % 10 === 3) ? 'rd' : 'th'
+                                        } place
                                       </span>
                                     </div>
                                   ) : (
@@ -151,7 +158,7 @@ export default function HomePage() {
                                   </span>
                                   <div className="flex items-center gap-2">
                                     <span className={`text-lg font-black ${league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' :
-                                        league.matchup.myScore < league.matchup.opponentScore ? 'text-red-400' : 'text-slate-300'
+                                      league.matchup.myScore < league.matchup.opponentScore ? 'text-red-400' : 'text-slate-300'
                                       }`}>
                                       {league.matchup.myScore}
                                     </span>
