@@ -56,7 +56,7 @@ export async function POST(request) {
       let currentMatchup = null;
 
       // Only fetch stats and matchups if the league is active (in season or playoffs)
-      if (status === 'in season' || status === 'post-season' || status === 'playoffs') {
+      if (status === 'in season' || status === 'post-draft & pre-season' || status === 'playoffs') {
         // Fetch User's Standing
         const { data: standing } = await supabase
           .from('v_league_standings')
