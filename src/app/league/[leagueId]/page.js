@@ -1271,268 +1271,268 @@ export default function LeaguePage() {
               )}
             </div>
           </div>
+        </div>
 
-
-          {/* Right Sidebar: CPBL Schedule */}
-          <div className="hidden lg:block w-[30%] space-y-8 sticky top-8 h-fit">
-            <div className="bg-gradient-to-br from-slate-900/50 to-purple-900/20 backdrop-blur-md rounded-3xl border border-white/5 p-6 shadow-xl">
-              <h3 className="text-xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-2 h-6 bg-purple-500 rounded-full"></span>
-                CPBL Schedule
-              </h3>
-              <CpblScheduleWidget />
-            </div>
-          </div>
-
-        </div >
-        );
-  }
-
-        return (
-        <div className="p-8">
-          <div className="max-w-7xl mx-auto">
-            {/* Header Section */}
-            <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
-              <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">
-                {leagueSettings.league_name}
-              </h1>
-              <div className="flex items-center gap-4 mt-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-purple-300 font-medium">Status:</span>
-                  <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${leagueStatus === 'pre-draft' ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50' :
-                    leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
-                      leagueStatus === 'drafting now' ? 'bg-blue-500/80 text-blue-100 shadow-blue-500/50 animate-pulse' :
-                        leagueStatus === 'in season' ? 'bg-green-500/80 text-green-100 shadow-green-500/50' :
-                          leagueStatus === 'playoffs' ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50' :
-                            leagueStatus === 'finished' ? 'bg-gray-500/80 text-gray-100 shadow-gray-500/50' :
-                              'bg-gray-500/80 text-gray-100 shadow-gray-500/50'
-                    }`}>
-                    {leagueStatus === 'pre-draft' ? 'Pre-Draft' :
-                      leagueStatus === 'post-draft & pre-season' ? 'Post-Draft & Pre-Season' :
-                        leagueStatus === 'drafting now' ? 'Drafting Now' :
-                          leagueStatus === 'in season' ? 'In Season' :
-                            leagueStatus === 'playoffs' ? 'Playoffs' :
-                              leagueStatus === 'finished' ? 'Finished' :
-                                leagueStatus}
-                  </span>
-                </div>
-                {currentUserRole && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-purple-300 font-medium">Your Role:</span>
-                    <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${currentUserRole === 'Commissioner' ? 'bg-red-500/80 text-red-100 shadow-red-500/50' :
-                      currentUserRole === 'Co-Commissioner' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
-                        'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
-                      }`}>
-                      {currentUserRole}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Draft Time Section */}
-            {leagueSettings?.live_draft_time && leagueSettings?.draft_type === 'Live Draft' && (
-              <div className="mb-8 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 backdrop-blur-lg border border-indigo-500/30 rounded-2xl p-8 shadow-2xl">
-                <div className="text-center">
-                  <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-4">
-                    Draft Time
-                  </h2>
-                  <div className="text-sm text-yellow-300/90 font-bold mb-3 flex items-center justify-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <span>Even number of managers required</span>
-                    {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && !leagueSettings?.is_finalized && (
-                      <span className="ml-2 text-xs text-indigo-300/70 italic">
-                        (Go to League Settings to finalize)
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-lg text-indigo-200 mb-6">
-                    {new Date(leagueSettings.live_draft_time).toLocaleString('en-US', {
-                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true
-                    })}
-                  </div>
-
-                  {draftTimeStatus === 'passed' ? (
-                    <div className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600/80 to-pink-600/80 backdrop-blur-md px-8 py-4 rounded-full border border-red-400/50 shadow-lg shadow-red-500/30">
-                      <svg className="w-6 h-6 text-red-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-2xl font-black text-white">Time&apos;s Up!</span>
-                    </div>
-                  ) : draftTimeStatus === 'upcoming' && countdown ? (
-                    <div className="flex justify-center gap-4 flex-wrap">
-                      <div className="bg-gradient-to-br from-indigo-600/80 to-purple-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-indigo-400/30 shadow-lg shadow-indigo-500/30">
-                        <div className="text-5xl font-black text-white mb-2">{countdown.days}</div>
-                        <div className="text-sm font-bold text-indigo-200 uppercase tracking-wider">Days</div>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-purple-400/30 shadow-lg shadow-purple-500/30">
-                        <div className="text-5xl font-black text-white mb-2">{countdown.hours}</div>
-                        <div className="text-sm font-bold text-purple-200 uppercase tracking-wider">Hours</div>
-                      </div>
-                      <div className="bg-gradient-to-br from-pink-600/80 to-red-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-pink-400/30 shadow-lg shadow-pink-500/30">
-                        <div className="text-5xl font-black text-white mb-2">{countdown.minutes}</div>
-                        <div className="text-sm font-bold text-pink-200 uppercase tracking-wider">Minutes</div>
-                      </div>
-                      <div className="bg-gradient-to-br from-red-600/80 to-orange-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-red-400/30 shadow-lg shadow-red-500/30">
-                        <div className="text-5xl font-black text-white mb-2">{countdown.seconds}</div>
-                        <div className="text-sm font-bold text-red-200 uppercase tracking-wider">Seconds</div>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            )}
-
-            {/* League Members Section */}
-            <div className="mb-8 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="bg-gradient-to-r from-green-600/80 to-emerald-600/80 backdrop-blur-sm p-6 border-b border-green-400/30">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <h2 className="text-3xl font-black text-white">League Members</h2>
-                  <div className="flex items-center gap-3">
-                    {canShowInviteLink() && (
-                      <button
-                        onClick={copyInviteLink}
-                        className="relative bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 transition-all hover:shadow-lg hover:shadow-white/20 group"
-                      >
-                        <span className="text-sm font-bold text-white flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                          </svg>
-                          {showCopied ? 'Copied!' : 'Invite Link'}
-                        </span>
-                      </button>
-                    )}
-                    <div className="flex items-center gap-3 bg-white/20 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/30">
-                      <span className="text-2xl font-bold text-white">{members.length}</span>
-                      <span className="text-white/80">/</span>
-                      <span className="text-xl font-semibold text-white/90">{maxTeams}</span>
-                      <span className="text-sm text-white/70 font-medium">Teams</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6">
-                {members.length === 0 ? (
-                  <div className="text-center py-12 text-purple-300/70 text-lg">
-                    No members in this league yet
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                    {members.map((member) => (
-                      <div
-                        key={member.manager_id}
-                        className="group bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-5 hover:border-purple-400/60 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-1"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/50">
-                            {member.nickname.charAt(0).toUpperCase()}
-                          </div>
-                          {member.role && (
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${member.role === 'Commissioner' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-                              member.role === 'Co-Commissioner' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-                                'bg-blue-500/30 text-blue-300 border border-blue-500/50'
-                              }`}>
-                              {member.role === 'Commissioner' ? 'COMM' : member.role === 'Co-Commissioner' ? 'CO-COMM' : 'MEMBER'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
-                          {member.nickname}
-                        </div>
-                        <div className="text-sm text-purple-300/70 mt-1.5">
-                          {member.managers?.name || 'Unknown'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
-                <h2 className="text-3xl font-black text-white">League Schedule</h2>
-              </div>
-              <div className="p-6">
-                {scheduleData.length === 0 ? (
-                  <div className="text-center py-12 text-purple-300/70 text-lg">
-                    No schedule data available for this league
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-slate-800/80 to-slate-700/80 border-b-2 border-purple-500/50">
-                          <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
-                            Week #
-                          </th>
-                          <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
-                            Label
-                          </th>
-                          <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
-                            Type
-                          </th>
-                          <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
-                            Start Date
-                          </th>
-                          <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
-                            End Date
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {scheduleData.map((week, index) => (
-                          <tr
-                            key={week.id}
-                            className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
-                              } border-b border-purple-500/20 hover:bg-purple-500/20 transition-colors`}
-                          >
-                            <td className="px-6 py-4 font-bold text-white text-lg">
-                              Week {week.week_number}
-                            </td>
-                            <td className="px-6 py-4 text-purple-200 font-medium">
-                              {week.week_label || '-'}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${getWeekTypeColor(
-                                  week.week_type
-                                )}`}
-                              >
-                                {getWeekTypeLabel(week.week_type)}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-purple-300 font-medium">
-                              {new Date(week.week_start).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                            </td>
-                            <td className="px-6 py-4 text-purple-300 font-medium">
-                              {new Date(week.week_end).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* Right Sidebar: CPBL Schedule */}
+        <div className="hidden lg:block w-[30%] space-y-8 sticky top-8 h-fit">
+          <div className="bg-gradient-to-br from-slate-900/50 to-purple-900/20 backdrop-blur-md rounded-3xl border border-white/5 p-6 shadow-xl">
+            <h3 className="text-xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2 h-6 bg-purple-500 rounded-full"></span>
+              CPBL Schedule
+            </h3>
+            <CpblScheduleWidget />
           </div>
         </div>
-        );
+
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
+          <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">
+            {leagueSettings.league_name}
+          </h1>
+          <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-purple-300 font-medium">Status:</span>
+              <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${leagueStatus === 'pre-draft' ? 'bg-yellow-500/80 text-yellow-100 shadow-yellow-500/50' :
+                leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
+                  leagueStatus === 'drafting now' ? 'bg-blue-500/80 text-blue-100 shadow-blue-500/50 animate-pulse' :
+                    leagueStatus === 'in season' ? 'bg-green-500/80 text-green-100 shadow-green-500/50' :
+                      leagueStatus === 'playoffs' ? 'bg-purple-500/80 text-purple-100 shadow-purple-500/50' :
+                        leagueStatus === 'finished' ? 'bg-gray-500/80 text-gray-100 shadow-gray-500/50' :
+                          'bg-gray-500/80 text-gray-100 shadow-gray-500/50'
+                }`}>
+                {leagueStatus === 'pre-draft' ? 'Pre-Draft' :
+                  leagueStatus === 'post-draft & pre-season' ? 'Post-Draft & Pre-Season' :
+                    leagueStatus === 'drafting now' ? 'Drafting Now' :
+                      leagueStatus === 'in season' ? 'In Season' :
+                        leagueStatus === 'playoffs' ? 'Playoffs' :
+                          leagueStatus === 'finished' ? 'Finished' :
+                            leagueStatus}
+              </span>
+            </div>
+            {currentUserRole && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-purple-300 font-medium">Your Role:</span>
+                <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${currentUserRole === 'Commissioner' ? 'bg-red-500/80 text-red-100 shadow-red-500/50' :
+                  currentUserRole === 'Co-Commissioner' ? 'bg-orange-500/80 text-orange-100 shadow-orange-500/50' :
+                    'bg-blue-500/80 text-blue-100 shadow-blue-500/50'
+                  }`}>
+                  {currentUserRole}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Draft Time Section */}
+        {leagueSettings?.live_draft_time && leagueSettings?.draft_type === 'Live Draft' && (
+          <div className="mb-8 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 backdrop-blur-lg border border-indigo-500/30 rounded-2xl p-8 shadow-2xl">
+            <div className="text-center">
+              <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-4">
+                Draft Time
+              </h2>
+              <div className="text-sm text-yellow-300/90 font-bold mb-3 flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Even number of managers required</span>
+                {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && !leagueSettings?.is_finalized && (
+                  <span className="ml-2 text-xs text-indigo-300/70 italic">
+                    (Go to League Settings to finalize)
+                  </span>
+                )}
+              </div>
+              <div className="text-lg text-indigo-200 mb-6">
+                {new Date(leagueSettings.live_draft_time).toLocaleString('en-US', {
+                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </div>
+
+              {draftTimeStatus === 'passed' ? (
+                <div className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600/80 to-pink-600/80 backdrop-blur-md px-8 py-4 rounded-full border border-red-400/50 shadow-lg shadow-red-500/30">
+                  <svg className="w-6 h-6 text-red-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-2xl font-black text-white">Time&apos;s Up!</span>
+                </div>
+              ) : draftTimeStatus === 'upcoming' && countdown ? (
+                <div className="flex justify-center gap-4 flex-wrap">
+                  <div className="bg-gradient-to-br from-indigo-600/80 to-purple-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-indigo-400/30 shadow-lg shadow-indigo-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.days}</div>
+                    <div className="text-sm font-bold text-indigo-200 uppercase tracking-wider">Days</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-purple-400/30 shadow-lg shadow-purple-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.hours}</div>
+                    <div className="text-sm font-bold text-purple-200 uppercase tracking-wider">Hours</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-pink-600/80 to-red-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-pink-400/30 shadow-lg shadow-pink-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.minutes}</div>
+                    <div className="text-sm font-bold text-pink-200 uppercase tracking-wider">Minutes</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-600/80 to-orange-600/80 backdrop-blur-md rounded-2xl p-6 min-w-[120px] border border-red-400/30 shadow-lg shadow-red-500/30">
+                    <div className="text-5xl font-black text-white mb-2">{countdown.seconds}</div>
+                    <div className="text-sm font-bold text-red-200 uppercase tracking-wider">Seconds</div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {/* League Members Section */}
+        <div className="mb-8 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-green-600/80 to-emerald-600/80 backdrop-blur-sm p-6 border-b border-green-400/30">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <h2 className="text-3xl font-black text-white">League Members</h2>
+              <div className="flex items-center gap-3">
+                {canShowInviteLink() && (
+                  <button
+                    onClick={copyInviteLink}
+                    className="relative bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 transition-all hover:shadow-lg hover:shadow-white/20 group"
+                  >
+                    <span className="text-sm font-bold text-white flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                      {showCopied ? 'Copied!' : 'Invite Link'}
+                    </span>
+                  </button>
+                )}
+                <div className="flex items-center gap-3 bg-white/20 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/30">
+                  <span className="text-2xl font-bold text-white">{members.length}</span>
+                  <span className="text-white/80">/</span>
+                  <span className="text-xl font-semibold text-white/90">{maxTeams}</span>
+                  <span className="text-sm text-white/70 font-medium">Teams</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            {members.length === 0 ? (
+              <div className="text-center py-12 text-purple-300/70 text-lg">
+                No members in this league yet
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {members.map((member) => (
+                  <div
+                    key={member.manager_id}
+                    className="group bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-5 hover:border-purple-400/60 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/50">
+                        {member.nickname.charAt(0).toUpperCase()}
+                      </div>
+                      {member.role && (
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${member.role === 'Commissioner' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
+                          member.role === 'Co-Commissioner' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
+                            'bg-blue-500/30 text-blue-300 border border-blue-500/50'
+                          }`}>
+                          {member.role === 'Commissioner' ? 'COMM' : member.role === 'Co-Commissioner' ? 'CO-COMM' : 'MEMBER'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+                      {member.nickname}
+                    </div>
+                    <div className="text-sm text-purple-300/70 mt-1.5">
+                      {member.managers?.name || 'Unknown'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
+            <h2 className="text-3xl font-black text-white">League Schedule</h2>
+          </div>
+          <div className="p-6">
+            {scheduleData.length === 0 ? (
+              <div className="text-center py-12 text-purple-300/70 text-lg">
+                No schedule data available for this league
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-800/80 to-slate-700/80 border-b-2 border-purple-500/50">
+                      <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
+                        Week #
+                      </th>
+                      <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
+                        Label
+                      </th>
+                      <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
+                        Start Date
+                      </th>
+                      <th className="px-6 py-4 text-left font-bold text-purple-200 text-sm uppercase tracking-wider">
+                        End Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scheduleData.map((week, index) => (
+                      <tr
+                        key={week.id}
+                        className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
+                          } border-b border-purple-500/20 hover:bg-purple-500/20 transition-colors`}
+                      >
+                        <td className="px-6 py-4 font-bold text-white text-lg">
+                          Week {week.week_number}
+                        </td>
+                        <td className="px-6 py-4 text-purple-200 font-medium">
+                          {week.week_label || '-'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${getWeekTypeColor(
+                              week.week_type
+                            )}`}
+                          >
+                            {getWeekTypeLabel(week.week_type)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-purple-300 font-medium">
+                          {new Date(week.week_start).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </td>
+                        <td className="px-6 py-4 text-purple-300 font-medium">
+                          {new Date(week.week_end).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
