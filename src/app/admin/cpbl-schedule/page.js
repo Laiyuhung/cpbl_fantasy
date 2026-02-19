@@ -43,10 +43,11 @@ export default function CpblScheduleAdmin() {
     };
 
     // --- Data Fetching ---
-    const fetchSchedule = async () => {
+    const fetchSchedule = async (date = null) => {
         setFetching(true);
         try {
-            const res = await fetch('/api/admin/cpbl-schedule');
+            const url = date ? `/api/admin/cpbl-schedule?date=${date}` : '/api/admin/cpbl-schedule';
+            const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
                 setExistingSchedule(data.data || []);
@@ -188,10 +189,21 @@ export default function CpblScheduleAdmin() {
     const saveEdit = async () => {
         setSaving(true);
         try {
+            const payload = { uuid: editingId, updates: editForm };
+
+            // If postponed and reschedule info is filled, add it to payload
+            if (editForm.is_postponed && editForm.rescheduleDate && editForm.rescheduleTime) {
+                payload.reschedule = {
+                    date: editForm.rescheduleDate,
+                    time: editForm.rescheduleTime,
+                    stadium: editForm.rescheduleStadium
+                };
+            }
+
             const res = await fetch('/api/admin/cpbl-schedule', {
                 method: 'PUT', // We added PUT support to the API
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uuid: editingId, updates: editForm })
+                body: JSON.stringify(payload)
             });
 
             const data = await res.json();
@@ -349,13 +361,25 @@ export default function CpblScheduleAdmin() {
                 {/* ... Header ... */}
                 <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-700">
                     <h3 className="text-lg font-bold text-white">Recent Games</h3>
-                    <button
-                        onClick={fetchSchedule}
-                        className="text-xs text-blue-400 hover:text-blue-300"
-                        disabled={fetching}
-                    >
-                        {fetching ? '...' : 'Refresh'}
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                const today = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+                                fetchSchedule(today);
+                            }}
+                            className="text-xs px-2 py-1 bg-purple-600/50 hover:bg-purple-600 rounded text-purple-100 transition-colors"
+                            disabled={fetching}
+                        >
+                            Today
+                        </button>
+                        <button
+                            onClick={() => fetchSchedule()}
+                            className="text-xs text-blue-400 hover:text-blue-300"
+                            disabled={fetching}
+                        >
+                            {fetching ? '...' : 'Refresh'}
+                        </button>
+                    </div>
                 </div>
 
                 {existingSchedule.length === 0 ? (
@@ -405,13 +429,47 @@ export default function CpblScheduleAdmin() {
                                                 {teams.map(t => <option key={t} value={t}>{t}</option>)}
                                             </select>
                                         </div>
-                                        <div className="flex gap-2 text-xs text-slate-300 items-center">
-                                            <label>Postponed:</label>
-                                            <input
-                                                type="checkbox"
-                                                checked={editForm.is_postponed || false}
-                                                onChange={(e) => handleEditChange('is_postponed', e.target.checked)}
-                                            />
+                                        <div className="flex flex-col gap-2 bg-slate-800/50 p-2 rounded border border-white/5 mt-2">
+                                            <div className="flex gap-2 text-xs text-slate-300 items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    id="postponed"
+                                                    checked={editForm.is_postponed || false}
+                                                    onChange={(e) => handleEditChange('is_postponed', e.target.checked)}
+                                                    className="rounded border-slate-500 bg-slate-900"
+                                                />
+                                                <label htmlFor="postponed" className="font-bold text-red-400">Postponed</label>
+                                            </div>
+
+                                            {/* Reschedule Inputs - Only show if Postponed is checked */}
+                                            {editForm.is_postponed && (
+                                                <div className="pl-4 border-l-2 border-slate-600 mt-1 space-y-2 animate-in slide-in-from-left-2 duration-200">
+                                                    <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Reschedule To (New Game)</p>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="date"
+                                                            className="flex-1 bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                            value={editForm.rescheduleDate || ''}
+                                                            onChange={(e) => handleEditChange('rescheduleDate', e.target.value)}
+                                                            placeholder="New Date"
+                                                        />
+                                                        <input
+                                                            type="time"
+                                                            className="w-20 bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                            value={editForm.rescheduleTime || ''}
+                                                            onChange={(e) => handleEditChange('rescheduleTime', e.target.value)}
+                                                            placeholder="New Time"
+                                                        />
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        className="w-full bg-slate-900 border border-slate-500 rounded px-1 py-1 text-xs"
+                                                        value={editForm.rescheduleStadium || ''}
+                                                        onChange={(e) => handleEditChange('rescheduleStadium', e.target.value)}
+                                                        placeholder="New Stadium (Optional)"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                         <div>
                                             <input

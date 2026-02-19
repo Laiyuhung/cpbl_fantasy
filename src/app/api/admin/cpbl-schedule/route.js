@@ -52,12 +52,21 @@ export async function POST(request) {
 
 export async function GET(request) {
     try {
-        // Fetch recent schedule items, ordered by game_no desc to see what's newly added
-        const { data, error } = await supabaseAdmin
+        const { searchParams } = new URL(request.url);
+        const dateParam = searchParams.get('date');
+
+        let query = supabaseAdmin
             .from('cpbl_schedule_2026')
             .select('*')
-            .order('game_no', { ascending: false })
-            .limit(50);
+            .order('game_no', { ascending: false });
+
+        if (dateParam) {
+            query = query.eq('date', dateParam);
+        } else {
+            query = query.limit(50);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error('[CPBL Schedule API] Fetch Error:', error);
@@ -74,7 +83,7 @@ export async function GET(request) {
 export async function PUT(request) {
     try {
         const body = await request.json();
-        const { uuid, updates } = body;
+        const { uuid, updates, reschedule } = body;
 
         if (!uuid || !updates) {
             return NextResponse.json({ success: false, error: 'Missing uuid or updates' }, { status: 400 });
@@ -82,31 +91,68 @@ export async function PUT(request) {
 
         const updatesToSave = { ...updates };
 
-        // If updating time or date, we need to recalculate the UTC timestamp
-        // However, usually we might get just one field. 
-        // For simplicity, if 'time' (string HH:mm) or 'date' is present, we might need the other to form a timestamp.
-        // But the admin page sends the full object usually? 
-        // Let's check the admin page... it sends `editForm` which has both.
+        // 1. Update the Original Game (Postponed)
+        // If rescheduling, force is_postponed=true on the original if not already set
+        if (reschedule) {
+            updatesToSave.is_postponed = true;
+        }
 
         if (updates.time && updates.date && !updates.time.includes('T')) {
-            // It's likely HH:mm format from input, convert to UTC
             const twDateTimeStr = `${updates.date}T${updates.time}:00+08:00`;
             updatesToSave.time = new Date(twDateTimeStr).toISOString();
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data: updatedGame, error: updateError } = await supabaseAdmin
             .from('cpbl_schedule_2026')
             .update(updatesToSave)
             .eq('uuid', uuid)
             .select()
             .single();
 
-        if (error) {
-            console.error('[CPBL Schedule API] Update Error:', error);
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        if (updateError) {
+            console.error('[CPBL Schedule API] Update Error:', updateError);
+            return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, data });
+        let newGame = null;
+
+        // 2. If Reschedule Info Provided, Insert NEW ROW
+        if (reschedule && reschedule.date && reschedule.time) {
+            // Calculate UTC for new game
+            const twDateTimeStr = `${reschedule.date}T${reschedule.time}:00+08:00`;
+            const utcTime = new Date(twDateTimeStr).toISOString();
+
+            const newGamePayload = {
+                game_no: updatedGame.game_no, // Keep same game number
+                home: updatedGame.home,
+                away: updatedGame.away,
+                stadium: reschedule.stadium || updatedGame.stadium,
+                date: reschedule.date,
+                time: utcTime,
+                is_postponed: false // New game is scheduled, not postponed
+            };
+
+            const { data: insertedGame, error: insertError } = await supabaseAdmin
+                .from('cpbl_schedule_2026')
+                .insert([newGamePayload])
+                .select()
+                .single();
+
+            if (insertError) {
+                console.error('[CPBL Schedule API] Reschedule Insert Error:', insertError);
+                // Note: We updated the original but failed to insert new. 
+                // Return success for update but warning for insert? Or fail?
+                // Let's return success but include error in logic
+                return NextResponse.json({
+                    success: true,
+                    data: updatedGame,
+                    warning: 'Game updated to postponed, but failed to create rescheduled game: ' + insertError.message
+                });
+            }
+            newGame = insertedGame;
+        }
+
+        return NextResponse.json({ success: true, data: updatedGame, newGame });
     } catch (error) {
         console.error('[CPBL Schedule API] Server Error:', error);
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
