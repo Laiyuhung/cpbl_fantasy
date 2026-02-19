@@ -18,9 +18,22 @@ export async function POST(request) {
 
         console.log(`[CPBL Schedule API] Inserting ${schedules.length} rows...`);
 
+        // Process schedules to convert time to UTC
+        const processedSchedules = schedules.map(game => {
+            // Assume input time is 'HH:mm' and date is 'YYYY-MM-DD' in Taiwan Time
+            // We need to create a UTC timestamp
+            const twDateTimeStr = `${game.date}T${game.time}:00+08:00`; // Force Taiwan Offset
+            const utcDate = new Date(twDateTimeStr);
+
+            return {
+                ...game,
+                time: utcDate.toISOString() // Save as UTC timestamp
+            };
+        });
+
         const { data, error } = await supabaseAdmin
             .from('cpbl_schedule_2026')
-            .insert(schedules)
+            .insert(processedSchedules)
             .select();
 
         if (error) {
@@ -67,9 +80,23 @@ export async function PUT(request) {
             return NextResponse.json({ success: false, error: 'Missing uuid or updates' }, { status: 400 });
         }
 
+        const updatesToSave = { ...updates };
+
+        // If updating time or date, we need to recalculate the UTC timestamp
+        // However, usually we might get just one field. 
+        // For simplicity, if 'time' (string HH:mm) or 'date' is present, we might need the other to form a timestamp.
+        // But the admin page sends the full object usually? 
+        // Let's check the admin page... it sends `editForm` which has both.
+
+        if (updates.time && updates.date && !updates.time.includes('T')) {
+            // It's likely HH:mm format from input, convert to UTC
+            const twDateTimeStr = `${updates.date}T${updates.time}:00+08:00`;
+            updatesToSave.time = new Date(twDateTimeStr).toISOString();
+        }
+
         const { data, error } = await supabaseAdmin
             .from('cpbl_schedule_2026')
-            .update(updates)
+            .update(updatesToSave)
             .eq('uuid', uuid)
             .select()
             .single();

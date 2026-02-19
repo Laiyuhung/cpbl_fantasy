@@ -217,7 +217,9 @@ export default function CpblScheduleWidget() {
                             <div key={game.uuid || game.id} className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 hover:border-purple-500/30 transition-colors group">
                                 <div className="flex justify-between text-[10px] text-slate-400 mb-2 font-mono">
                                     <span>#{game.game_no}</span>
-                                    <span>{game.time} @ {game.stadium}</span>
+                                    <span>
+                                        {game.time ? new Date(game.time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false }) : 'TBD'} @ {game.stadium}
+                                    </span>
                                 </div>
 
                                 <div className="flex items-center justify-between">
