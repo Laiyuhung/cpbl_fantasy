@@ -420,6 +420,52 @@ export async function DELETE(req, { params }) {
       );
     }
 
+    // --- DROP RESTRICTION CHECK ---
+    const checkNow = new Date();
+    const checkDateStr = checkNow.toLocaleDateString('zh-TW', {
+      timeZone: 'Asia/Taipei',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\//g, '-');
+
+    const { data: dropPlayerInfo } = await supabase
+      .from('player_list')
+      .select('team, name')
+      .eq('player_id', player_id)
+      .single();
+
+    if (dropPlayerInfo) {
+      const { data: rosterPos } = await supabase
+        .from('league_roster_positions')
+        .select('position')
+        .eq('league_id', leagueId)
+        .eq('manager_id', manager_id)
+        .eq('player_id', player_id)
+        .eq('game_date', checkDateStr)
+        .maybeSingle();
+
+      if (rosterPos && !['BN', 'NA'].includes(rosterPos.position)) {
+        const { data: teamGame } = await supabase
+          .from('cpbl_schedule_2026')
+          .select('time')
+          .eq('date', checkDateStr)
+          .or(`home.eq.${dropPlayerInfo.team},away.eq.${dropPlayerInfo.team}`)
+          .single();
+
+        if (teamGame && teamGame.time) {
+          const gameTime = new Date(teamGame.time);
+          if (checkNow >= gameTime) {
+            return NextResponse.json({
+              success: false,
+              error: `Cannot drop ${dropPlayerInfo.name} - Game has started and player is in active lineup (${rosterPos.position}).`
+            }, { status: 400 });
+          }
+        }
+      }
+    }
+    // -----------------------------
+
     // 取得聯盟設定中的 waiver_players_unfreeze_time
     const { data: leagueSettings, error: settingsError } = await supabase
       .from('league_settings')

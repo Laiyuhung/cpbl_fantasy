@@ -115,6 +115,57 @@ export async function POST(request, { params }) {
 
         // 2. Process DROP first (to free up space/limits)
         if (dropPlayerId) {
+            // --- DROP RESTRICTION CHECK ---
+            // 1. Get Taiwan Today Date
+            const dropTime = new Date();
+            const taiwanDateStr = dropTime.toLocaleDateString('zh-TW', {
+                timeZone: 'Asia/Taipei',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).replace(/\//g, '-');
+
+            // 2. Fetch Dropped Player Team
+            const { data: dropPlayerInfo, error: dpError } = await supabase
+                .from('player_list')
+                .select('team, name')
+                .eq('player_id', dropPlayerId)
+                .single();
+
+            if (dpError) throw dpError;
+
+            // 3. Check Roster Position for Today
+            const { data: rosterPos, error: rpError } = await supabase
+                .from('league_roster_positions')
+                .select('position')
+                .eq('league_id', leagueId)
+                .eq('manager_id', managerId)
+                .eq('player_id', dropPlayerId)
+                .eq('game_date', taiwanDateStr)
+                .single();
+
+            // Only proceed with game check if player is in a starting position (Not BN, Not NA)
+            if (rosterPos && !['BN', 'NA'].includes(rosterPos.position)) {
+                // 4. Check Schedule for Team on Today
+                const { data: teamGame, error: gameError } = await supabase
+                    .from('cpbl_schedule_2026')
+                    .select('time')
+                    .eq('date', taiwanDateStr)
+                    .or(`home.eq.${dropPlayerInfo.team},away.eq.${dropPlayerInfo.team}`)
+                    .single();
+
+                if (teamGame && teamGame.time) {
+                    const gameTime = new Date(teamGame.time);
+                    if (dropTime >= gameTime) {
+                        return NextResponse.json({
+                            success: false,
+                            error: `Cannot drop ${dropPlayerInfo.name} - Game has started and player is in active lineup (${rosterPos.position}).`
+                        }, { status: 400 });
+                    }
+                }
+            }
+            // -----------------------------
+
             // Check Drop Player Ownership Info for acquired_at
             const { data: dropOwnership, error: fetchDropError } = await supabase
                 .from('league_player_ownership')
