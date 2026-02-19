@@ -218,7 +218,33 @@ export default function CpblScheduleWidget() {
                                 <div className="flex justify-between text-[10px] text-slate-400 mb-2 font-mono">
                                     <span>#{game.game_no}</span>
                                     <span>
-                                        {game.time ? new Date(game.time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false }) : 'TBD'} @ {game.stadium}
+                                        {(() => {
+                                            if (!game.time) return 'TBD';
+                                            const gameDate = new Date(game.time);
+                                            const timeStr = gameDate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+                                            // Format game.time to YYYY-MM-DD in Taiwan Time
+                                            const gameDateStr = gameDate.toLocaleDateString('zh-TW', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                timeZone: 'Asia/Taipei'
+                                            }).replace(/\//g, '-'); // Expected format: YYYY-MM-DD
+
+                                            // If the actual game time date differs from the scheduled date (game.date), show the date
+                                            const isDifferentDate = game.date !== gameDateStr;
+
+                                            return (
+                                                <>
+                                                    {timeStr}
+                                                    {isDifferentDate && (
+                                                        <span className="ml-1 text-[9px] text-purple-300">
+                                                            ({gameDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })})
+                                                        </span>
+                                                    )}
+                                                </>
+                                            );
+                                        })()} @ {game.stadium}
                                     </span>
                                 </div>
 

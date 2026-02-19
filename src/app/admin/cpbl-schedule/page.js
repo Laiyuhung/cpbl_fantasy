@@ -225,8 +225,106 @@ export default function CpblScheduleAdmin() {
                         {/* ... Stage 1 Form ... */}
                         {/* ... */}
                         <form onSubmit={handleGenerate} className="space-y-4">
-                            {/* ... */}
-                            {/* ... */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Row 1 */}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Start Date</label>
+                                    <input
+                                        type="date"
+                                        name="startDate"
+                                        value={config.startDate}
+                                        onChange={handleConfigChange}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Start Game No.</label>
+                                    <input
+                                        type="number"
+                                        name="startGameNo"
+                                        value={config.startGameNo}
+                                        onChange={handleConfigChange}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                        placeholder="e.g. 1"
+                                        required
+                                    />
+                                </div>
+                                {/* Row 2 */}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Number of Games</label>
+                                    <input
+                                        type="number"
+                                        name="count"
+                                        value={config.count}
+                                        onChange={handleConfigChange}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                        min="1"
+                                        max="10"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Default Time</label>
+                                    <input
+                                        type="time"
+                                        name="time"
+                                        value={config.time}
+                                        onChange={handleConfigChange}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Away Team</label>
+                                    <select
+                                        name="awayTeam"
+                                        value={config.awayTeam}
+                                        onChange={handleConfigChange}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                        required
+                                    >
+                                        <option value="">Select Team</option>
+                                        {teams.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Home Team</label>
+                                    <select
+                                        name="homeTeam"
+                                        value={config.homeTeam}
+                                        onChange={handleConfigChange}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                        required
+                                    >
+                                        <option value="">Select Team</option>
+                                        {teams.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Stadium</label>
+                                    <input
+                                        type="text"
+                                        name="stadium"
+                                        value={config.stadium}
+                                        onChange={handleConfigChange}
+                                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                        placeholder="e.g. Taipei Dome"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-4">
+                                <button
+                                    type="submit"
+                                    className="w-full py-3 px-4 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-500 hover:shadow-lg transition-all"
+                                >
+                                    Generate Forms
+                                </button>
+                            </div>
                         </form>
                     </div>
                 )}
