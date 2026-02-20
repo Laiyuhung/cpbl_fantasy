@@ -109,7 +109,7 @@ export async function GET(request, { params }) {
         const recordsMap = {};
         if (standingsData && !standingsError) {
             standingsData.forEach(s => {
-                recordsMap[s.manager_id] = `(${s.wins}-${s.losses}-${s.ties})`;
+                recordsMap[s.manager_id] = `${s.wins}-${s.losses}-${s.ties}`;
             });
         }
 
@@ -122,13 +122,13 @@ export async function GET(request, { params }) {
                 manager1: manager1Data ? {
                     nickname: manager1Data.nickname || 'Unknown',
                     team_name: manager1Data.name || 'Team A',
-                    record: recordsMap[m.manager1_id] || '(0-0-0)'
-                } : { nickname: 'Unknown', team_name: 'Team A', record: '(0-0-0)' },
+                    record: recordsMap[m.manager1_id] || '0-0-0'
+                } : { nickname: 'Unknown', team_name: 'Team A', record: '0-0-0' },
                 manager2: manager2Data ? {
                     nickname: manager2Data.nickname || 'Unknown',
                     team_name: manager2Data.name || 'Team B',
-                    record: recordsMap[m.manager2_id] || '(0-0-0)'
-                } : { nickname: 'Unknown', team_name: 'Team B', record: '(0-0-0)' }
+                    record: recordsMap[m.manager2_id] || '0-0-0'
+                } : { nickname: 'Unknown', team_name: 'Team B', record: '0-0-0' }
             };
         });
 
