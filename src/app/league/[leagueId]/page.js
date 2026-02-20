@@ -1134,7 +1134,7 @@ export default function LeaguePage() {
                                     </div>
                                     <div className="flex flex-col">
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                        <span className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight">
                                           {item.player?.name}
                                         </span>
                                         {isTrade && recipientNickname && (
@@ -1212,7 +1212,7 @@ export default function LeaguePage() {
                                   <span className="text-2xl font-black text-green-500 leading-none">+</span>
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                  <span className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight">
                                     {w.player?.name}
                                   </span>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
@@ -1226,7 +1226,7 @@ export default function LeaguePage() {
                                     <span className="text-2xl font-black text-red-500 leading-none">-</span>
                                   </div>
                                   <div className="flex flex-col">
-                                    <span className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors leading-tight">
+                                    <span className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight">
                                       {w.drop_player?.name}
                                     </span>
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">

@@ -223,7 +223,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         const isPitcher = p.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(p.position);
         const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
 
-        // Game info: show inline — "vs 中信兄弟 17:05"
+        // Game info — vivid inline display
         let gameInfoEl = null;
         if (!isEmpty && p.game_info) {
             const timeStr = formatTime(p.game_info.time);
@@ -231,39 +231,45 @@ export default function LeagueDailyRoster({ leagueId, members }) {
             const opp = p.game_info.opponent || '';
             const datePrefix = actualDate && actualDate !== selectedDate ? `${formatDate(actualDate)} ` : '';
             gameInfoEl = (
-                <span className="text-[10px] text-slate-400 font-mono flex-shrink-0 ml-1">
-                    {datePrefix} {timeStr} {vsAt} {opp}
+                <span className="flex items-center gap-1 flex-shrink-0 ml-1">
+                    {datePrefix && <span className="text-[10px] text-slate-400 font-mono">{datePrefix}</span>}
+                    <span className="text-[11px] text-cyan-300 font-mono font-bold">{timeStr}</span>
+                    <span className="text-[10px] text-slate-300 font-semibold">{vsAt}</span>
+                    <span className="text-[11px] text-white font-bold">{opp}</span>
                 </span>
             );
         } else if (!isEmpty && !p.game_info) {
             gameInfoEl = <span className="text-[10px] text-slate-600 italic flex-shrink-0 ml-1">No game</span>;
         }
 
-        // Stats chips — vertical columns: name on top, value below
+        // Stats — horizontal scroll, vertical chip layout
         const statsRow = !isEmpty && statCats.length > 0 ? (
-            <div className="flex flex-wrap items-end gap-x-3 gap-y-1 mt-1">
-                {statCats.map((cat) => {
-                    const abbr = parseStatKey(cat);
-                    const val = getStatValue(p.name, cat);
-                    return (
-                        <div key={abbr} className="flex flex-col items-center">
-                            <span className="text-[9px] text-slate-500 font-semibold leading-none">{abbr}</span>
-                            <span className={`text-[11px] font-mono font-bold leading-tight ${val === '-' || val === 0 ? 'text-slate-600' : 'text-purple-200'}`}>{val}</span>
-                        </div>
-                    );
-                })}
+            <div className="overflow-x-auto mt-1.5 pb-0.5" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 transparent' }}>
+                <div className="flex items-end gap-x-4 flex-nowrap min-w-max">
+                    {statCats.map((cat) => {
+                        const abbr = parseStatKey(cat);
+                        const val = getStatValue(p.name, cat);
+                        const isZeroOrDash = val === '-' || val === 0 || val === '0';
+                        return (
+                            <div key={abbr} className="flex flex-col items-center flex-shrink-0">
+                                <span className="text-[9px] text-slate-500 font-semibold leading-none tracking-wide">{abbr}</span>
+                                <span className={`text-xs font-mono font-bold leading-tight mt-0.5 ${isZeroOrDash ? 'text-slate-600' : 'text-cyan-200'}`}>{val}</span>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         ) : null;
 
         return (
-            <div key={p.id || `empty-${p.position}-${Math.random()}`} className="py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 transition-colors">
+            <div key={p.id || `empty-${p.position}-${Math.random()}`} className="py-2.5 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 transition-colors">
                 <div className="flex items-start gap-3">
                     {/* Position badge */}
                     <span className={`w-8 flex-shrink-0 text-center text-xs font-bold mt-0.5 ${['BN', 'NA', 'IL'].includes(p.position) ? 'text-slate-500' : 'text-purple-400'}`}>
                         {p.position}
                     </span>
 
-                    <div className="flex flex-col min-w-0 flex-1">
+                    <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
                         {/* Row 1: Name + Team + Game Info */}
                         <div className="flex items-center gap-1 flex-wrap">
                             <span className={`text-sm font-bold ${isEmpty ? 'text-slate-600 italic' : 'text-slate-100'}`}>{name}</span>
@@ -273,9 +279,9 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                             {gameInfoEl}
                         </div>
 
-                        {/* Row 2: Stats */}
+                        {/* Row 2: Stats with horizontal scroll */}
                         {statsLoading && !isEmpty ? (
-                            <div className="text-[9px] text-slate-600 italic mt-0.5">Loading...</div>
+                            <div className="text-[9px] text-slate-600 italic mt-1">Loading...</div>
                         ) : statsRow}
                     </div>
                 </div>
