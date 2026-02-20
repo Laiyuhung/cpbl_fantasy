@@ -20,6 +20,7 @@ export default function MatchupsPage() {
     const [currentManagerId, setCurrentManagerId] = useState(null);
     const [selectedMatchupIndex, setSelectedMatchupIndex] = useState(0);
     const [scheduleData, setScheduleData] = useState([]);
+    const [weekDropdownOpen, setWeekDropdownOpen] = useState(false);
 
     // Get current user's manager ID
     useEffect(() => {
@@ -146,10 +147,9 @@ export default function MatchupsPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
             <div className="max-w-7xl mx-auto space-y-8">
-                {/* Header */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Matchups</h1>
-                    <div className="flex items-center bg-slate-800/80 rounded-full p-1.5 border border-white/10 shadow-lg">
+                    <div className="relative flex items-center bg-slate-800/80 rounded-full p-1.5 border border-white/10 shadow-lg">
                         <button
                             onClick={() => {
                                 const currentIndex = availableWeeks.indexOf(parseInt(selectedWeek));
@@ -163,16 +163,24 @@ export default function MatchupsPage() {
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                         </button>
 
-                        <div className="flex flex-col items-center min-w-[160px] px-4">
-                            <span className="text-lg font-black text-white tracking-wide">
-                                WEEK {selectedWeek}
-                            </span>
+                        <button
+                            onClick={() => setWeekDropdownOpen(!weekDropdownOpen)}
+                            className="flex flex-col items-center min-w-[160px] px-4 hover:bg-white/5 rounded-2xl py-1 transition-all group"
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="text-lg font-black text-white tracking-wide group-hover:text-cyan-300 transition-colors">
+                                    WEEK {selectedWeek}
+                                </span>
+                                <svg className={`w-4 h-4 text-white/50 transition-transform duration-300 ${weekDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
                             {scheduleData.find(w => w.week_number === parseInt(selectedWeek)) && (
                                 <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
                                     {new Date(scheduleData.find(w => w.week_number === parseInt(selectedWeek)).week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(scheduleData.find(w => w.week_number === parseInt(selectedWeek)).week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
                             )}
-                        </div>
+                        </button>
 
                         <button
                             onClick={() => {
@@ -186,6 +194,50 @@ export default function MatchupsPage() {
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
+
+                        {/* Custom Dropdown Content */}
+                        {weekDropdownOpen && (
+                            <>
+                                <div className="fixed inset-0 z-[100]" onClick={() => setWeekDropdownOpen(false)}></div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[280px] bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-[101] overflow-hidden animate-in fade-in zoom-in duration-200">
+                                    <div className="max-h-[400px] overflow-y-auto py-2 px-2 custom-scrollbar">
+                                        {scheduleData.map((week) => (
+                                            <button
+                                                key={week.week_number}
+                                                onClick={() => {
+                                                    setSelectedWeek(week.week_number.toString());
+                                                    setWeekDropdownOpen(false);
+                                                }}
+                                                className={`w-full flex flex-col items-start px-4 py-3 rounded-xl transition-all mb-1 ${parseInt(selectedWeek) === week.week_number
+                                                    ? 'bg-purple-600/30 border border-purple-500/50'
+                                                    : 'hover:bg-white/5 border border-transparent'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between w-full">
+                                                    <span className={`text-sm font-black ${parseInt(selectedWeek) === week.week_number ? 'text-white' : 'text-white/70'}`}>
+                                                        WEEK {week.week_number}
+                                                    </span>
+                                                    {parseInt(selectedWeek) === week.week_number && (
+                                                        <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]"></span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                        {new Date(week.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(week.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                    </span>
+                                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase ${week.week_type === 'playoffs' ? 'bg-purple-500/20 text-purple-400' :
+                                                        week.week_type === 'makeup' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                            'bg-blue-500/10 text-blue-400'
+                                                        }`}>
+                                                        {week.week_type === 'regular_season' ? 'Reg' : week.week_type === 'playoffs' ? 'Post' : 'Mkp'}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 

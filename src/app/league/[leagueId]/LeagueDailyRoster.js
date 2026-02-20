@@ -7,14 +7,17 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         const taiwanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
         return taiwanTime.toISOString().split('T')[0];
     });
-    const [selectedManagerId, setSelectedManagerId] = useState(members && members.length > 0 ? members[0].manager_id : '');
+    const [selectedManagerId, setSelectedManagerId] = useState('');
     const [rosterData, setRosterData] = useState({ batters: [], pitchers: [] });
     const [loading, setLoading] = useState(false);
 
     // Fetch Roster
     useEffect(() => {
         const fetchRoster = async () => {
-            if (!leagueId || !selectedManagerId) return;
+            if (!leagueId || !selectedManagerId) {
+                setRosterData({ batters: [], pitchers: [] });
+                return;
+            };
 
             setLoading(true);
             try {
@@ -60,14 +63,6 @@ export default function LeagueDailyRoster({ leagueId, members }) {
 
         fetchRoster();
     }, [leagueId, selectedManagerId, selectedDate]);
-
-    // Handlers
-    const handleDateChange = (days) => {
-        const date = new Date(selectedDate);
-        date.setDate(date.getDate() + days);
-        const newDateStr = date.toISOString().split('T')[0];
-        setSelectedDate(newDateStr);
-    };
 
     const getTeamColor = (team) => {
         const colors = {
@@ -137,10 +132,6 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         );
     };
 
-    const navigateDate = (direction) => {
-        handleDateChange(direction);
-    };
-
     return (
         <div className="bg-gradient-to-br from-slate-900/50 to-purple-900/20 backdrop-blur-md rounded-3xl border border-white/5 p-6 shadow-xl w-full">
             <h3 className="text-xl font-black text-white mb-4 uppercase tracking-wider flex items-center gap-2">
@@ -156,6 +147,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                     onChange={(e) => setSelectedManagerId(e.target.value)}
                     className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors"
                 >
+                    <option value="">Select Manager...</option>
                     {members && members.map(m => (
                         <option key={m.manager_id} value={m.manager_id}>
                             {m.nickname}
@@ -164,27 +156,23 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                 </select>
 
                 {/* Date Selector */}
-                <div className="flex items-center justify-between bg-slate-800 rounded-lg p-1 border border-white/10">
-                    <button
-                        onClick={() => navigateDate(-1)}
-                        className="p-1 hover:bg-white/10 rounded text-slate-300 transition-colors"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                    <span className="text-sm font-bold text-white font-mono">
-                        {selectedDate}
-                    </span>
-                    <button
-                        onClick={() => navigateDate(1)}
-                        className="p-1 hover:bg-white/10 rounded text-slate-300 transition-colors"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                    </button>
+                <div className="relative flex items-center justify-between bg-slate-800 rounded-lg p-1 border border-white/10">
+                    <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="w-full bg-transparent text-white font-mono text-center focus:outline-none p-1 uppercase cursor-pointer"
+                        style={{ colorScheme: 'dark' }}
+                    />
                 </div>
             </div>
 
             {/* Content */}
-            {loading ? (
+            {!selectedManagerId ? (
+                <div className="h-48 flex items-center justify-center text-slate-500 text-sm italic">
+                    Select a manager to view roster
+                </div>
+            ) : loading ? (
                 <div className="h-64 flex items-center justify-center">
                     <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
