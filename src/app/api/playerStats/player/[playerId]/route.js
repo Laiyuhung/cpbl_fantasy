@@ -8,7 +8,13 @@ const supabase = createClient(
 
 export async function GET(request, { params }) {
     try {
-        const { playerId } = params;
+        // Next.js 15: params should be awaited
+        const resolvedParams = await params;
+        const { playerId } = resolvedParams;
+
+        if (!playerId || playerId === 'undefined' || playerId === 'null') {
+            return NextResponse.json({ success: false, error: 'Invalid playerId' });
+        }
 
         // We want to fetch all stats for the specified time windows
         const timeWindows = [
@@ -21,23 +27,43 @@ export async function GET(request, { params }) {
             '2025 Season'
         ];
 
-        // Fetch batting stats
-        const { data: battingData, error: battingError } = await supabase
-            .from('v_batting_summary')
-            .select('*')
+        // 1. First find out if the player is a batter or pitcher
+        const { data: playerInfo, error: playerError } = await supabase
+            .from('player_list')
+            .select('batter_or_pitcher')
             .eq('player_id', playerId)
-            .in('time_window', timeWindows);
+            .single();
 
-        if (battingError) throw battingError;
+        if (playerError) {
+            console.error('Error fetching player info:', playerError);
+            throw playerError;
+        }
 
-        // Fetch pitching stats
-        const { data: pitchingData, error: pitchingError } = await supabase
-            .from('v_pitching_summary')
-            .select('*')
-            .eq('player_id', playerId)
-            .in('time_window', timeWindows);
+        const isPitcher = playerInfo?.batter_or_pitcher === 'pitcher';
 
-        if (pitchingError) throw pitchingError;
+        let battingData = [];
+        let pitchingData = [];
+
+        // 2. Fetch from the specific view using player_id
+        if (isPitcher) {
+            const { data, error } = await supabase
+                .from('v_pitching_summary')
+                .select('*')
+                .eq('player_id', playerId)
+                .in('time_window', timeWindows);
+
+            if (error) throw error;
+            pitchingData = data || [];
+        } else {
+            const { data, error } = await supabase
+                .from('v_batting_summary')
+                .select('*')
+                .eq('player_id', playerId)
+                .in('time_window', timeWindows);
+
+            if (error) throw error;
+            battingData = data || [];
+        }
 
         // Organize the data by time window for easier frontend consumption
         const battingByWindow = {};
@@ -51,7 +77,8 @@ export async function GET(request, { params }) {
         return NextResponse.json({
             success: true,
             batting: battingByWindow,
-            pitching: pitchingByWindow
+            pitching: pitchingByWindow,
+            isPitcher
         });
 
     } catch (err) {
