@@ -2403,6 +2403,21 @@ export default function PlayersPage() {
         onClose={() => setSelectedPlayerModal(null)}
         player={selectedPlayerModal}
         leagueId={leagueId}
+        // Transaction Props
+        myManagerId={myManagerId}
+        ownership={selectedPlayerModal ? ownerships.find(o => o.player_id === selectedPlayerModal.player_id) : null}
+        leagueStatus={leagueStatus}
+        tradeEndDate={tradeEndDate}
+        seasonYear={seasonYear}
+        isPlayerLocked={selectedPlayerModal ? activeTradePlayerIds.has(selectedPlayerModal.player_id) : false}
+        onAdd={(player, isWaiver) => handleAddPlayer(player, isWaiver)}
+        onDrop={(player) => handleDropPlayer(player)}
+        onTrade={(player, ownerManagerId) => {
+          setTradeTargetManagerId(ownerManagerId);
+          setShowTradeModal(true);
+          setSelectedMyPlayers([]);
+          setSelectedTheirPlayers([]);
+        }}
       />
     </div >
   );

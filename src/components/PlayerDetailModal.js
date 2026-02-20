@@ -10,7 +10,22 @@ const TIME_WINDOWS = [
     '2025 Season'
 ];
 
-export default function PlayerDetailModal({ isOpen, onClose, player, leagueId }) {
+export default function PlayerDetailModal({
+    isOpen,
+    onClose,
+    player,
+    leagueId,
+    // Transaction Props (optional - if provided, enables action buttons)
+    myManagerId,
+    ownership,          // { manager_id, status } for this player
+    leagueStatus,       // 'in season', 'post-draft & pre-season', etc.
+    tradeEndDate,
+    seasonYear,
+    isPlayerLocked,     // Boolean: is this player locked in a pending trade?
+    onAdd,              // (player, isWaiver) => void
+    onDrop,             // (player) => void
+    onTrade,            // (player, ownerManagerId) => void
+}) {
     const [stats, setStats] = useState({ batting: {}, pitching: {} });
     const [loading, setLoading] = useState(true);
     const [settingsLoading, setSettingsLoading] = useState(true);
@@ -121,9 +136,9 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
         if (!windowStats) {
             return (
                 <tr key={tw} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="py-2.5 px-3 text-sm font-semibold text-slate-300 whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10">{tw}</td>
+                    <td className="py-2.5 px-3 text-sm font-semibold text-slate-300 whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.2)] w-24">{tw}</td>
                     {abbreviations.map((abbr, i) => (
-                        <td key={i} className="py-2.5 px-3 text-center text-sm font-mono text-slate-600">-</td>
+                        <td key={i} className="py-2.5 px-3 text-center text-sm font-mono text-slate-600 whitespace-nowrap">-</td>
                     ))}
                 </tr>
             );
@@ -131,7 +146,7 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
 
         return (
             <tr key={tw} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                <td className="py-2.5 px-3 text-sm font-semibold text-slate-300 whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10">{tw}</td>
+                <td className="py-2.5 px-3 text-sm font-semibold text-slate-300 whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.2)] w-24">{tw}</td>
                 {abbreviations.map((abbr, i) => {
                     const val = windowStats[abbr.toLowerCase()];
                     const displayVal = val === null || val === undefined ? '-' : val;
@@ -139,7 +154,7 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
                     const isRefStat = abbr === 'AB' || abbr === 'IP';
 
                     return (
-                        <td key={i} className={`py-2.5 px-3 text-center text-sm font-mono ${isZeroOrDash ? 'text-slate-600' : isRefStat ? 'text-slate-400' : 'text-cyan-300'
+                        <td key={i} className={`py-2.5 px-3 text-center text-sm font-mono whitespace-nowrap ${isZeroOrDash ? 'text-slate-600' : isRefStat ? 'text-slate-400' : 'text-cyan-300'
                             }`}>
                             {displayVal}
                         </td>
@@ -174,6 +189,105 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
     })();
 
     const positionStr = player.position_list || player.position || (isPitcher ? 'P' : 'Util');
+
+    // Transaction Helpers
+    const canShowActionButtons = myManagerId && (onAdd || onDrop || onTrade);
+
+    const isTradeDeadlinePassed = () => {
+        if (!tradeEndDate || tradeEndDate.trim().toLowerCase() === 'no trade deadline') return false;
+        try {
+            const trimmedDate = tradeEndDate.trim();
+            let dateStr = trimmedDate;
+            if (!/\d{4}/.test(trimmedDate)) {
+                dateStr = `${trimmedDate}, ${seasonYear || new Date().getFullYear()}`;
+            }
+            const deadline = new Date(dateStr);
+            if (isNaN(deadline.getTime())) return false;
+            deadline.setHours(23, 59, 59, 999);
+            return new Date() > deadline;
+        } catch {
+            return false;
+        }
+    };
+
+    const isAllowedLeagueStatus = () => {
+        const allowedStatuses = ['post-draft & pre-season', 'in season', 'playoffs'];
+        const currentStatus = (leagueStatus || '').toLowerCase();
+        return allowedStatuses.includes(currentStatus);
+    };
+
+    const renderActionButton = () => {
+        if (!canShowActionButtons || !isAllowedLeagueStatus()) return null;
+
+        // No ownership = Free Agent (green + button)
+        if (!ownership) {
+            if (!onAdd) return null;
+            return (
+                <button
+                    onClick={() => { onClose(); onAdd(player, false); }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 hover:bg-green-500 text-white transition-all flex items-center gap-1.5 shadow-lg"
+                >
+                    <span className="text-base">+</span> Add
+                </button>
+            );
+        }
+
+        const status = ownership.status?.toLowerCase();
+
+        // Waiver status = yellow + button
+        if (status === 'waiver') {
+            if (!onAdd) return null;
+            return (
+                <button
+                    onClick={() => { onClose(); onAdd(player, true); }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-yellow-500 hover:bg-yellow-400 text-white transition-all flex items-center gap-1.5 shadow-lg"
+                    title="Claim via Waiver"
+                >
+                    <span className="text-base">+</span> Waiver
+                </button>
+            );
+        }
+
+        // On team
+        if (status === 'on team') {
+            // My player
+            if (ownership.manager_id === myManagerId) {
+                // Check if locked in trade
+                if (isPlayerLocked) {
+                    return (
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-600 text-slate-400 flex items-center gap-1.5 cursor-not-allowed" title="Locked in pending trade">
+                            🔒 Locked
+                        </span>
+                    );
+                }
+                // Drop button
+                if (!onDrop) return null;
+                return (
+                    <button
+                        onClick={() => { onClose(); onDrop(player); }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-500 text-white transition-all flex items-center gap-1.5 shadow-lg"
+                        title="Drop Player"
+                    >
+                        <span className="text-base">−</span> Drop
+                    </button>
+                );
+            } else {
+                // Other manager's player - Trade button
+                if (isTradeDeadlinePassed() || !onTrade) return null;
+                return (
+                    <button
+                        onClick={() => { onClose(); onTrade(player, ownership.manager_id); }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-all flex items-center gap-1.5 shadow-lg"
+                        title="Propose Trade"
+                    >
+                        <span className="text-base">⇌</span> Trade
+                    </button>
+                );
+            }
+        }
+
+        return null;
+    };
 
     // Fallback to determine best player photo
     let bestPhotoStr = '/photo/defaultPlayer.png';
@@ -256,6 +370,34 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
                             <span className="text-slate-300 tracking-wider">
                                 {positionStr}
                             </span>
+                            {player.game_info && (
+                                <>
+                                    <span className="text-purple-300">|</span>
+                                    <span className="text-slate-400 font-mono text-xs">
+                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        {' '}
+                                        {player.game_info.is_home ? 'vs' : '@'}
+                                        {' '}
+                                        {player.game_info.opponent}
+                                    </span>
+                                </>
+                            )}
+                            {!player.game_info && (
+                                <>
+                                    <span className="text-purple-300">|</span>
+                                    <span className="text-slate-500 text-xs">No game</span>
+                                </>
+                            )}
+                            {/* Action Button (Add/Drop/Trade) */}
+                            {(() => {
+                                const actionBtn = renderActionButton();
+                                return actionBtn ? (
+                                    <>
+                                        <span className="text-purple-300">|</span>
+                                        {actionBtn}
+                                    </>
+                                ) : null;
+                            })()}
                         </div>
                     </div>
                 </div>
@@ -274,15 +416,15 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
                             </div>
                         </div>
                     ) : (
-                        <div className="rounded-xl border border-white/5 bg-slate-900/50 shadow-inner overflow-x-auto max-w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            <table className="text-left border-collapse min-w-max">
+                        <div className="rounded-xl border border-white/5 bg-slate-900/50 shadow-inner overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <table className="w-full text-left border-collapse" style={{ minWidth: '100%' }}>
                                 <thead>
                                     <tr className="bg-slate-800/80 border-b border-white/10 shadow-sm">
-                                        <th className="py-3 px-3 text-xs font-black text-purple-300 uppercase tracking-widest sticky left-0 top-0 bg-slate-800 z-20 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.3)] whitespace-nowrap">
+                                        <th className="py-3 px-3 text-xs font-black text-purple-300 uppercase tracking-widest sticky left-0 top-0 bg-slate-800 z-20 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.3)] whitespace-nowrap w-24">
                                             Split
                                         </th>
                                         {abbreviations.map((abbr, i) => (
-                                            <th key={i} className="py-3 px-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest sticky top-0 bg-slate-800/80 z-10 backdrop-blur-sm">
+                                            <th key={i} className="py-3 px-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest sticky top-0 bg-slate-800/80 z-10 backdrop-blur-sm whitespace-nowrap">
                                                 {abbr}
                                             </th>
                                         ))}

@@ -53,6 +53,13 @@ export default function RosterPage() {
     const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
     const [pendingTradeCount, setPendingTradeCount] = useState(0);
 
+    // Drop State
+    const [showConfirmDrop, setShowConfirmDrop] = useState(false);
+    const [playerToDrop, setPlayerToDrop] = useState(null);
+    const [isDropping, setIsDropping] = useState(false);
+    const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
+    const [leagueStatus, setLeagueStatus] = useState('unknown');
+
     // Helpers
     const parseStatName = (stat) => {
         const matches = stat.match(/\(([^)]+)\)/g);
@@ -198,6 +205,51 @@ export default function RosterPage() {
         }
     };
 
+    // Handle Drop Player
+    const handleDropPlayer = (player) => {
+        if (!myManagerId) return;
+        // Check if locked in trade
+        if (activeTradePlayerIds.has(player.player_id)) {
+            setNotification({ type: 'error', message: 'Player is locked in a pending trade' });
+            setTimeout(() => setNotification(null), 3000);
+            return;
+        }
+        setPlayerToDrop(player);
+        setShowConfirmDrop(true);
+    };
+
+    const confirmDropPlayer = async () => {
+        if (!playerToDrop) return;
+        setIsDropping(true);
+        try {
+            const res = await fetch(`/api/league/${leagueId}/ownership`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    player_id: playerToDrop.player_id,
+                    manager_id: myManagerId
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setNotification({ type: 'success', message: `Dropped ${playerToDrop.name}` });
+                setTimeout(() => setNotification(null), 3000);
+                await refreshRoster();
+            } else {
+                setNotification({ type: 'error', message: data.error || 'Drop failed' });
+                setTimeout(() => setNotification(null), 3000);
+            }
+        } catch (e) {
+            console.error(e);
+            setNotification({ type: 'error', message: 'System error' });
+            setTimeout(() => setNotification(null), 3000);
+        } finally {
+            setIsDropping(false);
+            setShowConfirmDrop(false);
+            setPlayerToDrop(null);
+        }
+    };
+
     // Fetch Schedule and Initialize Date
     useEffect(() => {
         // Get Manager ID
@@ -222,6 +274,10 @@ export default function RosterPage() {
                                 if (!isNaN(parsedYear)) setSeasonYear(parsedYear);
                             }
                         }
+                    }
+                    // Set league status
+                    if (result.status) {
+                        setLeagueStatus(result.status);
                     }
 
                     // Calculate all available dates from schedule
@@ -312,6 +368,31 @@ export default function RosterPage() {
         };
         fetchSettings();
     }, [leagueId]);
+
+    // Fetch Active Trade Player IDs (for lock check)
+    useEffect(() => {
+        const fetchActiveTrades = async () => {
+            if (!myManagerId) return;
+            try {
+                const res = await fetch(`/api/trade?league_id=${leagueId}&manager_id=${myManagerId}`);
+                const data = await res.json();
+                if (data.success && data.trades) {
+                    const tradeIds = new Set();
+                    data.trades.forEach(t => {
+                        const status = t.status?.toLowerCase();
+                        if (status === 'pending' || status === 'accepted') {
+                            (t.offer_player_ids || []).forEach(id => tradeIds.add(id));
+                            (t.request_player_ids || []).forEach(id => tradeIds.add(id));
+                        }
+                    });
+                    setActiveTradePlayerIds(tradeIds);
+                }
+            } catch (e) {
+                console.error('Failed to fetch active trades:', e);
+            }
+        };
+        fetchActiveTrades();
+    }, [leagueId, myManagerId]);
 
     // Stats
     useEffect(() => {
@@ -1106,7 +1187,43 @@ export default function RosterPage() {
                     onClose={() => setSelectedPlayerModal(null)}
                     player={selectedPlayerModal}
                     leagueId={leagueId}
+                    // Transaction Props (for Drop button)
+                    myManagerId={myManagerId}
+                    ownership={selectedPlayerModal ? { manager_id: myManagerId, status: 'on team' } : null}
+                    leagueStatus={leagueStatus}
+                    tradeEndDate={tradeEndDate}
+                    seasonYear={seasonYear}
+                    isPlayerLocked={selectedPlayerModal ? activeTradePlayerIds.has(selectedPlayerModal.player_id) : false}
+                    onDrop={(player) => handleDropPlayer(player)}
                 />
+
+                {/* Drop Confirmation Modal */}
+                {showConfirmDrop && playerToDrop && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirmDrop(false)} />
+                        <div className="relative bg-slate-900 border border-red-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                            <h3 className="text-xl font-bold text-white mb-4">Confirm Drop</h3>
+                            <p className="text-slate-300 mb-6">
+                                Are you sure you want to drop <span className="font-bold text-red-400">{playerToDrop.name}</span>?
+                            </p>
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setShowConfirmDrop(false)}
+                                    className="px-4 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDropPlayer}
+                                    disabled={isDropping}
+                                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+                                >
+                                    {isDropping ? 'Dropping...' : 'Drop'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
             {/* Waiver Modal */}
             <WaiverModal
