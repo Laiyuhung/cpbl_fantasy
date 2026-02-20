@@ -383,6 +383,39 @@ export default function RosterPage() {
         e.target.src = window.location.origin + '/photo/defaultPlayer.png';
     };
 
+    // Move Restriction Helper
+    const isMoveAllowed = (player) => {
+        if (!selectedDate) return true;
+
+        // 1. Past Date Check
+        const now = new Date();
+        const taiwanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+        const todayStr = taiwanTime.toISOString().split('T')[0];
+
+        if (selectedDate < todayStr) return false;
+
+        // 2. Game Time Check (Only for Today)
+        if (selectedDate === todayStr && player.game_info && player.game_info.time) {
+            // Parse Game Time
+            const [gHour, gMin] = player.game_info.time.split(':').map(Number);
+            const gameDateObj = new Date(taiwanTime);
+            gameDateObj.setHours(gHour, gMin, 0, 0);
+
+            const isGameStarted = taiwanTime >= gameDateObj;
+            // TODO: Add PPD check if available in game_info, currently assuming not PPD if valid time
+
+            if (isGameStarted) {
+                // Starter Locked
+                if (!['BN', 'NA'].includes(player.position)) {
+                    return false;
+                }
+                // BN/NA are allowed to move (but target restricted)
+            }
+        }
+
+        return true;
+    };
+
     // Badge Helper
     const renderPlayerBadges = (player) => {
         if (player.player_id === 'empty') return null;
@@ -798,11 +831,12 @@ export default function RosterPage() {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={() => handleSlotClick(player)}
-                                                disabled={player.isEmpty}
+                                                disabled={player.isEmpty || !isMoveAllowed(player)}
                                                 className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
-                                                    ['BN', 'IL', 'NA'].includes(player.position)
-                                                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
-                                                        : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
+                                                    !isMoveAllowed(player) ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60' :
+                                                        ['BN', 'IL', 'NA'].includes(player.position)
+                                                            ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
+                                                            : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
                                                     }`}>
                                                 {player.position}
                                             </button>
@@ -894,11 +928,12 @@ export default function RosterPage() {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={() => handleSlotClick(player)}
-                                                disabled={player.isEmpty}
+                                                disabled={player.isEmpty || !isMoveAllowed(player)}
                                                 className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
-                                                    ['BN', 'IL', 'NA'].includes(player.position)
-                                                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
-                                                        : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
+                                                        !isMoveAllowed(player) ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60' :
+                                                            ['BN', 'IL', 'NA'].includes(player.position)
+                                                                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
+                                                                : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
                                                     }`}>
                                                 {player.position}
                                             </button>

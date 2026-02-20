@@ -20,7 +20,66 @@ export async function POST(request, { params }) {
         console.log(`[MoveRoster] ⚠️  Will update ALL dates >= ${gameDate}`);
         console.log('='.repeat(80));
 
-        // --- 1. Fetch League Settings (for limits) ---
+        // --- 1. Validate Date & Game Time ---
+        // Get Taiwan Time
+        const now = new Date();
+        const taiwanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+        const todayStr = taiwanTime.toISOString().split('T')[0];
+
+        // Rule: Past Dates
+        if (gameDate < todayStr) {
+            return NextResponse.json({ success: false, error: 'Cannot modify roster for past dates.' }, { status: 400 });
+        }
+
+        // Fetch Schedule for Game Time Check
+        // We need the player's team to find their game
+        const { data: playerTeamData } = await supabase
+            .from('player_list')
+            .select('Team')
+            .eq('player_id', playerId)
+            .single();
+
+        const playerTeam = playerTeamData?.Team;
+
+        if (playerTeam && gameDate === todayStr) {
+            const { data: gameData } = await supabase
+                .from('cpbl_schedule_2026')
+                .select('*')
+                .or(`home.eq.${playerTeam},away.eq.${playerTeam}`)
+                .eq('date', gameDate)
+                .single();
+
+            if (gameData) {
+                const gameTimeStr = `${gameData.date}T${gameData.time}:00`;
+                const gameTime = new Date(gameTimeStr);
+                // Adjust gameTime to Taiwan Time object comparisons if needed, 
+                // but since iso string is usually local time in schedule, treat as Taiwan Time.
+                // Actually, let's just compare HH:mm if date matches.
+
+                const [gHour, gMin] = gameData.time.split(':').map(Number);
+                const gameDateObj = new Date(taiwanTime);
+                gameDateObj.setHours(gHour, gMin, 0, 0);
+
+                const isGameStarted = taiwanTime >= gameDateObj;
+                const isPostponed = gameData.game_status === 'Postponed' || gameData.game_status === 'PPD';
+
+                if (isGameStarted && !isPostponed) {
+                    // Rule 1: Starter Locked
+                    const isStarter = !['BN', 'NA'].includes(currentPosition);
+                    if (isStarter) {
+                        return NextResponse.json({ success: false, error: 'Cannot move a starter after game has started.' }, { status: 400 });
+                    }
+
+                    // Rule 2: BN/NA to Starter Locked
+                    const isTargetStarter = !['BN', 'NA'].includes(targetPosition);
+                    if (isTargetStarter) {
+                        return NextResponse.json({ success: false, error: 'Cannot move bench player to starting lineup after game has started.' }, { status: 400 });
+                    }
+                }
+            }
+        }
+
+        // --- 2. Fetch League Settings (for limits) ---
         let naLimit = 0;
         let targetLimit = 0;
         let checkNaLimit = targetPosition === 'NA';

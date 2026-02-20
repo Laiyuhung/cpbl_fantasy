@@ -143,6 +143,23 @@ export default function MoveModal({
             distinctPositions.push('NA');
         }
 
+        // --- Game Status Check for BN/NA Moves ---
+        // If Player is BN/NA and Game Started -> Can ONLY move to BN/NA
+        if (['BN', 'NA'].includes(player.position)) {
+            if (player.game_info && player.game_info.time) {
+                const now = new Date();
+                const taiwanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+                const [gHour, gMin] = player.game_info.time.split(':').map(Number);
+                const gameDateObj = new Date(taiwanTime);
+                gameDateObj.setHours(gHour, gMin, 0, 0);
+
+                if (taiwanTime >= gameDateObj) {
+                    // Game Started -> Filter Options
+                    distinctPositions = distinctPositions.filter(p => ['BN', 'NA'].includes(p));
+                }
+            }
+        }
+
         return [...new Set(distinctPositions)].sort((a, b) => {
             // Priority Sort: Standard -> Util -> NA -> BN
             const order = { 'C': 1, '1B': 2, '2B': 3, '3B': 4, 'SS': 5, 'OF': 6, 'Util': 10, 'SP': 11, 'RP': 12, 'P': 13, 'NA': 20, 'BN': 21 };
