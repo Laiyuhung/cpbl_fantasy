@@ -106,6 +106,102 @@ export async function GET(request, { params }) {
             console.log(`[Roster API] 📅 Calculated game_date: ${gameDateStr}`);
         }
 
+        // 4. Fetch Roster with Clamped Date
+        const { data: rosterData, error: rosterError } = await supabase
+            .from('league_roster_positions')
+            .select(`
+        *,
+        player:player_list (
+          player_id,
+          name,
+          team,
+          batter_or_pitcher,
+          identity
+        )
+      `)
+            .eq('league_id', leagueId)
+            .eq('manager_id', managerId)
+            .eq('game_date', gameDateStr);
+
+        if (rosterError) {
+            console.error('Supabase error:', rosterError);
+            return NextResponse.json({ success: false, error: 'Database Error', details: rosterError.message }, { status: 500 });
+        }
+
+        // --- ALIGNMENT WITH playerslist API ---
+        // Fetch ALL positions from views, without filtering by ID.
+        // This matches the logic exactly from src/app/api/playerslist/route.js
+
+        // 獲取野手位置資料
+        const { data: batterPositions, error: batterError } = await supabase
+            .from('v_batter_positions')
+            .select('player_id, position_list');
+
+        if (batterError) {
+            console.error('Error fetching batter positions:', batterError);
+        }
+
+        // 獲取投手位置資料
+        const { data: pitcherPositions, error: pitcherError } = await supabase
+            .from('v_pitcher_positions')
+            .select('player_id, position_list');
+
+        if (pitcherError) {
+            console.error('Error fetching pitcher positions:', pitcherError);
+        }
+
+        // 建立位置對照表
+        const positionMap = {};
+        if (batterPositions) {
+            batterPositions.forEach(bp => {
+                positionMap[bp.player_id] = bp.position_list;
+            });
+        }
+        if (pitcherPositions) {
+            pitcherPositions.forEach(pp => {
+                positionMap[pp.player_id] = pp.position_list;
+            });
+        }
+        // --------------------------------------
+
+        // 獲取球員真實狀態
+        const { data: realLifeStatus, error: statusError } = await supabase
+            .from('real_life_player_status')
+            .select('player_id, status');
+
+        if (statusError) {
+            console.error('Error fetching real life status:', statusError);
+        }
+
+        // 建立狀態對照表
+        const statusMap = {};
+        if (realLifeStatus) {
+            realLifeStatus.forEach(s => {
+                statusMap[s.player_id] = s.status;
+            });
+        }
+
+        // Flatten and Sort
+        const positionOrder = {
+            'C': 1,
+            '1B': 2,
+            '2B': 3,
+            '3B': 4,
+            'SS': 5,
+            'CI': 6,
+            'MI': 7,
+            'LF': 8,
+            'CF': 9,
+            'RF': 10,
+            'OF': 11,
+            'Util': 12,
+            'SP': 13,
+            'RP': 14,
+            'P': 15,
+            'BN': 16,
+            'NA': 17 // Minor
+        };
+
         // 5. Fetch Schedule for the Game Date
         const { data: scheduleData, error: scheduleError } = await supabase
             .from('cpbl_schedule_2026')
