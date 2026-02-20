@@ -818,11 +818,13 @@ export default function RosterPage() {
                                                     <div>
                                                         <div className="font-bold text-white text-lg flex items-center">
                                                             {player.name}
+                                                            {player.original_name && player.original_name !== player.name && (
+                                                                <span className="text-purple-300/60 text-sm font-normal ml-2">({player.original_name})</span>
+                                                            )}
                                                             <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
                                                             <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                         </div>
-                                                        <div className="mt-1 flex items-center justify-between w-full">
-                                                            {renderPlayerBadges(player)}
+                                                        <div className="mt-1 flex items-center gap-2">
                                                             <span className="text-xs text-slate-400 font-mono">
                                                                 {player.game_info ? (
                                                                     <>
@@ -836,6 +838,7 @@ export default function RosterPage() {
                                                                     'No game'
                                                                 )}
                                                             </span>
+                                                            {renderPlayerBadges(player)}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -911,10 +914,28 @@ export default function RosterPage() {
                                                     <div>
                                                         <div className="font-bold text-white text-lg flex items-center">
                                                             {player.name}
+                                                            {player.original_name && player.original_name !== player.name && (
+                                                                <span className="text-purple-300/60 text-sm font-normal ml-2">({player.original_name})</span>
+                                                            )}
                                                             <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
                                                             <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                         </div>
-                                                        <div className="mt-1">{renderPlayerBadges(player)}</div>
+                                                        <div className="mt-1 flex items-center gap-2">
+                                                            <span className="text-xs text-slate-400 font-mono">
+                                                                {player.game_info ? (
+                                                                    <>
+                                                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                        {' '}
+                                                                        {player.game_info.is_home ? 'vs' : '@'}
+                                                                        {' '}
+                                                                        {player.game_info.opponent}
+                                                                    </>
+                                                                ) : (
+                                                                    'No game'
+                                                                )}
+                                                            </span>
+                                                            {renderPlayerBadges(player)}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}

@@ -1713,6 +1713,11 @@ export default function PlayersPage() {
                               )}
                               <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
                                 {player.name || 'Unknown'}
+                                {player.original_name && player.original_name !== player.name && (
+                                  <span className="text-purple-300/60 text-sm font-normal ml-1">
+                                    ({player.original_name})
+                                  </span>
+                                )}
                                 <span className="text-purple-300/70 font-normal ml-2">
                                   - {filterPositions(player)}
                                 </span>
@@ -1722,12 +1727,20 @@ export default function PlayersPage() {
                               </span>
                               {renderStatusTag(player)}
                             </div>
-                            <div className="flex items-center justify-between w-full mt-1">
-                              {player.original_name && player.original_name !== player.name && (
-                                <span className="text-purple-300/60 text-sm">
-                                  {player.original_name}
-                                </span>
-                              )}
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
+                                {player.game_info ? (
+                                  <>
+                                    {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                    {' '}
+                                    {player.game_info.is_home ? 'vs' : '@'}
+                                    {' '}
+                                    {player.game_info.opponent}
+                                  </>
+                                ) : (
+                                  'No game'
+                                )}
+                              </span>
                               {player.real_life_status && player.real_life_status !== 'MAJOR' && (
                                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${player.real_life_status === 'MINOR'
                                   ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
@@ -1743,19 +1756,6 @@ export default function PlayersPage() {
                                   F
                                 </span>
                               )}
-                              <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                                {player.game_info ? (
-                                  <>
-                                    {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                    {' '}
-                                    {player.game_info.is_home ? 'vs' : '@'}
-                                    {' '}
-                                    {player.game_info.opponent}
-                                  </>
-                                ) : (
-                                  'No game'
-                                )}
-                              </span>
                             </div>
                           </div>
                         </div>
