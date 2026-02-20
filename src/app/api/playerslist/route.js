@@ -74,11 +74,34 @@ export async function GET(req) {
       });
     }
 
-    // 將位置資料和真實狀態加入球員資料
+    // 獲取今日賽程資料 (Taiwan Time)
+    const now = new Date();
+    const nowTaiwan = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+    const todayStr = nowTaiwan.toISOString().split('T')[0];
+
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from('cpbl_schedule_2026')
+      .select('*')
+      .eq('date', todayStr);
+
+    if (scheduleError) {
+      console.error('Error fetching schedule:', scheduleError);
+    }
+
+    const gameMap = {};
+    if (scheduleData) {
+      scheduleData.forEach(game => {
+        gameMap[game.home] = { opponent: game.away, is_home: true, time: game.time };
+        gameMap[game.away] = { opponent: game.home, is_home: false, time: game.time };
+      });
+    }
+
+    // 將位置資料、真實狀態和賽程資料加入球員資料
     const playersWithPositions = (players || []).map(player => ({
       ...player,
       position_list: positionMap[player.player_id] || null,
-      real_life_status: statusMap[player.player_id] || 'UNREGISTERED' // 預設
+      real_life_status: statusMap[player.player_id] || 'UNREGISTERED', // 預設
+      game_info: player.Team ? gameMap[player.Team] : null
     }));
 
     return NextResponse.json({
