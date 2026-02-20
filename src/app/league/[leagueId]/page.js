@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
 import CpblScheduleWidget from '@/components/CpblScheduleWidget';
+import LeagueDailyRoster from './LeagueDailyRoster';
 
 // Playoff Tree Diagram Component
 const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members }) => {
@@ -1284,6 +1285,9 @@ export default function LeaguePage() {
             </h3>
             <CpblScheduleWidget />
           </div>
+
+          {/* Daily Roster Widget */}
+          <LeagueDailyRoster leagueId={leagueId} members={members} />
         </div>
 
       </div>
