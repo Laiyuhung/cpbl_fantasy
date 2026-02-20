@@ -1,5 +1,37 @@
 import React, { useState, useEffect } from 'react';
 
+function toAbbr(team) {
+    switch (team) {
+        case '統一獅': return 'UL';
+        case '富邦悍將': return 'FG';
+        case '樂天桃猿': return 'RM';
+        case '中信兄弟': return 'B';
+        case '味全龍': return 'W';
+        case '台鋼雄鷹': return 'TSG';
+        default: return team || '';
+    }
+}
+
+function formatTime(timeStr) {
+    // time may be "18:35:00", "18:35", or a full ISO like "2026-02-20T18:35:00"
+    if (!timeStr) return '';
+    // If ISO/datetime format, extract the HH:MM part
+    if (timeStr.includes('T')) {
+        // e.g. "2026-02-20T18:35:00+08:00"
+        const timePart = timeStr.split('T')[1];
+        return timePart.substring(0, 5);
+    }
+    // Already "HH:MM:SS" or "HH:MM"
+    return timeStr.substring(0, 5);
+}
+
+function formatDate(dateStr) {
+    // dateStr is "YYYY-MM-DD", format to M/D
+    if (!dateStr) return '';
+    const [, m, d] = dateStr.split('-');
+    return `${parseInt(m)}/${parseInt(d)}`;
+}
+
 export default function LeagueDailyRoster({ leagueId, members }) {
     // State
     const [selectedDate, setSelectedDate] = useState(() => {
@@ -46,8 +78,6 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                         } else if (isBatterPos) {
                             bRoster.push(item);
                         } else {
-                            // BN, NA, IL
-                            // Use batter_or_pitcher if available
                             if (item.batter_or_pitcher === 'pitcher') {
                                 pRoster.push(item);
                             } else {
@@ -68,7 +98,6 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         fetchRoster();
     }, [leagueId, selectedManagerId, selectedDate]);
 
-    // Handlers
     const handleDateChange = (days) => {
         const date = new Date(selectedDate);
         date.setDate(date.getDate() + days);
@@ -77,22 +106,29 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     };
 
     const getTeamColor = (team) => {
-        if (!team) return 'text-slate-400';
-        const lower = team.toLowerCase();
-        if (lower.includes('brother') || lower.includes('兄弟')) return 'text-yellow-500';
-        if (lower.includes('lion') || lower.includes('統一')) return 'text-orange-500';
-        if (lower.includes('guardian') || lower.includes('富邦') || lower.includes('fubon')) return 'text-blue-500';
-        if (lower.includes('dragon') || lower.includes('味全')) return 'text-red-500';
-        if (lower.includes('hawk') || lower.includes('台鋼') || lower.includes('tsg')) return 'text-green-500';
-        if (lower.includes('monkey') || lower.includes('樂天') || lower.includes('rakuten')) return 'text-red-800';
-        return 'text-slate-400';
+        switch (team) {
+            case '統一獅': return 'text-orange-400';
+            case '富邦悍將': return 'text-blue-400';
+            case '台鋼雄鷹': return 'text-green-400';
+            case '味全龍': return 'text-red-400';
+            case '樂天桃猿': return 'text-rose-400';
+            case '中信兄弟': return 'text-yellow-400';
+            default: return 'text-slate-400';
+        }
     };
 
-    // Render Row
     const renderPlayerRow = (p) => {
-        // p is the roster item. p.player_id might be 'empty'.
         const isEmpty = !p.player_id || p.player_id === 'empty';
         const name = p.name || (isEmpty ? 'Empty' : 'Unknown');
+        const teamAbbr = toAbbr(p.team);
+
+        let gameInfoDisplay = 'No game';
+        if (p.game_info) {
+            const timeStr = formatTime(p.game_info.time);
+            const vsAt = p.game_info.is_home ? 'vs' : '@';
+            const oppAbbr = toAbbr(p.game_info.opponent);
+            gameInfoDisplay = `${timeStr} ${vsAt} ${oppAbbr}`;
+        }
 
         return (
             <div key={p.id || `empty-${p.position}-${Math.random()}`} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 transition-colors">
@@ -106,25 +142,16 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                                 {name}
                             </span>
                             {!isEmpty && p.team && (
-                                <span className={`${getTeamColor(p.team)} font-bold text-[10px]`}>{p.team}</span>
+                                <span className={`${getTeamColor(p.team)} font-bold text-[10px] flex-shrink-0`}>{teamAbbr}</span>
                             )}
                         </div>
-
-                        {!isEmpty && p.game_info && (
-                            <div className="text-[10px] text-slate-500 whitespace-nowrap">
-                                {p.game_info.is_home ? 'vs' : '@'} {p.game_info.opponent}
+                        {!isEmpty && (
+                            <div className={`text-[10px] whitespace-nowrap ${p.game_info ? 'text-slate-500' : 'text-slate-600 italic'}`}>
+                                {gameInfoDisplay}
                             </div>
                         )}
                     </div>
                 </div>
-
-                {!isEmpty && p.game_info && (
-                    <div className="text-right flex-shrink-0">
-                        <span className="text-[10px] font-mono text-slate-400 block">
-                            {p.game_info.time.substring(0, 5)}
-                        </span>
-                    </div>
-                )}
             </div>
         );
     };
@@ -153,7 +180,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                 </select>
 
                 {/* Date Selector (Custom UI) */}
-                <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1 border border-white/10 justify-between">
+                <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-white/10 justify-between">
                     <button
                         onClick={() => handleDateChange(-1)}
                         className="p-1.5 hover:bg-white/10 rounded text-slate-300 transition-colors"
@@ -161,7 +188,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                     </button>
 
-                    <div className="relative">
+                    <div className="relative flex-1 flex justify-center">
                         <button
                             onClick={() => {
                                 if (!showDatePicker) {
@@ -180,26 +207,15 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             <span className="text-sm font-bold text-white font-mono">
-                                {selectedDate ? selectedDate.substring(5) : ''}
+                                {formatDate(selectedDate)}
                             </span>
-                            {(() => {
-                                const now = new Date();
-                                const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-                                const todayStr = taiwanTime.toISOString().split('T')[0];
-                                const isToday = selectedDate === todayStr;
-                                return isToday ? (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-green-500/20 text-green-300 border border-green-500/30 font-bold">
-                                        TODAY
-                                    </span>
-                                ) : null;
-                            })()}
                         </button>
 
-                        {/* Dropdown Calendar */}
+                        {/* Dropdown Calendar — opens UPWARD */}
                         {showDatePicker && (
                             <>
                                 <div className="fixed inset-0 z-[890]" onClick={() => setShowDatePicker(false)} />
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[900] bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px]">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[900] bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px]">
                                     {/* Calendar Header */}
                                     <div className="flex justify-between items-center mb-4">
                                         <button
@@ -238,12 +254,10 @@ export default function LeagueDailyRoster({ leagueId, members }) {
 
                                     {/* Calendar Grid */}
                                     <div className="grid grid-cols-7 gap-1">
-                                        {/* Empty Cells */}
                                         {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() }).map((_, i) => (
                                             <div key={`empty-${i}`} />
                                         ))}
 
-                                        {/* Days */}
                                         {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
                                             const day = i + 1;
                                             const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -305,7 +319,11 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                             <span className="text-[10px] opacity-70">{rosterData.batters.length} Players</span>
                         </h4>
                         <div className="flex flex-col">
-                            {rosterData.batters.length === 0 ? <div className="text-slate-600 text-xs italic py-2">No batters found</div> : rosterData.batters.map(renderPlayerRow)}
+                            {rosterData.batters.length === 0 ? (
+                                <div className="text-slate-600 text-xs italic py-2">No batters found</div>
+                            ) : (
+                                rosterData.batters.map(renderPlayerRow)
+                            )}
                         </div>
                     </div>
 
@@ -316,7 +334,11 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                             <span className="text-[10px] opacity-70">{rosterData.pitchers.length} Players</span>
                         </h4>
                         <div className="flex flex-col">
-                            {rosterData.pitchers.length === 0 ? <div className="text-slate-600 text-xs italic py-2">No pitchers found</div> : rosterData.pitchers.map(renderPlayerRow)}
+                            {rosterData.pitchers.length === 0 ? (
+                                <div className="text-slate-600 text-xs italic py-2">No pitchers found</div>
+                            ) : (
+                                rosterData.pitchers.map(renderPlayerRow)
+                            )}
                         </div>
                     </div>
                 </div>
