@@ -1722,7 +1722,7 @@ export default function PlayersPage() {
                               </span>
                               {renderStatusTag(player)}
                             </div>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex items-center justify-between w-full mt-1">
                               {player.original_name && player.original_name !== player.name && (
                                 <span className="text-purple-300/60 text-sm">
                                   {player.original_name}

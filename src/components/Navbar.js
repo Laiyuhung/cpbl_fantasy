@@ -195,55 +195,63 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden lg:flex items-center space-x-1">
-          {currentLeague ? (
-            <>
-              <a
-                href={`/league/${currentLeague.league_id}`}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname === `/league/${currentLeague.league_id}`
-                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
-                  : 'hover:bg-white/10 hover:text-cyan-300'
-                  }`}
-              >
-                OVERVIEW
-              </a>
-              <a
-                href={`/league/${currentLeague.league_id}/players`}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/players')
-                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
-                  : 'hover:bg-white/10 hover:text-cyan-300'
-                  }`}
-              >
-                PLAYERS
-              </a>
-              <a
-                href={`/league/${currentLeague.league_id}/roster`}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/roster')
-                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
-                  : 'hover:bg-white/10 hover:text-cyan-300'
-                  }`}
-              >
-                ROSTER
-              </a>
-              <a
-                href={`/league/${currentLeague.league_id}/matchups`}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/matchups')
-                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
-                  : 'hover:bg-white/10 hover:text-cyan-300'
-                  }`}
-              >
-                MATCHUPS
-              </a>
-              <a
-                href={`/league/${currentLeague.league_id}/league_settings`}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings')
-                  ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
-                  : 'hover:bg-white/10 hover:text-cyan-300'
-                  }`}
-              >
-                LEAGUE SETTINGS
-              </a>
-            </>
-          ) : null}
+          {(() => {
+            const leagueIdMatch = pathname?.match(/^\/league\/([^\/]+)/);
+            const activeLeagueId = leagueIdMatch ? leagueIdMatch[1] : currentLeague?.league_id;
+
+            if (activeLeagueId) {
+              return (
+                <>
+                  <a
+                    href={`/league/${activeLeagueId}`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname === `/league/${activeLeagueId}`
+                      ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                      : 'hover:bg-white/10 hover:text-cyan-300'
+                      }`}
+                  >
+                    OVERVIEW
+                  </a>
+                  <a
+                    href={`/league/${activeLeagueId}/players`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/players')
+                      ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                      : 'hover:bg-white/10 hover:text-cyan-300'
+                      }`}
+                  >
+                    PLAYERS
+                  </a>
+                  <a
+                    href={`/league/${activeLeagueId}/roster`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/roster')
+                      ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                      : 'hover:bg-white/10 hover:text-cyan-300'
+                      }`}
+                  >
+                    ROSTER
+                  </a>
+                  <a
+                    href={`/league/${activeLeagueId}/matchups`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/matchups')
+                      ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                      : 'hover:bg-white/10 hover:text-cyan-300'
+                      }`}
+                  >
+                    MATCHUPS
+                  </a>
+                  <a
+                    href={`/league/${activeLeagueId}/league_settings`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings')
+                      ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                      : 'hover:bg-white/10 hover:text-cyan-300'
+                      }`}
+                  >
+                    LEAGUE SETTINGS
+                  </a>
+                </>
+              );
+            }
+            return null;
+          })()}
 
           <div className="relative league-dropdown">
             <button
