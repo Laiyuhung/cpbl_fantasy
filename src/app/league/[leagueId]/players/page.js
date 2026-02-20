@@ -470,7 +470,7 @@ export default function PlayersPage() {
         player.identity?.toLowerCase() === filterIdentity.toLowerCase();
 
       // Ownership filter
-      const ownership = playerOwnership[player.player_id];
+      const ownership = ownerships.find(o => o.player_id === player.player_id);
       let matchesOwnership = true;
       if (filterOwnership === 'available') {
         matchesOwnership = !ownership; // Free agents only
@@ -513,7 +513,7 @@ export default function PlayersPage() {
     }
 
     return result;
-  }, [players, searchTerm, filterType, filterIdentity, filterOwnership, sortConfig, playerStats, playerRankings, playerOwnership, myManagerId, watchedPlayerIds]);
+  }, [players, searchTerm, filterType, filterIdentity, filterOwnership, sortConfig, playerStats, playerRankings, ownerships, myManagerId, watchedPlayerIds]);
 
   const displayBatterCats = useMemo(() => {
     const forced = 'At Bats (AB)';
