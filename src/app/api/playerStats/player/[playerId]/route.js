@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import supabase from '@/lib/supabase';
 import { NextResponse } from 'next/server';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 export async function GET(request, { params }) {
     try {
@@ -12,11 +7,13 @@ export async function GET(request, { params }) {
         const resolvedParams = await params;
         const { playerId } = resolvedParams;
 
+        const { searchParams } = new URL(request.url);
+        const type = searchParams.get('type'); // 'batter' or 'pitcher'
+
         if (!playerId || playerId === 'undefined' || playerId === 'null') {
             return NextResponse.json({ success: false, error: 'Invalid playerId' });
         }
 
-        // We want to fetch all stats for the specified time windows
         const timeWindows = [
             'Today',
             'Yesterday',
@@ -27,24 +24,25 @@ export async function GET(request, { params }) {
             '2025 Season'
         ];
 
-        // 1. First find out if the player is a batter or pitcher
-        const { data: playerInfo, error: playerError } = await supabase
-            .from('player_list')
-            .select('batter_or_pitcher')
-            .eq('player_id', playerId)
-            .single();
+        // 1. Determine player type (batter or pitcher)
+        // If type is passed from frontend, use it. Otherwise, query database.
+        let isPitcher = type === 'pitcher';
+        if (!type) {
+            const { data: playerInfo, error: playerError } = await supabase
+                .from('player_list')
+                .select('batter_or_pitcher')
+                .eq('player_id', playerId)
+                .single();
 
-        if (playerError) {
-            console.error('Error fetching player info:', playerError);
-            throw playerError;
+            if (!playerError && playerInfo) {
+                isPitcher = playerInfo.batter_or_pitcher === 'pitcher';
+            }
         }
-
-        const isPitcher = playerInfo?.batter_or_pitcher === 'pitcher';
 
         let battingData = [];
         let pitchingData = [];
 
-        // 2. Fetch from the specific view using player_id
+        // 2. Fetch from the specific view
         if (isPitcher) {
             const { data, error } = await supabase
                 .from('v_pitching_summary')
@@ -52,8 +50,11 @@ export async function GET(request, { params }) {
                 .eq('player_id', playerId)
                 .in('time_window', timeWindows);
 
-            if (error) throw error;
-            pitchingData = data || [];
+            if (error) {
+                console.error('Pitching View Error:', error);
+            } else {
+                pitchingData = data || [];
+            }
         } else {
             const { data, error } = await supabase
                 .from('v_batting_summary')
@@ -61,11 +62,14 @@ export async function GET(request, { params }) {
                 .eq('player_id', playerId)
                 .in('time_window', timeWindows);
 
-            if (error) throw error;
-            battingData = data || [];
+            if (error) {
+                console.error('Batting View Error:', error);
+            } else {
+                battingData = data || [];
+            }
         }
 
-        // Organize the data by time window for easier frontend consumption
+        // Organize the data by time window
         const battingByWindow = {};
         const pitchingByWindow = {};
 
@@ -78,7 +82,8 @@ export async function GET(request, { params }) {
             success: true,
             batting: battingByWindow,
             pitching: pitchingByWindow,
-            isPitcher
+            isPitcher,
+            playerId // for debugging
         });
 
     } catch (err) {

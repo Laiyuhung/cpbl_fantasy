@@ -46,7 +46,9 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
             setLoading(true);
             setError('');
             try {
-                const res = await fetch(`/api/playerStats/player/${player.player_id}`);
+                // Pass type (batter or pitcher) to API to help it query the right view
+                const type = player.batter_or_pitcher;
+                const res = await fetch(`/api/playerStats/player/${player.player_id}${type ? `?type=${type}` : ''}`);
                 const data = await res.json();
                 if (data.success) {
                     setStats({ batting: data.batting, pitching: data.pitching });
