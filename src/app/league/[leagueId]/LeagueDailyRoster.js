@@ -141,29 +141,32 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         fetchRoster();
     }, [leagueId, selectedManagerId, selectedDate]);
 
-    // Fetch stats for selected date
+    // Fetch stats — derive timeWindow from selectedDate, re-fetch on date or manager change
     useEffect(() => {
+        if (!selectedManagerId || !selectedDate) {
+            setPlayerStats({});
+            return;
+        }
+        const taiwanNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+        const todayStr = taiwanNow.toISOString().split('T')[0];
+        const timeWindow = selectedDate === todayStr ? 'Today' : selectedDate;
+
         const fetchStats = async () => {
-            if (!selectedDate) return;
             setStatsLoading(true);
             try {
                 const [batterRes, pitcherRes] = await Promise.all([
-                    fetch('/api/playerStats', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ type: 'batter', from: selectedDate, to: selectedDate })
-                    }),
-                    fetch('/api/playerStats', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ type: 'pitcher', from: selectedDate, to: selectedDate })
-                    })
+                    fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
+                    fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
                 ]);
                 const batterData = await batterRes.json();
                 const pitcherData = await pitcherRes.json();
                 const statsMap = {};
-                if (Array.isArray(batterData)) batterData.forEach(s => { if (s.name) statsMap[s.name] = s; });
-                if (Array.isArray(pitcherData)) pitcherData.forEach(s => { if (s.name) statsMap[s.name] = s; });
+                if (batterData.success && Array.isArray(batterData.stats)) {
+                    batterData.stats.forEach(s => { if (s.name) statsMap[s.name] = s; });
+                }
+                if (pitcherData.success && Array.isArray(pitcherData.stats)) {
+                    pitcherData.stats.forEach(s => { if (s.name) statsMap[s.name] = s; });
+                }
                 setPlayerStats(statsMap);
             } catch (e) {
                 console.error('Failed to fetch stats:', e);
@@ -173,7 +176,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
             }
         };
         fetchStats();
-    }, [selectedDate]);
+    }, [selectedManagerId, selectedDate]);
 
     const handleDateChange = (days) => {
         const currentIdx = availableDates.indexOf(selectedDate);
@@ -236,17 +239,17 @@ export default function LeagueDailyRoster({ leagueId, members }) {
             gameInfoEl = <span className="text-[10px] text-slate-600 italic flex-shrink-0 ml-1">No game</span>;
         }
 
-        // Stats chips — vivid, second row
+        // Stats chips — vertical columns: name on top, value below
         const statsRow = !isEmpty && statCats.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                {statCats.map((cat, idx) => {
+            <div className="flex flex-wrap items-end gap-x-3 gap-y-1 mt-1">
+                {statCats.map((cat) => {
                     const abbr = parseStatKey(cat);
                     const val = getStatValue(p.name, cat);
                     return (
-                        <span key={abbr} className="flex items-center gap-0.5 text-[10px]">
-                            <span className="text-slate-500 font-semibold">{abbr}</span>
-                            <span className={`font-mono font-bold ${val === '-' || val === 0 ? 'text-slate-600' : 'text-purple-200'}`}>{val}</span>
-                        </span>
+                        <div key={abbr} className="flex flex-col items-center">
+                            <span className="text-[9px] text-slate-500 font-semibold leading-none">{abbr}</span>
+                            <span className={`text-[11px] font-mono font-bold leading-tight ${val === '-' || val === 0 ? 'text-slate-600' : 'text-purple-200'}`}>{val}</span>
+                        </div>
                     );
                 })}
             </div>
@@ -287,19 +290,8 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                 Daily Roster
             </h3>
 
-            {/* Controls — Manager + Date on same row */}
+            {/* Controls — Date + Manager on same row */}
             <div className="flex items-center gap-2 mb-6">
-                <select
-                    value={selectedManagerId}
-                    onChange={(e) => setSelectedManagerId(e.target.value)}
-                    className="flex-1 min-w-0 bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors"
-                >
-                    <option value="">Select Manager...</option>
-                    {members && members.map(m => (
-                        <option key={m.manager_id} value={m.manager_id}>{m.nickname}</option>
-                    ))}
-                </select>
-
                 {/* Date Selector */}
                 <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-white/10 flex-shrink-0">
                     <button onClick={() => handleDateChange(-1)} disabled={!canGoPrev} className={`p-1.5 rounded transition-colors ${canGoPrev ? 'hover:bg-white/10 text-slate-300' : 'text-slate-700 cursor-not-allowed'}`}>
@@ -377,14 +369,19 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
                 </div>
-            </div>
 
-            {/* Clamped date notice */}
-            {actualDate && actualDate !== selectedDate && (
-                <div className="mb-3 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-[11px] text-yellow-300">
-                    Showing roster for <span className="font-bold">{formatDate(actualDate)}</span> (season boundary)
-                </div>
-            )}
+                {/* Manager Selector */}
+                <select
+                    value={selectedManagerId}
+                    onChange={(e) => setSelectedManagerId(e.target.value)}
+                    className="flex-1 min-w-0 bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors"
+                >
+                    <option value="">Select Manager...</option>
+                    {members && members.map(m => (
+                        <option key={m.manager_id} value={m.manager_id}>{m.nickname}</option>
+                    ))}
+                </select>
+            </div>
 
             {/* Content */}
             {!selectedManagerId ? (

@@ -287,6 +287,14 @@ export default function RosterPage() {
         fetchRosterForDate();
     }, [selectedDate]);
 
+    // Derive timeWindow from selectedDate — re-fetches stats when date changes
+    useEffect(() => {
+        if (!selectedDate) return;
+        const taiwanNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+        const todayStr = taiwanNow.toISOString().split('T')[0];
+        setTimeWindow(selectedDate === todayStr ? 'Today' : selectedDate);
+    }, [selectedDate]);
+
     // Settings
     useEffect(() => {
         const fetchSettings = async () => {
@@ -930,10 +938,10 @@ export default function RosterPage() {
                                                 onClick={() => handleSlotClick(player)}
                                                 disabled={player.isEmpty || !isMoveAllowed(player)}
                                                 className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
-                                                        !isMoveAllowed(player) ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60' :
-                                                            ['BN', 'IL', 'NA'].includes(player.position)
-                                                                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
-                                                                : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
+                                                    !isMoveAllowed(player) ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60' :
+                                                        ['BN', 'IL', 'NA'].includes(player.position)
+                                                            ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
+                                                            : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
                                                     }`}>
                                                 {player.position}
                                             </button>
