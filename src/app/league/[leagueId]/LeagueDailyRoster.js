@@ -11,6 +11,10 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     const [rosterData, setRosterData] = useState({ batters: [], pitchers: [] });
     const [loading, setLoading] = useState(false);
 
+    // Date Picker State
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [viewDate, setViewDate] = useState(new Date());
+
     // Fetch Roster
     useEffect(() => {
         const fetchRoster = async () => {
@@ -64,29 +68,54 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         fetchRoster();
     }, [leagueId, selectedManagerId, selectedDate]);
 
+    // Handlers
+    const handleDateChange = (days) => {
+        const date = new Date(selectedDate);
+        date.setDate(date.getDate() + days);
+        const newDateStr = date.toISOString().split('T')[0];
+        setSelectedDate(newDateStr);
+    };
+
     const getTeamColor = (team) => {
-        const colors = {
-            'Tigers': 'text-yellow-400',
-            'Brothers': 'text-yellow-500',
-            'Lions': 'text-orange-500',
-            'Guardians': 'text-blue-500',
-            'Dragons': 'text-red-500',
-            'Hawks': 'text-green-500',
-            'Monkeys': 'text-red-800' // Rakuten usually red/dark red
-        };
-        return colors[team] || 'text-slate-400';
+        if (!team) return 'text-slate-400';
+        const lower = team.toLowerCase();
+        if (lower.includes('brother') || lower.includes('兄弟')) return 'text-yellow-500';
+        if (lower.includes('lion') || lower.includes('統一')) return 'text-orange-500';
+        if (lower.includes('guardian') || lower.includes('富邦') || lower.includes('fubon')) return 'text-blue-500';
+        if (lower.includes('dragon') || lower.includes('味全')) return 'text-red-500';
+        if (lower.includes('hawk') || lower.includes('台鋼') || lower.includes('tsg')) return 'text-green-500';
+        if (lower.includes('monkey') || lower.includes('樂天') || lower.includes('rakuten')) return 'text-red-800';
+        return 'text-slate-400';
     };
 
     const getTeamAbbr = (team) => {
         if (!team) return '';
         const lower = team.toLowerCase();
+        // English mappings
         if (lower.includes('brothers')) return 'CTBC';
         if (lower.includes('lions')) return 'UNI';
         if (lower.includes('guardians')) return 'FBG';
         if (lower.includes('dragons')) return 'WCD';
         if (lower.includes('monkeys')) return 'RKM';
         if (lower.includes('hawks')) return 'TSG';
-        if (lower.includes('tigers')) return 'TSG'; // Sometimes Tigers/Hawks mixed up in older data?
+
+        // Chinese mappings
+        if (lower.includes('兄弟')) return '兄弟';
+        if (lower.includes('統一')) return '統一';
+        if (lower.includes('富邦')) return '富邦';
+        if (lower.includes('味全')) return '味全';
+        if (lower.includes('樂天')) return '樂天';
+        if (lower.includes('台鋼')) return '台鋼';
+
+        // Fallback: if it looks like a full Chinese name (3+ chars), trim to 2 if possible, or 3.
+        // Actually, just return specific length if English (3), else return as is or safe slice.
+        // If it's English and long, slice 3. If Chinese, maybe ok to keep?
+        // Let's stick to safe defaults.
+        if (/[\u4e00-\u9fa5]/.test(team)) {
+            // Chinese characters detected
+            return team.length > 2 ? team.substring(0, 2) : team; // Try to act smartly, e.g. 台鋼雄鷹 -> 台鋼
+        }
+
         return team.substring(0, 3).toUpperCase();
     };
 
@@ -107,7 +136,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                             {name}
                         </span>
                         {!isEmpty && (
-                            <div className="flex items-center gap-2 text-[10px]">
+                            <div className="flex items-center gap-2 text-[10px] whitespace-nowrap">
                                 {p.team && (
                                     <span className={`${getTeamColor(p.team)} font-bold`}>{getTeamAbbr(p.team)}</span>
                                 )}
@@ -155,15 +184,127 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                     ))}
                 </select>
 
-                {/* Date Selector */}
-                <div className="relative flex items-center justify-between bg-slate-800 rounded-lg p-1 border border-white/10">
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="w-full bg-transparent text-white font-mono text-center focus:outline-none p-1 uppercase cursor-pointer"
-                        style={{ colorScheme: 'dark' }}
-                    />
+                {/* Date Selector (Custom UI) */}
+                <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1 border border-white/10 justify-between">
+                    <button
+                        onClick={() => handleDateChange(-1)}
+                        className="p-1.5 hover:bg-white/10 rounded text-slate-300 transition-colors"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => {
+                                if (!showDatePicker) {
+                                    let initDate = new Date();
+                                    if (selectedDate) {
+                                        const [y, m, d] = selectedDate.split('-').map(Number);
+                                        initDate = new Date(y, m - 1, d);
+                                    }
+                                    setViewDate(initDate);
+                                }
+                                setShowDatePicker(!showDatePicker);
+                            }}
+                            className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 rounded transition-colors"
+                        >
+                            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-sm font-bold text-white font-mono">
+                                {selectedDate}
+                            </span>
+                        </button>
+
+                        {/* Dropdown Calendar */}
+                        {showDatePicker && (
+                            <>
+                                <div className="fixed inset-0 z-[890]" onClick={() => setShowDatePicker(false)} />
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[900] bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px]">
+                                    {/* Calendar Header */}
+                                    <div className="flex justify-between items-center mb-4">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const newDate = new Date(viewDate);
+                                                newDate.setMonth(newDate.getMonth() - 1);
+                                                setViewDate(newDate);
+                                            }}
+                                            className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                        </button>
+                                        <span className="text-white font-bold text-sm">
+                                            {viewDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                                        </span>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const newDate = new Date(viewDate);
+                                                newDate.setMonth(newDate.getMonth() + 1);
+                                                setViewDate(newDate);
+                                            }}
+                                            className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                        </button>
+                                    </div>
+
+                                    {/* Days Header */}
+                                    <div className="grid grid-cols-7 mb-2">
+                                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                                            <div key={d} className="text-center text-xs font-bold text-slate-500">{d}</div>
+                                        ))}
+                                    </div>
+
+                                    {/* Calendar Grid */}
+                                    <div className="grid grid-cols-7 gap-1">
+                                        {/* Empty Cells */}
+                                        {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() }).map((_, i) => (
+                                            <div key={`empty-${i}`} />
+                                        ))}
+
+                                        {/* Days */}
+                                        {Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
+                                            const day = i + 1;
+                                            const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                            const isSelected = selectedDate === dateStr;
+                                            const now = new Date();
+                                            const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                                            const todayStr = taiwanTime.toISOString().split('T')[0];
+                                            const isToday = dateStr === todayStr;
+
+                                            return (
+                                                <button
+                                                    key={dateStr}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedDate(dateStr);
+                                                        setShowDatePicker(false);
+                                                    }}
+                                                    className={`
+                                                        h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all
+                                                        ${isSelected ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50 scale-110' : ''}
+                                                        ${!isSelected && isToday ? 'border border-green-500 text-green-400' : ''}
+                                                        ${!isSelected && !isToday ? 'text-slate-300 hover:bg-purple-500/20 hover:text-white' : ''}
+                                                    `}
+                                                >
+                                                    {day}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => handleDateChange(1)}
+                        className="p-1.5 hover:bg-white/10 rounded text-slate-300 transition-colors"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
                 </div>
             </div>
 
