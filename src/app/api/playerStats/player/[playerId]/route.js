@@ -10,13 +10,19 @@ export async function GET(request, { params }) {
     try {
         // Next.js 15: params should be awaited
         const resolvedParams = await params;
-        const { playerId } = resolvedParams;
+        const { playerId: rawPlayerId } = resolvedParams;
 
         const { searchParams } = new URL(request.url);
         const type = searchParams.get('type'); // 'batter' or 'pitcher'
 
-        if (!playerId || playerId === 'undefined' || playerId === 'null') {
+        if (!rawPlayerId || rawPlayerId === 'undefined' || rawPlayerId === 'null') {
             return NextResponse.json({ success: false, error: 'Invalid playerId' });
+        }
+
+        // Convert playerId to integer for database query (view uses integer player_id)
+        const playerId = parseInt(rawPlayerId, 10);
+        if (isNaN(playerId)) {
+            return NextResponse.json({ success: false, error: 'Invalid playerId format' });
         }
 
         const timeWindows = [
@@ -47,7 +53,7 @@ export async function GET(request, { params }) {
         let battingData = [];
         let pitchingData = [];
 
-        // 2. Fetch from the specific view
+        // 2. Fetch from the specific view based on player type
         if (isPitcher) {
             const { data, error } = await supabase
                 .from('v_pitching_summary')
@@ -83,12 +89,20 @@ export async function GET(request, { params }) {
             pitchingByWindow[tw] = pitchingData.find(d => d.time_window === tw) || null;
         });
 
+        // Debug: log the data counts
+        console.log(`Player ${playerId} (isPitcher: ${isPitcher}): batting=${battingData.length}, pitching=${pitchingData.length}`);
+
         return NextResponse.json({
             success: true,
             batting: battingByWindow,
             pitching: pitchingByWindow,
             isPitcher,
-            playerId // for debugging
+            playerId, // for debugging
+            debug: {
+                battingDataCount: battingData.length,
+                pitchingDataCount: pitchingData.length,
+                typeParam: type
+            }
         });
 
     } catch (err) {
