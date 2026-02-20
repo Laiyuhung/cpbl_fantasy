@@ -213,7 +213,7 @@ export default function MatchupsPage() {
                                 >
                                     <div className="flex justify-between items-center text-sm">
                                         <div className="flex flex-col gap-0.5 truncate max-w-[100px]">
-                                            <span className="truncate text-purple-100 font-semibold">{match.manager1.nickname}</span>
+                                            <span className="truncate text-purple-100 font-semibold">{match.manager1.record}</span>
                                             <span className="truncate text-purple-300/70 text-xs">{match.manager1.team_name}</span>
                                         </div>
                                         <div className="flex flex-col items-center px-2">
@@ -225,7 +225,7 @@ export default function MatchupsPage() {
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-0.5 truncate max-w-[100px] text-right">
-                                            <span className="truncate text-purple-100 font-semibold">{match.manager2.nickname}</span>
+                                            <span className="truncate text-purple-100 font-semibold">{match.manager2.record}</span>
                                             <span className="truncate text-purple-300/70 text-xs">{match.manager2.team_name}</span>
                                         </div>
                                     </div>
@@ -247,7 +247,10 @@ export default function MatchupsPage() {
                                 {/* Manager 1 */}
                                 <div className="flex items-center gap-3 md:gap-4 flex-1">
                                     <div className="min-w-0">
-                                        <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager1.nickname}</div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager1.nickname}</div>
+                                            <div className="text-xs font-bold text-cyan-300 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">{activeMatchup.manager1.record}</div>
+                                        </div>
                                         <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager1.team_name}</div>
                                     </div>
                                 </div>
@@ -262,8 +265,11 @@ export default function MatchupsPage() {
 
                                 {/* Manager 2 */}
                                 <div className="flex items-center gap-3 md:gap-4 flex-1 justify-end text-right">
-                                    <div className="min-w-0">
-                                        <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager2.nickname}</div>
+                                    <div className="min-w-0 flex flex-col items-end">
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-xs font-bold text-cyan-300 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">{activeMatchup.manager2.record}</div>
+                                            <div className="font-bold text-lg md:text-xl truncate text-white">{activeMatchup.manager2.nickname}</div>
+                                        </div>
                                         <div className="text-xs md:text-sm text-purple-200 truncate">{activeMatchup.manager2.team_name}</div>
                                     </div>
                                 </div>

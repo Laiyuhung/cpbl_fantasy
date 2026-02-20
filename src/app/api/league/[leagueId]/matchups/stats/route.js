@@ -100,6 +100,19 @@ export async function GET(request, { params }) {
             }
         }
 
+        // 5. Fetch Standings for Records
+        const { data: standingsData, error: standingsError } = await supabase
+            .from('v_league_standings')
+            .select('manager_id, wins, losses, ties')
+            .eq('league_id', leagueId);
+
+        const recordsMap = {};
+        if (standingsData && !standingsError) {
+            standingsData.forEach(s => {
+                recordsMap[s.manager_id] = `(${s.wins}-${s.losses}-${s.ties})`;
+            });
+        }
+
         const finalMatchups = enrichedMatchups.map(m => {
             const manager1Data = managersMap[m.manager1_id];
             const manager2Data = managersMap[m.manager2_id];
@@ -108,12 +121,14 @@ export async function GET(request, { params }) {
                 ...m,
                 manager1: manager1Data ? {
                     nickname: manager1Data.nickname || 'Unknown',
-                    team_name: manager1Data.name || 'Team A'
-                } : { nickname: 'Unknown', team_name: 'Team A' },
+                    team_name: manager1Data.name || 'Team A',
+                    record: recordsMap[m.manager1_id] || '(0-0-0)'
+                } : { nickname: 'Unknown', team_name: 'Team A', record: '(0-0-0)' },
                 manager2: manager2Data ? {
                     nickname: manager2Data.nickname || 'Unknown',
-                    team_name: manager2Data.name || 'Team B'
-                } : { nickname: 'Unknown', team_name: 'Team B' }
+                    team_name: manager2Data.name || 'Team B',
+                    record: recordsMap[m.manager2_id] || '(0-0-0)'
+                } : { nickname: 'Unknown', team_name: 'Team B', record: '(0-0-0)' }
             };
         });
 
