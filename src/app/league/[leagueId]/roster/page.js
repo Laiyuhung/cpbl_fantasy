@@ -374,15 +374,15 @@ export default function RosterPage() {
         const fetchActiveTrades = async () => {
             if (!myManagerId) return;
             try {
-                const res = await fetch(`/api/trade?league_id=${leagueId}&manager_id=${myManagerId}`);
+                const res = await fetch(`/api/trade/list?league_id=${leagueId}&manager_id=${myManagerId}`);
                 const data = await res.json();
                 if (data.success && data.trades) {
                     const tradeIds = new Set();
                     data.trades.forEach(t => {
                         const status = t.status?.toLowerCase();
                         if (status === 'pending' || status === 'accepted') {
-                            (t.offer_player_ids || []).forEach(id => tradeIds.add(id));
-                            (t.request_player_ids || []).forEach(id => tradeIds.add(id));
+                            (t.initiator_player_ids || []).forEach(id => tradeIds.add(id));
+                            (t.recipient_player_ids || []).forEach(id => tradeIds.add(id));
                         }
                     });
                     setActiveTradePlayerIds(tradeIds);
