@@ -19,9 +19,9 @@ const TIME_WINDOWS = [
 export async function GET(request, { params }) {
   try {
     const resolvedParams = await params;
-    const playerId = parseInt(resolvedParams.playerId, 10);
+    const playerId = resolvedParams.playerId;
 
-    if (isNaN(playerId)) {
+    if (!playerId || playerId === 'undefined' || playerId === 'null') {
       return NextResponse.json({ success: false, error: 'Invalid playerId' }, { status: 400 });
     }
 
