@@ -25,11 +25,15 @@ export default function PlayerDetailModal({
     onAdd,              // (player, isWaiver) => void
     onDrop,             // (player) => void
     onTrade,            // (player, ownerManagerId) => void
+    // Watch Props (optional)
+    isWatched,          // Boolean: is this player in watchlist?
+    onToggleWatch,      // (player, isCurrentlyWatched) => void
 }) {
     const [stats, setStats] = useState({ batting: {}, pitching: {} });
     const [loading, setLoading] = useState(true);
     const [settingsLoading, setSettingsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [watchLoading, setWatchLoading] = useState(false);
 
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
@@ -289,6 +293,38 @@ export default function PlayerDetailModal({
         return null;
     };
 
+    // Watch button handler
+    const handleWatchClick = async () => {
+        if (!onToggleWatch || watchLoading) return;
+        setWatchLoading(true);
+        try {
+            await onToggleWatch(player, isWatched);
+        } finally {
+            setWatchLoading(false);
+        }
+    };
+
+    // Render Watch button
+    const renderWatchButton = () => {
+        if (!onToggleWatch || !myManagerId) return null;
+        
+        return (
+            <button
+                onClick={handleWatchClick}
+                disabled={watchLoading}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg ${
+                    isWatched
+                        ? 'bg-amber-500 hover:bg-amber-400 text-white'
+                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-600'
+                } ${watchLoading ? 'opacity-50 cursor-wait' : ''}`}
+                title={isWatched ? 'Remove from Watchlist' : 'Add to Watchlist'}
+            >
+                <span className="text-base">{isWatched ? '★' : '☆'}</span>
+                {watchLoading ? '...' : (isWatched ? 'Watched' : 'Watch')}
+            </button>
+        );
+    };
+
     // Fallback to determine best player photo
     let bestPhotoStr = '/photo/defaultPlayer.png';
     if (player.player_id) {
@@ -388,6 +424,16 @@ export default function PlayerDetailModal({
                                     <span className="text-slate-500 text-xs">No game</span>
                                 </>
                             )}
+                            {/* Watch Button */}
+                            {(() => {
+                                const watchBtn = renderWatchButton();
+                                return watchBtn ? (
+                                    <>
+                                        <span className="text-purple-300">|</span>
+                                        {watchBtn}
+                                    </>
+                                ) : null;
+                            })()}
                             {/* Action Button (Add/Drop/Trade) */}
                             {(() => {
                                 const actionBtn = renderActionButton();

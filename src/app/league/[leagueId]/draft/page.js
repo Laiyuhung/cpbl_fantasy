@@ -1269,6 +1269,7 @@ export default function DraftPage() {
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-700 mb-4 flex flex-wrap gap-4 items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="text-white font-bold text-lg mr-2">Players</span>
+                                <span className="text-xs text-slate-500 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700">2025 Season Stats</span>
                                 <div className="flex bg-slate-800 rounded p-1 border border-slate-700">
                                     <button
                                         className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}

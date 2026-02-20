@@ -62,6 +62,10 @@ export default function PlayersPage() {
   const [isFetchingTradeData, setIsFetchingTradeData] = useState(false);
   const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
+  // Watch State
+  const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
+  const [filterOwnership, setFilterOwnership] = useState('all'); // all, available, myteam, watched
+
   // Fetch rosters for trade validation
   useEffect(() => {
     if (showTradeModal && myManagerId && tradeTargetManagerId) {
@@ -221,6 +225,69 @@ export default function PlayersPage() {
     fetchAcquisitions();
     fetchActiveTrades();
   }, [leagueId, myManagerId]);
+
+  // Fetch watched players
+  const fetchWatchedPlayers = async () => {
+    if (!myManagerId || !leagueId) return;
+    try {
+      const res = await fetch(`/api/watched?league_id=${leagueId}&manager_id=${myManagerId}`);
+      const data = await res.json();
+      if (data.success) {
+        setWatchedPlayerIds(new Set(data.watchedIds || []));
+      }
+    } catch (e) {
+      console.error('Failed to fetch watched players:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchWatchedPlayers();
+  }, [leagueId, myManagerId]);
+
+  // Toggle watch status
+  const handleToggleWatch = async (player, isCurrentlyWatched) => {
+    if (!myManagerId || !leagueId) return;
+    
+    try {
+      if (isCurrentlyWatched) {
+        // Remove from watchlist
+        const res = await fetch('/api/watched', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            league_id: leagueId,
+            manager_id: myManagerId,
+            player_id: player.player_id
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setWatchedPlayerIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(player.player_id);
+            return newSet;
+          });
+        }
+      } else {
+        // Add to watchlist
+        const res = await fetch('/api/watched', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            league_id: leagueId,
+            manager_id: myManagerId,
+            player_id: player.player_id
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setWatchedPlayerIds(prev => new Set([...prev, player.player_id]));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to toggle watch:', e);
+    }
+  };
 
   // Set default sort when categories are loaded
   // useEffect removed to enforce Rank ASC default via initial state and button handlers
@@ -402,7 +469,18 @@ export default function PlayersPage() {
       const matchesIdentity = filterIdentity === 'all' ||
         player.identity?.toLowerCase() === filterIdentity.toLowerCase();
 
-      return matchesSearch && matchesType && matchesIdentity;
+      // Ownership filter
+      const ownership = playerOwnership[player.player_id];
+      let matchesOwnership = true;
+      if (filterOwnership === 'available') {
+        matchesOwnership = !ownership; // Free agents only
+      } else if (filterOwnership === 'myteam') {
+        matchesOwnership = ownership && ownership.manager_id === myManagerId;
+      } else if (filterOwnership === 'watched') {
+        matchesOwnership = watchedPlayerIds.has(player.player_id);
+      }
+
+      return matchesSearch && matchesType && matchesIdentity && matchesOwnership;
     });
 
     if (sortConfig.key) {
@@ -435,7 +513,7 @@ export default function PlayersPage() {
     }
 
     return result;
-  }, [players, searchTerm, filterType, filterIdentity, sortConfig, playerStats, playerRankings]);
+  }, [players, searchTerm, filterType, filterIdentity, filterOwnership, sortConfig, playerStats, playerRankings, playerOwnership, myManagerId, watchedPlayerIds]);
 
   const displayBatterCats = useMemo(() => {
     const forced = 'At Bats (AB)';
@@ -1556,6 +1634,23 @@ export default function PlayersPage() {
                 </select>
               </div>
 
+              {/* Ownership Filter */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Status
+                </label>
+                <select
+                  value={filterOwnership}
+                  onChange={(e) => setFilterOwnership(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="all">All Players</option>
+                  <option value="available">Free Agents</option>
+                  <option value="myteam">My Team</option>
+                  <option value="watched">★ Watched</option>
+                </select>
+              </div>
+
               {/* Time Window */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
@@ -1702,6 +1797,18 @@ export default function PlayersPage() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
+                          {/* Watch Button */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all ${
+                              watchedPlayerIds.has(player.player_id)
+                                ? 'bg-amber-500 text-white hover:bg-amber-400'
+                                : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
+                            }`}
+                            title={watchedPlayerIds.has(player.player_id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                          >
+                            {watchedPlayerIds.has(player.player_id) ? '★' : '☆'}
+                          </button>
                           {getPlayerActionButton(player)}
                           <img
                             src={getPlayerPhoto(player)}
@@ -2418,6 +2525,9 @@ export default function PlayersPage() {
           setSelectedMyPlayers([]);
           setSelectedTheirPlayers([]);
         }}
+        // Watch Props
+        isWatched={selectedPlayerModal ? watchedPlayerIds.has(selectedPlayerModal.player_id) : false}
+        onToggleWatch={handleToggleWatch}
       />
     </div >
   );
