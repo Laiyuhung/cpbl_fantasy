@@ -6,6 +6,7 @@ import LegendModal from '../../../../components/LegendModal';
 import MoveModal from './MoveModal';
 import MyTradesModal from '../../../../components/MyTradesModal';
 import WaiverModal from '../../../../components/WaiverModal';
+import PlayerDetailModal from '../../../../components/PlayerDetailModal';
 
 export default function RosterPage() {
     const params = useParams();
@@ -43,6 +44,7 @@ export default function RosterPage() {
     const [showWaiverModal, setShowWaiverModal] = useState(false);
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [playerToMove, setPlayerToMove] = useState(null);
+    const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
     // Trade State
     const [showMyTradesModal, setShowMyTradesModal] = useState(false);
@@ -859,7 +861,12 @@ export default function RosterPage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-white text-lg flex items-center">
-                                                            {player.name}
+                                                            <button
+                                                                onClick={() => setSelectedPlayerModal(player)}
+                                                                className="hover:text-purple-300 transition-colors cursor-pointer"
+                                                            >
+                                                                {player.name}
+                                                            </button>
                                                             {player.original_name && player.original_name !== player.name && (
                                                                 <span className="text-purple-300/60 text-sm font-normal ml-2">({player.original_name})</span>
                                                             )}
@@ -956,7 +963,12 @@ export default function RosterPage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-white text-lg flex items-center">
-                                                            {player.name}
+                                                            <button
+                                                                onClick={() => setSelectedPlayerModal(player)}
+                                                                className="hover:text-purple-300 transition-colors cursor-pointer"
+                                                            >
+                                                                {player.name}
+                                                            </button>
                                                             {player.original_name && player.original_name !== player.name && (
                                                                 <span className="text-purple-300/60 text-sm font-normal ml-2">({player.original_name})</span>
                                                             )}
@@ -1087,6 +1099,13 @@ export default function RosterPage() {
                     onClose={() => setShowMyTradesModal(false)}
                     leagueId={leagueId}
                     managerId={myManagerId}
+                />
+
+                <PlayerDetailModal
+                    isOpen={!!selectedPlayerModal}
+                    onClose={() => setSelectedPlayerModal(null)}
+                    player={selectedPlayerModal}
+                    leagueId={leagueId}
                 />
             </div>
             {/* Waiver Modal */}

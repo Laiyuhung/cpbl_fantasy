@@ -12,7 +12,8 @@ const TIME_WINDOWS = [
 
 export default function PlayerDetailModal({ isOpen, onClose, player, leagueId }) {
     const [stats, setStats] = useState({ batting: {}, pitching: {} });
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [settingsLoading, setSettingsLoading] = useState(true);
     const [error, setError] = useState('');
 
     const [batterStatCategories, setBatterStatCategories] = useState([]);
@@ -22,8 +23,22 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
     // or fall back to position if undefined
     const isPitcher = player?.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(player?.position);
 
+    // Reset state when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setLoading(true);
+            setSettingsLoading(true);
+            setError('');
+            setStats({ batting: {}, pitching: {} });
+        }
+    }, [isOpen, player?.player_id]);
+
     useEffect(() => {
         const fetchLeagueSettings = async () => {
+            if (!leagueId) {
+                setSettingsLoading(false);
+                return;
+            }
             try {
                 const res = await fetch(`/api/league-settings?league_id=${leagueId}`);
                 const data = await res.json();
@@ -33,6 +48,8 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
                 }
             } catch (err) {
                 console.error('Failed to fetch league settings', err);
+            } finally {
+                setSettingsLoading(false);
             }
         };
         if (isOpen && leagueId) {
@@ -42,9 +59,10 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
 
     useEffect(() => {
         const fetchStats = async () => {
-            if (!player?.player_id) return;
-            setLoading(true);
-            setError('');
+            if (!player?.player_id) {
+                setLoading(false);
+                return;
+            }
             try {
                 // Pass type (batter or pitcher) to API to help it query the right view
                 const type = player.batter_or_pitcher;
@@ -69,6 +87,9 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
     }, [isOpen, player]);
 
     if (!isOpen || !player) return null;
+
+    // Show loading until both settings and stats are loaded
+    const isFullyLoaded = !loading && !settingsLoading;
 
     // We need to parse categorical arrays to abbreviations
     const parseStatKey = (cat) => {
@@ -168,6 +189,25 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
         }
     };
 
+    // Render player badges (DR, NR, NA, F)
+    const renderBadges = () => {
+        const badges = [];
+        if (player.identity && player.identity.toLowerCase() === 'foreigner') {
+            badges.push(<span key="f" title="Foreign Player" className="w-6 h-6 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold">F</span>);
+        }
+        const status = (player.real_life_status || '').toUpperCase();
+        if (status.includes('MN') || status.includes('MINOR') || status === 'NA') {
+            badges.push(<span key="na" className="px-2 py-0.5 rounded text-xs font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">NA</span>);
+        }
+        if (status.includes('DEREGISTERED') || status === 'DR' || status === 'D') {
+            badges.push(<span key="dr" className="px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30">DR</span>);
+        }
+        if (status.includes('UNREGISTERED') || status === 'NR') {
+            badges.push(<span key="nr" className="px-2 py-0.5 rounded text-xs font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">NR</span>);
+        }
+        return badges.length > 0 ? <div className="flex items-center gap-1.5 ml-2">{badges}</div> : null;
+    };
+
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             {/* Backdrop */}
@@ -192,9 +232,12 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
 
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-4">
-                            <h2 className="text-2xl sm:text-3xl font-black text-white truncate drop-shadow-md">
-                                {player.name}
-                            </h2>
+                            <div className="flex items-center">
+                                <h2 className="text-2xl sm:text-3xl font-black text-white truncate drop-shadow-md">
+                                    {player.name}
+                                </h2>
+                                {renderBadges()}
+                            </div>
                             <button
                                 onClick={onClose}
                                 className="p-2 -mr-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-colors self-start shrink-0"
@@ -218,8 +261,8 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
                 </div>
 
                 {/* Stats Table Area */}
-                <div className="flex-1 overflow-auto bg-black/10 p-5 sm:p-6 custom-scrollbar">
-                    {loading ? (
+                <div className="flex-1 overflow-hidden bg-black/10 p-5 sm:p-6">
+                    {!isFullyLoaded ? (
                         <div className="flex flex-col items-center justify-center h-48 space-y-4">
                             <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                             <div className="text-purple-300 font-semibold tracking-wide animate-pulse">Loading Stats...</div>
@@ -231,11 +274,11 @@ export default function PlayerDetailModal({ isOpen, onClose, player, leagueId })
                             </div>
                         </div>
                     ) : (
-                        <div className="rounded-xl overflow-x-auto border border-white/5 bg-slate-900/50 shadow-inner block custom-scrollbar">
-                            <table className="w-full text-left border-collapse">
+                        <div className="rounded-xl border border-white/5 bg-slate-900/50 shadow-inner overflow-x-auto max-w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <table className="text-left border-collapse min-w-max">
                                 <thead>
                                     <tr className="bg-slate-800/80 border-b border-white/10 shadow-sm">
-                                        <th className="py-3 px-3 text-xs font-black text-purple-300 uppercase tracking-widest sticky left-0 top-0 bg-slate-800 z-20 border-r border-white/10 shadow-[1px_0_0_0_rgba(255,255,255,0.05)]">
+                                        <th className="py-3 px-3 text-xs font-black text-purple-300 uppercase tracking-widest sticky left-0 top-0 bg-slate-800 z-20 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.3)] whitespace-nowrap">
                                             Split
                                         </th>
                                         {abbreviations.map((abbr, i) => (
