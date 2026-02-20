@@ -419,7 +419,7 @@ export default function PlayerDetailModal({
                                 </span>
                             )}
                             {!player.game_info && (
-                                <span className="text-slate-500 text-xs">—</span>
+                                <span className="text-slate-400 text-xs">No game</span>
                             )}
                             {/* Watch Button */}
                             {renderWatchButton()}
