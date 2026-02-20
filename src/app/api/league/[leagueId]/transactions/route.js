@@ -48,10 +48,24 @@ export async function GET(request, { params }) {
         if (playerIds.size > 0) {
             const { data: players, error: pError } = await supabase
                 .from('player_list')
-                .select('player_id, name')
+                .select('player_id, name, batter_or_pitcher, team')
                 .in('player_id', Array.from(playerIds));
+
+            // Fetch positions too for better modal display
+            const { data: batterPos } = await supabase.from('v_batter_positions').select('*').in('player_id', Array.from(playerIds));
+            const { data: pitcherPos } = await supabase.from('v_pitcher_positions').select('*').in('player_id', Array.from(playerIds));
+
+            const posMap = {};
+            batterPos?.forEach(p => posMap[p.player_id] = p.position_list);
+            pitcherPos?.forEach(p => posMap[p.player_id] = p.position_list);
+
             if (!pError && players) {
-                players.forEach(p => playerMap[p.player_id] = p.name);
+                players.forEach(p => {
+                    playerMap[p.player_id] = {
+                        ...p,
+                        position_list: posMap[p.player_id]
+                    };
+                });
             }
         }
 
@@ -62,14 +76,14 @@ export async function GET(request, { params }) {
         // 4. Enrich data
         const enrichedTransactions = transRes.data.map(t => ({
             ...t,
-            player: { name: playerMap[t.player_id] || 'Unknown' },
+            player: playerMap[t.player_id] || { name: 'Unknown' },
             manager: { nickname: memberMap[t.manager_id] || 'Unknown' }
         }));
 
         const enrichedWaivers = waiverRes.data.map(w => ({
             ...w,
-            player: { name: playerMap[w.player_id] || 'Unknown' },
-            drop_player: w.drop_player_id ? { name: playerMap[w.drop_player_id] || 'Unknown' } : null,
+            player: playerMap[w.player_id] || { name: 'Unknown' },
+            drop_player: w.drop_player_id ? (playerMap[w.drop_player_id] || { name: 'Unknown' }) : null,
             manager: { nickname: memberMap[w.manager_id] || 'Unknown' }
         }));
 
