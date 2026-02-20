@@ -88,37 +88,6 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         return 'text-slate-400';
     };
 
-    const getTeamAbbr = (team) => {
-        if (!team) return '';
-        const lower = team.toLowerCase();
-        // English mappings
-        if (lower.includes('brothers')) return 'CTBC';
-        if (lower.includes('lions')) return 'UNI';
-        if (lower.includes('guardians')) return 'FBG';
-        if (lower.includes('dragons')) return 'WCD';
-        if (lower.includes('monkeys')) return 'RKM';
-        if (lower.includes('hawks')) return 'TSG';
-
-        // Chinese mappings
-        if (lower.includes('兄弟')) return '兄弟';
-        if (lower.includes('統一')) return '統一';
-        if (lower.includes('富邦')) return '富邦';
-        if (lower.includes('味全')) return '味全';
-        if (lower.includes('樂天')) return '樂天';
-        if (lower.includes('台鋼')) return '台鋼';
-
-        // Fallback: if it looks like a full Chinese name (3+ chars), trim to 2 if possible, or 3.
-        // Actually, just return specific length if English (3), else return as is or safe slice.
-        // If it's English and long, slice 3. If Chinese, maybe ok to keep?
-        // Let's stick to safe defaults.
-        if (/[\u4e00-\u9fa5]/.test(team)) {
-            // Chinese characters detected
-            return team.length > 2 ? team.substring(0, 2) : team; // Try to act smartly, e.g. 台鋼雄鷹 -> 台鋼
-        }
-
-        return team.substring(0, 3).toUpperCase();
-    };
-
     // Render Row
     const renderPlayerRow = (p) => {
         // p is the roster item. p.player_id might be 'empty'.
@@ -132,19 +101,18 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                         }`}>{p.position}</span>
 
                     <div className="flex flex-col min-w-0">
-                        <span className={`text-sm font-bold truncate ${isEmpty ? 'text-slate-600 italic' : 'text-slate-200'}`}>
-                            {name}
-                        </span>
-                        {!isEmpty && (
-                            <div className="flex items-center gap-2 text-[10px] whitespace-nowrap">
-                                {p.team && (
-                                    <span className={`${getTeamColor(p.team)} font-bold`}>{getTeamAbbr(p.team)}</span>
-                                )}
-                                {p.game_info && (
-                                    <span className="text-slate-500">
-                                        {p.game_info.is_home ? 'vs' : '@'} {getTeamAbbr(p.game_info.opponent)}
-                                    </span>
-                                )}
+                        <div className="flex items-center gap-2">
+                            <span className={`text-sm font-bold truncate ${isEmpty ? 'text-slate-600 italic' : 'text-slate-200'}`}>
+                                {name}
+                            </span>
+                            {!isEmpty && p.team && (
+                                <span className={`${getTeamColor(p.team)} font-bold text-[10px]`}>{p.team}</span>
+                            )}
+                        </div>
+
+                        {!isEmpty && p.game_info && (
+                            <div className="text-[10px] text-slate-500 whitespace-nowrap">
+                                {p.game_info.is_home ? 'vs' : '@'} {p.game_info.opponent}
                             </div>
                         )}
                     </div>
@@ -212,8 +180,19 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             <span className="text-sm font-bold text-white font-mono">
-                                {selectedDate}
+                                {selectedDate ? selectedDate.substring(5) : ''}
                             </span>
+                            {(() => {
+                                const now = new Date();
+                                const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                                const todayStr = taiwanTime.toISOString().split('T')[0];
+                                const isToday = selectedDate === todayStr;
+                                return isToday ? (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-green-500/20 text-green-300 border border-green-500/30 font-bold">
+                                        TODAY
+                                    </span>
+                                ) : null;
+                            })()}
                         </button>
 
                         {/* Dropdown Calendar */}
