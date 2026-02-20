@@ -220,27 +220,32 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         const isPitcher = p.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(p.position);
         const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
 
-        // Game info string — show date prefix if clamped to different date
-        let gameInfoDisplay = 'No game';
-        if (p.game_info) {
+        // Game info: show inline — "vs 中信兄弟 17:05"
+        let gameInfoEl = null;
+        if (!isEmpty && p.game_info) {
             const timeStr = formatTime(p.game_info.time);
             const vsAt = p.game_info.is_home ? 'vs' : '@';
             const opp = p.game_info.opponent || '';
-            // If the actualDate returned by API differs from selectedDate, show date prefix
             const datePrefix = actualDate && actualDate !== selectedDate ? `${formatDate(actualDate)} ` : '';
-            gameInfoDisplay = `${datePrefix}${timeStr} ${vsAt} ${opp}`;
+            gameInfoEl = (
+                <span className="text-[10px] text-slate-400 font-mono flex-shrink-0 ml-1">
+                    {datePrefix} {timeStr} {vsAt} {opp}
+                </span>
+            );
+        } else if (!isEmpty && !p.game_info) {
+            gameInfoEl = <span className="text-[10px] text-slate-600 italic flex-shrink-0 ml-1">No game</span>;
         }
 
-        // Stats row chips
+        // Stats chips — vivid, second row
         const statsRow = !isEmpty && statCats.length > 0 ? (
-            <div className="flex flex-wrap gap-1 mt-1">
-                {statCats.map(cat => {
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                {statCats.map((cat, idx) => {
                     const abbr = parseStatKey(cat);
                     const val = getStatValue(p.name, cat);
                     return (
-                        <span key={abbr} className="flex items-center gap-0.5 text-[9px]">
-                            <span className="text-slate-600 font-bold">{abbr}</span>
-                            <span className="text-slate-300 font-mono">{val}</span>
+                        <span key={abbr} className="flex items-center gap-0.5 text-[10px]">
+                            <span className="text-slate-500 font-semibold">{abbr}</span>
+                            <span className={`font-mono font-bold ${val === '-' || val === 0 ? 'text-slate-600' : 'text-purple-200'}`}>{val}</span>
                         </span>
                     );
                 })}
@@ -249,24 +254,25 @@ export default function LeagueDailyRoster({ leagueId, members }) {
 
         return (
             <div key={p.id || `empty-${p.position}-${Math.random()}`} className="py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 transition-colors">
-                <div className="flex items-center gap-3">
-                    <span className={`w-8 flex-shrink-0 text-center text-xs font-bold ${['BN', 'NA', 'IL'].includes(p.position) ? 'text-slate-500' : 'text-purple-400'}`}>
+                <div className="flex items-start gap-3">
+                    {/* Position badge */}
+                    <span className={`w-8 flex-shrink-0 text-center text-xs font-bold mt-0.5 ${['BN', 'NA', 'IL'].includes(p.position) ? 'text-slate-500' : 'text-purple-400'}`}>
                         {p.position}
                     </span>
+
                     <div className="flex flex-col min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                            <span className={`text-sm font-bold truncate ${isEmpty ? 'text-slate-600 italic' : 'text-slate-200'}`}>{name}</span>
+                        {/* Row 1: Name + Team + Game Info */}
+                        <div className="flex items-center gap-1 flex-wrap">
+                            <span className={`text-sm font-bold ${isEmpty ? 'text-slate-600 italic' : 'text-slate-100'}`}>{name}</span>
                             {!isEmpty && p.team && (
                                 <span className={`${getTeamColor(p.team)} font-bold text-[10px] flex-shrink-0`}>{teamAbbr}</span>
                             )}
+                            {gameInfoEl}
                         </div>
-                        {!isEmpty && (
-                            <div className={`text-[10px] whitespace-nowrap ${p.game_info ? 'text-slate-500' : 'text-slate-600 italic'}`}>
-                                {gameInfoDisplay}
-                            </div>
-                        )}
+
+                        {/* Row 2: Stats */}
                         {statsLoading && !isEmpty ? (
-                            <div className="text-[9px] text-slate-600 italic mt-0.5">Loading stats...</div>
+                            <div className="text-[9px] text-slate-600 italic mt-0.5">Loading...</div>
                         ) : statsRow}
                     </div>
                 </div>
