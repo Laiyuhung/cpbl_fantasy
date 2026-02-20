@@ -171,7 +171,9 @@ export async function GET(request) {
 
     // Filter trades logic
     const filteredTrades = (trades || []).filter(t => { // Safety check or handle after error check
-      if (t.status === 'pending' || t.status === 'accepted' || t.status === 'processed') return true;
+      // Always show pending and accepted trades
+      if (t.status === 'pending' || t.status === 'accepted') return true;
+      // Show processed and other resolved trades only within 48 hours
       const updatedAt = t.updated_at ? new Date(t.updated_at) : new Date(t.created_at);
       return updatedAt > fortyEightHoursAgo;
     });

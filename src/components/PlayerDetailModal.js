@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const TIME_WINDOWS = [
     'Today',
@@ -358,7 +359,10 @@ export default function PlayerDetailModal({
         return badges.length > 0 ? <div className="flex items-center gap-1.5 ml-2">{badges}</div> : null;
     };
 
-    return (
+    // Use portal to render modal directly under body to avoid positioning issues from parent transforms
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
@@ -402,48 +406,25 @@ export default function PlayerDetailModal({
                             <span className={`${teamColor} bg-white/5 py-1 px-2.5 rounded shadow-sm border border-white/5`}>
                                 {teamAbbr}
                             </span>
-                            <span className="text-purple-300">|</span>
                             <span className="text-slate-300 tracking-wider">
                                 {positionStr}
                             </span>
                             {player.game_info && (
-                                <>
-                                    <span className="text-purple-300">|</span>
-                                    <span className="text-slate-400 font-mono text-xs">
-                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                        {' '}
-                                        {player.game_info.is_home ? 'vs' : '@'}
-                                        {' '}
-                                        {player.game_info.opponent}
-                                    </span>
-                                </>
+                                <span className="text-slate-400 font-mono text-xs">
+                                    {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                    {' '}
+                                    {player.game_info.is_home ? 'vs' : '@'}
+                                    {' '}
+                                    {player.game_info.opponent}
+                                </span>
                             )}
                             {!player.game_info && (
-                                <>
-                                    <span className="text-purple-300">|</span>
-                                    <span className="text-slate-500 text-xs">No game</span>
-                                </>
+                                <span className="text-slate-500 text-xs">—</span>
                             )}
                             {/* Watch Button */}
-                            {(() => {
-                                const watchBtn = renderWatchButton();
-                                return watchBtn ? (
-                                    <>
-                                        <span className="text-purple-300">|</span>
-                                        {watchBtn}
-                                    </>
-                                ) : null;
-                            })()}
+                            {renderWatchButton()}
                             {/* Action Button (Add/Drop/Trade) */}
-                            {(() => {
-                                const actionBtn = renderActionButton();
-                                return actionBtn ? (
-                                    <>
-                                        <span className="text-purple-300">|</span>
-                                        {actionBtn}
-                                    </>
-                                ) : null;
-                            })()}
+                            {renderActionButton()}
                         </div>
                     </div>
                 </div>
@@ -484,6 +465,7 @@ export default function PlayerDetailModal({
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

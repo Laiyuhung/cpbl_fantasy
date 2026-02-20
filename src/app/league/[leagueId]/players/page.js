@@ -1797,18 +1797,6 @@ export default function PlayersPage() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {/* Watch Button */}
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all ${
-                              watchedPlayerIds.has(player.player_id)
-                                ? 'bg-amber-500 text-white hover:bg-amber-400'
-                                : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
-                            }`}
-                            title={watchedPlayerIds.has(player.player_id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
-                          >
-                            {watchedPlayerIds.has(player.player_id) ? '★' : '☆'}
-                          </button>
                           {getPlayerActionButton(player)}
                           <img
                             src={getPlayerPhoto(player)}
@@ -1817,6 +1805,18 @@ export default function PlayersPage() {
                           />
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
+                              {/* Watch Button */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                                  watchedPlayerIds.has(player.player_id)
+                                    ? 'bg-amber-500 text-white hover:bg-amber-400'
+                                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
+                                }`}
+                                title={watchedPlayerIds.has(player.player_id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                              >
+                                {watchedPlayerIds.has(player.player_id) ? '★' : '☆'}
+                              </button>
                               {playerRankings[player.player_id] && (
                                 <span className="text-xs font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
                               )}

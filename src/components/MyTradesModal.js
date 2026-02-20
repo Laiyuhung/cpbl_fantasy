@@ -408,7 +408,12 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="mt-2 text-right">
+                                        <div className="mt-2 flex items-center justify-end gap-2">
+                                            {trade.status === 'processed' && trade.updated_at && (
+                                                <span className="text-[10px] text-slate-400">
+                                                    Executed: {new Date(trade.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
+                                                </span>
+                                            )}
                                             <span className={`text-xs px-2 py-0.5 rounded border ${(trade.status === 'accepted' || trade.status === 'processed') ? 'bg-green-500/10 text-green-500 border-green-500/30' :
                                                 trade.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' :
                                                     'bg-red-500/10 text-red-500 border-red-500/30'

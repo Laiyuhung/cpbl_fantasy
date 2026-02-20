@@ -60,6 +60,9 @@ export default function RosterPage() {
     const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
     const [leagueStatus, setLeagueStatus] = useState('unknown');
 
+    // Watch State
+    const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
+
     // Helpers
     const parseStatName = (stat) => {
         const matches = stat.match(/\(([^)]+)\)/g);
@@ -428,6 +431,51 @@ export default function RosterPage() {
         };
         fetchTrades();
     }, [leagueId, myManagerId, showMyTradesModal]);
+
+    // Fetch watched players
+    useEffect(() => {
+        if (!leagueId || !myManagerId) return;
+        const fetchWatched = async () => {
+            try {
+                const res = await fetch(`/api/watched?league_id=${leagueId}&manager_id=${myManagerId}`);
+                const data = await res.json();
+                if (data.success && data.watchedIds) {
+                    setWatchedPlayerIds(new Set(data.watchedIds));
+                }
+            } catch (e) {
+                console.error('Failed to fetch watched players:', e);
+            }
+        };
+        fetchWatched();
+    }, [leagueId, myManagerId]);
+
+    // Toggle watch handler
+    const handleToggleWatch = async (player, isCurrentlyWatched) => {
+        if (!myManagerId || !player?.player_id) return;
+        try {
+            if (isCurrentlyWatched) {
+                await fetch('/api/watched', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ league_id: leagueId, manager_id: myManagerId, player_id: player.player_id })
+                });
+                setWatchedPlayerIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(player.player_id);
+                    return next;
+                });
+            } else {
+                await fetch('/api/watched', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ league_id: leagueId, manager_id: myManagerId, player_id: player.player_id })
+                });
+                setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
+            }
+        } catch (e) {
+            console.error('Failed to toggle watch:', e);
+        }
+    };
 
     const getPlayerStat = (playerId, statKey) => {
         if (!playerId || playerId === 'empty') return '-';
@@ -1195,6 +1243,9 @@ export default function RosterPage() {
                     seasonYear={seasonYear}
                     isPlayerLocked={selectedPlayerModal ? activeTradePlayerIds.has(selectedPlayerModal.player_id) : false}
                     onDrop={(player) => handleDropPlayer(player)}
+                    // Watch Props
+                    isWatched={selectedPlayerModal ? watchedPlayerIds.has(selectedPlayerModal.player_id) : false}
+                    onToggleWatch={handleToggleWatch}
                 />
 
                 {/* Drop Confirmation Modal */}

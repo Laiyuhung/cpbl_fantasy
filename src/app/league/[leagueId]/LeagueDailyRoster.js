@@ -56,6 +56,62 @@ export default function LeagueDailyRoster({ leagueId, members }) {
 
     const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
+    // Watch state
+    const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
+    const [myManagerId, setMyManagerId] = useState(null);
+
+    // Get current user's manager ID
+    useEffect(() => {
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+        const userId = cookie?.split('=')[1];
+        if (userId) setMyManagerId(userId);
+    }, []);
+
+    // Fetch watched players
+    useEffect(() => {
+        if (!leagueId || !myManagerId) return;
+        const fetchWatched = async () => {
+            try {
+                const res = await fetch(`/api/watched?league_id=${leagueId}&manager_id=${myManagerId}`);
+                const data = await res.json();
+                if (data.success && data.watchedIds) {
+                    setWatchedPlayerIds(new Set(data.watchedIds));
+                }
+            } catch (e) {
+                console.error('Failed to fetch watched players:', e);
+            }
+        };
+        fetchWatched();
+    }, [leagueId, myManagerId]);
+
+    // Toggle watch handler
+    const handleToggleWatch = async (player, isCurrentlyWatched) => {
+        if (!myManagerId || !player?.player_id) return;
+        try {
+            if (isCurrentlyWatched) {
+                await fetch('/api/watched', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ league_id: leagueId, manager_id: myManagerId, player_id: player.player_id })
+                });
+                setWatchedPlayerIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(player.player_id);
+                    return next;
+                });
+            } else {
+                await fetch('/api/watched', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ league_id: leagueId, manager_id: myManagerId, player_id: player.player_id })
+                });
+                setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
+            }
+        } catch (e) {
+            console.error('Failed to toggle watch:', e);
+        }
+    };
+
     // Fetch schedule (for availableDates) + league settings on mount
     useEffect(() => {
         if (!leagueId) return;
@@ -242,7 +298,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                 </span>
             );
         } else if (!isEmpty && !p.game_info) {
-            gameInfoEl = <span className="text-[10px] text-slate-600 italic flex-shrink-0 ml-1">No game</span>;
+            gameInfoEl = <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">No game</span>;
         }
 
         // Stats — horizontal scroll, vertical chip layout
@@ -441,6 +497,9 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                 onClose={() => setSelectedPlayerModal(null)}
                 player={selectedPlayerModal}
                 leagueId={leagueId}
+                myManagerId={myManagerId}
+                isWatched={selectedPlayerModal ? watchedPlayerIds.has(selectedPlayerModal.player_id) : false}
+                onToggleWatch={handleToggleWatch}
             />
         </div>
     );
