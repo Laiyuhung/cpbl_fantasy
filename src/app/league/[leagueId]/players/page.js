@@ -1743,15 +1743,19 @@ export default function PlayersPage() {
                                   F
                                 </span>
                               )}
-                              {player.game_info && (
-                                <span className="text-[10px] font-mono text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-700/50 flex items-center gap-1">
-                                  <span>{new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                                  <span className={player.game_info.is_home ? 'text-purple-400' : 'text-blue-400'}>
+                              <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
+                                {player.game_info ? (
+                                  <>
+                                    {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                    {' '}
                                     {player.game_info.is_home ? 'vs' : '@'}
-                                  </span>
-                                  <span>{getTeamAbbr(player.game_info.opponent)}</span>
-                                </span>
-                              )}
+                                    {' '}
+                                    {player.game_info.opponent}
+                                  </>
+                                ) : (
+                                  'No game'
+                                )}
+                              </span>
                             </div>
                           </div>
                         </div>
