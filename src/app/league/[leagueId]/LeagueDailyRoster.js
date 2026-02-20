@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PlayerDetailModal from '../../../components/PlayerDetailModal';
 
 function toAbbr(team) {
     switch (team) {
@@ -52,6 +53,8 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     // Date Picker State
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [viewDate, setViewDate] = useState(new Date());
+
+    const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
     // Fetch schedule (for availableDates) + league settings on mount
     useEffect(() => {
@@ -272,7 +275,12 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                     <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
                         {/* Row 1: Name + Team + Game Info */}
                         <div className="flex items-center gap-1 flex-wrap">
-                            <span className={`text-sm font-bold ${isEmpty ? 'text-slate-600 italic' : 'text-slate-100'}`}>{name}</span>
+                            <span
+                                className={`text-sm font-bold ${isEmpty ? 'text-slate-600 italic' : 'text-slate-100 cursor-pointer hover:text-purple-300 transition-colors'}`}
+                                onClick={() => !isEmpty && setSelectedPlayerModal(p)}
+                            >
+                                {name}
+                            </span>
                             {!isEmpty && p.team && (
                                 <span className={`${getTeamColor(p.team)} font-bold text-[10px] flex-shrink-0`}>{teamAbbr}</span>
                             )}
@@ -427,6 +435,13 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                     </div>
                 </div>
             )}
+
+            <PlayerDetailModal
+                isOpen={!!selectedPlayerModal}
+                onClose={() => setSelectedPlayerModal(null)}
+                player={selectedPlayerModal}
+                leagueId={leagueId}
+            />
         </div>
     );
 }

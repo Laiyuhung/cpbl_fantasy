@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
 import CpblScheduleWidget from '@/components/CpblScheduleWidget';
 import LeagueDailyRoster from './LeagueDailyRoster';
+import PlayerDetailModal from '@/components/PlayerDetailModal';
 
 // Playoff Tree Diagram Component
 const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members }) => {
@@ -302,6 +303,7 @@ export default function LeaguePage() {
   const [transLoading, setTransLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('transactions'); // 'transactions' | 'waivers'
   const [viewAll, setViewAll] = useState(false);
+  const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -1134,7 +1136,10 @@ export default function LeaguePage() {
                                     </div>
                                     <div className="flex flex-col">
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight">
+                                        <span
+                                          className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight"
+                                          onClick={() => item.player && setSelectedPlayerModal(item.player)}
+                                        >
                                           {item.player?.name}
                                         </span>
                                         {isTrade && recipientNickname && (
@@ -1212,7 +1217,10 @@ export default function LeaguePage() {
                                   <span className="text-2xl font-black text-green-500 leading-none">+</span>
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight">
+                                  <span
+                                    className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight"
+                                    onClick={() => w.player && setSelectedPlayerModal(w.player)}
+                                  >
                                     {w.player?.name}
                                   </span>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
@@ -1226,7 +1234,10 @@ export default function LeaguePage() {
                                     <span className="text-2xl font-black text-red-500 leading-none">-</span>
                                   </div>
                                   <div className="flex flex-col">
-                                    <span className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight">
+                                    <span
+                                      className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight"
+                                      onClick={() => w.drop_player && setSelectedPlayerModal(w.drop_player)}
+                                    >
                                       {w.drop_player?.name}
                                     </span>
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
@@ -1290,6 +1301,12 @@ export default function LeaguePage() {
           <LeagueDailyRoster leagueId={leagueId} members={members} />
         </div>
 
+        <PlayerDetailModal
+          isOpen={!!selectedPlayerModal}
+          onClose={() => setSelectedPlayerModal(null)}
+          player={selectedPlayerModal}
+          leagueId={leagueId}
+        />
       </div>
     );
   }

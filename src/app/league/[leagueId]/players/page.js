@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
+import PlayerDetailModal from '../../../../components/PlayerDetailModal';
 
 export default function PlayersPage() {
   const params = useParams();
@@ -59,6 +60,7 @@ export default function PlayersPage() {
   const [leagueSettings, setLeagueSettings] = useState({});
   const [tradeEndDate, setTradeEndDate] = useState(null);
   const [isFetchingTradeData, setIsFetchingTradeData] = useState(false);
+  const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
   // Fetch rosters for trade validation
   useEffect(() => {
@@ -1711,7 +1713,10 @@ export default function PlayersPage() {
                               {playerRankings[player.player_id] && (
                                 <span className="text-xs font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
                               )}
-                              <span className="text-white font-semibold group-hover:text-purple-300 transition-colors">
+                              <span
+                                className="text-white font-semibold group-hover:text-purple-300 transition-colors cursor-pointer"
+                                onClick={() => setSelectedPlayerModal(player)}
+                              >
                                 {player.name || 'Unknown'}
                                 {player.original_name && player.original_name !== player.name && (
                                   <span className="text-purple-300/60 text-sm font-normal ml-1">
@@ -2393,6 +2398,12 @@ export default function PlayersPage() {
         )
       }
 
+      <PlayerDetailModal
+        isOpen={!!selectedPlayerModal}
+        onClose={() => setSelectedPlayerModal(null)}
+        player={selectedPlayerModal}
+        leagueId={leagueId}
+      />
     </div >
   );
 }
