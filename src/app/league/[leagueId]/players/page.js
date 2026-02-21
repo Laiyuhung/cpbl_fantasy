@@ -244,48 +244,56 @@ export default function PlayersPage() {
     fetchWatchedPlayers();
   }, [leagueId, myManagerId]);
 
-  // Toggle watch status
+  // Toggle watch status (optimistic update)
   const handleToggleWatch = async (player, isCurrentlyWatched) => {
     if (!myManagerId || !leagueId) return;
     
+    // Optimistic update - update UI immediately
+    if (isCurrentlyWatched) {
+      setWatchedPlayerIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(player.player_id);
+        return newSet;
+      });
+    } else {
+      setWatchedPlayerIds(prev => new Set([...prev, player.player_id]));
+    }
+    
     try {
-      if (isCurrentlyWatched) {
-        // Remove from watchlist
-        const res = await fetch('/api/watched', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            league_id: leagueId,
-            manager_id: myManagerId,
-            player_id: player.player_id
-          })
-        });
-        const data = await res.json();
-        if (data.success) {
+      const res = await fetch('/api/watched', {
+        method: isCurrentlyWatched ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          league_id: leagueId,
+          manager_id: myManagerId,
+          player_id: player.player_id
+        })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        // Rollback on failure
+        if (isCurrentlyWatched) {
+          setWatchedPlayerIds(prev => new Set([...prev, player.player_id]));
+        } else {
           setWatchedPlayerIds(prev => {
             const newSet = new Set(prev);
             newSet.delete(player.player_id);
             return newSet;
           });
         }
-      } else {
-        // Add to watchlist
-        const res = await fetch('/api/watched', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            league_id: leagueId,
-            manager_id: myManagerId,
-            player_id: player.player_id
-          })
-        });
-        const data = await res.json();
-        if (data.success) {
-          setWatchedPlayerIds(prev => new Set([...prev, player.player_id]));
-        }
       }
     } catch (e) {
       console.error('Failed to toggle watch:', e);
+      // Rollback on error
+      if (isCurrentlyWatched) {
+        setWatchedPlayerIds(prev => new Set([...prev, player.player_id]));
+      } else {
+        setWatchedPlayerIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(player.player_id);
+          return newSet;
+        });
+      }
     }
   };
 

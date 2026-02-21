@@ -449,31 +449,52 @@ export default function RosterPage() {
         fetchWatched();
     }, [leagueId, myManagerId]);
 
-    // Toggle watch handler
+    // Toggle watch handler (optimistic update)
     const handleToggleWatch = async (player, isCurrentlyWatched) => {
         if (!myManagerId || !player?.player_id) return;
+        
+        // Optimistic update - update UI immediately
+        if (isCurrentlyWatched) {
+            setWatchedPlayerIds(prev => {
+                const next = new Set(prev);
+                next.delete(player.player_id);
+                return next;
+            });
+        } else {
+            setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
+        }
+        
         try {
+            const res = await fetch('/api/watched', {
+                method: isCurrentlyWatched ? 'DELETE' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ league_id: leagueId, manager_id: myManagerId, player_id: player.player_id })
+            });
+            const data = await res.json();
+            if (!data.success) {
+                // Rollback on failure
+                if (isCurrentlyWatched) {
+                    setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
+                } else {
+                    setWatchedPlayerIds(prev => {
+                        const next = new Set(prev);
+                        next.delete(player.player_id);
+                        return next;
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('Failed to toggle watch:', e);
+            // Rollback on error
             if (isCurrentlyWatched) {
-                await fetch('/api/watched', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ league_id: leagueId, manager_id: myManagerId, player_id: player.player_id })
-                });
+                setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
+            } else {
                 setWatchedPlayerIds(prev => {
                     const next = new Set(prev);
                     next.delete(player.player_id);
                     return next;
                 });
-            } else {
-                await fetch('/api/watched', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ league_id: leagueId, manager_id: myManagerId, player_id: player.player_id })
-                });
-                setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
             }
-        } catch (e) {
-            console.error('Failed to toggle watch:', e);
         }
     };
 

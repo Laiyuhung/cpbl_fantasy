@@ -317,11 +317,11 @@ export default function PlayerDetailModal({
                     isWatched
                         ? 'bg-amber-500 hover:bg-amber-400 text-white'
                         : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-600'
-                } ${watchLoading ? 'opacity-50 cursor-wait' : ''}`}
+                }`}
                 title={isWatched ? 'Remove from Watchlist' : 'Add to Watchlist'}
             >
                 <span className="text-base">{isWatched ? '★' : '☆'}</span>
-                {watchLoading ? '...' : (isWatched ? 'Watched' : 'Watch')}
+                {isWatched ? 'Watched' : 'Watch'}
             </button>
         );
     };
