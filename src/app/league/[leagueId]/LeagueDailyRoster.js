@@ -216,7 +216,8 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                     setLeagueSettings(settData.data);
                     setTradeEndDate(settData.data.trade_end_date || null);
                     setSeasonYear(settData.data.season_year || new Date().getFullYear());
-                    setLeagueStatus(settData.data.league_status || '');
+                    // status comes from league_statuses table, returned at top level
+                    setLeagueStatus(settData.status || '');
                 }
             } catch (e) { console.error('Failed to fetch league settings:', e); }
 
