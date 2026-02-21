@@ -21,6 +21,9 @@ export default function MatchupsPage() {
     const [selectedMatchupIndex, setSelectedMatchupIndex] = useState(0);
     const [scheduleData, setScheduleData] = useState([]);
     const [weekDropdownOpen, setWeekDropdownOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('categories'); // 'categories' or 'stats'
+    const [playerStats, setPlayerStats] = useState({ batting: [], pitching: [] });
+    const [playerStatsLoading, setPlayerStatsLoading] = useState(false);
 
     // Get current user's manager ID
     useEffect(() => {
@@ -99,6 +102,27 @@ export default function MatchupsPage() {
         fetchData();
     }, [leagueId, selectedWeek]); // 移除 currentManagerId 避免雙重 fetch
 
+    // Fetch player stats when tab switches to 'stats' or matchup changes
+    useEffect(() => {
+        if (activeTab !== 'stats' || !leagueId || !selectedWeek || !matchups[selectedMatchupIndex]) return;
+        
+        const fetchPlayerStats = async () => {
+            setPlayerStatsLoading(true);
+            try {
+                const res = await fetch(`/api/league/${leagueId}/matchups/player-stats?week=${selectedWeek}`);
+                const data = await res.json();
+                if (data.success) {
+                    setPlayerStats({ batting: data.batting || [], pitching: data.pitching || [] });
+                }
+            } catch (error) {
+                console.error('Error fetching player stats:', error);
+            } finally {
+                setPlayerStatsLoading(false);
+            }
+        };
+        fetchPlayerStats();
+    }, [activeTab, leagueId, selectedWeek, selectedMatchupIndex, matchups]);
+
     // 獨立處理 auto-select 用戶的對戰
     useEffect(() => {
         if (currentManagerId && matchups.length > 0) {
@@ -141,6 +165,57 @@ export default function MatchupsPage() {
         const prefix = type === 'batter' ? 'b_' : 'p_';
         return `${prefix}${abbr}`;
     };
+
+    // Team abbreviation helper
+    const getTeamAbbr = (team) => {
+        switch (team) {
+            case '統一獅': return 'UL';
+            case '富邦悍將': return 'FG';
+            case '樂天桃猿': return 'RM';
+            case '中信兄弟': return 'B';
+            case '味全龍': return 'W';
+            case '台鋼雄鷹': return 'TSG';
+            default: return team?.substring(0, 2) || '-';
+        }
+    };
+
+    const getTeamColor = (team) => {
+        switch (team) {
+            case '統一獅': return 'text-orange-400';
+            case '富邦悍將': return 'text-blue-400';
+            case '樂天桃猿': return 'text-rose-400';
+            case '中信兄弟': return 'text-yellow-400';
+            case '味全龍': return 'text-red-400';
+            case '台鋼雄鷹': return 'text-green-400';
+            default: return 'text-slate-400';
+        }
+    };
+
+    // Get stat value from player data
+    const getStatValue = (stat, abbr) => {
+        const key = abbr.toLowerCase();
+        const val = stat[key];
+        // Format rate stats
+        if (['avg', 'obp', 'slg', 'ops'].includes(key)) {
+            return typeof val === 'number' ? val.toFixed(3) : (val ?? '.000');
+        }
+        if (['era', 'whip'].includes(key)) {
+            return val ?? '0.00';
+        }
+        if (key === 'ip') {
+            return stat.ip_display ?? '0.0';
+        }
+        if (key === 'k/bb') {
+            return val === null || val === undefined ? 'INF' : val;
+        }
+        return val ?? 0;
+    };
+
+    // Build batter columns: AB + league categories
+    const batterColumns = ['AB', ...(scroingSettings?.batter_categories?.map(cat => getAbbr(cat)) || [])];
+    
+    // Build pitcher columns: IP + league categories  
+    const pitcherColumns = ['IP', ...(scroingSettings?.pitcher_categories?.map(cat => getAbbr(cat)) || [])];
 
     const activeMatchup = matchups[selectedMatchupIndex];
 
@@ -328,7 +403,32 @@ export default function MatchupsPage() {
                             </div>
                         </div>
 
-                        {/* Stats Table */}
+                        {/* Tab Switcher */}
+                        <div className="flex justify-center border-b border-purple-500/20 bg-slate-900/50">
+                            <button
+                                onClick={() => setActiveTab('categories')}
+                                className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-all ${
+                                    activeTab === 'categories'
+                                        ? 'text-purple-300 border-b-2 border-purple-500 bg-purple-500/10'
+                                        : 'text-slate-400 hover:text-purple-300 hover:bg-purple-500/5'
+                                }`}
+                            >
+                                Categories
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('stats')}
+                                className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-all ${
+                                    activeTab === 'stats'
+                                        ? 'text-cyan-300 border-b-2 border-cyan-500 bg-cyan-500/10'
+                                        : 'text-slate-400 hover:text-cyan-300 hover:bg-cyan-500/5'
+                                }`}
+                            >
+                                Player Stats
+                            </button>
+                        </div>
+
+                        {/* Categories Tab Content */}
+                        {activeTab === 'categories' && (
                         <div className="overflow-x-auto">
                             {/* Stats Table */}
                             <div className="w-full">
@@ -397,6 +497,177 @@ export default function MatchupsPage() {
                                 </Table>
                             </div>
                         </div>
+                        )}
+
+                        {/* Stats Tab Content - Player Level Stats */}
+                        {activeTab === 'stats' && (
+                            <div className="p-4">
+                                {playerStatsLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                        <span className="text-cyan-300 font-bold">Loading Player Stats...</span>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-8">
+                                        {/* Manager 1 Batting */}
+                                        <div>
+                                            <h3 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                                                <span className="w-2 h-5 bg-purple-500 rounded-full"></span>
+                                                {activeMatchup.manager1.nickname} - Batting
+                                            </h3>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="bg-slate-800/60 text-purple-300 text-xs uppercase">
+                                                            <th className="px-3 py-2 text-left">Player</th>
+                                                            {batterColumns.map(col => (
+                                                                <th key={col} className="px-2 py-2 text-center">{col}</th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-white/5">
+                                                        {playerStats.batting
+                                                            .filter(s => s.manager_id === activeMatchup.manager1_id && s.gp > 0)
+                                                            .sort((a, b) => (b.ab || 0) - (a.ab || 0))
+                                                            .map((stat, idx) => (
+                                                                <tr key={idx} className="hover:bg-slate-800/40">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-white font-medium">{stat.player_name}</span>
+                                                                        <span className={`ml-1 text-xs font-bold ${getTeamColor(stat.player_team)}`}>{getTeamAbbr(stat.player_team)}</span>
+                                                                    </td>
+                                                                    {batterColumns.map(col => (
+                                                                        <td key={col} className="px-2 py-2 text-center text-slate-300 font-mono">{getStatValue(stat, col)}</td>
+                                                                    ))}
+                                                                </tr>
+                                                            ))}
+                                                        {playerStats.batting.filter(s => s.manager_id === activeMatchup.manager1_id && s.gp > 0).length === 0 && (
+                                                            <tr><td colSpan={batterColumns.length + 1} className="text-center py-4 text-slate-500 italic">No batting stats recorded</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        {/* Manager 2 Batting */}
+                                        <div>
+                                            <h3 className="text-lg font-bold text-cyan-300 mb-3 flex items-center gap-2">
+                                                <span className="w-2 h-5 bg-cyan-500 rounded-full"></span>
+                                                {activeMatchup.manager2.nickname} - Batting
+                                            </h3>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="bg-slate-800/60 text-cyan-300 text-xs uppercase">
+                                                            <th className="px-3 py-2 text-left">Player</th>
+                                                            {batterColumns.map(col => (
+                                                                <th key={col} className="px-2 py-2 text-center">{col}</th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-white/5">
+                                                        {playerStats.batting
+                                                            .filter(s => s.manager_id === activeMatchup.manager2_id && s.gp > 0)
+                                                            .sort((a, b) => (b.ab || 0) - (a.ab || 0))
+                                                            .map((stat, idx) => (
+                                                                <tr key={idx} className="hover:bg-slate-800/40">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-white font-medium">{stat.player_name}</span>
+                                                                        <span className={`ml-1 text-xs font-bold ${getTeamColor(stat.player_team)}`}>{getTeamAbbr(stat.player_team)}</span>
+                                                                    </td>
+                                                                    {batterColumns.map(col => (
+                                                                        <td key={col} className="px-2 py-2 text-center text-slate-300 font-mono">{getStatValue(stat, col)}</td>
+                                                                    ))}
+                                                                </tr>
+                                                            ))}
+                                                        {playerStats.batting.filter(s => s.manager_id === activeMatchup.manager2_id && s.gp > 0).length === 0 && (
+                                                            <tr><td colSpan={batterColumns.length + 1} className="text-center py-4 text-slate-500 italic">No batting stats recorded</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        {/* Manager 1 Pitching */}
+                                        <div>
+                                            <h3 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                                                <span className="w-2 h-5 bg-purple-500 rounded-full"></span>
+                                                {activeMatchup.manager1.nickname} - Pitching
+                                            </h3>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="bg-slate-800/60 text-purple-300 text-xs uppercase">
+                                                            <th className="px-3 py-2 text-left">Player</th>
+                                                            {pitcherColumns.map(col => (
+                                                                <th key={col} className="px-2 py-2 text-center">{col}</th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-white/5">
+                                                        {playerStats.pitching
+                                                            .filter(s => s.manager_id === activeMatchup.manager1_id && s.app > 0)
+                                                            .sort((a, b) => (b.outs || 0) - (a.outs || 0))
+                                                            .map((stat, idx) => (
+                                                                <tr key={idx} className="hover:bg-slate-800/40">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-white font-medium">{stat.player_name}</span>
+                                                                        <span className={`ml-1 text-xs font-bold ${getTeamColor(stat.player_team)}`}>{getTeamAbbr(stat.player_team)}</span>
+                                                                    </td>
+                                                                    {pitcherColumns.map(col => (
+                                                                        <td key={col} className="px-2 py-2 text-center text-slate-300 font-mono">{getStatValue(stat, col)}</td>
+                                                                    ))}
+                                                                </tr>
+                                                            ))}
+                                                        {playerStats.pitching.filter(s => s.manager_id === activeMatchup.manager1_id && s.app > 0).length === 0 && (
+                                                            <tr><td colSpan={pitcherColumns.length + 1} className="text-center py-4 text-slate-500 italic">No pitching stats recorded</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        {/* Manager 2 Pitching */}
+                                        <div>
+                                            <h3 className="text-lg font-bold text-cyan-300 mb-3 flex items-center gap-2">
+                                                <span className="w-2 h-5 bg-cyan-500 rounded-full"></span>
+                                                {activeMatchup.manager2.nickname} - Pitching
+                                            </h3>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="bg-slate-800/60 text-cyan-300 text-xs uppercase">
+                                                            <th className="px-3 py-2 text-left">Player</th>
+                                                            {pitcherColumns.map(col => (
+                                                                <th key={col} className="px-2 py-2 text-center">{col}</th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-white/5">
+                                                        {playerStats.pitching
+                                                            .filter(s => s.manager_id === activeMatchup.manager2_id && s.app > 0)
+                                                            .sort((a, b) => (b.outs || 0) - (a.outs || 0))
+                                                            .map((stat, idx) => (
+                                                                <tr key={idx} className="hover:bg-slate-800/40">
+                                                                    <td className="px-3 py-2 whitespace-nowrap">
+                                                                        <span className="text-white font-medium">{stat.player_name}</span>
+                                                                        <span className={`ml-1 text-xs font-bold ${getTeamColor(stat.player_team)}`}>{getTeamAbbr(stat.player_team)}</span>
+                                                                    </td>
+                                                                    {pitcherColumns.map(col => (
+                                                                        <td key={col} className="px-2 py-2 text-center text-slate-300 font-mono">{getStatValue(stat, col)}</td>
+                                                                    ))}
+                                                                </tr>
+                                                            ))}
+                                                        {playerStats.pitching.filter(s => s.manager_id === activeMatchup.manager2_id && s.app > 0).length === 0 && (
+                                                            <tr><td colSpan={pitcherColumns.length + 1} className="text-center py-4 text-slate-500 italic">No pitching stats recorded</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
