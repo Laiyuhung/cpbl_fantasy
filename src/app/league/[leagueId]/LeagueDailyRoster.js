@@ -373,22 +373,57 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         }
     };
 
-    const validateTradeRoster = (currentRoster, outgoingIds, incomingIds, settings) => {
+    // Trade Validation - matches players page logic
+    const validateTradeRoster = (currentRoster, losingPlayerIds, gainingPlayerIds, settings, gainingRoster) => {
         if (!settings || !settings.roster_positions) return [];
+
+        // 1. Calculate future roster
+        const losingSet = new Set(losingPlayerIds);
+        const futureRoster = currentRoster.filter(p => !losingSet.has(p.player_id));
+
+        // Get gaining players from the other roster
+        const gainingPlayers = gainingRoster ? gainingRoster.filter(p => gainingPlayerIds.includes(p.player_id)) : [];
+
+        // Add gaining players to future roster. Assume they go to BN (Active).
+        const futureRosterWithIncoming = [
+            ...futureRoster,
+            ...gainingPlayers.map(p => ({ ...p, position: 'BN', identity: p.identity || 'local' }))
+        ];
+
+        // 2. Counts
+        const rosterConfig = settings.roster_positions || {};
+        const totalLimit = Object.values(rosterConfig).reduce((sum, count) => sum + count, 0);
+
+        const foreigners = futureRosterWithIncoming.filter(p => p.identity?.toLowerCase() === 'foreigner');
+        const foreignerCount = foreigners.length;
+        const foreignerLimit = parseInt(settings.foreigner_on_team_limit) || 999;
+
+        // Active Counts (Exclude NA and Minor)
+        const activePlayers = futureRosterWithIncoming.filter(p => {
+            const pos = (p.position || '').toUpperCase();
+            return !['NA', 'MINOR', 'MN', 'DL', 'IL'].includes(pos);
+        });
+        const activeCount = activePlayers.length;
+
+        // Calculate Active Limit (Sum of all slots except NA/Minor/DL/IL)
+        const activeLimit = Object.entries(rosterConfig)
+            .filter(([key]) => {
+                const k = key.toUpperCase();
+                return !['MINOR', 'NA', 'MN', 'DL', 'IL'].includes(k);
+            })
+            .reduce((sum, [_, count]) => sum + count, 0);
+
+        const activeForeigners = activePlayers.filter(p => p.identity?.toLowerCase() === 'foreigner');
+        const activeForeignerCount = activeForeigners.length;
+        const activeForeignerLimit = parseInt(settings.foreigner_active_limit) || 999;
+
+        // 3. Check violations
         const violations = [];
-        const projectedRoster = currentRoster.filter(p => !outgoingIds.includes(p.player_id));
-        const incomingCount = incomingIds.length;
-        const outgoingCount = outgoingIds.length;
-        const delta = incomingCount - outgoingCount;
-        const totalOnTeamLimit = parseInt(settings.total_player_limit) || 999;
-        if (projectedRoster.length + incomingCount > totalOnTeamLimit) {
-            violations.push(`Total players exceed limit (${projectedRoster.length + incomingCount}/${totalOnTeamLimit})`);
-        }
-        const activeLimit = parseInt(settings.active_player_limit) || 999;
-        const activeCount = projectedRoster.filter(p => !['BN', 'IL', 'NA', 'MN'].includes(p.position)).length + incomingCount;
-        if (activeCount > activeLimit) {
-            violations.push(`Active roster exceeds limit (${activeCount}/${activeLimit})`);
-        }
+        if (futureRosterWithIncoming.length > totalLimit) violations.push(`Total Players: ${futureRosterWithIncoming.length}/${totalLimit}`);
+        if (activeCount > activeLimit) violations.push(`Active Players: ${activeCount}/${activeLimit}`);
+        if (foreignerCount > foreignerLimit) violations.push(`Foreign Players: ${foreignerCount}/${foreignerLimit}`);
+        if (activeForeignerCount > activeForeignerLimit) violations.push(`Active Foreigners: ${activeForeignerCount}/${activeForeignerLimit}`);
+
         return violations;
     };
 
@@ -403,6 +438,17 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         setTradeLoading(true);
         if (!selectedMyPlayers.length || !selectedTheirPlayers.length) {
             setTradeErrorMessage({ title: 'Validation Error', description: 'Both sides must select at least one player.' });
+            setShowTradeErrorNotification(true);
+            setTimeout(() => setShowTradeErrorNotification(false), 4000);
+            setTradeLoading(false);
+            return;
+        }
+        // Final roster validation before submit
+        const myViolations = validateTradeRoster(tradeMyRoster, selectedMyPlayers, selectedTheirPlayers, leagueSettings, tradeTheirRoster);
+        const theirViolations = validateTradeRoster(tradeTheirRoster, selectedTheirPlayers, selectedMyPlayers, leagueSettings, tradeMyRoster);
+        if (myViolations.length > 0 || theirViolations.length > 0) {
+            const allViolations = [...myViolations.map(v => `You: ${v}`), ...theirViolations.map(v => `Opponent: ${v}`)];
+            setTradeErrorMessage({ title: 'Roster Violation', description: allViolations.join('; ') });
             setShowTradeErrorNotification(true);
             setTimeout(() => setShowTradeErrorNotification(false), 4000);
             setTradeLoading(false);
@@ -447,9 +493,10 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         const theirPlayers = tradeTheirRoster.filter(p => !['IL', 'NA', 'MN'].includes(p.position));
         const myNick = members.find(m => m.manager_id === myManagerId)?.nickname || 'You';
         const theirNick = members.find(m => m.manager_id === tradeTargetManagerId)?.nickname || 'Opponent';
-        const myViolations = validateTradeRoster(tradeMyRoster, selectedMyPlayers, selectedTheirPlayers, leagueSettings);
-        const theirViolations = validateTradeRoster(tradeTheirRoster, selectedTheirPlayers, selectedMyPlayers, leagueSettings);
-        const isValid = myViolations.length === 0 && theirViolations.length === 0;
+        // Validate before submit - pass gaining roster for player info lookup
+        const myViolations = validateTradeRoster(tradeMyRoster, selectedMyPlayers, selectedTheirPlayers, leagueSettings, tradeTheirRoster);
+        const theirViolations = validateTradeRoster(tradeTheirRoster, selectedTheirPlayers, selectedMyPlayers, leagueSettings, tradeMyRoster);
+        const isValid = myViolations.length === 0 && theirViolations.length === 0 && selectedMyPlayers.length > 0 && selectedTheirPlayers.length > 0;
 
         return createPortal(
             <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
