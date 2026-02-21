@@ -458,10 +458,17 @@ export default function MatchupsPage() {
                                             const val1 = activeMatchup.manager1_stats[dbCol];
                                             const val2 = activeMatchup.manager2_stats[dbCol];
                                             const abbr = getAbbr(cat);
+                                            const weight = scroingSettings?.category_weights?.batter?.[cat];
+                                            const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
                                             return (
                                                 <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
                                                     <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-purple-100 py-3 pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
-                                                    <TableCell className="w-[20%] text-center font-bold text-sm text-purple-300 uppercase tracking-wider py-3">{abbr}</TableCell>
+                                                    <TableCell className="w-[20%] text-center py-3">
+                                                        <span className="font-bold text-sm text-purple-300 uppercase tracking-wider">{abbr}</span>
+                                                        {isFantasyPoints && weight !== undefined && (
+                                                            <span className="ml-1 text-xs text-yellow-300 font-bold">x{weight}</span>
+                                                        )}
+                                                    </TableCell>
                                                     <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-purple-100 py-3 pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
                                                 </TableRow>
                                             );
@@ -485,10 +492,17 @@ export default function MatchupsPage() {
                                             const val1 = activeMatchup.manager1_stats[dbCol];
                                             const val2 = activeMatchup.manager2_stats[dbCol];
                                             const abbr = getAbbr(cat);
+                                            const weight = scroingSettings?.category_weights?.pitcher?.[cat];
+                                            const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
                                             return (
                                                 <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
                                                     <TableCell className="w-[40%] text-right font-mono text-lg md:text-xl font-medium text-purple-100 py-3 pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
-                                                    <TableCell className="w-[20%] text-center font-bold text-sm text-purple-300 uppercase tracking-wider py-3">{abbr}</TableCell>
+                                                    <TableCell className="w-[20%] text-center py-3">
+                                                        <span className="font-bold text-sm text-purple-300 uppercase tracking-wider">{abbr}</span>
+                                                        {isFantasyPoints && weight !== undefined && (
+                                                            <span className="ml-1 text-xs text-yellow-300 font-bold">x{weight}</span>
+                                                        )}
+                                                    </TableCell>
                                                     <TableCell className="w-[40%] text-left font-mono text-lg md:text-xl font-medium text-purple-100 py-3 pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
                                                 </TableRow>
                                             );

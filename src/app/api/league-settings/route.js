@@ -380,6 +380,20 @@ export async function PUT(request) {
       );
     }
 
+    // Check if Max Teams is valid (not less than current member count)
+    const newMaxTeams = parseInt(settings.general['Max Teams']);
+    const { count, error: memberCountError } = await supabase
+      .from('league_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', league_id);
+
+    if (!memberCountError && count !== null && newMaxTeams < count) {
+      return NextResponse.json(
+        { error: `Max Teams cannot be less than current member count (${count})` },
+        { status: 400 }
+      );
+    }
+
     // 檢查 Scoring Type 是否改變
     const { data: currentSettings } = await supabase
       .from('league_settings')

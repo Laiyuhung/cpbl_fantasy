@@ -1,11 +1,14 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 export default function AmericanDatePicker({ value, onChange, minDate, disabled, className }) {
     const [show, setShow] = useState(false);
     const [viewDate, setViewDate] = useState(new Date()); // Calendar view month
+    const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
     const containerRef = useRef(null);
+    const inputRef = useRef(null);
 
     // Parse input value
     const dateValue = value ? new Date(value) : null;
@@ -21,13 +24,23 @@ export default function AmericanDatePicker({ value, onChange, minDate, disabled,
             } else {
                 setViewDate(new Date());
             }
+            // Calculate popup position (fixed positioning uses viewport coordinates)
+            if (inputRef.current) {
+                const rect = inputRef.current.getBoundingClientRect();
+                setPopupPosition({
+                    top: rect.bottom + 8,
+                    left: rect.left
+                });
+            }
         }
     }, [show]);
 
-    // Click outside to close
+    // Click outside to close (check both container and portal popup)
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
+            const popupEl = document.getElementById('datepicker-portal-popup');
+            if (containerRef.current && !containerRef.current.contains(event.target) && 
+                (!popupEl || !popupEl.contains(event.target))) {
                 setShow(false);
             }
         };
@@ -134,6 +147,7 @@ export default function AmericanDatePicker({ value, onChange, minDate, disabled,
         <div className={`relative ${className}`} ref={containerRef}>
             {/* Input Display */}
             <div
+                ref={inputRef}
                 onClick={() => !disabled && setShow(!show)}
                 className={`flex items-center justify-between w-full px-3 py-2 bg-slate-800/60 border rounded-md cursor-pointer transition-colors ${disabled ? 'opacity-50 cursor-not-allowed border-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}
             >
@@ -143,9 +157,13 @@ export default function AmericanDatePicker({ value, onChange, minDate, disabled,
                 <CalendarIcon className="w-4 h-4 text-purple-400" />
             </div>
 
-            {/* Popup */}
-            {show && (
-                <div className="absolute top-full left-0 mt-2 z-50 bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[300px] animate-scaleIn">
+            {/* Popup via Portal */}
+            {show && typeof document !== 'undefined' && createPortal(
+                <div 
+                    id="datepicker-portal-popup"
+                    style={{ position: 'fixed', top: popupPosition.top, left: popupPosition.left, zIndex: 9999 }}
+                    className="bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[300px] animate-scaleIn"
+                >
                     {/* Header */}
                     <div className="flex items-center justify-between mb-4">
                         <button
@@ -247,7 +265,8 @@ export default function AmericanDatePicker({ value, onChange, minDate, disabled,
                             Done
                         </button>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

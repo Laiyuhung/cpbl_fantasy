@@ -27,6 +27,25 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: 'Failed to fetch league settings' }, { status: 500 });
         }
 
+        // 1.5 Fetch Weights if Fantasy Points mode
+        let categoryWeights = { batter: {}, pitcher: {} };
+        if (settings.scoring_type === 'Head-to-Head Fantasy Points') {
+            const { data: weightsData, error: weightsError } = await supabase
+                .from('league_stat_category_weights')
+                .select('category_type, category_name, weight')
+                .eq('league_id', leagueId);
+
+            if (!weightsError && weightsData) {
+                weightsData.forEach(w => {
+                    if (w.category_type === 'batter') {
+                        categoryWeights.batter[w.category_name] = w.weight;
+                    } else if (w.category_type === 'pitcher') {
+                        categoryWeights.pitcher[w.category_name] = w.weight;
+                    }
+                });
+            }
+        }
+
         // 2. Fetch Matchups for the week
         const { data: matchups, error: matchupsError } = await supabase
             .from('league_matchups')
@@ -138,7 +157,8 @@ export async function GET(request, { params }) {
             settings: {
                 batter_categories: settings.batter_stat_categories,
                 pitcher_categories: settings.pitcher_stat_categories,
-                scoring_type: settings.scoring_type
+                scoring_type: settings.scoring_type,
+                category_weights: categoryWeights
             }
         });
 
