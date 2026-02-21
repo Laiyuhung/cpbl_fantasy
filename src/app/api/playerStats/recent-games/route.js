@@ -138,13 +138,13 @@ export async function GET(request) {
 
                 const { data: scheduleData } = await supabaseAdmin
                     .from('cpbl_schedule_2026')
-                    .select('date, home_team, away_team')
-                    .or(`home_team.eq.${team},away_team.eq.${team}`)
+                    .select('date, home, away')
+                    .or(`home.eq.${team},away.eq.${team}`)
                     .in('date', gameDates);
 
                 const scheduleMap = {};
                 (scheduleData || []).forEach(s => {
-                    scheduleMap[s.date] = s.home_team === team ? s.away_team : s.home_team;
+                    scheduleMap[s.date] = s.home === team ? s.away : s.home;
                 });
 
                 enrichedPitchingGames = pitchingGames.map(g => {
@@ -177,8 +177,8 @@ export async function GET(request) {
 
                 const { data: futureGames } = await supabaseAdmin
                     .from('cpbl_schedule_2026')
-                    .select('date, home_team, away_team')
-                    .or(`home_team.eq.${team},away_team.eq.${team}`)
+                    .select('date, home, away')
+                    .or(`home.eq.${team},away.eq.${team}`)
                     .gt('date', today)
                     .order('date', { ascending: true })
                     .limit(neededGames);
@@ -186,7 +186,7 @@ export async function GET(request) {
                 if (futureGames && futureGames.length > 0) {
                     const futureEnriched = futureGames.map(fg => ({
                         game_date: fg.date,
-                        opponent: fg.home_team === team ? fg.away_team : fg.home_team,
+                        opponent: fg.home === team ? fg.away : fg.home,
                         has_stats: false,
                         is_future: true,
                         IP: '-', H: '-', R: '-', ER: '-', BB: '-', K: '-', HR: '-',
@@ -215,10 +215,10 @@ export async function GET(request) {
         // Step 1: Get team's recent completed games from cpbl_schedule_2026
         const { data: pastGames, error: pastError } = await supabaseAdmin
             .from('cpbl_schedule_2026')
-            .select('date, home_team, away_team, home_score, away_score')
-            .or(`home_team.eq.${team},away_team.eq.${team}`)
+            .select('date, home, away, is_postponed')
+            .or(`home.eq.${team},away.eq.${team}`)
             .lte('date', today)
-            .not('home_score', 'is', null) // completed games only
+            .or('is_postponed.is.null,is_postponed.eq.false') // not postponed
             .order('date', { ascending: false })
             .limit(TARGET_GAMES);
 
@@ -235,8 +235,8 @@ export async function GET(request) {
 
             const { data: futureGames } = await supabaseAdmin
                 .from('cpbl_schedule_2026')
-                .select('date, home_team, away_team')
-                .or(`home_team.eq.${team},away_team.eq.${team}`)
+                .select('date, home, away')
+                .or(`home.eq.${team},away.eq.${team}`)
                 .gt('date', today)
                 .order('date', { ascending: true })
                 .limit(neededGames);
@@ -281,7 +281,7 @@ export async function GET(request) {
 
         // Build enriched games
         const enrichedGames = allScheduleGames.map(sg => {
-            const opponent = sg.home_team === team ? sg.away_team : sg.home_team;
+            const opponent = sg.home === team ? sg.away : sg.home;
 
             // Future game - no stats possible
             if (sg.is_future) {

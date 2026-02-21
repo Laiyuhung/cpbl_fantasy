@@ -259,22 +259,6 @@ export default function PlayerDetailModal({
     };
 
     const renderActionButton = () => {
-        // DEBUG: Log all conditions
-        console.log('=== Trade Button Debug ===', {
-            player: player?.name,
-            myManagerId,
-            ownership,
-            ownershipStatus: ownership?.status,
-            ownershipManagerId: ownership?.manager_id,
-            isOtherManagersPlayer: ownership?.manager_id && ownership?.manager_id !== myManagerId,
-            leagueStatus,
-            isAllowedStatus: isAllowedLeagueStatus(),
-            tradeEndDate,
-            isTradeDeadlinePassed: isTradeDeadlinePassed(),
-            onTradeProvided: !!onTrade,
-            canShowActionButtons,
-        });
-
         if (!canShowActionButtons || !isAllowedLeagueStatus()) return null;
 
         // No ownership = Free Agent (green + button)
