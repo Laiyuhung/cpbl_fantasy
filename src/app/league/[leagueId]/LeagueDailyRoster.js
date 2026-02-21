@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import PlayerDetailModal from '../../../components/PlayerDetailModal';
 
 function toAbbr(team) {
@@ -450,7 +451,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         const theirViolations = validateTradeRoster(tradeTheirRoster, selectedTheirPlayers, selectedMyPlayers, leagueSettings);
         const isValid = myViolations.length === 0 && theirViolations.length === 0;
 
-        return (
+        return createPortal(
             <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                 <div className="bg-gradient-to-br from-purple-700/90 to-blue-800/90 border border-purple-400/40 rounded-2xl shadow-2xl w-full max-w-2xl relative max-h-[85vh] flex flex-col">
                     <div className="flex items-center justify-between px-6 py-4 border-b border-purple-400/20 bg-gradient-to-r from-purple-600/80 to-blue-700/80 rounded-t-2xl shrink-0">
@@ -560,7 +561,8 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                         </>
                     )}
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     };
 
