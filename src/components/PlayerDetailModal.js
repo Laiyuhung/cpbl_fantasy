@@ -547,44 +547,44 @@ export default function PlayerDetailModal({
                                 </div>
                             ) : (
                                 <div className="rounded-xl border border-white/5 bg-slate-900/50 shadow-inner overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-                                    <table className="text-left border-collapse" style={{ minWidth: 'max-content' }}>
+                                    <table className="w-full text-left border-collapse table-fixed" style={{ minWidth: '100%' }}>
                                         <thead>
                                             <tr className="bg-slate-800/80 border-b border-white/10 shadow-sm">
-                                                <th className="py-2 px-2 text-xs font-bold text-purple-300 uppercase tracking-wide whitespace-nowrap min-w-[60px] sticky left-0 bg-slate-800 z-20 border-r border-white/10">Date</th>
-                                                <th className="py-2 px-2 text-xs font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap min-w-[45px] text-center">OPP</th>
+                                                <th className="py-3 px-3 text-xs font-black text-purple-300 uppercase tracking-widest sticky left-0 top-0 bg-slate-800 z-20 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.3)] whitespace-nowrap w-32">Date</th>
                                                 {abbreviations.map((abbr, i) => (
-                                                    <th key={i} className="py-2 px-2 text-xs font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap min-w-[35px] text-center">
+                                                    <th key={i} className="py-3 px-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest sticky top-0 bg-slate-800/80 z-10 backdrop-blur-sm whitespace-nowrap">
                                                         {abbr}
                                                     </th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
-                                            {recentGames.map((game, idx) => (
-                                                <tr key={idx} className={`hover:bg-white/5 transition-colors ${game.is_future ? 'opacity-60' : ''}`}>
-                                                    <td className={`py-2 px-2 text-xs whitespace-nowrap sticky left-0 bg-slate-900/90 border-r border-white/5 ${game.is_future ? 'text-cyan-400 italic' : 'text-slate-300'}`}>
-                                                        {game.game_date ? new Date(game.game_date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }) : '-'}
-                                                        {game.is_future && <span className="ml-1 text-[10px]">↗</span>}
-                                                    </td>
-                                                    <td className={`py-2 px-2 text-xs text-center whitespace-nowrap ${game.is_future ? 'text-cyan-400/80 italic' : 'text-slate-400'}`}>
-                                                        {game.opponent || '-'}
-                                                    </td>
-                                                    {abbreviations.map((abbr, i) => {
-                                                        const val = game[abbr];
-                                                        const isRateCol = ['AVG', 'OBP', 'SLG', 'ERA', 'WHIP'].includes(abbr);
-                                                        const displayVal = val == null || val === '-' 
-                                                            ? '-' 
-                                                            : isRateCol 
-                                                                ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3) 
-                                                                : val;
-                                                        return (
-                                                            <td key={i} className={`py-2 px-2 text-xs text-center whitespace-nowrap ${game.is_future ? 'text-slate-500' : i === 0 ? 'text-white' : 'text-slate-300'}`}>
-                                                                {displayVal}
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            ))}
+                                            {recentGames.map((game, idx) => {
+                                                const dateStr = game.game_date ? new Date(game.game_date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }) : '-';
+                                                const locationSymbol = game.is_home ? 'vs' : '@';
+                                                const displayLabel = `${dateStr}${locationSymbol}${game.opponent || ''}`;
+                                                return (
+                                                    <tr key={idx} className={`hover:bg-white/5 transition-colors ${game.is_future ? 'opacity-60' : ''}`}>
+                                                        <td className={`py-2 px-3 text-xs whitespace-nowrap sticky left-0 bg-slate-900/90 border-r border-white/5 shadow-[2px_0_4px_rgba(0,0,0,0.2)] ${game.is_future ? 'text-cyan-400 italic' : 'text-purple-200'}`}>
+                                                            {displayLabel}
+                                                        </td>
+                                                        {abbreviations.map((abbr, i) => {
+                                                            const val = game[abbr];
+                                                            const isRateCol = ['AVG', 'OBP', 'SLG', 'ERA', 'WHIP'].includes(abbr);
+                                                            const displayVal = val == null || val === '-' 
+                                                                ? '-' 
+                                                                : isRateCol 
+                                                                    ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3) 
+                                                                    : val;
+                                                            return (
+                                                                <td key={i} className={`py-2 px-3 text-xs text-center whitespace-nowrap ${game.is_future ? 'text-slate-500' : i === 0 ? 'text-white' : 'text-slate-300'}`}>
+                                                                    {displayVal}
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

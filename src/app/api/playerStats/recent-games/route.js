@@ -144,14 +144,16 @@ export async function GET(request) {
 
                 const scheduleMap = {};
                 (scheduleData || []).forEach(s => {
-                    scheduleMap[s.date] = s.home === team ? s.away : s.home;
+                    scheduleMap[s.date] = { opponent: s.home === team ? s.away : s.home, is_home: s.home === team };
                 });
 
                 enrichedPitchingGames = pitchingGames.map(g => {
                     const derived = calcPitchingStats(g);
+                    const schedInfo = scheduleMap[g.game_date] || { opponent: '-', is_home: false };
                     return {
                         game_date: g.game_date,
-                        opponent: scheduleMap[g.game_date] || '-',
+                        opponent: schedInfo.opponent,
+                        is_home: schedInfo.is_home,
                         has_stats: true,
                         IP: g.innings_pitched,
                         H: g.hits_allowed,
@@ -187,6 +189,7 @@ export async function GET(request) {
                     const futureEnriched = futureGames.map(fg => ({
                         game_date: fg.date,
                         opponent: fg.home === team ? fg.away : fg.home,
+                        is_home: fg.home === team,
                         has_stats: false,
                         is_future: true,
                         IP: '-', H: '-', R: '-', ER: '-', BB: '-', K: '-', HR: '-',
@@ -282,12 +285,14 @@ export async function GET(request) {
         // Build enriched games
         const enrichedGames = allScheduleGames.map(sg => {
             const opponent = sg.home === team ? sg.away : sg.home;
+            const is_home = sg.home === team;
 
             // Future game - no stats possible
             if (sg.is_future) {
                 return {
                     game_date: sg.date,
                     opponent,
+                    is_home,
                     has_stats: false,
                     is_future: true,
                     AB: '-', H: '-', R: '-', RBI: '-', HR: '-', SB: '-', BB: '-', K: '-',
@@ -303,6 +308,7 @@ export async function GET(request) {
                 return {
                     game_date: sg.date,
                     opponent,
+                    is_home,
                     has_stats: false,
                     AB: '-', H: '-', R: '-', RBI: '-', HR: '-', SB: '-', BB: '-', K: '-',
                     CS: '-', '2B': '-', '3B': '-', '1B': '-', XBH: '-', TB: '-', PA: '-',
@@ -315,6 +321,7 @@ export async function GET(request) {
             return {
                 game_date: sg.date,
                 opponent,
+                is_home,
                 has_stats: true,
                 AB: b.at_bats ?? 0,
                 H: b.hits ?? 0,
