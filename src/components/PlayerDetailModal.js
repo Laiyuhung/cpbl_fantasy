@@ -577,11 +577,12 @@ export default function PlayerDetailModal({
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
                                             {recentGames.map((game, idx) => (
-                                                <tr key={idx} className="hover:bg-white/5 transition-colors">
-                                                    <td className="py-2 px-2 text-xs text-slate-300 whitespace-nowrap sticky left-0 bg-slate-900/90 border-r border-white/5">
+                                                <tr key={idx} className={`hover:bg-white/5 transition-colors ${game.is_future ? 'opacity-60' : ''}`}>
+                                                    <td className={`py-2 px-2 text-xs whitespace-nowrap sticky left-0 bg-slate-900/90 border-r border-white/5 ${game.is_future ? 'text-cyan-400 italic' : 'text-slate-300'}`}>
                                                         {game.game_date ? new Date(game.game_date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }) : '-'}
+                                                        {game.is_future && <span className="ml-1 text-[10px]">↗</span>}
                                                     </td>
-                                                    <td className="py-2 px-2 text-xs text-slate-400 text-center whitespace-nowrap">
+                                                    <td className={`py-2 px-2 text-xs text-center whitespace-nowrap ${game.is_future ? 'text-cyan-400/80 italic' : 'text-slate-400'}`}>
                                                         {game.opponent || '-'}
                                                     </td>
                                                     {abbreviations.map((abbr, i) => {
@@ -593,7 +594,7 @@ export default function PlayerDetailModal({
                                                                 ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3) 
                                                                 : val;
                                                         return (
-                                                            <td key={i} className={`py-2 px-2 text-xs text-center whitespace-nowrap ${i === 0 ? 'text-white' : 'text-slate-300'}`}>
+                                                            <td key={i} className={`py-2 px-2 text-xs text-center whitespace-nowrap ${game.is_future ? 'text-slate-500' : i === 0 ? 'text-white' : 'text-slate-300'}`}>
                                                                 {displayVal}
                                                             </td>
                                                         );

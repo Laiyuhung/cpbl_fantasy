@@ -108,25 +108,34 @@ export async function GET(request) {
     }
 
     try {
+        const today = new Date().toISOString().split('T')[0];
+
         // If pitcher: get last 8 games from pitching_stats_2026
         if (type === 'pitcher') {
+            const TARGET_GAMES = 8;
+
+            // First get pitcher's recent games
             const { data: pitchingGames, error: pitchingError } = await supabaseAdmin
                 .from('pitching_stats_2026')
                 .select('game_date, innings_pitched, batters_faced, pitches_thrown, hits_allowed, home_runs_allowed, walks, ibb, hbp, strikeouts, wild_pitches, balks, runs_allowed, earned_runs, errors, era, whip, record, position, complete_game, is_major')
                 .eq('player_id', playerId)
                 .eq('is_major', true)
                 .order('game_date', { ascending: false })
-                .limit(8);
+                .limit(TARGET_GAMES);
 
             if (pitchingError) {
                 console.error('[Recent Games API] Pitching Error:', pitchingError);
                 return NextResponse.json({ success: false, error: pitchingError.message }, { status: 500 });
             }
 
-            // If team is provided, enrich with opponent info from schedule
-            let enrichedPitchingGames = pitchingGames || [];
-            if (team && enrichedPitchingGames.length > 0) {
-                const gameDates = enrichedPitchingGames.map(g => g.game_date);
+            let enrichedPitchingGames = [];
+            const existingDates = new Set();
+
+            // Process existing pitching stats
+            if (pitchingGames && pitchingGames.length > 0 && team) {
+                const gameDates = pitchingGames.map(g => g.game_date);
+                gameDates.forEach(d => existingDates.add(d));
+
                 const { data: scheduleData } = await supabaseAdmin
                     .from('cpbl_schedule_2026')
                     .select('date, home_team, away_team')
@@ -138,11 +147,12 @@ export async function GET(request) {
                     scheduleMap[s.date] = s.home_team === team ? s.away_team : s.home_team;
                 });
 
-                enrichedPitchingGames = enrichedPitchingGames.map(g => {
+                enrichedPitchingGames = pitchingGames.map(g => {
                     const derived = calcPitchingStats(g);
                     return {
                         game_date: g.game_date,
                         opponent: scheduleMap[g.game_date] || '-',
+                        has_stats: true,
                         IP: g.innings_pitched,
                         H: g.hits_allowed,
                         R: g.runs_allowed,
@@ -159,28 +169,33 @@ export async function GET(request) {
                         ...derived
                     };
                 });
-            } else {
-                enrichedPitchingGames = enrichedPitchingGames.map(g => {
-                    const derived = calcPitchingStats(g);
-                    return {
-                        game_date: g.game_date,
-                        opponent: '-',
-                        IP: g.innings_pitched,
-                        H: g.hits_allowed,
-                        R: g.runs_allowed,
-                        ER: g.earned_runs,
-                        BB: g.walks,
-                        K: g.strikeouts,
-                        HR: g.home_runs_allowed,
-                        HBP: g.hbp,
-                        IBB: g.ibb,
-                        WP: g.wild_pitches,
-                        BK: g.balks,
-                        TBF: g.batters_faced,
-                        PC: g.pitches_thrown,
-                        ...derived
-                    };
-                });
+            }
+
+            // If not enough games, fill with team's upcoming schedule
+            if (team && enrichedPitchingGames.length < TARGET_GAMES) {
+                const neededGames = TARGET_GAMES - enrichedPitchingGames.length;
+
+                const { data: futureGames } = await supabaseAdmin
+                    .from('cpbl_schedule_2026')
+                    .select('date, home_team, away_team')
+                    .or(`home_team.eq.${team},away_team.eq.${team}`)
+                    .gt('date', today)
+                    .order('date', { ascending: true })
+                    .limit(neededGames);
+
+                if (futureGames && futureGames.length > 0) {
+                    const futureEnriched = futureGames.map(fg => ({
+                        game_date: fg.date,
+                        opponent: fg.home_team === team ? fg.away_team : fg.home_team,
+                        has_stats: false,
+                        is_future: true,
+                        IP: '-', H: '-', R: '-', ER: '-', BB: '-', K: '-', HR: '-',
+                        HBP: '-', IBB: '-', WP: '-', BK: '-', TBF: '-', PC: '-',
+                        OUT: '-', ERA: '-', WHIP: '-', 'K/9': '-', 'BB/9': '-', 'H/9': '-', 'K/BB': '-',
+                        W: '-', L: '-', SV: '-', HLD: '-', 'SV+HLD': '-', QS: '-', SHO: '-', NH: '-', CG: '-'
+                    }));
+                    enrichedPitchingGames = [...enrichedPitchingGames, ...futureEnriched];
+                }
             }
 
             return NextResponse.json({
@@ -195,24 +210,45 @@ export async function GET(request) {
             return NextResponse.json({ success: false, error: 'team is required for batters' }, { status: 400 });
         }
 
-        // Step 1: Get team's recent 10 game dates from cpbl_schedule_2026 (completed games)
-        const today = new Date().toISOString().split('T')[0];
-        
-        const { data: scheduleGames, error: scheduleError } = await supabaseAdmin
+        const TARGET_GAMES = 10;
+
+        // Step 1: Get team's recent completed games from cpbl_schedule_2026
+        const { data: pastGames, error: pastError } = await supabaseAdmin
             .from('cpbl_schedule_2026')
             .select('date, home_team, away_team, home_score, away_score')
             .or(`home_team.eq.${team},away_team.eq.${team}`)
             .lte('date', today)
             .not('home_score', 'is', null) // completed games only
             .order('date', { ascending: false })
-            .limit(10);
+            .limit(TARGET_GAMES);
 
-        if (scheduleError) {
-            console.error('[Recent Games API] Schedule Error:', scheduleError);
-            return NextResponse.json({ success: false, error: scheduleError.message }, { status: 500 });
+        if (pastError) {
+            console.error('[Recent Games API] Schedule Error:', pastError);
+            return NextResponse.json({ success: false, error: pastError.message }, { status: 500 });
         }
 
-        if (!scheduleGames || scheduleGames.length === 0) {
+        let allScheduleGames = pastGames || [];
+
+        // If not enough past games, fill with future games
+        if (allScheduleGames.length < TARGET_GAMES) {
+            const neededGames = TARGET_GAMES - allScheduleGames.length;
+
+            const { data: futureGames } = await supabaseAdmin
+                .from('cpbl_schedule_2026')
+                .select('date, home_team, away_team')
+                .or(`home_team.eq.${team},away_team.eq.${team}`)
+                .gt('date', today)
+                .order('date', { ascending: true })
+                .limit(neededGames);
+
+            if (futureGames && futureGames.length > 0) {
+                // Mark future games
+                const markedFutureGames = futureGames.map(fg => ({ ...fg, is_future: true }));
+                allScheduleGames = [...allScheduleGames, ...markedFutureGames];
+            }
+        }
+
+        if (allScheduleGames.length === 0) {
             return NextResponse.json({
                 success: true,
                 type: 'batter',
@@ -220,31 +256,48 @@ export async function GET(request) {
             });
         }
 
-        // Step 2: Get batting stats for those dates
-        const gameDates = scheduleGames.map(g => g.date);
+        // Step 2: Get batting stats for past game dates only
+        const pastGameDates = allScheduleGames.filter(g => !g.is_future).map(g => g.date);
 
-        const { data: battingGames, error: battingError } = await supabaseAdmin
-            .from('batting_stats_2026')
-            .select('game_date, at_bats, hits, rbis, runs, home_runs, stolen_bases, walks, strikeouts, double_plays, sacrifice_flies, hbp, is_major, caught_stealing, doubles, triples, avg, errors, sacrifice_bunts, ibb')
-            .eq('player_id', playerId)
-            .eq('is_major', true)
-            .in('game_date', gameDates)
-            .order('game_date', { ascending: false });
+        let battingMap = {};
+        if (pastGameDates.length > 0) {
+            const { data: battingGames, error: battingError } = await supabaseAdmin
+                .from('batting_stats_2026')
+                .select('game_date, at_bats, hits, rbis, runs, home_runs, stolen_bases, walks, strikeouts, double_plays, sacrifice_flies, hbp, is_major, caught_stealing, doubles, triples, avg, errors, sacrifice_bunts, ibb')
+                .eq('player_id', playerId)
+                .eq('is_major', true)
+                .in('game_date', pastGameDates)
+                .order('game_date', { ascending: false });
 
-        if (battingError) {
-            console.error('[Recent Games API] Batting Error:', battingError);
-            return NextResponse.json({ success: false, error: battingError.message }, { status: 500 });
+            if (battingError) {
+                console.error('[Recent Games API] Batting Error:', battingError);
+                return NextResponse.json({ success: false, error: battingError.message }, { status: 500 });
+            }
+
+            (battingGames || []).forEach(g => {
+                battingMap[g.game_date] = g;
+            });
         }
 
-        // Match up with schedule dates to show "no appearance" games
-        const battingMap = {};
-        (battingGames || []).forEach(g => {
-            battingMap[g.game_date] = g;
-        });
-
-        const enrichedGames = scheduleGames.map(sg => {
-            const b = battingMap[sg.date];
+        // Build enriched games
+        const enrichedGames = allScheduleGames.map(sg => {
             const opponent = sg.home_team === team ? sg.away_team : sg.home_team;
+
+            // Future game - no stats possible
+            if (sg.is_future) {
+                return {
+                    game_date: sg.date,
+                    opponent,
+                    has_stats: false,
+                    is_future: true,
+                    AB: '-', H: '-', R: '-', RBI: '-', HR: '-', SB: '-', BB: '-', K: '-',
+                    CS: '-', '2B': '-', '3B': '-', '1B': '-', XBH: '-', TB: '-', PA: '-',
+                    AVG: '-', OBP: '-', SLG: '-', OPS: '-', E: '-', SF: '-', SH: '-',
+                    HBP: '-', GIDP: '-', IBB: '-'
+                };
+            }
+
+            const b = battingMap[sg.date];
             
             if (!b) {
                 return {
