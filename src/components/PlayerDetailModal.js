@@ -39,6 +39,13 @@ export default function PlayerDetailModal({
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
 
+    // Recent games state
+    const [recentGames, setRecentGames] = useState([]);
+    const [recentGamesLoading, setRecentGamesLoading] = useState(true);
+
+    // Tab state for Split vs Recent Games
+    const [activeTab, setActiveTab] = useState('split');
+
     // Decide which stats to show based on player.batter_or_pitcher 
     // or fall back to position if undefined
     const isPitcher = player?.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(player?.position);
@@ -48,8 +55,11 @@ export default function PlayerDetailModal({
         if (isOpen) {
             setLoading(true);
             setSettingsLoading(true);
+            setRecentGamesLoading(true);
             setError('');
             setStats({ batting: {}, pitching: {} });
+            setRecentGames([]);
+            setActiveTab('split');
         }
     }, [isOpen, player?.player_id]);
 
@@ -105,6 +115,33 @@ export default function PlayerDetailModal({
             fetchStats();
         }
     }, [isOpen, player]);
+
+    // Fetch recent game stats
+    useEffect(() => {
+        const fetchRecentGames = async () => {
+            if (!player?.player_id) {
+                setRecentGamesLoading(false);
+                return;
+            }
+            try {
+                const type = isPitcher ? 'pitcher' : 'batter';
+                const teamParam = player.team ? `&team=${encodeURIComponent(player.team)}` : '';
+                const res = await fetch(`/api/playerStats/recent-games?player_id=${player.player_id}&type=${type}${teamParam}`);
+                const data = await res.json();
+                if (data.success) {
+                    setRecentGames(data.games || []);
+                }
+            } catch (err) {
+                console.error('Error fetching recent games:', err);
+            } finally {
+                setRecentGamesLoading(false);
+            }
+        };
+
+        if (isOpen && player?.player_id) {
+            fetchRecentGames();
+        }
+    }, [isOpen, player, isPitcher]);
 
     if (!isOpen || !player) return null;
 
@@ -447,37 +484,127 @@ export default function PlayerDetailModal({
 
                 {/* Stats Table Area */}
                 <div className="flex-1 overflow-hidden bg-black/10 p-5 sm:p-6">
-                    {!isFullyLoaded ? (
-                        <div className="flex flex-col items-center justify-center h-48 space-y-4">
-                            <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                            <div className="text-purple-300 font-semibold tracking-wide animate-pulse">Loading Stats...</div>
-                        </div>
-                    ) : error ? (
-                        <div className="flex items-center justify-center h-48">
-                            <div className="text-red-400 bg-red-400/10 px-4 py-3 rounded-lg border border-red-500/20 shadow-inner">
-                                {error}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="rounded-xl border border-white/5 bg-slate-900/50 shadow-inner overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            <table className="w-full text-left border-collapse" style={{ minWidth: '100%' }}>
-                                <thead>
-                                    <tr className="bg-slate-800/80 border-b border-white/10 shadow-sm">
-                                        <th className="py-3 px-3 text-xs font-black text-purple-300 uppercase tracking-widest sticky left-0 top-0 bg-slate-800 z-20 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.3)] whitespace-nowrap w-24">
-                                            Split
-                                        </th>
-                                        {abbreviations.map((abbr, i) => (
-                                            <th key={i} className="py-3 px-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest sticky top-0 bg-slate-800/80 z-10 backdrop-blur-sm whitespace-nowrap">
-                                                {abbr}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {TIME_WINDOWS.map(renderRow)}
-                                </tbody>
-                            </table>
-                        </div>
+                    {/* Tab Switcher */}
+                    <div className="flex gap-2 mb-4">
+                        <button
+                            onClick={() => setActiveTab('split')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                activeTab === 'split'
+                                    ? 'bg-purple-600 text-white shadow-lg'
+                                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                            }`}
+                        >
+                            Split Stats
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('recent')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                activeTab === 'recent'
+                                    ? 'bg-purple-600 text-white shadow-lg'
+                                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                            }`}
+                        >
+                            Recent Games
+                            <span className="ml-1 text-xs text-slate-400 font-normal">
+                                ({isPitcher ? '8' : '10'})
+                            </span>
+                        </button>
+                    </div>
+
+                    {/* Split Stats Tab */}
+                    {activeTab === 'split' && (
+                        <>
+                            {!isFullyLoaded ? (
+                                <div className="flex flex-col items-center justify-center h-48 space-y-4">
+                                    <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <div className="text-purple-300 font-semibold tracking-wide animate-pulse">Loading Stats...</div>
+                                </div>
+                            ) : error ? (
+                                <div className="flex items-center justify-center h-48">
+                                    <div className="text-red-400 bg-red-400/10 px-4 py-3 rounded-lg border border-red-500/20 shadow-inner">
+                                        {error}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="rounded-xl border border-white/5 bg-slate-900/50 shadow-inner overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                    <table className="w-full text-left border-collapse" style={{ minWidth: '100%' }}>
+                                        <thead>
+                                            <tr className="bg-slate-800/80 border-b border-white/10 shadow-sm">
+                                                <th className="py-3 px-3 text-xs font-black text-purple-300 uppercase tracking-widest sticky left-0 top-0 bg-slate-800 z-20 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.3)] whitespace-nowrap w-24">
+                                                    Split
+                                                </th>
+                                                {abbreviations.map((abbr, i) => (
+                                                    <th key={i} className="py-3 px-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest sticky top-0 bg-slate-800/80 z-10 backdrop-blur-sm whitespace-nowrap">
+                                                        {abbr}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {TIME_WINDOWS.map(renderRow)}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* Recent Games Tab */}
+                    {activeTab === 'recent' && (
+                        <>
+                            {recentGamesLoading ? (
+                                <div className="flex flex-col items-center justify-center h-48 space-y-4">
+                                    <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <div className="text-purple-300 font-semibold tracking-wide animate-pulse">Loading Recent Games...</div>
+                                </div>
+                            ) : recentGames.length === 0 ? (
+                                <div className="text-slate-400 text-sm text-center py-8">
+                                    No recent game data available
+                                </div>
+                            ) : (
+                                <div className="rounded-xl border border-white/5 bg-slate-900/50 shadow-inner overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                    <table className="text-left border-collapse" style={{ minWidth: 'max-content' }}>
+                                        <thead>
+                                            <tr className="bg-slate-800/80 border-b border-white/10 shadow-sm">
+                                                <th className="py-2 px-2 text-xs font-bold text-purple-300 uppercase tracking-wide whitespace-nowrap min-w-[60px] sticky left-0 bg-slate-800 z-20 border-r border-white/10">Date</th>
+                                                <th className="py-2 px-2 text-xs font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap min-w-[45px] text-center">OPP</th>
+                                                {abbreviations.map((abbr, i) => (
+                                                    <th key={i} className="py-2 px-2 text-xs font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap min-w-[35px] text-center">
+                                                        {abbr}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {recentGames.map((game, idx) => (
+                                                <tr key={idx} className="hover:bg-white/5 transition-colors">
+                                                    <td className="py-2 px-2 text-xs text-slate-300 whitespace-nowrap sticky left-0 bg-slate-900/90 border-r border-white/5">
+                                                        {game.game_date ? new Date(game.game_date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }) : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-xs text-slate-400 text-center whitespace-nowrap">
+                                                        {game.opponent || '-'}
+                                                    </td>
+                                                    {abbreviations.map((abbr, i) => {
+                                                        const val = game[abbr];
+                                                        const isRateCol = ['AVG', 'OBP', 'SLG', 'ERA', 'WHIP'].includes(abbr);
+                                                        const displayVal = val == null || val === '-' 
+                                                            ? '-' 
+                                                            : isRateCol 
+                                                                ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3) 
+                                                                : val;
+                                                        return (
+                                                            <td key={i} className={`py-2 px-2 text-xs text-center whitespace-nowrap ${i === 0 ? 'text-white' : 'text-slate-300'}`}>
+                                                                {displayVal}
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
