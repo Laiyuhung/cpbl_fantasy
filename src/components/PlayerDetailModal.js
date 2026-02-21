@@ -565,7 +565,7 @@ export default function PlayerDetailModal({
                                                 const displayLabel = `${dateStr}${locationSymbol}${game.opponent || ''}`;
                                                 return (
                                                     <tr key={idx} className={`hover:bg-white/5 transition-colors ${game.is_future ? 'opacity-60' : ''}`}>
-                                                        <td className={`py-2.5 px-3 text-sm font-semibold whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.2)] w-32 ${game.is_future ? 'text-cyan-400 italic' : 'text-slate-300'}`}>
+                                                        <td className="py-2.5 px-3 text-sm font-semibold text-slate-300 whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.2)] w-32">
                                                             {displayLabel}
                                                         </td>
                                                         {abbreviations.map((abbr, i) => {
