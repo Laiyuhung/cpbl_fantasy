@@ -345,16 +345,15 @@ export default function PlayerDetailModal({
     // Render Watch button
     const renderWatchButton = () => {
         if (!onToggleWatch || !myManagerId) return null;
-        
+
         return (
             <button
                 onClick={handleWatchClick}
                 disabled={watchLoading}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg ${
-                    isWatched
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg ${isWatched
                         ? 'bg-amber-500 hover:bg-amber-400 text-white'
                         : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-600'
-                }`}
+                    }`}
                 title={isWatched ? 'Remove from Watchlist' : 'Add to Watchlist'}
             >
                 <span className="text-base">{isWatched ? '★' : '☆'}</span>
@@ -476,21 +475,19 @@ export default function PlayerDetailModal({
                     <div className="flex gap-2 mb-4">
                         <button
                             onClick={() => setActiveTab('split')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                activeTab === 'split'
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'split'
                                     ? 'bg-purple-600 text-white shadow-lg'
                                     : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
-                            }`}
+                                }`}
                         >
                             Split Stats
                         </button>
                         <button
                             onClick={() => setActiveTab('recent')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                activeTab === 'recent'
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'recent'
                                     ? 'bg-purple-600 text-white shadow-lg'
                                     : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
-                            }`}
+                                }`}
                         >
                             Recent Games
                             <span className="ml-1 text-xs text-slate-400 font-normal">
@@ -575,13 +572,15 @@ export default function PlayerDetailModal({
                                                         {abbreviations.map((abbr, i) => {
                                                             const val = game[abbr];
                                                             const isRateCol = ['AVG', 'OBP', 'SLG', 'ERA', 'WHIP'].includes(abbr);
-                                                            const displayVal = val == null || val === '-' 
-                                                                ? '-' 
-                                                                : isRateCol 
-                                                                    ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3) 
+                                                            const displayVal = val == null || val === '-'
+                                                                ? '-'
+                                                                : isRateCol
+                                                                    ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3)
                                                                     : val;
+                                                            const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
+                                                            const isRefStat = abbr === 'AB' || abbr === 'IP';
                                                             return (
-                                                                <td key={i} className={`py-2 px-3 text-xs text-center whitespace-nowrap ${game.is_future ? 'text-slate-500' : i === 0 ? 'text-white' : 'text-slate-300'}`}>
+                                                                <td key={i} className={`py-2.5 px-3 text-center text-sm font-mono whitespace-nowrap ${isZeroOrDash ? 'text-slate-600' : isRefStat ? 'text-slate-400' : 'text-cyan-300'}`}>
                                                                     {displayVal}
                                                                 </td>
                                                             );
