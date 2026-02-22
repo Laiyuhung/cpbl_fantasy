@@ -116,10 +116,7 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
     };
 
     const getSenderName = (msg) => {
-        if (msg.managers) {
-            return msg.managers.nickname || msg.managers.manager_name || 'Unknown';
-        }
-        return 'Unknown';
+        return msg.nickname || 'Unknown';
     };
 
     const getMessageTypeStyle = (type) => {

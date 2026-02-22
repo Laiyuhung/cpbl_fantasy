@@ -9,6 +9,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [leagues, setLeagues] = useState([])
@@ -68,7 +69,10 @@ export default function Navbar() {
     const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='))
     const uid = cookie?.split('=')[1]
 
-    if (!uid) return router.push('/login')
+    if (!uid) {
+      setIsLoading(false)
+      return router.push('/login')
+    }
 
     fetch('/api/username', {
       method: 'POST',
@@ -87,6 +91,7 @@ export default function Navbar() {
         }
       })
       .catch(() => router.push('/login'))
+      .finally(() => setIsLoading(false))
   }, [router, fetchLeagues])
 
   // 監聽全局 auth 改變事件，讓 Navbar 可以在登入/登出時立即更新
@@ -165,10 +170,6 @@ export default function Navbar() {
     localStorage.removeItem('user_id')  // 清除 localStorage 中的 user_id
     router.push('/login')
   }
-
-  // 如果沒有登入，則不顯示 navbar
-  if (!userId) return null
-
 
   return (
     <nav className="sticky top-0 z-[50] bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-2xl border-b border-blue-500/30">
@@ -350,7 +351,12 @@ export default function Navbar() {
               <span className="text-sm font-bold text-white">{taiwanTime}</span>
             </div>
           )}
-          {userName && (
+          {isLoading ? (
+            <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-lg border border-white/10">
+              <div className="w-6 h-6 rounded-full bg-slate-600 animate-pulse"></div>
+              <div className="w-16 h-4 bg-slate-600 rounded animate-pulse"></div>
+            </div>
+          ) : userName ? (
             <div className="relative group">
               <button
                 className="flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200"
@@ -397,7 +403,7 @@ export default function Navbar() {
                 </button>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="lg:hidden flex items-center">

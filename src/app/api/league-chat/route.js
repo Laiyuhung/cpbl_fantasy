@@ -21,11 +21,7 @@ export async function GET(request) {
                 manager_id,
                 message,
                 message_type,
-                created_at,
-                managers:manager_id (
-                    manager_name,
-                    nickname
-                )
+                created_at
             `)
             .eq('league_id', leagueId)
             .order('created_at', { ascending: false })
@@ -44,6 +40,25 @@ export async function GET(request) {
 
         // Reverse to show oldest first in the array
         const messages = (data || []).reverse();
+
+        // Fetch nicknames from league_members
+        const managerIds = [...new Set(messages.map(m => m.manager_id))];
+        if (managerIds.length > 0) {
+            const { data: membersData } = await supabaseAdmin
+                .from('league_members')
+                .select('manager_id, nickname')
+                .eq('league_id', leagueId)
+                .in('manager_id', managerIds);
+            
+            const nicknameMap = {};
+            (membersData || []).forEach(m => {
+                nicknameMap[m.manager_id] = m.nickname;
+            });
+
+            messages.forEach(m => {
+                m.nickname = nicknameMap[m.manager_id] || 'Unknown';
+            });
+        }
 
         return NextResponse.json({ success: true, messages });
     } catch (err) {
@@ -82,11 +97,7 @@ export async function POST(request) {
                 manager_id,
                 message,
                 message_type,
-                created_at,
-                managers:manager_id (
-                    manager_name,
-                    nickname
-                )
+                created_at
             `)
             .single();
 
@@ -94,6 +105,16 @@ export async function POST(request) {
             console.error('Error sending message:', error);
             return NextResponse.json({ success: false, error: error.message }, { status: 500 });
         }
+
+        // Fetch nickname for the sender
+        const { data: memberData } = await supabaseAdmin
+            .from('league_members')
+            .select('nickname')
+            .eq('league_id', league_id)
+            .eq('manager_id', manager_id)
+            .single();
+
+        data.nickname = memberData?.nickname || 'Unknown';
 
         return NextResponse.json({ success: true, message: data });
     } catch (err) {
