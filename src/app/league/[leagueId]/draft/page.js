@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
+import LeagueChat from '../../../../components/LeagueChat';
 
 export default function DraftPage() {
     const params = useParams();
@@ -1713,6 +1714,14 @@ export default function DraftPage() {
                                 </div>
                             )}
                         </div>
+
+                        {/* League Chat */}
+                        <LeagueChat 
+                            leagueId={leagueId} 
+                            managerId={myManagerId} 
+                            isCompact={true}
+                            pollInterval={5000}
+                        />
                     </div>
                 </div>
             )}

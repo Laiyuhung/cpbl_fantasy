@@ -64,7 +64,7 @@ export default function PlayersPage() {
 
   // Watch State
   const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
-  const [filterOwnership, setFilterOwnership] = useState('all'); // all, available, myteam, watched
+  const [filterOwnership, setFilterOwnership] = useState('available'); // all, available, myteam, watched
   const [filterTeam, setFilterTeam] = useState('all'); // Team filter
   const [filterPosition, setFilterPosition] = useState('all'); // Position filter
 
