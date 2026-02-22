@@ -192,11 +192,23 @@ export default function JoinLeaguePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
       <div className={`max-w-4xl mx-auto transition-all duration-300 ${joinBlockedReason ? 'blur-sm pointer-events-none' : ''}`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl mb-6">
-          <h1 className="text-4xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-2">
-            Join League
-          </h1>
-          <p className="text-purple-300 text-lg">{leagueSettings.league_name}</p>
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => router.back()}
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <span className="px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">
+                Join
+              </span>
+              <h1 className="text-xl font-black text-white truncate">{leagueSettings.league_name}</h1>
+            </div>
+          </div>
         </div>
 
         {/* League Information */}
