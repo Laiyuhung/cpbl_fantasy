@@ -109,6 +109,7 @@ export async function GET(request) {
 
     try {
         const today = new Date().toISOString().split('T')[0];
+        console.log('[Recent Games] today (UTC):', today, '| Now ISO:', new Date().toISOString());
 
         // If pitcher: get last 8 games from pitching_stats_2026
         if (type === 'pitcher') {
@@ -150,6 +151,7 @@ export async function GET(request) {
                 enrichedPitchingGames = pitchingGames.map(g => {
                     const derived = calcPitchingStats(g);
                     const schedInfo = scheduleMap[g.game_date] || { opponent: '-', is_home: false };
+                    console.log(`[Recent Games] Pitcher game: ${g.game_date} | IP: ${g.innings_pitched} | vs ${schedInfo.opponent}`);
                     return {
                         game_date: g.game_date,
                         opponent: schedInfo.opponent,
@@ -259,17 +261,23 @@ export async function GET(request) {
             });
         }
 
-        // Step 2: Get batting stats for past game dates only
-        const pastGameDates = allScheduleGames.filter(g => !g.is_future).map(g => g.date);
+        // Step 2: Get batting stats for ALL game dates (past + future with possible test data)
+        const allGameDates = allScheduleGames.map(g => g.date);
+        const futureGameDates = allScheduleGames.filter(g => g.is_future).map(g => g.date);
+
+        console.log('[Recent Games] Batter | player_id:', playerId, '| team:', team);
+        console.log('[Recent Games] Total schedule games:', allScheduleGames.length);
+        console.log('[Recent Games] All game dates:', allGameDates);
+        console.log('[Recent Games] Future game dates:', futureGameDates);
 
         let battingMap = {};
-        if (pastGameDates.length > 0) {
+        if (allGameDates.length > 0) {
             const { data: battingGames, error: battingError } = await supabaseAdmin
                 .from('batting_stats_2026')
                 .select('game_date, at_bats, hits, rbis, runs, home_runs, stolen_bases, walks, strikeouts, double_plays, sacrifice_flies, hbp, is_major, caught_stealing, doubles, triples, avg, errors, sacrifice_bunts, ibb')
                 .eq('player_id', playerId)
                 .eq('is_major', true)
-                .in('game_date', pastGameDates)
+                .in('game_date', allGameDates)
                 .order('game_date', { ascending: false });
 
             if (battingError) {
@@ -280,6 +288,9 @@ export async function GET(request) {
             (battingGames || []).forEach(g => {
                 battingMap[g.game_date] = g;
             });
+
+            console.log('[Recent Games] Batting stats found for dates:', Object.keys(battingMap));
+            console.log('[Recent Games] Dates WITHOUT stats:', allGameDates.filter(d => !battingMap[d]));
         }
 
         // Build enriched games
@@ -287,8 +298,39 @@ export async function GET(request) {
             const opponent = sg.home === team ? sg.away : sg.home;
             const is_home = sg.home === team;
 
-            // Future game - no stats possible
+            // Future game - check if stats exist anyway (test data)
             if (sg.is_future) {
+                const b = battingMap[sg.date];
+                if (b) {
+                    console.log(`[Recent Games] FUTURE game ${sg.date} vs ${opponent} → HAS data!`);
+                    const derived = calcBattingStats(b);
+                    return {
+                        game_date: sg.date,
+                        opponent,
+                        is_home,
+                        has_stats: true,
+                        is_future: true,
+                        AB: b.at_bats ?? 0,
+                        H: b.hits ?? 0,
+                        R: b.runs ?? 0,
+                        RBI: b.rbis ?? 0,
+                        HR: b.home_runs ?? 0,
+                        SB: b.stolen_bases ?? 0,
+                        BB: b.walks ?? 0,
+                        K: b.strikeouts ?? 0,
+                        CS: b.caught_stealing ?? 0,
+                        '2B': b.doubles ?? 0,
+                        '3B': b.triples ?? 0,
+                        E: b.errors ?? 0,
+                        SF: b.sacrifice_flies ?? 0,
+                        SH: b.sacrifice_bunts ?? 0,
+                        HBP: b.hbp ?? 0,
+                        GIDP: b.double_plays ?? 0,
+                        IBB: b.ibb ?? 0,
+                        ...derived
+                    };
+                }
+                console.log(`[Recent Games] FUTURE game: ${sg.date} vs ${opponent} → no data, all dashes`);
                 return {
                     game_date: sg.date,
                     opponent,
@@ -303,8 +345,9 @@ export async function GET(request) {
             }
 
             const b = battingMap[sg.date];
-            
+
             if (!b) {
+                console.log(`[Recent Games] PAST game ${sg.date} vs ${opponent} → NO batting data (player did not play)`);
                 return {
                     game_date: sg.date,
                     opponent,
