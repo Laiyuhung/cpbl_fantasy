@@ -68,6 +68,10 @@ export default function PlayersPage() {
   const [filterTeam, setFilterTeam] = useState('all'); // Team filter
   const [filterPosition, setFilterPosition] = useState('all'); // Position filter
 
+  // Position ordering (same as Roster page)
+  const batterPositionOrder = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'OF', 'CI', 'MI', 'Util'];
+  const pitcherPositionOrder = ['SP', 'RP', 'P'];
+
   // Fetch rosters for trade validation
   useEffect(() => {
     if (showTradeModal && myManagerId && tradeTargetManagerId) {
@@ -1687,8 +1691,8 @@ export default function PlayersPage() {
                   className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All Positions</option>
-                  {Object.keys(rosterPositions)
-                    .filter(pos => rosterPositions[pos] > 0 && !['BN', 'Minor', 'Util', 'P', 'CI', 'MI', 'OF'].includes(pos))
+                  {(filterType === 'batter' ? batterPositionOrder : pitcherPositionOrder)
+                    .filter(pos => rosterPositions[pos] && rosterPositions[pos] > 0 && !['BN', 'NA'].includes(pos))
                     .map(pos => (
                       <option key={pos} value={pos}>{pos}</option>
                     ))
@@ -1749,6 +1753,7 @@ export default function PlayersPage() {
               <button
                 onClick={() => {
                   setFilterType('batter');
+                  setFilterPosition('all');
                   setSortConfig({ key: 'rank', direction: 'asc' });
                 }}
                 className={`flex items-center justify-center py-1.5 px-4 rounded text-sm font-bold transition-all ${filterType === 'batter'
@@ -1761,6 +1766,7 @@ export default function PlayersPage() {
               <button
                 onClick={() => {
                   setFilterType('pitcher');
+                  setFilterPosition('all');
                   setSortConfig({ key: 'rank', direction: 'asc' });
                 }}
                 className={`flex items-center justify-center py-1.5 px-4 rounded text-sm font-bold transition-all ${filterType === 'pitcher'
