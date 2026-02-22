@@ -11,7 +11,8 @@ export default function CpblScheduleAdmin() {
         time: '18:35',
         homeTeam: '',
         awayTeam: '',
-        stadium: ''
+        stadium: '',
+        majorGame: true
     });
 
     // Stage 2: Generated Games (Editable)
@@ -21,6 +22,7 @@ export default function CpblScheduleAdmin() {
     const [existingSchedule, setExistingSchedule] = useState([]);
     const [editingId, setEditingId] = useState(null); // UUID of game being edited
     const [editForm, setEditForm] = useState({}); // Form data for editing
+    const [scheduleTab, setScheduleTab] = useState('major'); // 'major' or 'minor'
 
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
@@ -103,7 +105,8 @@ export default function CpblScheduleAdmin() {
                 time: defaultTime,
                 home: config.homeTeam,
                 away: config.awayTeam,
-                stadium: config.stadium
+                stadium: config.stadium,
+                major_game: config.majorGame
             });
         }
         setGames(generatedGames);
@@ -173,7 +176,8 @@ export default function CpblScheduleAdmin() {
 
         setEditForm({
             ...game,
-            time: timeStr // Set straightforward HH:mm for the input
+            time: timeStr, // Set straightforward HH:mm for the input
+            major_game: game.major_game !== false // Default to true if undefined
         });
     };
 
@@ -329,6 +333,18 @@ export default function CpblScheduleAdmin() {
                                 </div>
                             </div>
 
+                            <div className="flex items-center gap-3 mt-4">
+                                <input
+                                    type="checkbox"
+                                    id="majorGame"
+                                    name="majorGame"
+                                    checked={config.majorGame}
+                                    onChange={(e) => setConfig(prev => ({ ...prev, majorGame: e.target.checked }))}
+                                    className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-2 focus:ring-purple-500"
+                                />
+                                <label htmlFor="majorGame" className="text-sm font-medium text-slate-300">一軍 (Major League)</label>
+                            </div>
+
                             <div className="pt-4">
                                 <button
                                     type="submit"
@@ -344,14 +360,89 @@ export default function CpblScheduleAdmin() {
                 {/* STAGE 2: EDIT GAMES */}
                 {games.length > 0 && (
                     <div className="space-y-4">
-                        {/* ... */}
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-purple-300">Generated Games ({games.length})</h2>
+                            <button onClick={handleReset} className="text-sm text-red-400 hover:text-red-300">Clear All</button>
+                        </div>
                         {games.map((game, idx) => (
                             <div key={idx} className="bg-slate-800 rounded-xl p-4 shadow-md border border-slate-700 flex flex-wrap gap-4 items-end">
-                                {/* ... Pre-insert edit fields use simple values, no change needed ... */}
-                                {/* ... */}
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Date</label>
+                                    <input
+                                        type="date"
+                                        value={game.date}
+                                        onChange={(e) => handleGameChange(idx, 'date', e.target.value)}
+                                        className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Game No</label>
+                                    <input
+                                        type="number"
+                                        value={game.game_no}
+                                        onChange={(e) => handleGameChange(idx, 'game_no', parseInt(e.target.value))}
+                                        className="w-20 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Time</label>
+                                    <input
+                                        type="time"
+                                        value={game.time}
+                                        onChange={(e) => handleGameChange(idx, 'time', e.target.value)}
+                                        className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Away</label>
+                                    <select
+                                        value={game.away}
+                                        onChange={(e) => handleGameChange(idx, 'away', e.target.value)}
+                                        className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm"
+                                    >
+                                        {teams.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Home</label>
+                                    <select
+                                        value={game.home}
+                                        onChange={(e) => handleGameChange(idx, 'home', e.target.value)}
+                                        className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm"
+                                    >
+                                        {teams.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Stadium</label>
+                                    <input
+                                        type="text"
+                                        value={game.stadium || ''}
+                                        onChange={(e) => handleGameChange(idx, 'stadium', e.target.value)}
+                                        className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id={`major_${idx}`}
+                                        checked={game.major_game !== false}
+                                        onChange={(e) => handleGameChange(idx, 'major_game', e.target.checked)}
+                                        className="rounded border-slate-600 bg-slate-700"
+                                    />
+                                    <label htmlFor={`major_${idx}`} className="text-xs text-blue-400">一軍</label>
+                                </div>
                             </div>
                         ))}
-                        {/* ... */}
+                        <div className="flex gap-4 mt-6">
+                            <button onClick={handleReset} className="flex-1 py-3 px-4 rounded-lg font-bold bg-slate-600 hover:bg-slate-500 transition-all">
+                                Cancel
+                            </button>
+                            <button onClick={handleSubmit} disabled={loading} className="flex-1 py-3 px-4 rounded-lg font-bold bg-green-600 hover:bg-green-500 transition-all disabled:opacity-50">
+                                {loading ? 'Inserting...' : `Insert ${games.length} Games`}
+                            </button>
+                        </div>
+                        {message && <div className={`p-3 rounded-lg ${message.includes('Error') ? 'bg-red-900/50 text-red-300' : 'bg-green-900/50 text-green-300'}`}>{message}</div>}
                     </div>
                 )}
             </div>
@@ -382,11 +473,35 @@ export default function CpblScheduleAdmin() {
                     </div>
                 </div>
 
-                {existingSchedule.length === 0 ? (
+                {/* Major/Minor Tabs */}
+                <div className="flex mb-4 bg-slate-900/50 rounded-lg p-1">
+                    <button
+                        onClick={() => setScheduleTab('major')}
+                        className={`flex-1 py-2 px-3 text-sm font-bold rounded-md transition-all ${
+                            scheduleTab === 'major'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                        }`}
+                    >
+                        一軍 (Major)
+                    </button>
+                    <button
+                        onClick={() => setScheduleTab('minor')}
+                        className={`flex-1 py-2 px-3 text-sm font-bold rounded-md transition-all ${
+                            scheduleTab === 'minor'
+                                ? 'bg-slate-600 text-white shadow-lg'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                        }`}
+                    >
+                        二軍 (Minor)
+                    </button>
+                </div>
+
+                {existingSchedule.filter(g => scheduleTab === 'major' ? g.major_game !== false : g.major_game === false).length === 0 ? (
                     <p className="text-slate-500 text-sm text-center py-4">No games found.</p>
                 ) : (
                     <div className="space-y-3">
-                        {existingSchedule.map((game) => (
+                        {existingSchedule.filter(g => scheduleTab === 'major' ? g.major_game !== false : g.major_game === false).map((game) => (
                             <div key={game.uuid || game.id} className="bg-slate-700/50 p-3 rounded border border-slate-600 hover:bg-slate-700 transition-colors relative group">
                                 {editingId === game.uuid ? (
                                     // EDIT MODE
@@ -430,6 +545,16 @@ export default function CpblScheduleAdmin() {
                                             </select>
                                         </div>
                                         <div className="flex flex-col gap-2 bg-slate-800/50 p-2 rounded border border-white/5 mt-2">
+                                            <div className="flex gap-2 text-xs text-slate-300 items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    id="major_game"
+                                                    checked={editForm.major_game !== false}
+                                                    onChange={(e) => handleEditChange('major_game', e.target.checked)}
+                                                    className="rounded border-slate-500 bg-slate-900"
+                                                />
+                                                <label htmlFor="major_game" className="font-bold text-blue-400">一軍 (Major)</label>
+                                            </div>
                                             <div className="flex gap-2 text-xs text-slate-300 items-center">
                                                 <input
                                                     type="checkbox"
@@ -525,6 +650,11 @@ export default function CpblScheduleAdmin() {
                                             <div className="text-xs text-slate-500 truncate max-w-[150px]">
                                                 {game.stadium}
                                             </div>
+                                            {game.major_game === false && (
+                                                <span className="text-xs bg-slate-600/50 text-slate-300 px-1.5 py-0.5 rounded border border-slate-500">
+                                                    二軍
+                                                </span>
+                                            )}
                                             {game.is_postponed && (
                                                 <span className="text-xs bg-red-900/50 text-red-300 px-1.5 py-0.5 rounded border border-red-800">
                                                     Postponed

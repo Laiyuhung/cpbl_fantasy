@@ -82,9 +82,9 @@ export default function AdminPage() {
             <p className="text-gray-600">View and manage CPBL game schedules</p>
           </div>
 
-          {/* Pitching Stats Insert */}
+          {/* Stats Entry */}
           <div 
-            onClick={() => router.push('/admin/pitching-insert')}
+            onClick={() => router.push('/admin/stats-entry')}
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
           >
             <div className="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mb-4">
@@ -92,8 +92,8 @@ export default function AdminPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Pitching Stats Insert</h2>
-            <p className="text-gray-600">Bulk insert pitching statistics from box scores</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Stats Key-in</h2>
+            <p className="text-gray-600">Bulk insert pitching & batting statistics</p>
           </div>
 
           {/* 未来功能预留位 */}
