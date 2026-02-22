@@ -458,6 +458,10 @@ export default function PlayerDetailModal({
                             {!player.game_info && (
                                 <span className="text-slate-400 text-xs">No game</span>
                             )}
+                            {/* Roster % */}
+                            <span className="text-xs font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                {player.roster_percentage ?? 0}% Rostered
+                            </span>
                             {/* Watch Button */}
                             {renderWatchButton()}
                             {/* Action Button (Add/Drop/Trade) */}

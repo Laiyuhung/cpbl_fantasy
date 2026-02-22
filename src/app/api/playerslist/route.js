@@ -96,12 +96,30 @@ export async function GET(req) {
       });
     }
 
+    // 獲取球員持有率資料
+    const { data: rosterPercentageData, error: rosterError } = await supabase
+      .from('roster_percentage')
+      .select('player_id, roster_percentage');
+
+    if (rosterError) {
+      console.error('Error fetching roster percentage:', rosterError);
+    }
+
+    // 建立持有率對照表
+    const rosterPercentageMap = {};
+    if (rosterPercentageData) {
+      rosterPercentageData.forEach(rp => {
+        rosterPercentageMap[rp.player_id] = rp.roster_percentage;
+      });
+    }
+
     // 將位置資料、真實狀態和賽程資料加入球員資料
     const playersWithPositions = (players || []).map(player => ({
       ...player,
       position_list: positionMap[player.player_id] || null,
       real_life_status: statusMap[player.player_id] || 'UNREGISTERED', // 預設
-      game_info: player.Team ? gameMap[player.Team] : null
+      game_info: player.Team ? gameMap[player.Team] : null,
+      roster_percentage: rosterPercentageMap[player.player_id] ?? 0
     }));
 
     return NextResponse.json({

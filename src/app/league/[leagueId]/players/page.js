@@ -527,6 +527,9 @@ export default function PlayersPage() {
         } else if (sortConfig.key === 'name') {
           valA = a.name;
           valB = b.name;
+        } else if (sortConfig.key === 'roster_percentage') {
+          valA = a.roster_percentage ?? 0;
+          valB = b.roster_percentage ?? 0;
         } else {
           valA = getPlayerStatRaw(a.player_id, sortConfig.key);
           valB = getPlayerStatRaw(b.player_id, sortConfig.key);
@@ -1805,6 +1808,17 @@ export default function PlayersPage() {
                       )}
                     </div>
                   </th>
+                  <th
+                    className="px-4 py-4 text-center text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
+                    onClick={() => handleSort('roster_percentage')}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      %
+                      {sortConfig.key === 'roster_percentage' && (
+                        <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                      )}
+                    </div>
+                  </th>
 
 
                   {/* 動態顯示統計項目 */}
@@ -1849,7 +1863,7 @@ export default function PlayersPage() {
               <tbody className="divide-y divide-purple-500/10">
                 {filteredPlayers.length === 0 ? (
                   <tr>
-                    <td colSpan={3 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)} className="px-6 py-12 text-center">
+                    <td colSpan={4 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)} className="px-6 py-12 text-center">
                       <div className="text-purple-300/50 text-lg">
                         {searchTerm || filterType !== 'all' || filterIdentity !== 'all'
                           ? 'No players found matching your filters'
@@ -1942,6 +1956,9 @@ export default function PlayersPage() {
                       </td>
                       <td className="px-4 py-4 text-center font-mono text-cyan-300">
                         {playerRankings[player.player_id] || '-'}
+                      </td>
+                      <td className="px-4 py-4 text-center font-mono text-slate-400">
+                        {player.roster_percentage ?? 0}%
                       </td>
 
 

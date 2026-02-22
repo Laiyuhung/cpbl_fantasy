@@ -812,6 +812,9 @@ export default function DraftPage() {
                     // Use 9999 for unranked players so they go to bottom in asc sort
                     valA = playerRankings[a.player_id] || 9999;
                     valB = playerRankings[b.player_id] || 9999;
+                } else if (sortConfig.key === 'roster_percentage') {
+                    valA = a.roster_percentage ?? 0;
+                    valB = b.roster_percentage ?? 0;
                 } else {
                     valA = getPlayerStatRaw(a.player_id, sortConfig.key);
                     valB = getPlayerStatRaw(b.player_id, sortConfig.key);
@@ -1356,6 +1359,12 @@ export default function DraftPage() {
                                             </div>
                                         </th>
                                         <th className="p-2 border-b border-slate-700 min-w-[250px]">Player</th>
+                                        <th className="p-2 border-b border-slate-700 min-w-[50px] text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('roster_percentage')}>
+                                            <div className="flex items-center justify-center gap-1">
+                                                %
+                                                {sortConfig.key === 'roster_percentage' && (<span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>)}
+                                            </div>
+                                        </th>
                                         {currentStatCats.map(cat => (
                                             <th key={cat} className="p-2 border-b border-slate-700 text-center min-w-[40px] cursor-pointer hover:text-white transition-colors"
                                                 onClick={() => handleSort(cat)}
@@ -1412,6 +1421,11 @@ export default function DraftPage() {
                                                             </div>
                                                         </div>
                                                     </div>
+                                                </td>
+
+                                                {/* Rostered % */}
+                                                <td className="p-2 text-center text-xs font-mono text-slate-400">
+                                                    {player.roster_percentage ?? 0}%
                                                 </td>
 
                                                 {/* Stats */}
