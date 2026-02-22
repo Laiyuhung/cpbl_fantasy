@@ -16,6 +16,8 @@ export default function JoinLeaguePage() {
   const [joining, setJoining] = useState(false);
   const [joinStatus, setJoinStatus] = useState(null); // null, 'success', 'error'
   const [joinMessage, setJoinMessage] = useState('');
+  const [currentMembers, setCurrentMembers] = useState(0);
+  const [maxTeams, setMaxTeams] = useState(0);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -33,6 +35,8 @@ export default function JoinLeaguePage() {
 
         if (response.ok && result.success) {
           setLeagueSettings(result.league);
+          setCurrentMembers(result.members?.length || 0);
+          setMaxTeams(result.maxTeams || result.league?.max_teams || 0);
 
           // 如果是 Fantasy Points，載入權重
           if (result.league?.scoring_type === 'Head-to-Head Fantasy Points') {
@@ -191,8 +195,13 @@ export default function JoinLeaguePage() {
               <h3 className="text-lg font-bold text-purple-300 mb-3">⚙️ Basic Settings</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Max Teams</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.max_teams || 'N/A'}</p>
+                  <span className="text-purple-400 text-sm font-medium">Teams</span>
+                  <p className="text-white text-lg font-bold mt-1">
+                    {currentMembers} / {maxTeams || leagueSettings.max_teams || 'N/A'}
+                    {currentMembers >= maxTeams && maxTeams > 0 && (
+                      <span className="ml-2 text-xs font-normal text-red-400">(Full)</span>
+                    )}
+                  </p>
                 </div>
                 <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
                   <span className="text-purple-400 text-sm font-medium">Scoring Type</span>

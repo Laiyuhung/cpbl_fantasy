@@ -58,13 +58,28 @@ export default function HomePage() {
                 <span className="w-1.5 h-6 bg-purple-400 rounded-full"></span>
                 My Leagues
               </h2>
-              <Link
-                href="/create_league"
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 flex items-center gap-2 text-sm"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                Create New League
-              </Link>
+              <div className="flex items-center gap-2">
+                {new Date() < new Date('2026-04-16') ? (
+                  <>
+                    <Link
+                      href="/public_league"
+                      className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-blue-500/50 flex items-center gap-2 text-sm"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      Join Public League
+                    </Link>
+                    <Link
+                      href="/create_league"
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 flex items-center gap-2 text-sm"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                      Create New League
+                    </Link>
+                  </>
+                ) : (
+                  <span className="text-slate-500 text-sm">League creation period has ended</span>
+                )}
+              </div>
             </div>
 
             <div>

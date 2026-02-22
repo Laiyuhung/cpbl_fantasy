@@ -275,20 +275,42 @@ export default function Navbar() {
             </button>
             {leagueDropdownOpen && (
               <div className="absolute top-full right-0 mt-2 bg-slate-800/95 backdrop-blur-xl text-white rounded-xl shadow-2xl min-w-[260px] z-50 border border-blue-500/30 overflow-hidden">
-                <Link
-                  href="/create_league"
-                  className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 border-b border-blue-400/30"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    setLeagueDropdownOpen(false)
-                    window.location.href = '/create_league'
-                  }}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <span className="font-bold text-sm">CREATE NEW LEAGUE</span>
-                </Link>
+                {new Date() < new Date('2026-04-16') ? (
+                  <>
+                    <Link
+                      href="/public_league"
+                      className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 border-b border-purple-400/30"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setLeagueDropdownOpen(false)
+                        window.location.href = '/public_league'
+                      }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="font-bold text-sm">JOIN PUBLIC LEAGUE</span>
+                    </Link>
+                    <Link
+                      href="/create_league"
+                      className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 border-b border-blue-400/30"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setLeagueDropdownOpen(false)
+                        window.location.href = '/create_league'
+                      }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <span className="font-bold text-sm">CREATE NEW LEAGUE</span>
+                    </Link>
+                  </>
+                ) : (
+                  <div className="px-4 py-3 text-slate-400 text-sm text-center border-b border-slate-700/50">
+                    League creation period has ended
+                  </div>
+                )}
 
                 {leagues.length > 0 ? (
                   <div className="max-h-[400px] overflow-y-auto">
@@ -461,12 +483,26 @@ export default function Navbar() {
               <div className="border-t border-blue-500/30 mt-4 pt-4">
                 <div className="text-xs text-blue-300/70 mb-3 px-4 font-semibold tracking-wider">MY LEAGUES</div>
 
-                <Link href="/create_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/create_league'; }}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <span className="text-sm font-bold">CREATE NEW LEAGUE</span>
-                </Link>
+                {new Date() < new Date('2026-04-16') ? (
+                  <>
+                    <Link href="/public_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/public_league'; }}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm font-bold">JOIN PUBLIC LEAGUE</span>
+                    </Link>
+                    <Link href="/create_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/create_league'; }}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <span className="text-sm font-bold">CREATE NEW LEAGUE</span>
+                    </Link>
+                  </>
+                ) : (
+                  <div className="px-4 py-3 mb-2 text-slate-400 text-sm text-center">
+                    League creation period has ended
+                  </div>
+                )}
 
                 {leagues.length > 0 ? (
                   leagues.map(league => (

@@ -925,6 +925,31 @@ const CreateLeaguePage = () => {
     }
   };
 
+  // Check deadline - disable page after 2026-04-16
+  if (new Date() >= new Date('2026-04-16')) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-8">
+        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-12 shadow-2xl max-w-md text-center">
+          <div className="w-20 h-20 mx-auto mb-6 bg-slate-700/50 rounded-full flex items-center justify-center">
+            <svg className="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">League Creation Period Ended</h2>
+          <p className="text-slate-400 mb-6">
+            The deadline for creating new leagues was April 15, 2026. New leagues can no longer be created for this season.
+          </p>
+          <button
+            onClick={() => router.push('/home')}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all"
+          >
+            Return to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <style jsx>{`
