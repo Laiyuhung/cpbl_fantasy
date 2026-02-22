@@ -3,7 +3,33 @@ import supabase from '@/lib/supabase'
 
 export async function POST(req) {
   try {
-    const { text, date, isMajor } = await req.json()
+    const body = await req.json()
+    
+    // New format: pre-parsed records with table specification
+    if (body.records && Array.isArray(body.records)) {
+      const { records, table } = body
+      const targetTable = table || 'pitching_stats_2026'
+      
+      // Validate table name to prevent SQL injection
+      const allowedTables = ['pitching_stats', 'pitching_stats_2026']
+      if (!allowedTables.includes(targetTable)) {
+        return NextResponse.json({ error: 'Invalid table name' }, { status: 400 })
+      }
+
+      console.log(`🟡 Inserting ${records.length} records into ${targetTable}`)
+
+      const { error } = await supabase.from(targetTable).insert(records)
+
+      if (error) {
+        console.error('❌ Supabase insert 錯誤:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, count: records.length })
+    }
+
+    // Legacy format: text parsing
+    const { text, date, isMajor } = body
     if (!text || !date || typeof isMajor !== 'boolean') {
       return NextResponse.json({ error: '缺少必要欄位' }, { status: 400 })
     }
