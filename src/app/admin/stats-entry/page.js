@@ -158,12 +158,15 @@ export default function StatsEntryPage() {
     return parseFloat(str) || 0
   }
 
-  // Extract positions from raw position string - clean format
+  // Extract positions from raw position string - clean format (return as comma-separated string)
   const extractPositions = (rawPos) => {
     rawPos = rawPos.replace(/（/g, '(').replace(/）/g, ')')
     const matches = rawPos.match(/[A-Z]+\d*|\d+[A-Z]+/g)
-    return matches || []
+    return matches ? matches.join(', ') : ''
   }
+
+  // Valid pitcher record values
+  const validRecords = ['W', 'L', 'HLD', 'SV', 'H', 'S', 'BS', 'WP', 'LP', 'HD']
 
   // Determine if a line is pitching or batting based on header
   const isPitchingHeader = (line) => {
@@ -240,7 +243,9 @@ export default function StatsEntryPage() {
       let statStart = 2
       
       if (parts[2] && /^\(.*\)$/.test(parts[2])) {
-        record = parts[2].replace(/[()]/g, '')
+        const rawRecord = parts[2].replace(/[()]/g, '').toUpperCase()
+        // Only keep valid record values
+        record = validRecords.includes(rawRecord) ? rawRecord : null
         statStart = 3
       }
       
@@ -797,7 +802,7 @@ export default function StatsEntryPage() {
                 {battingPreview.map((p, idx) => (
                   <tr key={idx} className="border-b border-purple-500/20 hover:bg-purple-500/10">
                     <td className="p-2 font-semibold">{p.name}</td>
-                    <td className="p-2 text-xs">{p.position?.join(', ') || '-'}</td>
+                    <td className="p-2 text-xs">{p.position || '-'}</td>
                     <td className="p-2 text-center">{p.at_bats}</td>
                     <td className="p-2 text-center">{p.runs}</td>
                     <td className="p-2 text-center">{p.hits}</td>
