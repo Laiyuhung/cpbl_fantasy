@@ -247,7 +247,10 @@ export default function StatsEntryPage() {
       
       if (parts[2] && /^\(.*\)$/.test(parts[2])) {
         // Handle formats like (W,5-2) or (W) - extract first part before comma
-        const rawRecord = parts[2].replace(/[()]/g, '').split(',')[0].toUpperCase()
+        let rawRecord = parts[2].replace(/[()]/g, '').split(',')[0].toUpperCase()
+        // Convert short forms: H -> HLD, S -> SV
+        if (rawRecord === 'H') rawRecord = 'HLD'
+        if (rawRecord === 'S') rawRecord = 'SV'
         // Only keep valid record values
         record = validRecords.includes(rawRecord) ? rawRecord : null
         statStart = 3
