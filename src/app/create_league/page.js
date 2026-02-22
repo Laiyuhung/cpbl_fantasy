@@ -67,7 +67,7 @@ const initialSettings = {
     'Lock Eliminated Teams': 'Yes',
   },
   league: {
-    'Make League Publicly Viewable': 'No',
+    'Make League Publicly Viewable': 'Yes',
     'Invite Permissions': 'Commissioner Only',
   },
 };

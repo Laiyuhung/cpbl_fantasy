@@ -65,6 +65,8 @@ export default function PlayersPage() {
   // Watch State
   const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
   const [filterOwnership, setFilterOwnership] = useState('all'); // all, available, myteam, watched
+  const [filterTeam, setFilterTeam] = useState('all'); // Team filter
+  const [filterPosition, setFilterPosition] = useState('all'); // Position filter
 
   // Fetch rosters for trade validation
   useEffect(() => {
@@ -477,6 +479,18 @@ export default function PlayersPage() {
       const matchesIdentity = filterIdentity === 'all' ||
         player.identity?.toLowerCase() === filterIdentity.toLowerCase();
 
+      // Team filter
+      const matchesTeam = filterTeam === 'all' || player.team === filterTeam;
+
+      // Position filter (check if player has the selected position)
+      let matchesPosition = true;
+      if (filterPosition !== 'all') {
+        const playerPositions = player.position_list
+          ? player.position_list.split(',').map(p => p.trim())
+          : [];
+        matchesPosition = playerPositions.includes(filterPosition);
+      }
+
       // Ownership filter
       const ownership = ownerships.find(o => o.player_id === player.player_id);
       let matchesOwnership = true;
@@ -488,7 +502,7 @@ export default function PlayersPage() {
         matchesOwnership = watchedPlayerIds.has(player.player_id);
       }
 
-      return matchesSearch && matchesType && matchesIdentity && matchesOwnership;
+      return matchesSearch && matchesType && matchesIdentity && matchesOwnership && matchesTeam && matchesPosition;
     });
 
     if (sortConfig.key) {
@@ -521,7 +535,7 @@ export default function PlayersPage() {
     }
 
     return result;
-  }, [players, searchTerm, filterType, filterIdentity, filterOwnership, sortConfig, playerStats, playerRankings, ownerships, myManagerId, watchedPlayerIds]);
+  }, [players, searchTerm, filterType, filterIdentity, filterOwnership, filterTeam, filterPosition, sortConfig, playerStats, playerRankings, ownerships, myManagerId, watchedPlayerIds]);
 
   const displayBatterCats = useMemo(() => {
     const forced = 'At Bats (AB)';
@@ -1609,7 +1623,7 @@ export default function PlayersPage() {
 
           {/* Filters */}
           <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {/* Search */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
@@ -1639,6 +1653,46 @@ export default function PlayersPage() {
                   <option value="all">All</option>
                   <option value="local">Local</option>
                   <option value="foreigner">Foreigner</option>
+                </select>
+              </div>
+
+              {/* Team Filter */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Team
+                </label>
+                <select
+                  value={filterTeam}
+                  onChange={(e) => setFilterTeam(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="all">All Teams</option>
+                  <option value="統一獅">統一獅</option>
+                  <option value="富邦悍將">富邦悍將</option>
+                  <option value="樂天桃猿">樂天桃猿</option>
+                  <option value="中信兄弟">中信兄弟</option>
+                  <option value="味全龍">味全龍</option>
+                  <option value="台鋼雄鷹">台鋼雄鷹</option>
+                </select>
+              </div>
+
+              {/* Position Filter */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Position
+                </label>
+                <select
+                  value={filterPosition}
+                  onChange={(e) => setFilterPosition(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="all">All Positions</option>
+                  {Object.keys(rosterPositions)
+                    .filter(pos => rosterPositions[pos] > 0 && !['BN', 'Minor', 'Util', 'P', 'CI', 'MI', 'OF'].includes(pos))
+                    .map(pos => (
+                      <option key={pos} value={pos}>{pos}</option>
+                    ))
+                  }
                 </select>
               </div>
 

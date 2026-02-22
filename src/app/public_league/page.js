@@ -36,12 +36,12 @@ export default function PublicLeaguePage() {
 
     const getScoringTypeLabel = (type) => {
         switch (type) {
-            case 'Head-to-Head Categories':
-                return 'H2H CAT';
+            case 'Head-to-Head':
+                return 'H2H';
+            case 'Head-to-Head One Win':
+                return 'H2H 1W';
             case 'Head-to-Head Fantasy Points':
                 return 'H2H PTS';
-            case 'Roto':
-                return 'ROTO';
             default:
                 return type || 'Unknown';
         }
@@ -66,10 +66,9 @@ export default function PublicLeaguePage() {
         // Scoring type filter
         if (filterScoring !== 'all') {
             const scoringLabel = getScoringTypeLabel(league.scoring_type);
-            if (filterScoring === 'h2h' && !scoringLabel.startsWith('H2H')) return false;
-            if (filterScoring === 'h2h-cat' && scoringLabel !== 'H2H CAT') return false;
+            if (filterScoring === 'h2h' && scoringLabel !== 'H2H') return false;
+            if (filterScoring === 'h2h-1w' && scoringLabel !== 'H2H 1W') return false;
             if (filterScoring === 'h2h-pts' && scoringLabel !== 'H2H PTS') return false;
-            if (filterScoring === 'roto' && scoringLabel !== 'ROTO') return false;
         }
 
         // Draft time filter
@@ -156,9 +155,9 @@ export default function PublicLeaguePage() {
                             className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-purple-500 focus:border-purple-500"
                         >
                             <option value="all">All Types</option>
-                            <option value="h2h-cat">H2H Categories</option>
+                            <option value="h2h">Head-to-Head</option>
+                            <option value="h2h-1w">H2H One Win</option>
                             <option value="h2h-pts">H2H Fantasy Points</option>
-                            <option value="roto">Roto</option>
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
