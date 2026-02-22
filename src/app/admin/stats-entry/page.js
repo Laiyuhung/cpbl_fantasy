@@ -35,6 +35,10 @@ export default function StatsEntryPage() {
   const [battingPreview, setBattingPreview] = useState([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+  
+  // Entry log - track which teams have been logged
+  const [entryLog, setEntryLog] = useState([]) // { game_uuid, team }[]
+  const [detectedMinor, setDetectedMinor] = useState(false) // true if "二軍" detected
 
   // Team name variations for detection (longer variants first for priority matching)
   const teamVariants = {
@@ -122,6 +126,13 @@ export default function StatsEntryPage() {
           setSelectedGameUuid('')
           setAwayScore('')
           setHomeScore('')
+          
+          // Fetch entry log for this date
+          const logRes = await fetch(`/api/admin/stats-entry-log?date=${date}`)
+          const logData = await logRes.json()
+          if (logData.success) {
+            setEntryLog(logData.data || [])
+          }
         }
       } catch (err) {
         console.error('Failed to fetch games:', err)
@@ -196,10 +207,18 @@ export default function StatsEntryPage() {
     const firstLine = lines[0]
     const detectedTeamName = detectTeam(firstLine)
     setDetectedTeam(detectedTeamName || '')
+    
+    // Detect if minor league from header (contains "二軍")
+    const isMinorLeague = firstLine.includes('二軍')
+    setDetectedMinor(isMinorLeague)
 
-    // Auto-select matching game
+    // Auto-select matching game (considering major/minor)
     if (detectedTeamName && gamesForDate.length > 0 && !selectedGameUuid) {
-      const matchingGame = gamesForDate.find(g => g.away === detectedTeamName || g.home === detectedTeamName)
+      const matchingGame = gamesForDate.find(g => {
+        const teamMatch = g.away === detectedTeamName || g.home === detectedTeamName
+        const leagueMatch = isMinorLeague ? g.major_game === false : g.major_game !== false
+        return teamMatch && leagueMatch
+      })
       if (matchingGame) {
         setSelectedGameUuid(matchingGame.uuid)
       }
@@ -479,17 +498,36 @@ export default function StatsEntryPage() {
       }
 
       if (results.length > 0) {
+        // Log the entry to track which team has been logged
+        if (detectedTeam && selectedGameUuid) {
+          await fetch('/api/admin/stats-entry-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              game_uuid: selectedGameUuid,
+              team: detectedTeam
+            })
+          })
+        }
+        
         setMessage({ type: 'success', text: `✅ 成功插入: ${results.join(', ')}` })
         setStatsText('')
         setPitchingPreview([])
         setBattingPreview([])
         setDetectedTeam('')
+        setDetectedMinor(false)
         
-        // Refresh games
+        // Refresh games and entry log
         const gamesRes = await fetch(`/api/admin/cpbl-schedule?date=${date}`)
         const gamesData = await gamesRes.json()
         if (gamesData.success) {
           setGamesForDate(gamesData.data)
+        }
+        
+        const logRes = await fetch(`/api/admin/stats-entry-log?date=${date}`)
+        const logData = await logRes.json()
+        if (logData.success) {
+          setEntryLog(logData.data || [])
         }
       } else {
         setMessage({ type: 'error', text: '❌ 未能插入任何數據' })
@@ -549,6 +587,27 @@ export default function StatsEntryPage() {
   // Separate games by league
   const majorGames = gamesForDate.filter(g => g.major_game !== false)
   const minorGames = gamesForDate.filter(g => g.major_game === false)
+  
+  // Helper to check if a team is logged for a game
+  const isTeamLogged = (gameUuid, team) => {
+    return entryLog.some(log => log.game_uuid === gameUuid && log.team === team)
+  }
+  
+  // Get pending teams for display
+  const getPendingTeams = () => {
+    const pending = []
+    gamesForDate.forEach(game => {
+      if (!isTeamLogged(game.uuid, game.away)) {
+        pending.push({ team: game.away, league: game.major_game !== false ? '一軍' : '二軍', game })
+      }
+      if (!isTeamLogged(game.uuid, game.home)) {
+        pending.push({ team: game.home, league: game.major_game !== false ? '一軍' : '二軍', game })
+      }
+    })
+    return pending
+  }
+  
+  const pendingTeams = getPendingTeams()
 
   if (checkingAdmin) {
     return (
@@ -603,6 +662,22 @@ export default function StatsEntryPage() {
             />
           </div>
 
+          {/* Pending Teams */}
+          {pendingTeams.length > 0 && (
+            <div className="mb-6 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+              <label className="block text-yellow-300 text-sm font-semibold mb-2">
+                ⚠️ 尚未登錄之球隊 ({pendingTeams.length})
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {pendingTeams.map((item, idx) => (
+                  <span key={idx} className="px-2 py-1 bg-yellow-800/30 text-yellow-200 text-xs rounded">
+                    {item.team} ({item.league})
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Games for Date - All leagues */}
           <div className="mb-6">
             <label className="block text-purple-300 text-sm font-semibold mb-2">
@@ -622,6 +697,8 @@ export default function StatsEntryPage() {
                         const isSelected = selectedGameUuid === game.uuid
                         const hasScore = game.away_team_score !== null && game.home_team_score !== null
                         const isDetectedGame = detectedTeam && (game.away === detectedTeam || game.home === detectedTeam)
+                        const awayLogged = isTeamLogged(game.uuid, game.away)
+                        const homeLogged = isTeamLogged(game.uuid, game.home)
                         
                         return (
                           <div
@@ -640,11 +717,15 @@ export default function StatsEntryPage() {
                               {hasScore && <span className="text-green-400">✓ 已登錄比分</span>}
                             </div>
                             <div className="flex justify-between items-center font-bold text-white">
-                              <span className={detectedTeam === game.away ? 'text-yellow-400' : ''}>{game.away}</span>
+                              <span className={`${detectedTeam === game.away ? 'text-yellow-400' : ''} ${awayLogged ? 'line-through opacity-50' : ''}`}>
+                                {awayLogged && '✓ '}{game.away}
+                              </span>
                               <span className="text-slate-500 mx-2">
                                 {hasScore ? `${game.away_team_score} - ${game.home_team_score}` : 'vs'}
                               </span>
-                              <span className={detectedTeam === game.home ? 'text-yellow-400' : ''}>{game.home}</span>
+                              <span className={`${detectedTeam === game.home ? 'text-yellow-400' : ''} ${homeLogged ? 'line-through opacity-50' : ''}`}>
+                                {game.home}{homeLogged && ' ✓'}
+                              </span>
                             </div>
                           </div>
                         )
@@ -662,6 +743,8 @@ export default function StatsEntryPage() {
                         const isSelected = selectedGameUuid === game.uuid
                         const hasScore = game.away_team_score !== null && game.home_team_score !== null
                         const isDetectedGame = detectedTeam && (game.away === detectedTeam || game.home === detectedTeam)
+                        const awayLogged = isTeamLogged(game.uuid, game.away)
+                        const homeLogged = isTeamLogged(game.uuid, game.home)
                         
                         return (
                           <div
@@ -680,11 +763,15 @@ export default function StatsEntryPage() {
                               {hasScore && <span className="text-green-400">✓ 已登錄比分</span>}
                             </div>
                             <div className="flex justify-between items-center font-bold text-white">
-                              <span className={detectedTeam === game.away ? 'text-yellow-400' : ''}>{game.away}</span>
+                              <span className={`${detectedTeam === game.away ? 'text-yellow-400' : ''} ${awayLogged ? 'line-through opacity-50' : ''}`}>
+                                {awayLogged && '✓ '}{game.away}
+                              </span>
                               <span className="text-slate-500 mx-2">
                                 {hasScore ? `${game.away_team_score} - ${game.home_team_score}` : 'vs'}
                               </span>
-                              <span className={detectedTeam === game.home ? 'text-yellow-400' : ''}>{game.home}</span>
+                              <span className={`${detectedTeam === game.home ? 'text-yellow-400' : ''} ${homeLogged ? 'line-through opacity-50' : ''}`}>
+                                {game.home}{homeLogged && ' ✓'}
+                              </span>
                             </div>
                           </div>
                         )
