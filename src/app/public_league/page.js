@@ -9,6 +9,8 @@ export default function PublicLeaguePage() {
     const [leagues, setLeagues] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [filterScoring, setFilterScoring] = useState('all');
+    const [filterDraftTime, setFilterDraftTime] = useState('all');
 
     useEffect(() => {
         const fetchPublicLeagues = async () => {
@@ -58,6 +60,31 @@ export default function PublicLeaguePage() {
                 return type || 'TBD';
         }
     };
+
+    // Filter leagues based on selected filters
+    const filteredLeagues = leagues.filter(league => {
+        // Scoring type filter
+        if (filterScoring !== 'all') {
+            const scoringLabel = getScoringTypeLabel(league.scoring_type);
+            if (filterScoring === 'h2h' && !scoringLabel.startsWith('H2H')) return false;
+            if (filterScoring === 'h2h-cat' && scoringLabel !== 'H2H CAT') return false;
+            if (filterScoring === 'h2h-pts' && scoringLabel !== 'H2H PTS') return false;
+            if (filterScoring === 'roto' && scoringLabel !== 'ROTO') return false;
+        }
+
+        // Draft time filter
+        if (filterDraftTime !== 'all' && league.live_draft_time) {
+            const draftDate = new Date(league.live_draft_time);
+            const now = new Date();
+            const daysDiff = (draftDate - now) / (1000 * 60 * 60 * 24);
+            
+            if (filterDraftTime === '3days' && daysDiff > 3) return false;
+            if (filterDraftTime === '1week' && daysDiff > 7) return false;
+            if (filterDraftTime === '2weeks' && daysDiff > 14) return false;
+        }
+
+        return true;
+    });
 
     // Check deadline - disable page after 2026-04-16
     if (new Date() >= new Date('2026-04-16')) {
@@ -115,9 +142,47 @@ export default function PublicLeaguePage() {
                 </div>
 
                 {/* Description */}
-                <p className="text-slate-400 mb-6 text-sm">
+                <p className="text-slate-400 mb-4 text-sm">
                     Browse and join public leagues that are looking for members. These leagues are in pre-draft status and have open spots available.
                 </p>
+
+                {/* Filters */}
+                <div className="flex flex-wrap gap-4 mb-6">
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase">Scoring:</label>
+                        <select
+                            value={filterScoring}
+                            onChange={(e) => setFilterScoring(e.target.value)}
+                            className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-purple-500 focus:border-purple-500"
+                        >
+                            <option value="all">All Types</option>
+                            <option value="h2h-cat">H2H Categories</option>
+                            <option value="h2h-pts">H2H Fantasy Points</option>
+                            <option value="roto">Roto</option>
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase">Draft Within:</label>
+                        <select
+                            value={filterDraftTime}
+                            onChange={(e) => setFilterDraftTime(e.target.value)}
+                            className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-purple-500 focus:border-purple-500"
+                        >
+                            <option value="all">Any Time</option>
+                            <option value="3days">3 Days</option>
+                            <option value="1week">1 Week</option>
+                            <option value="2weeks">2 Weeks</option>
+                        </select>
+                    </div>
+                    {(filterScoring !== 'all' || filterDraftTime !== 'all') && (
+                        <button
+                            onClick={() => { setFilterScoring('all'); setFilterDraftTime('all'); }}
+                            className="text-xs text-purple-400 hover:text-purple-300 underline"
+                        >
+                            Clear Filters
+                        </button>
+                    )}
+                </div>
 
                 {/* Content */}
                 {loading ? (
@@ -141,9 +206,19 @@ export default function PublicLeaguePage() {
                         <p className="text-slate-400 text-lg mb-2">No public leagues available</p>
                         <p className="text-slate-500 text-sm">Check back later or create your own league!</p>
                     </div>
+                ) : filteredLeagues.length === 0 ? (
+                    <div className="text-center py-16">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center">
+                            <svg className="w-10 h-10 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                        </div>
+                        <p className="text-slate-400 text-lg mb-2">No leagues match your filters</p>
+                        <p className="text-slate-500 text-sm">Try adjusting your filter criteria</p>
+                    </div>
                 ) : (
                     <div className="space-y-4">
-                        {leagues.map((league) => (
+                        {filteredLeagues.map((league) => (
                             <Link
                                 key={league.league_id}
                                 href={`/league/${league.league_id}/join`}
@@ -184,11 +259,11 @@ export default function PublicLeaguePage() {
                                             </div>
                                         </div>
 
-                                        {/* Draft Type */}
+                                        {/* Live Draft Time */}
                                         <div className="bg-slate-800/50 rounded-xl p-3 border border-white/5">
-                                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Draft</div>
+                                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Live Draft Time</div>
                                             <div className="text-sm font-bold text-blue-300">
-                                                {getDraftTypeLabel(league.draft_type)}
+                                                {league.live_draft_time ? new Date(league.live_draft_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'TBD'}
                                             </div>
                                         </div>
 
@@ -202,10 +277,7 @@ export default function PublicLeaguePage() {
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <span className="text-xs text-slate-500">
-                                            Created {new Date(league.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </span>
+                                    <div className="mt-4 flex items-center justify-end">
                                         <span className="text-xs font-bold text-green-400 group-hover:text-green-300 flex items-center gap-1 transition-colors">
                                             View & Join
                                             <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

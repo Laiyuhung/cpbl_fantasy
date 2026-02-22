@@ -11,7 +11,7 @@ export async function GET() {
         // Step 1: Get all leagues that are publicly viewable
         const { data: publicLeagues, error: leaguesError } = await supabase
             .from('league_settings')
-            .select('league_id, league_name, max_teams, scoring_type, draft_type, playoffs, created_at')
+            .select('league_id, league_name, max_teams, scoring_type, draft_type, playoffs, created_at, live_draft_time')
             .eq('make_league_publicly_viewable', 'Yes');
 
         if (leaguesError) {
@@ -70,6 +70,7 @@ export async function GET() {
         });
 
         // Step 5: Filter and build final list
+        const now = new Date();
         const eligibleLeagues = publicLeagues.filter(league => {
             // Must be pre-draft
             if (!preDraftLeagueIds.has(league.league_id)) return false;
@@ -81,14 +82,22 @@ export async function GET() {
             const currentMembers = memberCountMap[league.league_id] || 0;
             if (currentMembers >= league.max_teams) return false;
 
+            // Must have future draft time (or no draft time set yet)
+            if (league.live_draft_time && new Date(league.live_draft_time) < now) return false;
+
             return true;
         }).map(league => ({
             ...league,
             current_members: memberCountMap[league.league_id] || 0
         }));
 
-        // Sort by creation date (newest first)
-        eligibleLeagues.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        // Sort by draft time (nearest first), leagues without draft time go last
+        eligibleLeagues.sort((a, b) => {
+            if (!a.live_draft_time && !b.live_draft_time) return 0;
+            if (!a.live_draft_time) return 1;
+            if (!b.live_draft_time) return -1;
+            return new Date(a.live_draft_time) - new Date(b.live_draft_time);
+        });
 
         return NextResponse.json({ success: true, leagues: eligibleLeagues });
 

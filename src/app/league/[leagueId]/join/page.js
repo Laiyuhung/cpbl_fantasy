@@ -12,12 +12,14 @@ export default function JoinLeaguePage() {
   const [leagueSettings, setLeagueSettings] = useState(null);
   const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
   const [error, setError] = useState('');
+  const [joinBlockedReason, setJoinBlockedReason] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinStatus, setJoinStatus] = useState(null); // null, 'success', 'error'
   const [joinMessage, setJoinMessage] = useState('');
   const [currentMembers, setCurrentMembers] = useState(0);
   const [maxTeams, setMaxTeams] = useState(0);
+  const [leagueStatus, setLeagueStatus] = useState('');
 
   useEffect(() => {
     if (!leagueId) return;
@@ -37,6 +39,19 @@ export default function JoinLeaguePage() {
           setLeagueSettings(result.league);
           setCurrentMembers(result.members?.length || 0);
           setMaxTeams(result.maxTeams || result.league?.max_teams || 0);
+          setLeagueStatus(result.status || '');
+
+          // Check for join-blocking conditions
+          const memberCount = result.members?.length || 0;
+          const maxTeamsVal = result.maxTeams || result.league?.max_teams || 0;
+
+          if (result.league?.is_finalized) {
+            setJoinBlockedReason('This league has been finalized. The Commissioner has locked team membership.');
+          } else if (result.status !== 'pre-draft') {
+            setJoinBlockedReason('The draft has already been completed. New members cannot join leagues that have already started.');
+          } else if (memberCount >= maxTeamsVal) {
+            setJoinBlockedReason('This league is full. All team slots have been taken.');
+          }
 
           // 如果是 Fantasy Points，載入權重
           if (result.league?.scoring_type === 'Head-to-Head Fantasy Points') {
@@ -175,7 +190,7 @@ export default function JoinLeaguePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className={`max-w-4xl mx-auto transition-all duration-300 ${joinBlockedReason ? 'blur-sm pointer-events-none' : ''}`}>
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl mb-6">
           <h1 className="text-4xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-2">
@@ -453,6 +468,38 @@ export default function JoinLeaguePage() {
           </div>
         )}
       </div>
+
+      {/* Join Blocked Modal */}
+      {joinBlockedReason && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+          <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 border border-red-500/30 rounded-2xl p-8 shadow-2xl max-w-md w-full animate-in fade-in zoom-in">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-white mb-3">Unable to Join</h2>
+              <p className="text-slate-300 mb-6">{joinBlockedReason}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => router.push('/public_league')}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-all"
+                >
+                  Browse Leagues
+                </button>
+                <button
+                  onClick={() => router.push('/home')}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-all"
+                >
+                  Go Home
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
