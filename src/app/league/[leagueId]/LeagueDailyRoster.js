@@ -657,17 +657,27 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         }
 
         // Stats — horizontal scroll, vertical chip layout
-        const statsRow = !isEmpty && statCats.length > 0 ? (
+        // Prepend AB (batters) or IP (pitchers) if not already in categories
+        let displayCats = statCats;
+        if (!isPitcher && statCats.length > 0 && !statCats.some(c => parseStatKey(c) === 'AB')) {
+            displayCats = ['At Bats (AB)', ...statCats];
+        }
+        if (isPitcher && statCats.length > 0 && !statCats.some(c => parseStatKey(c) === 'IP')) {
+            displayCats = ['Innings Pitched (IP)', ...statCats];
+        }
+
+        const statsRow = !isEmpty && displayCats.length > 0 ? (
             <div className="overflow-x-auto mt-1.5 pb-0.5" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 transparent' }}>
                 <div className="flex items-end gap-x-4 flex-nowrap min-w-max">
-                    {statCats.map((cat) => {
+                    {displayCats.map((cat) => {
                         const abbr = parseStatKey(cat);
                         const val = getStatValue(p.name, cat);
                         const isZeroOrDash = val === '-' || val === 0 || val === '0';
+                        const isForced = !statCats.includes(cat);
                         return (
                             <div key={abbr} className="flex flex-col items-center flex-shrink-0">
-                                <span className="text-[9px] text-slate-500 font-semibold leading-none tracking-wide">{abbr}</span>
-                                <span className={`text-xs font-mono font-bold leading-tight mt-0.5 ${isZeroOrDash ? 'text-slate-600' : 'text-cyan-200'}`}>{val}</span>
+                                <span className={`text-[9px] font-semibold leading-none tracking-wide ${isForced ? 'text-slate-600' : 'text-slate-500'}`}>{abbr}</span>
+                                <span className={`text-xs font-mono font-bold leading-tight mt-0.5 ${isForced ? 'text-slate-500' : (isZeroOrDash ? 'text-slate-600' : 'text-cyan-200')}`}>{val}</span>
                             </div>
                         );
                     })}
