@@ -39,7 +39,7 @@ export async function POST(req) {
           player_id: playerId,
           player_name: playerName,
           time_window: targetDate,
-          app: 0, gs: 0, rapp: 0, ip: 0, out: 0, tbf: 0, pc: 0, w: 0, l: 0, hld: 0, sv: 0, sv_hld: 0, rw: 0, rl: 0, h: 0, hr: 0, k: 0, bb: 0, ibb: 0, hbp: 0, ra: 0, er: 0, qs: 0, cg: 0, sho: 0, pg: 0, nh: 0, era: 0, whip: 0, win_pct: 0, k9: 0, bb9: 0, kbb: 0, h9: 0, obpa: 0
+          app: 0, gs: 0, rapp: 0, ip: 0, out: 0, tbf: 0, pc: 0, w: 0, l: 0, hld: 0, sv: 0, 'sv+hld': 0, rw: 0, rl: 0, h: 0, hr: 0, k: 0, bb: 0, ibb: 0, hbp: 0, ra: 0, er: 0, qs: 0, cg: 0, sho: 0, pg: 0, nh: 0, era: 0, whip: 0, 'win%': 0, 'k/9': 0, 'bb/9': 0, 'k/bb': 0, 'h/9': 0, obpa: 0
         })
       }
       const p = playerMap.get(playerName)
@@ -64,7 +64,7 @@ export async function POST(req) {
       if (row.record === 'SV') p.sv++
       if (isWin && isReliever) p.rw++
       if (isLoss && isReliever) p.rl++
-      p.sv_hld = p.sv + p.hld
+      p['sv+hld'] = p.sv + p.hld
       // 安打
       p.h += row.hits_allowed || 0
       p.hr += row.home_runs_allowed || 0
@@ -92,11 +92,11 @@ export async function POST(req) {
       const ip_raw = p.out / 3
       p.era = ip_raw ? Number((9 * p.er / ip_raw).toFixed(2)) : 0
       p.whip = ip_raw ? Number(((p.bb + p.h) / ip_raw).toFixed(2)) : 0
-      p.win_pct = (p.w + p.l) > 0 ? Number((p.w / (p.w + p.l)).toFixed(3)) : 0
-      p.k9 = ip_raw ? Number((9 * p.k / ip_raw).toFixed(2)) : 0
-      p.bb9 = ip_raw ? Number((9 * p.bb / ip_raw).toFixed(2)) : 0
-      p.kbb = p.bb > 0 ? Number((p.k / p.bb).toFixed(2)) : Number(p.k.toFixed(2))
-      p.h9 = ip_raw ? Number((9 * p.h / ip_raw).toFixed(2)) : 0
+      p['win%'] = (p.w + p.l) > 0 ? Number((p.w / (p.w + p.l)).toFixed(3)) : 0
+      p['k/9'] = ip_raw ? Number((9 * p.k / ip_raw).toFixed(2)) : 0
+      p['bb/9'] = ip_raw ? Number((9 * p.bb / ip_raw).toFixed(2)) : 0
+      p['k/bb'] = p.bb > 0 ? Number((p.k / p.bb).toFixed(2)) : Number(p.k.toFixed(2))
+      p['h/9'] = ip_raw ? Number((9 * p.h / ip_raw).toFixed(2)) : 0
       p.obpa = p.tbf > 0 ? Number(((p.h + p.bb + p.hbp) / p.tbf).toFixed(3)) : 0
       results.push({
         player_id: p.player_id,
@@ -113,7 +113,7 @@ export async function POST(req) {
         l: p.l,
         hld: p.hld,
         sv: p.sv,
-        sv_hld: p.sv_hld,
+        'sv+hld': p['sv+hld'],
         rw: p.rw,
         rl: p.rl,
         h: p.h,
@@ -131,11 +131,11 @@ export async function POST(req) {
         nh: p.nh,
         era: p.era,
         whip: p.whip,
-        win_pct: p.win_pct,
-        k9: p.k9,
-        bb9: p.bb9,
-        kbb: p.kbb,
-        h9: p.h9,
+        'win%': p['win%'],
+        'k/9': p['k/9'],
+        'bb/9': p['bb/9'],
+        'k/bb': p['k/bb'],
+        'h/9': p['h/9'],
         obpa: p.obpa
       })
     }

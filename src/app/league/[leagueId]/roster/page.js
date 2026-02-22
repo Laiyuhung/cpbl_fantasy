@@ -400,24 +400,46 @@ export default function RosterPage() {
     // Stats
     useEffect(() => {
         const fetchStats = async () => {
-            if (!selectedDate) return;
+            if (!timeWindow) return;
             try {
-                let newStats = {};
-                // Always use daily APIs for any selected date
-                const [batterRes, pitcherRes] = await Promise.all([
-                    fetch('/api/playerStats/daily-batting', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) }),
-                    fetch('/api/playerStats/daily-pitching', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) })
-                ]);
-                const batterData = await batterRes.json();
-                const pitcherData = await pitcherRes.json();
-                // Use name as key
-                if (Array.isArray(batterData)) batterData.forEach(s => newStats[s.name] = s);
-                if (Array.isArray(pitcherData)) pitcherData.forEach(s => newStats[s.name] = { ...newStats[s.name], ...s });
+                const newStats = {};
+
+                if (timeWindow === 'Today') {
+                    // Use daily APIs (POST, flat array response)
+                    const [batterRes, pitcherRes] = await Promise.all([
+                        fetch('/api/playerStats/daily-batting', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ date: selectedDate })
+                        }),
+                        fetch('/api/playerStats/daily-pitching', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ date: selectedDate })
+                        })
+                    ]);
+                    const batterData = await batterRes.json();
+                    const pitcherData = await pitcherRes.json();
+                    // Daily APIs return flat arrays (no {success, stats} wrapper)
+                    if (Array.isArray(batterData)) batterData.forEach(s => { if (s.player_id) newStats[s.player_id] = s; });
+                    if (Array.isArray(pitcherData)) pitcherData.forEach(s => { if (s.player_id) newStats[s.player_id] = s; });
+                } else {
+                    // Use summary APIs (GET, {success, stats} wrapper)
+                    const [batterRes, pitcherRes] = await Promise.all([
+                        fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
+                        fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
+                    ]);
+                    const batterData = await batterRes.json();
+                    const pitcherData = await pitcherRes.json();
+                    if (batterData.success && batterData.stats) batterData.stats.forEach(s => newStats[s.player_id] = s);
+                    if (pitcherData.success && pitcherData.stats) pitcherData.stats.forEach(s => newStats[s.player_id] = s);
+                }
+
                 setPlayerStats(newStats);
             } catch (err) { console.error('Failed to fetch stats:', err); }
         };
         fetchStats();
-    }, [selectedDate]);
+    }, [timeWindow, selectedDate]);
 
     // Fetch Pending Trades Count
     useEffect(() => {
@@ -454,7 +476,7 @@ export default function RosterPage() {
     // Toggle watch handler (optimistic update)
     const handleToggleWatch = async (player, isCurrentlyWatched) => {
         if (!myManagerId || !player?.player_id) return;
-        
+
         // Optimistic update - update UI immediately
         if (isCurrentlyWatched) {
             setWatchedPlayerIds(prev => {
@@ -465,7 +487,7 @@ export default function RosterPage() {
         } else {
             setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
         }
-        
+
         try {
             const res = await fetch('/api/watched', {
                 method: isCurrentlyWatched ? 'DELETE' : 'POST',
