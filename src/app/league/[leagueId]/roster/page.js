@@ -63,6 +63,15 @@ export default function RosterPage() {
     // Watch State
     const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
 
+    // Weekly IP & Add Limit State
+    const [weeklyIP, setWeeklyIP] = useState(null);
+    const [minIPRequired, setMinIPRequired] = useState(null);
+    const [weeklyAddCount, setWeeklyAddCount] = useState(0);
+    const [maxAcquisitions, setMaxAcquisitions] = useState(null);
+
+    // Roster Percentage Map
+    const [rosterPercentageMap, setRosterPercentageMap] = useState({});
+
     // Helpers
     const parseStatName = (stat) => {
         const matches = stat.match(/\(([^)]+)\)/g);
@@ -361,10 +370,56 @@ export default function RosterPage() {
 
                 setRosterPositionsConfig(settingsData.data.roster_positions || {});
                 setForeignerActiveLimit(settingsData.data.foreigner_active_limit);
+
+                // IP requirement & Add limit from settings
+                const minIP = settingsData.data.min_innings_pitched_per_week;
+                if (minIP && minIP !== 'No minimum') {
+                    const parsed = parseFloat(minIP);
+                    if (!isNaN(parsed)) setMinIPRequired(parsed);
+                }
+                const maxAcq = settingsData.data.max_acquisitions_per_week;
+                if (maxAcq && maxAcq !== 'No limit') {
+                    const parsed = parseInt(maxAcq);
+                    if (!isNaN(parsed)) setMaxAcquisitions(parsed);
+                }
             }
         };
         fetchSettings();
     }, [leagueId]);
+
+    // Fetch Weekly IP & Add Count
+    useEffect(() => {
+        if (!myManagerId || !leagueId) return;
+        const fetchWeeklyIP = async () => {
+            try {
+                const res = await fetch(`/api/league/${leagueId}/weekly-ip?manager_id=${myManagerId}`);
+                const data = await res.json();
+                if (data.success) {
+                    setWeeklyIP(data.ip);
+                    setWeeklyAddCount(data.addCount || 0);
+                }
+            } catch (e) { console.error('Failed to fetch weekly IP:', e); }
+        };
+        fetchWeeklyIP();
+    }, [leagueId, myManagerId]);
+
+    // Fetch Roster Percentage
+    useEffect(() => {
+        const fetchRosterPercentage = async () => {
+            try {
+                const res = await fetch('/api/playerslist?available=true');
+                const data = await res.json();
+                if (data.success && data.players) {
+                    const map = {};
+                    data.players.forEach(p => {
+                        if (p.player_id) map[p.player_id] = p.roster_percentage ?? 0;
+                    });
+                    setRosterPercentageMap(map);
+                }
+            } catch (e) { console.error('Failed to fetch roster percentage:', e); }
+        };
+        fetchRosterPercentage();
+    }, []);
 
     // Fetch Active Trade Player IDs (for lock check)
     useEffect(() => {
@@ -939,6 +994,18 @@ export default function RosterPage() {
 
                         {/* Buttons Row */}
                         <div className="flex items-center gap-2">
+                            {/* IP Requirement Badge */}
+                            {minIPRequired !== null && weeklyIP !== null && (
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold tracking-wider flex items-center gap-1 ${weeklyIP < minIPRequired ? 'bg-red-600 text-white' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'}`}>
+                                    IP: {weeklyIP}/{minIPRequired}
+                                </span>
+                            )}
+                            {/* Add Limit Badge */}
+                            {maxAcquisitions !== null && (
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold tracking-wider flex items-center gap-1 ${weeklyAddCount >= maxAcquisitions ? 'bg-red-600 text-white' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'}`}>
+                                    ADD: {weeklyAddCount}/{maxAcquisitions}
+                                </span>
+                            )}
                             {!isTradeDeadlinePassed() && (
                                 <button
                                     onClick={() => setShowMyTradesModal(true)}
@@ -1272,7 +1339,7 @@ export default function RosterPage() {
                 <PlayerDetailModal
                     isOpen={!!selectedPlayerModal}
                     onClose={() => setSelectedPlayerModal(null)}
-                    player={selectedPlayerModal}
+                    player={selectedPlayerModal ? { ...selectedPlayerModal, roster_percentage: rosterPercentageMap[selectedPlayerModal.player_id] ?? 0 } : null}
                     leagueId={leagueId}
                     // Transaction Props (for Drop button)
                     myManagerId={myManagerId}
