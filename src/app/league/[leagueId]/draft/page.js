@@ -1359,9 +1359,9 @@ export default function DraftPage() {
                                             </div>
                                         </th>
                                         <th className="p-2 border-b border-slate-700 min-w-[250px]">Player</th>
-                                        <th className="p-2 border-b border-slate-700 min-w-[50px] text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('roster_percentage')}>
+                                        <th className="p-2 border-b border-slate-700 min-w-[60px] text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('roster_percentage')}>
                                             <div className="flex items-center justify-center gap-1">
-                                                %
+                                                Roster%
                                                 {sortConfig.key === 'roster_percentage' && (<span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>)}
                                             </div>
                                         </th>
@@ -1424,7 +1424,7 @@ export default function DraftPage() {
                                                 </td>
 
                                                 {/* Rostered % */}
-                                                <td className="p-2 text-center text-xs font-mono text-slate-400">
+                                                <td className="p-2 text-center text-sm font-bold text-slate-400">
                                                     {player.roster_percentage ?? 0}%
                                                 </td>
 

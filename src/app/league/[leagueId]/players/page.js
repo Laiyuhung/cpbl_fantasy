@@ -1813,7 +1813,7 @@ export default function PlayersPage() {
                     onClick={() => handleSort('roster_percentage')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      %
+                      Roster%
                       {sortConfig.key === 'roster_percentage' && (
                         <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                       )}
@@ -1957,7 +1957,7 @@ export default function PlayersPage() {
                       <td className="px-4 py-4 text-center font-mono text-cyan-300">
                         {playerRankings[player.player_id] || '-'}
                       </td>
-                      <td className="px-4 py-4 text-center font-mono text-slate-400">
+                      <td className="px-4 py-4 text-center font-mono text-cyan-300">
                         {player.roster_percentage ?? 0}%
                       </td>
 
