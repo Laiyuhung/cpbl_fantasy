@@ -402,20 +402,34 @@ export default function RosterPage() {
         const fetchStats = async () => {
             if (!timeWindow) return;
             try {
-                const [batterRes, pitcherRes] = await Promise.all([
-                    fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
-                    fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
-                ]);
-                const batterData = await batterRes.json();
-                const pitcherData = await pitcherRes.json();
-                const newStats = {};
-                if (batterData.success && batterData.stats) batterData.stats.forEach(s => newStats[s.player_id] = s);
-                if (pitcherData.success && pitcherData.stats) pitcherData.stats.forEach(s => newStats[s.player_id] = s);
+                let newStats = {};
+                if (timeWindow === 'Today') {
+                    // 取 daily API
+                    const [batterRes, pitcherRes] = await Promise.all([
+                        fetch('/api/playerStats/daily-batting', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) }),
+                        fetch('/api/playerStats/daily-pitching', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) })
+                    ]);
+                    const batterData = await batterRes.json();
+                    const pitcherData = await pitcherRes.json();
+                    // 以 name 為 key
+                    if (Array.isArray(batterData)) batterData.forEach(s => newStats[s.name] = s);
+                    if (Array.isArray(pitcherData)) pitcherData.forEach(s => newStats[s.name] = { ...newStats[s.name], ...s });
+                } else {
+                    // 原本 summary API
+                    const [batterRes, pitcherRes] = await Promise.all([
+                        fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
+                        fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
+                    ]);
+                    const batterData = await batterRes.json();
+                    const pitcherData = await pitcherRes.json();
+                    if (batterData.success && batterData.stats) batterData.stats.forEach(s => newStats[s.player_id] = s);
+                    if (pitcherData.success && pitcherData.stats) pitcherData.stats.forEach(s => newStats[s.player_id] = s);
+                }
                 setPlayerStats(newStats);
             } catch (err) { console.error('Failed to fetch stats:', err); }
         };
         fetchStats();
-    }, [timeWindow]);
+    }, [timeWindow, selectedDate]);
 
     // Fetch Pending Trades Count
     useEffect(() => {

@@ -260,7 +260,7 @@ export default function StatsEntryPage() {
       if (isNaN(parseInt(parts[0]))) return null
       
       const sequence = parseInt(parts[0]) || 0
-      let name = parts[1] || ''
+      let name = (parts[1] || '').replace(/[*#◎]/g, '')
       let record = null
       let statStart = 2
       
@@ -315,11 +315,11 @@ export default function StatsEntryPage() {
       let name, rawPos, stats
       
       if (!isNaN(parts[0])) {
-        name = parts[1]
+        name = (parts[1] || '').replace(/[*#◎]/g, '')
         rawPos = parts[2]
         stats = parts.slice(3)
       } else {
-        name = parts[0]
+        name = (parts[0] || '').replace(/[*#◎]/g, '')
         rawPos = parts[1]
         stats = parts.slice(2)
       }
@@ -365,8 +365,12 @@ export default function StatsEntryPage() {
     parseStatsText(statsText)
   }, [statsText, playerMap, gamesForDate])
 
-  // Get is_major from selected game
+  // Get is_major from selected game or detected minor league
   const getIsMajor = () => {
+    // If detected minor league from header (二軍), always return false
+    if (detectedMinor) return false
+    
+    // Otherwise check selected game
     if (!selectedGameUuid) return true
     const game = gamesForDate.find(g => g.uuid === selectedGameUuid)
     return game ? game.major_game !== false : true
@@ -386,6 +390,12 @@ export default function StatsEntryPage() {
 
     if (!selectedGameUuid) {
       setMessage({ type: 'error', text: '請選擇比賽' })
+      return
+    }
+
+    // Require score input
+    if (awayScore === '' || homeScore === '') {
+      setMessage({ type: 'error', text: '⚠️ 請輸入該場比分後再登錄' })
       return
     }
 
@@ -639,14 +649,33 @@ export default function StatsEntryPage() {
           </div>
         </div>
 
-        {/* Message */}
+        {/* Message Modal - Centered */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-xl border ${
-            message.type === 'success' 
-              ? 'bg-green-900/30 border-green-500/50 text-green-300' 
-              : 'bg-red-900/30 border-red-500/50 text-red-300'
-          }`}>
-            {message.text}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className={`relative max-w-md w-full mx-4 p-8 rounded-2xl shadow-2xl transform animate-bounce-in ${
+              message.type === 'success' 
+                ? 'bg-gradient-to-br from-green-900 to-green-800 border-2 border-green-400' 
+                : 'bg-gradient-to-br from-red-900 to-red-800 border-2 border-red-400'
+            }`}>
+              <div className="text-center">
+                <div className={`text-6xl mb-4 ${message.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                  {message.type === 'success' ? '✓' : '✗'}
+                </div>
+                <div className={`text-xl font-bold mb-6 ${message.type === 'success' ? 'text-green-200' : 'text-red-200'}`}>
+                  {message.text}
+                </div>
+                <button
+                  onClick={() => setMessage({ type: '', text: '' })}
+                  className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+                    message.type === 'success'
+                      ? 'bg-green-500 hover:bg-green-600 text-white'
+                      : 'bg-red-500 hover:bg-red-600 text-white'
+                  }`}
+                >
+                  確認
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -833,7 +862,12 @@ export default function StatsEntryPage() {
           {/* Detected Team */}
           {detectedTeam && (
             <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg">
-              <span className="text-yellow-300 text-sm">偵測到隊伍: <strong>{detectedTeam}</strong></span>
+              <span className="text-yellow-300 text-sm">
+                偵測到隊伍: <strong>{detectedTeam}</strong>
+                <span className={`ml-2 ${detectedMinor ? 'text-orange-400' : 'text-blue-400'}`}>
+                  ({detectedMinor ? '二軍' : '一軍'})
+                </span>
+              </span>
             </div>
           )}
 
