@@ -180,12 +180,16 @@ export async function POST(request) {
             opponentName = 'Bye';
           }
 
+          const matchupWeekSchedule = schedule?.find(w => w.week_number === targetMatchupData.week_number);
+          const isPastWeek = matchupWeekSchedule ? taiwanTime > new Date(new Date(matchupWeekSchedule.week_end).getTime() + (8 * 60 * 60 * 1000) + (24 * 60 * 60 * 1000 - 1)) : false;
+
           currentMatchup = {
             myScore: isManagerA ? (targetMatchupData.score_a || 0) : (targetMatchupData.score_b || 0),
             opponentScore: isManagerA ? (targetMatchupData.score_b || 0) : (targetMatchupData.score_a || 0),
             opponentName: opponentName,
             opponentStats: opponentStats,
-            week: targetMatchupData.week_number
+            week: targetMatchupData.week_number,
+            isPastWeek: isPastWeek
           };
         }
       }

@@ -337,7 +337,7 @@ export default function LeaguePage() {
   // Toggle watch handler (optimistic update)
   const handleToggleWatch = async (player, isCurrentlyWatched) => {
     if (!myManagerId || !player?.player_id) return;
-    
+
     // Optimistic update - update UI immediately
     if (isCurrentlyWatched) {
       setWatchedPlayerIds(prev => {
@@ -348,7 +348,7 @@ export default function LeaguePage() {
     } else {
       setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
     }
-    
+
     try {
       const res = await fetch('/api/watched', {
         method: isCurrentlyWatched ? 'DELETE' : 'POST',
@@ -777,22 +777,21 @@ export default function LeaguePage() {
               {leagueSettings?.league_name}
             </h1>
             <div className="flex items-center gap-2 mt-2">
-              <span className={`px-3 py-0.5 rounded-full text-xs font-bold border shadow-lg ${
-                leagueStatus === 'pre-draft' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-                leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
-                leagueStatus === 'drafting now' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30 animate-pulse' :
-                leagueStatus === 'in season' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
-                leagueStatus === 'playoffs' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
-                leagueStatus === 'finished' ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' :
-                'bg-gray-500/20 text-gray-300 border-gray-500/30'
-              }`}>
+              <span className={`px-3 py-0.5 rounded-full text-xs font-bold border shadow-lg ${leagueStatus === 'pre-draft' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                  leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+                    leagueStatus === 'drafting now' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30 animate-pulse' :
+                      leagueStatus === 'in season' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                        leagueStatus === 'playoffs' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                          leagueStatus === 'finished' ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' :
+                            'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                }`}>
                 {leagueStatus === 'pre-draft' ? 'Pre-Draft' :
                   leagueStatus === 'post-draft & pre-season' ? 'Post-Draft & Pre-Season' :
-                  leagueStatus === 'drafting now' ? 'Drafting Now' :
-                  leagueStatus === 'in season' ? 'In Season' :
-                  leagueStatus === 'playoffs' ? 'Playoffs' :
-                  leagueStatus === 'finished' ? 'Finished' :
-                  leagueStatus?.toUpperCase() || 'UNKNOWN'}
+                    leagueStatus === 'drafting now' ? 'Drafting Now' :
+                      leagueStatus === 'in season' ? 'In Season' :
+                        leagueStatus === 'playoffs' ? 'Playoffs' :
+                          leagueStatus === 'finished' ? 'Finished' :
+                            leagueStatus?.toUpperCase() || 'UNKNOWN'}
               </span>
             </div>
           </div>
@@ -957,9 +956,9 @@ export default function LeaguePage() {
 
                               {/* Score A */}
                               <div className="text-right">
-                                <div className={`text-4xl font-black tabular-nums ${scoreA > scoreB ? 'text-green-400' :
-                                  scoreA < scoreB ? 'text-slate-500' :
-                                    'text-cyan-300'
+                                <div className={`text-4xl font-black tabular-nums ${isFinal
+                                  ? (scoreA > scoreB ? 'text-green-400' : scoreA < scoreB ? 'text-slate-500' : 'text-cyan-300')
+                                  : 'text-cyan-300'
                                   }`}>
                                   {scoreA}
                                 </div>
@@ -998,9 +997,9 @@ export default function LeaguePage() {
 
                               {/* Score B */}
                               <div className="text-left">
-                                <div className={`text-4xl font-black tabular-nums ${scoreB > scoreA ? 'text-green-400' :
-                                  scoreB < scoreA ? 'text-slate-500' :
-                                    'text-cyan-300'
+                                <div className={`text-4xl font-black tabular-nums ${isFinal
+                                  ? (scoreB > scoreA ? 'text-green-400' : scoreB < scoreA ? 'text-slate-500' : 'text-cyan-300')
+                                  : 'text-cyan-300'
                                   }`}>
                                   {scoreB}
                                 </div>
@@ -1390,8 +1389,8 @@ export default function LeaguePage() {
           <LeagueDailyRoster leagueId={leagueId} members={members} />
 
           {/* League Chat */}
-          <LeagueChat 
-            leagueId={leagueId} 
+          <LeagueChat
+            leagueId={leagueId}
             managerId={myManagerId}
             className="h-[450px]"
             pollInterval={60000}
@@ -1658,8 +1657,8 @@ export default function LeaguePage() {
 
         {/* League Chat */}
         <div className="mt-8 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-          <LeagueChat 
-            leagueId={leagueId} 
+          <LeagueChat
+            leagueId={leagueId}
             managerId={myManagerId}
             className="h-[450px]"
             pollInterval={60000}

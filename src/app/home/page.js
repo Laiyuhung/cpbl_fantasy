@@ -150,14 +150,16 @@ export default function HomePage() {
 
                             {/* Center: Score */}
                             <div className="flex items-center justify-center gap-2 shrink-0 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-white/5">
-                              <span className={`text-xl font-black tabular-nums ${league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' :
-                                league.matchup.myScore < league.matchup.opponentScore ? 'text-white' : 'text-white'
+                              <span className={`text-xl font-black tabular-nums ${league.matchup.isPastWeek
+                                ? (league.matchup.myScore > league.matchup.opponentScore ? 'text-green-400' : league.matchup.myScore < league.matchup.opponentScore ? 'text-slate-500' : 'text-cyan-300')
+                                : 'text-cyan-300'
                                 }`}>
                                 {league.matchup.myScore}
                               </span>
                               <span className="text-[10px] font-bold text-slate-600 uppercase">vs</span>
-                              <span className={`text-xl font-black tabular-nums ${league.matchup.opponentScore > league.matchup.myScore ? 'text-green-400' :
-                                league.matchup.opponentScore < league.matchup.myScore ? 'text-white' : 'text-white'
+                              <span className={`text-xl font-black tabular-nums ${league.matchup.isPastWeek
+                                ? (league.matchup.opponentScore > league.matchup.myScore ? 'text-green-400' : league.matchup.opponentScore < league.matchup.myScore ? 'text-slate-500' : 'text-cyan-300')
+                                : 'text-cyan-300'
                                 }`}>
                                 {league.matchup.opponentScore}
                               </span>

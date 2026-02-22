@@ -107,7 +107,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     // Toggle watch handler (optimistic update)
     const handleToggleWatch = async (player, isCurrentlyWatched) => {
         if (!myManagerId || !player?.player_id) return;
-        
+
         // Optimistic update - update UI immediately
         if (isCurrentlyWatched) {
             setWatchedPlayerIds(prev => {
@@ -118,7 +118,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         } else {
             setWatchedPlayerIds(prev => new Set(prev).add(player.player_id));
         }
-        
+
         try {
             const res = await fetch('/api/watched', {
                 method: isCurrentlyWatched ? 'DELETE' : 'POST',
@@ -279,32 +279,33 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         fetchRoster();
     }, [leagueId, selectedManagerId, selectedDate]);
 
-    // Fetch stats — derive timeWindow from selectedDate, re-fetch on date or manager change
+    // Fetch stats — always use daily APIs for per-day data
     useEffect(() => {
         if (!selectedManagerId || !selectedDate) {
             setPlayerStats({});
             return;
         }
-        const taiwanNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-        const todayStr = taiwanNow.toISOString().split('T')[0];
-        const timeWindow = selectedDate === todayStr ? 'Today' : selectedDate;
 
         const fetchStats = async () => {
             setStatsLoading(true);
             try {
+                const statsMap = {};
                 const [batterRes, pitcherRes] = await Promise.all([
-                    fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
-                    fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
+                    fetch('/api/playerStats/daily-batting', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date: selectedDate })
+                    }),
+                    fetch('/api/playerStats/daily-pitching', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date: selectedDate })
+                    })
                 ]);
                 const batterData = await batterRes.json();
                 const pitcherData = await pitcherRes.json();
-                const statsMap = {};
-                if (batterData.success && Array.isArray(batterData.stats)) {
-                    batterData.stats.forEach(s => { if (s.name) statsMap[s.name] = s; });
-                }
-                if (pitcherData.success && Array.isArray(pitcherData.stats)) {
-                    pitcherData.stats.forEach(s => { if (s.name) statsMap[s.name] = s; });
-                }
+                if (Array.isArray(batterData)) batterData.forEach(s => { if (s.player_name) statsMap[s.player_name] = s; });
+                if (Array.isArray(pitcherData)) pitcherData.forEach(s => { if (s.player_name) statsMap[s.player_name] = s; });
                 setPlayerStats(statsMap);
             } catch (e) {
                 console.error('Failed to fetch stats:', e);
@@ -626,7 +627,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
             const timeStr = formatTime(p.game_info.time);
             const vsAt = p.game_info.is_home ? 'vs' : '@';
             const opp = p.game_info.opponent || '';
-            
+
             // Check if game date differs from selected date (cross-day game)
             let datePrefix = '';
             if (p.game_info.time) {
@@ -642,7 +643,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                     // Ignore date parsing errors
                 }
             }
-            
+
             gameInfoEl = (
                 <span className="flex items-center gap-1 flex-shrink-0 ml-1 text-cyan-400 font-mono text-[11px]">
                     {datePrefix && <span>{datePrefix}</span>}
