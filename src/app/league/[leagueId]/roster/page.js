@@ -348,13 +348,7 @@ export default function RosterPage() {
         fetchRosterForDate();
     }, [selectedDate]);
 
-    // Derive timeWindow from selectedDate — re-fetches stats when date changes
-    useEffect(() => {
-        if (!selectedDate) return;
-        const taiwanNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-        const todayStr = taiwanNow.toISOString().split('T')[0];
-        setTimeWindow(selectedDate === todayStr ? 'Today' : selectedDate);
-    }, [selectedDate]);
+
 
     // Settings
     useEffect(() => {
