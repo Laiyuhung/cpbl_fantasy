@@ -1721,6 +1721,7 @@ export default function DraftPage() {
                             managerId={myManagerId} 
                             isCompact={true}
                             pollInterval={5000}
+                            enablePolling={draftState?.status !== 'complete'}
                         />
                     </div>
                 </div>

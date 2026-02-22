@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-export default function LeagueChat({ leagueId, managerId, isCompact = false, className = '', pollInterval = 5000 }) {
+export default function LeagueChat({ leagueId, managerId, isCompact = false, className = '', pollInterval = 5000, enablePolling = true }) {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
@@ -31,20 +31,41 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
             console.error('Failed to fetch chat messages:', err);
         } finally {
             setLoading(false);
-            // Schedule next poll AFTER this fetch completes
-            pollIntervalRef.current = setTimeout(fetchMessages, pollInterval);
         }
-    }, [leagueId, pollInterval]);
+    }, [leagueId]);
 
-    // Initial fetch and polling
+    // Polling logic - only poll when enablePolling is true
     useEffect(() => {
-        fetchMessages();
+        if (!enablePolling) {
+            // Clear any existing timeout when polling is disabled
+            if (pollIntervalRef.current) {
+                clearTimeout(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+            }
+            return;
+        }
+
+        // Schedule next poll after each fetch
+        const scheduleNextPoll = async () => {
+            await fetchMessages();
+            if (enablePolling) {
+                pollIntervalRef.current = setTimeout(scheduleNextPoll, pollInterval);
+            }
+        };
+
+        // Start polling cycle (after initial fetch from below useEffect)
+        pollIntervalRef.current = setTimeout(scheduleNextPoll, pollInterval);
 
         return () => {
             if (pollIntervalRef.current) {
                 clearTimeout(pollIntervalRef.current);
             }
         };
+    }, [enablePolling, pollInterval, fetchMessages]);
+
+    // Initial fetch only
+    useEffect(() => {
+        fetchMessages();
     }, [fetchMessages]);
 
     // Scroll to bottom when messages change
