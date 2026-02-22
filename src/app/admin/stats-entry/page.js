@@ -36,9 +36,9 @@ export default function StatsEntryPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
-  // Team name variations for detection
+  // Team name variations for detection (longer variants first for priority matching)
   const teamVariants = {
-    '統一獅': ['統一獅', '統一7-ELEVEn獅', '統一'],
+    '統一獅': ['統一7-ELEVEn獅', '統一7-eleven獅', '統一7-11獅', '統一獅', '統一'],
     '中信兄弟': ['中信兄弟', '兄弟'],
     '樂天桃猿': ['樂天桃猿', '桃猿', '樂天'],
     '富邦悍將': ['富邦悍將', '悍將', '富邦'],
@@ -50,9 +50,12 @@ export default function StatsEntryPage() {
 
   // Detect team from text
   const detectTeam = (text) => {
+    // Normalize text for matching
+    const normalizedText = text.toLowerCase()
     for (const [team, variants] of Object.entries(teamVariants)) {
       for (const variant of variants) {
-        if (text.includes(variant)) {
+        // Check both original and lowercase
+        if (text.includes(variant) || normalizedText.includes(variant.toLowerCase())) {
           return team
         }
       }
@@ -243,7 +246,8 @@ export default function StatsEntryPage() {
       let statStart = 2
       
       if (parts[2] && /^\(.*\)$/.test(parts[2])) {
-        const rawRecord = parts[2].replace(/[()]/g, '').toUpperCase()
+        // Handle formats like (W,5-2) or (W) - extract first part before comma
+        const rawRecord = parts[2].replace(/[()]/g, '').split(',')[0].toUpperCase()
         // Only keep valid record values
         record = validRecords.includes(rawRecord) ? rawRecord : null
         statStart = 3
@@ -259,6 +263,7 @@ export default function StatsEntryPage() {
         sequence,
         name,
         record,
+        position: sequence === 1 ? 'SP' : 'RP',
         innings_pitched: parseInnings(stats[0]),
         batters_faced: toInt(stats[1]),
         pitches_thrown: toInt(stats[2]),
@@ -411,12 +416,16 @@ export default function StatsEntryPage() {
 
       // Insert pitching data
       if (pitchingPreview.length > 0) {
+        // complete_game = 1 if only one pitcher, else 0
+        const isCompleteGame = pitchingPreview.length === 1 ? 1 : 0
+        
         const pitchingRes = await fetch('/api/pitching-insert', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             records: pitchingPreview.map(p => ({
               name: p.name,
+              position: p.position,
               innings_pitched: p.innings_pitched,
               batters_faced: p.batters_faced,
               pitches_thrown: p.pitches_thrown,
@@ -437,6 +446,7 @@ export default function StatsEntryPage() {
               game_date: date,
               is_major: isMajor,
               record: p.record,
+              complete_game: isCompleteGame,
               player_id: p.player_id
             })),
             table: 'pitching_stats_2026'
@@ -838,6 +848,7 @@ export default function StatsEntryPage() {
               <thead>
                 <tr className="border-b border-purple-500/30">
                   <th className="p-2 text-left">Name</th>
+                  <th className="p-2 text-center">Pos</th>
                   <th className="p-2 text-center">Record</th>
                   <th className="p-2 text-center">IP</th>
                   <th className="p-2 text-center">BF</th>
@@ -863,6 +874,7 @@ export default function StatsEntryPage() {
                 {pitchingPreview.map((p, idx) => (
                   <tr key={idx} className="border-b border-purple-500/20 hover:bg-purple-500/10">
                     <td className="p-2 font-semibold">{p.name}</td>
+                    <td className="p-2 text-center text-xs">{p.position}</td>
                     <td className="p-2 text-center text-xs">{p.record || '-'}</td>
                     <td className="p-2 text-center">{p.innings_pitched}</td>
                     <td className="p-2 text-center">{p.batters_faced}</td>
