@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
 
-// Get Taiwan today's date
 const getTaiwanToday = () => {
   const now = new Date()
   const taiwanOffset = 8 * 60 * 60 * 1000
@@ -12,7 +11,6 @@ const getTaiwanToday = () => {
 function cleanName(name) {
   return (name || '').replace(/[#◎＊*]/g, '').trim()
 }
-
 function formatIP(outs) {
   const fullInnings = Math.floor(outs / 3)
   const remainder = outs % 3
@@ -22,142 +20,127 @@ function formatIP(outs) {
 export async function POST(req) {
   try {
     const { date } = await req.json()
-    
-    // Use provided date or default to Taiwan today
     const targetDate = date || getTaiwanToday()
-
-    // Query pitching_stats_2026 for the specific date
     const { data: rawData, error } = await supabase
       .from('pitching_stats_2026')
       .select('*')
       .eq('is_major', true)
       .eq('game_date', targetDate)
-
     if (error) {
-      console.error('❌ 查詢 pitching_stats_2026 失敗:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    // Group by player name and aggregate stats
     const playerMap = new Map()
-    
     for (const row of (rawData || [])) {
       const playerName = cleanName(row.name)
       if (!playerName) continue
-      
+      const playerId = row.player_id || null
       if (!playerMap.has(playerName)) {
         playerMap.set(playerName, {
-          APP: 0, GS: 0, RAPP: 0, IP: 0, OUT: 0, TBF: 0, PC: 0, W: 0, L: 0, HLD: 0, SV: 0, 'SV+HLD': 0, RW: 0, RL: 0, H: 0, HR: 0, K: 0, BB: 0, IBB: 0, HBP: 0, RA: 0, ER: 0, QS: 0, CG: 0, SHO: 0, PG: 0, NH: 0, ERA: 0, WHIP: 0, 'WIN%': 0, 'K/9': 0, 'BB/9': 0, 'K/BB': 0, 'H/9': 0, OBPA: 0
+          player_id: playerId,
+          player_name: playerName,
+          time_window: targetDate,
+          app: 0, gs: 0, rapp: 0, ip: 0, out: 0, tbf: 0, pc: 0, w: 0, l: 0, hld: 0, sv: 0, sv_hld: 0, rw: 0, rl: 0, h: 0, hr: 0, k: 0, bb: 0, ibb: 0, hbp: 0, ra: 0, er: 0, qs: 0, cg: 0, sho: 0, pg: 0, nh: 0, era: 0, whip: 0, win_pct: 0, k9: 0, bb9: 0, kbb: 0, h9: 0, obpa: 0
         })
       }
-      
       const p = playerMap.get(playerName)
       const isStarter = row.position === 'SP'
       const isReliever = row.position === 'RP' || row.position === 'MR' || row.position === 'CL'
       const isWin = row.record === 'W'
       const isLoss = row.record === 'L'
-      
       // IP/OUT
       const rawIP = row.innings_pitched || 0
       const outs = Math.floor(rawIP) * 3 + Math.round((rawIP % 1) * 10)
-      
-      p.APP += 1
-      p.GS += isStarter ? 1 : 0
-      p.RAPP += isReliever ? 1 : 0
-      p.IP += rawIP
-      p.OUT += outs
-      p.TBF += row.batters_faced || 0
-      p.PC += row.pitches_thrown || 0
-      
+      p.app += 1
+      p.gs += isStarter ? 1 : 0
+      p.rapp += isReliever ? 1 : 0
+      p.ip += rawIP
+      p.out += outs
+      p.tbf += row.batters_faced || 0
+      p.pc += row.pitches_thrown || 0
       // 勝敗
-      if (isWin) p.W++
-      if (isLoss) p.L++
-      if (row.record === 'HLD') p.HLD++
-      if (row.record === 'SV') p.SV++
-      if (isWin && isReliever) p.RW++
-      if (isLoss && isReliever) p.RL++
-      p['SV+HLD'] = p.SV + p.HLD
-      
+      if (isWin) p.w++
+      if (isLoss) p.l++
+      if (row.record === 'HLD') p.hld++
+      if (row.record === 'SV') p.sv++
+      if (isWin && isReliever) p.rw++
+      if (isLoss && isReliever) p.rl++
+      p.sv_hld = p.sv + p.hld
       // 安打
-      p.H += row.hits_allowed || 0
-      p.HR += row.home_runs_allowed || 0
-      p.K += row.strikeouts || 0
-      p.BB += row.walks || 0
-      p.IBB += row.ibb || 0
-      p.HBP += row.hbp || 0
-      p.RA += row.runs_allowed || 0
-      p.ER += row.earned_runs || 0
-      
+      p.h += row.hits_allowed || 0
+      p.hr += row.home_runs_allowed || 0
+      p.k += row.strikeouts || 0
+      p.bb += row.walks || 0
+      p.ibb += row.ibb || 0
+      p.hbp += row.hbp || 0
+      p.ra += row.runs_allowed || 0
+      p.er += row.earned_runs || 0
       // 品質
-      if (rawIP >= 6 && (row.earned_runs || 0) <= 3) p.QS++
-      
+      if (rawIP >= 6 && (row.earned_runs || 0) <= 3) p.qs++
       const isCG = row.complete_game === 1
       if (isCG) {
-        p.CG++
-        if ((row.runs_allowed || 0) === 0) p.SHO++
+        p.cg++
+        if ((row.runs_allowed || 0) === 0) p.sho++
         if ((row.hits_allowed || 0) === 0) {
-          p.NH++
-          if ((row.walks || 0) === 0 && (row.hbp || 0) === 0) p.PG++
+          p.nh++
+          if ((row.walks || 0) === 0 && (row.hbp || 0) === 0) p.pg++
         }
       }
     }
-
     const results = []
-    for (const [name, p] of playerMap.entries()) {
+    for (const [_, p] of playerMap.entries()) {
       // Rate stats
-      const IP_raw = p.OUT / 3
-      p.ERA = IP_raw ? (9 * p.ER / IP_raw) : 0
-      p.WHIP = IP_raw ? ((p.BB + p.H) / IP_raw) : 0
-      p['WIN%'] = (p.W + p.L) > 0 ? (p.W / (p.W + p.L)) : 0
-      p['K/9'] = IP_raw ? (9 * p.K / IP_raw) : 0
-      p['BB/9'] = IP_raw ? (9 * p.BB / IP_raw) : 0
-      p['K/BB'] = p.BB > 0 ? (p.K / p.BB) : p.K
-      p['H/9'] = IP_raw ? (9 * p.H / IP_raw) : 0
-      p.OBPA = p.TBF > 0 ? ((p.H + p.BB + p.HBP) / p.TBF) : 0
+      const ip_raw = p.out / 3
+      p.era = ip_raw ? Number((9 * p.er / ip_raw).toFixed(2)) : 0
+      p.whip = ip_raw ? Number(((p.bb + p.h) / ip_raw).toFixed(2)) : 0
+      p.win_pct = (p.w + p.l) > 0 ? Number((p.w / (p.w + p.l)).toFixed(3)) : 0
+      p.k9 = ip_raw ? Number((9 * p.k / ip_raw).toFixed(2)) : 0
+      p.bb9 = ip_raw ? Number((9 * p.bb / ip_raw).toFixed(2)) : 0
+      p.kbb = p.bb > 0 ? Number((p.k / p.bb).toFixed(2)) : Number(p.k.toFixed(2))
+      p.h9 = ip_raw ? Number((9 * p.h / ip_raw).toFixed(2)) : 0
+      p.obpa = p.tbf > 0 ? Number(((p.h + p.bb + p.hbp) / p.tbf).toFixed(3)) : 0
       results.push({
-        name,
-        APP: p.APP,
-        GS: p.GS,
-        RAPP: p.RAPP,
-        IP: formatIP(p.OUT),
-        OUT: p.OUT,
-        TBF: p.TBF,
-        PC: p.PC,
-        W: p.W,
-        L: p.L,
-        HLD: p.HLD,
-        SV: p.SV,
-        'SV+HLD': p['SV+HLD'],
-        RW: p.RW,
-        RL: p.RL,
-        H: p.H,
-        HR: p.HR,
-        K: p.K,
-        BB: p.BB,
-        IBB: p.IBB,
-        HBP: p.HBP,
-        RA: p.RA,
-        ER: p.ER,
-        QS: p.QS,
-        CG: p.CG,
-        SHO: p.SHO,
-        PG: p.PG,
-        NH: p.NH,
-        ERA: p.ERA.toFixed(2),
-        WHIP: p.WHIP.toFixed(2),
-        'WIN%': p['WIN%'].toFixed(3),
-        'K/9': p['K/9'].toFixed(2),
-        'BB/9': p['BB/9'].toFixed(2),
-        'K/BB': p['K/BB'].toFixed(2),
-        'H/9': p['H/9'].toFixed(2),
-        OBPA: p.OBPA.toFixed(3)
+        player_id: p.player_id,
+        player_name: p.player_name,
+        time_window: p.time_window,
+        app: p.app,
+        gs: p.gs,
+        rapp: p.rapp,
+        ip: formatIP(p.out),
+        out: p.out,
+        tbf: p.tbf,
+        pc: p.pc,
+        w: p.w,
+        l: p.l,
+        hld: p.hld,
+        sv: p.sv,
+        sv_hld: p.sv_hld,
+        rw: p.rw,
+        rl: p.rl,
+        h: p.h,
+        hr: p.hr,
+        k: p.k,
+        bb: p.bb,
+        ibb: p.ibb,
+        hbp: p.hbp,
+        ra: p.ra,
+        er: p.er,
+        qs: p.qs,
+        cg: p.cg,
+        sho: p.sho,
+        pg: p.pg,
+        nh: p.nh,
+        era: p.era,
+        whip: p.whip,
+        win_pct: p.win_pct,
+        k9: p.k9,
+        bb9: p.bb9,
+        kbb: p.kbb,
+        h9: p.h9,
+        obpa: p.obpa
       })
     }
-
     return NextResponse.json(results)
-
   } catch (err) {
-    console.error('❌ daily-pitching 錯誤:', err)
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }

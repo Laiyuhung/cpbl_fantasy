@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
 
-// Get Taiwan today's date
 const getTaiwanToday = () => {
   const now = new Date()
   const taiwanOffset = 8 * 60 * 60 * 1000
@@ -16,105 +15,66 @@ function cleanName(name) {
 export async function POST(req) {
   try {
     const { date } = await req.json()
-    
-    // Use provided date or default to Taiwan today
     const targetDate = date || getTaiwanToday()
-
-    // Query batting_stats_2026 for the specific date
     const { data: rawData, error } = await supabase
       .from('batting_stats_2026')
       .select('*')
       .eq('is_major', true)
       .eq('game_date', targetDate)
-
     if (error) {
-      console.error('❌ 查詢 batting_stats_2026 失敗:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    // Group by player name and aggregate stats
     const playerMap = new Map()
-    
     for (const row of (rawData || [])) {
       const playerName = cleanName(row.name)
       if (!playerName) continue
-      
+      const playerId = row.player_id || null
       if (!playerMap.has(playerName)) {
         playerMap.set(playerName, {
-          GP: 0, PA: 0, AB: 0, H: 0, '1B': 0, '2B': 0, '3B': 0, HR: 0, XBH: 0, TB: 0, R: 0, RBI: 0, K: 0, BB: 0, HBP: 0, SH: 0, SF: 0, SB: 0, CS: 0, GIDP: 0, CYC: 0, AVG: 0, OBP: 0, SLG: 0, OPS: 0
+          player_id: playerId,
+          player_name: playerName,
+          time_window: targetDate,
+          r: 0, hr: 0, rbi: 0, sb: 0, cs: 0, k: 0, avg: 0, '1b': 0, '2b': 0, '3b': 0, ab: 0, bb: 0, cyc: 0, gidp: 0, gp: 0, h: 0, hbp: 0, obp: 0, ops: 0, pa: 0, sf: 0, sh: 0, slg: 0, tb: 0, xbh: 0
         })
       }
-      
       const p = playerMap.get(playerName)
-      p.GP += 1
-      p.AB += row.at_bats || 0
-      p.R += row.runs || 0
-      p.H += row.hits || 0
-      p['2B'] += row.doubles || 0
-      p['3B'] += row.triples || 0
-      p.HR += row.home_runs || 0
-      p.RBI += row.rbis || 0
-      p.K += row.strikeouts || 0
-      p.BB += row.walks || 0
-      p.HBP += row.hbp || row.hit_by_pitch || 0
-      p.SH += row.sacrifice_bunts || 0
-      p.SF += row.sacrifice_flies || 0
-      p.SB += row.stolen_bases || 0
-      p.CS += row.caught_stealing || 0
-      p.GIDP += row.double_plays || 0
-      // 計算 1B, XBH, TB
-      p['1B'] += Math.max(0, (row.hits || 0) - (row.doubles || 0) - (row.triples || 0) - (row.home_runs || 0))
-      p.XBH += (row.doubles || 0) + (row.triples || 0) + (row.home_runs || 0)
-      p.TB += p['1B'] + (p['2B'] * 2) + (p['3B'] * 3) + (p.HR * 4)
+      p.gp += 1
+      p.ab += row.at_bats || 0
+      p.r += row.runs || 0
+      p.h += row.hits || 0
+      p['2b'] += row.doubles || 0
+      p['3b'] += row.triples || 0
+      p.hr += row.home_runs || 0
+      p.rbi += row.rbis || 0
+      p.k += row.strikeouts || 0
+      p.bb += row.walks || 0
+      p.hbp += row.hbp || row.hit_by_pitch || 0
+      p.sh += row.sacrifice_bunts || 0
+      p.sf += row.sacrifice_flies || 0
+      p.sb += row.stolen_bases || 0
+      p.cs += row.caught_stealing || 0
+      p.gidp += row.double_plays || 0
+      // 計算 1b, xbh, tb
+      p['1b'] += Math.max(0, (row.hits || 0) - (row.doubles || 0) - (row.triples || 0) - (row.home_runs || 0))
+      p.xbh += (row.doubles || 0) + (row.triples || 0) + (row.home_runs || 0)
+      p.tb += p['1b'] + (p['2b'] * 2) + (p['3b'] * 3) + (p.hr * 4)
       // PA
-      p.PA += p.AB + p.BB + p.HBP + p.SF + p.SH
+      p.pa += p.ab + p.bb + p.hbp + p.sf + p.sh
       // AVG, OBP, SLG, OPS
-      p.AVG = p.AB ? p.H / p.AB : 0
-      const OBP_den = p.AB + p.BB + p.HBP + p.SF
-      p.OBP = OBP_den ? (p.H + p.BB + p.HBP) / OBP_den : 0
-      p.SLG = p.AB ? p.TB / p.AB : 0
-      p.OPS = p.OBP + p.SLG
-      // CYC: 無法判斷單場，設 0
-      p.CYC = 0
+      p.avg = p.ab ? Number((p.h / p.ab).toFixed(3)) : 0
+      const obpDen = p.ab + p.bb + p.hbp + p.sf
+      p.obp = obpDen ? Number(((p.h + p.bb + p.hbp) / obpDen).toFixed(3)) : 0
+      p.slg = p.ab ? Number((p.tb / p.ab).toFixed(3)) : 0
+      p.ops = Number((p.obp + p.slg).toFixed(3))
+      // CYC: 單場有1b,2b,3b,hr各>=1才算
+      p.cyc = (p['1b'] >= 1 && p['2b'] >= 1 && p['3b'] >= 1 && p.hr >= 1) ? 1 : 0
     }
-
     const results = []
-    for (const [name, p] of playerMap.entries()) {
-      results.push({
-        name,
-        GP: p.GP,
-        PA: p.PA,
-        AB: p.AB,
-        H: p.H,
-        '1B': p['1B'],
-        '2B': p['2B'],
-        '3B': p['3B'],
-        HR: p.HR,
-        XBH: p.XBH,
-        TB: p.TB,
-        R: p.R,
-        RBI: p.RBI,
-        K: p.K,
-        BB: p.BB,
-        HBP: p.HBP,
-        SH: p.SH,
-        SF: p.SF,
-        SB: p.SB,
-        CS: p.CS,
-        GIDP: p.GIDP,
-        CYC: p.CYC,
-        AVG: p.AVG.toFixed(3),
-        OBP: p.OBP.toFixed(3),
-        SLG: p.SLG.toFixed(3),
-        OPS: p.OPS.toFixed(3)
-      })
+    for (const [_, p] of playerMap.entries()) {
+      results.push(p)
     }
-
-    console.log(`✅ daily-batting: ${targetDate} 共 ${results.length} 筆`)
     return NextResponse.json(results)
-
   } catch (err) {
-    console.error('❌ daily-batting 錯誤:', err)
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }
