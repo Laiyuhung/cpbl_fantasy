@@ -42,7 +42,8 @@ export default function PlayersPage() {
   const [leagueStatus, setLeagueStatus] = useState('unknown'); // 聯盟狀態
   const [showInfoModal, setShowInfoModal] = useState(false); // 守位資格說明視窗
   const [showLegendModal, setShowLegendModal] = useState(false); // Legend視窗
-  const [timeWindow, setTimeWindow] = useState('2026 Season'); // 數據區間選擇
+  const [timeWindow, setTimeWindow] = useState(null); // 數據區間選擇，初始為 null 等待計算
+  const [scheduleData, setScheduleData] = useState([]); // 聯盟賽程
   const [batterStatCategories, setBatterStatCategories] = useState([]); // 打者統計項目
   const [pitcherStatCategories, setPitcherStatCategories] = useState([]); // 投手統計項目
   const [playerStats, setPlayerStats] = useState({}); // 球員統計數據
@@ -152,6 +153,7 @@ export default function PlayersPage() {
           setMembers(leagueData.members || []);
           setRosterPositions(leagueData.league?.roster_positions || {});
           setLeagueStatus(leagueData.status || 'unknown');
+          setScheduleData(leagueData.schedule || []);
 
           // Get trade deadline info
           setTradeEndDate(leagueData.league?.trade_end_date || null);
@@ -182,6 +184,33 @@ export default function PlayersPage() {
 
     fetchData();
   }, [leagueId]);
+
+  // Determine default timeWindow based on Taiwan time vs first week start
+  useEffect(() => {
+    if (scheduleData.length === 0 || timeWindow !== null) return;
+
+    // Helper to convert date to Taiwan timezone
+    const getDateInTaiwan = (dateStr) => {
+      const date = new Date(dateStr);
+      // Add 8 hours to convert UTC to Taiwan time
+      return new Date(date.getTime() + (8 * 60 * 60 * 1000));
+    };
+
+    // Get current Taiwan time
+    const now = new Date();
+    const taiwanOffset = 8 * 60 * 60 * 1000;
+    const taiwanTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + taiwanOffset);
+
+    // Get first week start date
+    const firstWeekStart = getDateInTaiwan(scheduleData[0].week_start);
+
+    // If before first week, use "2025 Season", otherwise "2026 Season"
+    if (taiwanTime < firstWeekStart) {
+      setTimeWindow('2025 Season');
+    } else {
+      setTimeWindow('2026 Season');
+    }
+  }, [scheduleData, timeWindow]);
 
   // Fetch Acquisitions Count
   const [acquisitionData, setAcquisitionData] = useState(null);
@@ -344,6 +373,7 @@ export default function PlayersPage() {
 
   // Fetch Rankings
   useEffect(() => {
+    if (!timeWindow) return; // Wait for timeWindow to be set
     const fetchRankings = async () => {
       try {
         const res = await fetch(`/api/league/${leagueId}/rankings?time_window=${encodeURIComponent(timeWindow)}`);
@@ -1726,10 +1756,12 @@ export default function PlayersPage() {
                   Stats Period
                 </label>
                 <select
-                  value={timeWindow}
+                  value={timeWindow || ''}
                   onChange={(e) => setTimeWindow(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  disabled={!timeWindow}
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
                 >
+                  {!timeWindow && <option value="">Loading...</option>}
                   <option value="Today">Today</option>
                   <option value="Yesterday">Yesterday</option>
                   <option value="Last 7 Days">Last 7 Days</option>
