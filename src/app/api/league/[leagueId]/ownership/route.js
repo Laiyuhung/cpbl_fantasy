@@ -617,6 +617,7 @@ export async function DELETE(req, { params }) {
         .update({
           status: 'Waiver',
           acquired_at: now.toISOString(),
+          manager_id: null, // DETACH
           off_waiver: offWaiverUTC.toISOString().split('T')[0]  // 只取日期部分 YYYY-MM-DD
         })
         .eq('id', ownership.id);

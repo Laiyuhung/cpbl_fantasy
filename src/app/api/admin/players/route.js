@@ -9,7 +9,7 @@ async function checkAdmin(userId) {
     .select('manager_id')
     .eq('manager_id', userId)
     .single()
-  
+
   return !error && data
 }
 
@@ -122,7 +122,69 @@ export async function POST(req) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, player: data[0] }, { status: 201 })
+    const newPlayer = data[0]
+
+    // Auto-create WAIVER ownership records in all active leagues
+    try {
+      // Get all leagues that are NOT pre-draft or drafting now
+      const { data: activeLeagues } = await supabase
+        .from('league_statuses')
+        .select('league_id, status')
+        .not('status', 'in', '("pre-draft","drafting now")')
+
+      if (activeLeagues && activeLeagues.length > 0) {
+        // Fetch waiver_players_unfreeze_time for each active league
+        const leagueIds = activeLeagues.map(l => l.league_id)
+        const { data: leagueSettings } = await supabase
+          .from('league_settings')
+          .select('league_id, waiver_players_unfreeze_time')
+          .in('league_id', leagueIds)
+
+        const settingsMap = {}
+        if (leagueSettings) {
+          leagueSettings.forEach(ls => { settingsMap[ls.league_id] = ls.waiver_players_unfreeze_time })
+        }
+
+        // Calculate off_waiver for each league and build insert records
+        // Taiwan time = UTC+8
+        const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+
+        const ownershipRecords = activeLeagues.map(league => {
+          const unfreezeTime = settingsMap[league.league_id] || '2 days'
+          // Parse "X days" from the setting string
+          const daysMatch = unfreezeTime.match(/(\d+)/)
+          const freezeDays = daysMatch ? parseInt(daysMatch[1]) : 2
+
+          // off_waiver = today (Taiwan) + freezeDays + 1 (full days must pass)
+          const offWaiverDate = new Date(nowTaiwan)
+          offWaiverDate.setDate(offWaiverDate.getDate() + freezeDays + 1)
+          const offWaiverStr = offWaiverDate.toISOString().split('T')[0]
+
+          return {
+            league_id: league.league_id,
+            player_id: newPlayer.player_id,
+            status: 'Waiver',
+            manager_id: null,
+            off_waiver: offWaiverStr
+          }
+        })
+
+        if (ownershipRecords.length > 0) {
+          const { error: ownershipError } = await supabase
+            .from('league_player_ownership')
+            .upsert(ownershipRecords, { onConflict: 'league_id,player_id', ignoreDuplicates: true })
+
+          if (ownershipError) {
+            console.error('Failed to create waiver ownership records:', ownershipError)
+          }
+        }
+      }
+    } catch (waiverErr) {
+      // Non-blocking: log error but still return success for player creation
+      console.error('Error creating waiver records:', waiverErr)
+    }
+
+    return NextResponse.json({ success: true, player: newPlayer }, { status: 201 })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
