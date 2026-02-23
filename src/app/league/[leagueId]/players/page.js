@@ -1842,13 +1842,18 @@ export default function PlayersPage() {
 
         {/* Players Table */}
         <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-6 border-b border-purple-400/30 flex items-center justify-between">
-            <h2 className="text-2xl font-black text-white flex items-center gap-3">
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              Player List
-            </h2>
+          <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-6 border-b border-purple-400/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-2xl font-black text-white flex items-center gap-3">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Player List
+              </h2>
+              <span className="text-[10px] sm:text-xs text-white/70 italic font-sans md:ml-10">
+                *Rate/Negative stats require PA/IP top 60% qualification to rank.
+              </span>
+            </div>
             <div className="flex bg-slate-900/40 p-1 rounded-md border border-white/20">
               <button
                 onClick={() => {
@@ -1880,20 +1885,6 @@ export default function PlayersPage() {
           </div>
 
           <div className="overflow-x-auto relative min-h-[400px]">
-            {/* 說明文字區塊：新增 Qualify 說明 */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-slate-500 mb-2 font-mono gap-2 px-2">
-              <div className="flex gap-4">
-                <span className="flex items-center gap-1 text-cyan-400 font-bold">
-                  <div className="w-2 h-2 rounded-full bg-cyan-400/20 border border-cyan-400"></div> Value
-                </span>
-                <span className="flex items-center gap-1 text-amber-500 font-bold">
-                  <div className="w-2 h-2 rounded-full bg-amber-500/20 border border-amber-500"></div> Rank (Top 15)
-                </span>
-              </div>
-              <span className="text-[10px] sm:text-xs text-slate-400 italic font-sans text-right">
-                *Rate/Negative stats (AVG, ERA, SO, etc.) require PA/IP top 60% qualification to rank. Counting stats rank all players.
-              </span>
-            </div>
 
             {/* 如果正在載入數據，顯示遮罩與 Spinner */}
             {fetchingStats && (
@@ -2092,7 +2083,7 @@ export default function PlayersPage() {
                           <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                             <div>{getPlayerStat(player.player_id, stat)}</div>
                             {rank && rank <= 15 && (
-                              <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)}</div>
+                              <div className="text-[11px] font-bold text-amber-400 font-sans mt-0.5">{getOrdinal(rank)}</div>
                             )}
                           </td>
                         );
@@ -2105,7 +2096,7 @@ export default function PlayersPage() {
                           <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                             <div>{getPlayerStat(player.player_id, stat)}</div>
                             {rank && rank <= 15 && (
-                              <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)}</div>
+                              <div className="text-[11px] font-bold text-amber-400 font-sans mt-0.5">{getOrdinal(rank)}</div>
                             )}
                           </td>
                         );

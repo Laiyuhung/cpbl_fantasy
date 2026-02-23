@@ -1333,10 +1333,17 @@ export default function DraftPage() {
                     <div className="flex-[3] bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
                         {/* Filter Bar */}
                         <div className="bg-slate-900 p-3 rounded-lg border border-slate-700 mb-4 flex flex-wrap gap-4 items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-white font-bold text-lg mr-2">Players</span>
-                                <span className="text-xs text-slate-500 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700">2025 Season Stats</span>
-                                <div className="flex bg-slate-800 rounded p-1 border border-slate-700">
+                            <div className="flex items-center gap-4 w-full md:w-auto overflow-hidden">
+                                <div className="flex flex-col gap-1 justify-center">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-white font-bold text-lg mr-2">Players</span>
+                                        <span className="text-[10px] md:text-xs text-slate-500 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700">2025 Season Stats</span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 italic font-sans max-w-[200px] md:max-w-none break-words">
+                                        *Rate/Negative stats require PA/IP top 60% qualification to rank.
+                                    </span>
+                                </div>
+                                <div className="flex bg-slate-800 rounded p-1 border border-slate-700 shrink-0 self-start mt-1 relative z-10">
                                     <button
                                         className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
                                         onClick={() => {
@@ -1501,7 +1508,7 @@ export default function DraftPage() {
                                                         <td key={cat} className={`p-2 text-center text-xs font-mono py-2 ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
                                                             <div>{formatStat(val)}</div>
                                                             {rank && rank <= 15 && (
-                                                                <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)}</div>
+                                                                <div className="text-[11px] font-bold text-amber-400 font-sans mt-0.5">{getOrdinal(rank)}</div>
                                                             )}
                                                         </td>
                                                     );
