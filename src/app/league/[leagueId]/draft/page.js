@@ -834,38 +834,47 @@ export default function DraftPage() {
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
 
-    // Stats where lower value = better ranking (separated by player type)
+    // Stats requiring PA/IP qualification (rate stats & lower-is-better stats)
+    const batterQualifyStats = new Set(['cs', 'k', 'avg', 'gidp', 'obp', 'ops', 'slg']);
+    const pitcherQualifyStats = new Set(['era', 'whip', 'bb/9', 'bb', 'er', 'ra', 'h/9', 'h', 'hbp', 'hr', 'ibb', 'k/9', 'k/bb', 'l', 'obpa', 'rl', 'win%']);
+
+    // Stats where lower value = better ranking
     const batterLowerIsBetter = new Set(['cs', 'k', 'gidp']);
     const pitcherLowerIsBetter = new Set(['era', 'whip', 'bb/9', 'bb', 'er', 'ra', 'h/9', 'h', 'hbp', 'hr', 'ibb', 'l', 'obpa', 'rl']);
 
-    // Compute CPBL stat rankings for PA/IP-qualified players (top 60%)
+    // Compute CPBL stat rankings
     const cpblStatRankings = useMemo(() => {
         if (!playerStats || Object.keys(playerStats).length === 0) return {};
 
         const allStats = Object.entries(playerStats);
         const qualifyKey = filterType === 'batter' ? 'pa' : 'ip';
         const categories = filterType === 'batter' ? batterStatCategories : pitcherStatCategories;
+
+        const qualifySet = filterType === 'batter' ? batterQualifyStats : pitcherQualifyStats;
         const lowerBetterSet = filterType === 'batter' ? batterLowerIsBetter : pitcherLowerIsBetter;
 
-        // Sort all players by PA/IP descending
-        const sorted = allStats
-            .filter(([_, s]) => s[qualifyKey] != null && Number(s[qualifyKey]) > 0)
-            .sort((a, b) => Number(b[1][qualifyKey]) - Number(a[1][qualifyKey]));
+        // First filter out players with absolutely no stats
+        const activePlayers = allStats.filter(([_, s]) => s[qualifyKey] != null && Number(s[qualifyKey]) > 0);
 
-        // Top 60% cutoff
-        const cutoff = Math.ceil(sorted.length * 0.6);
-        const qualifiedIds = new Set(sorted.slice(0, cutoff).map(([id]) => String(id)));
+        // Sort active players by PA/IP descending to find top 60%
+        const sortedByTime = [...activePlayers].sort((a, b) => Number(b[1][qualifyKey]) - Number(a[1][qualifyKey]));
 
-        // For each scoring category, rank qualified players
+        // Top 60% cutoff for Qualification
+        const cutoff = Math.ceil(sortedByTime.length * 0.6);
+        const qualifiedIds = new Set(sortedByTime.slice(0, cutoff).map(([id]) => String(id)));
+
+        // For each scoring category, rank players
         const rankings = {}; // { player_id_string: { statAbbr: rank } }
 
         categories.forEach(cat => {
             const abbr = getStatAbbr(cat).toLowerCase();
+            const requiresQualify = qualifySet.has(abbr);
             const isLowerBetter = lowerBetterSet.has(abbr);
 
-            // Collect qualified players with valid (non-null) stat values
-            const entries = sorted
-                .filter(([id]) => qualifiedIds.has(String(id)))
+            // Collect players with valid (non-null) stat values
+            const entries = activePlayers
+                // If it requires qualification, must be in top 60%
+                .filter(([id]) => !requiresQualify || qualifiedIds.has(String(id)))
                 .map(([id, s]) => ({ id: String(id), val: s[abbr] }))
                 .filter(e => e.val != null && e.val !== '' && !isNaN(Number(e.val)))
                 .map(e => ({ ...e, val: Number(e.val) }))

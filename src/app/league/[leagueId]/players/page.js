@@ -47,6 +47,7 @@ export default function PlayersPage() {
   const [batterStatCategories, setBatterStatCategories] = useState([]); // 打者統計項目
   const [pitcherStatCategories, setPitcherStatCategories] = useState([]); // 投手統計項目
   const [playerStats, setPlayerStats] = useState({}); // 球員統計數據
+  const [fetchingStats, setFetchingStats] = useState(false); // 統計數據讀取中
   const [playerRankings, setPlayerRankings] = useState({}); // Z-score rankings
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeTargetManagerId, setTradeTargetManagerId] = useState(null);
@@ -339,6 +340,7 @@ export default function PlayersPage() {
   useEffect(() => {
     const fetchPlayerStats = async () => {
       if (!timeWindow) return;
+      setFetchingStats(true);
 
       try {
         // 根據球員類型選擇不同的 API
@@ -364,10 +366,11 @@ export default function PlayersPage() {
         }
       } catch (err) {
         console.error('Failed to fetch player stats:', err);
+      } finally {
+        setFetchingStats(false);
       }
     };
 
-    fetchPlayerStats();
     fetchPlayerStats();
   }, [timeWindow, filterType]);
 
@@ -593,38 +596,47 @@ export default function PlayersPage() {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   };
 
-  // Stats where lower value = better ranking (separated by player type)
+  // Stats requiring PA/IP qualification (rate stats & lower-is-better stats)
+  const batterQualifyStats = new Set(['cs', 'k', 'avg', 'gidp', 'obp', 'ops', 'slg']);
+  const pitcherQualifyStats = new Set(['era', 'whip', 'bb/9', 'bb', 'er', 'ra', 'h/9', 'h', 'hbp', 'hr', 'ibb', 'k/9', 'k/bb', 'l', 'obpa', 'rl', 'win%']);
+
+  // Stats where lower value = better ranking
   const batterLowerIsBetter = new Set(['cs', 'k', 'gidp']);
   const pitcherLowerIsBetter = new Set(['era', 'whip', 'bb/9', 'bb', 'er', 'ra', 'h/9', 'h', 'hbp', 'hr', 'ibb', 'l', 'obpa', 'rl']);
 
-  // Compute CPBL stat rankings for PA/IP-qualified players (top 60%)
+  // Compute CPBL stat rankings
   const cpblStatRankings = useMemo(() => {
     if (!playerStats || Object.keys(playerStats).length === 0) return {};
 
     const allStats = Object.entries(playerStats);
     const qualifyKey = filterType === 'batter' ? 'pa' : 'ip';
     const categories = filterType === 'batter' ? batterStatCategories : pitcherStatCategories;
+
+    const qualifySet = filterType === 'batter' ? batterQualifyStats : pitcherQualifyStats;
     const lowerBetterSet = filterType === 'batter' ? batterLowerIsBetter : pitcherLowerIsBetter;
 
-    // Sort all players by PA/IP descending
-    const sorted = allStats
-      .filter(([_, s]) => s[qualifyKey] != null && Number(s[qualifyKey]) > 0)
-      .sort((a, b) => Number(b[1][qualifyKey]) - Number(a[1][qualifyKey]));
+    // First filter out players with absolutely no stats
+    const activePlayers = allStats.filter(([_, s]) => s[qualifyKey] != null && Number(s[qualifyKey]) > 0);
 
-    // Top 60% cutoff
-    const cutoff = Math.ceil(sorted.length * 0.6);
-    const qualifiedIds = new Set(sorted.slice(0, cutoff).map(([id]) => String(id)));
+    // Sort active players by PA/IP descending to find top 60%
+    const sortedByTime = [...activePlayers].sort((a, b) => Number(b[1][qualifyKey]) - Number(a[1][qualifyKey]));
 
-    // For each scoring category, rank qualified players
+    // Top 60% cutoff for Qualification
+    const cutoff = Math.ceil(sortedByTime.length * 0.6);
+    const qualifiedIds = new Set(sortedByTime.slice(0, cutoff).map(([id]) => String(id)));
+
+    // For each scoring category, rank players
     const rankings = {}; // { player_id_string: { statAbbr: rank } }
 
     categories.forEach(cat => {
       const abbr = getStatAbbr(cat).toLowerCase();
+      const requiresQualify = qualifySet.has(abbr);
       const isLowerBetter = lowerBetterSet.has(abbr);
 
-      // Collect qualified players with valid (non-null) stat values
-      const entries = sorted
-        .filter(([id]) => qualifiedIds.has(String(id)))
+      // Collect players with valid (non-null) stat values
+      const entries = activePlayers
+        // If it requires qualification, must be in top 60%
+        .filter(([id]) => !requiresQualify || qualifiedIds.has(String(id)))
         .map(([id, s]) => ({ id: String(id), val: s[abbr] }))
         .filter(e => e.val != null && e.val !== '' && !isNaN(Number(e.val)))
         .map(e => ({ ...e, val: Number(e.val) }))
@@ -1867,7 +1879,32 @@ export default function PlayersPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto relative min-h-[400px]">
+            {/* 說明文字區塊：新增 Qualify 說明 */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-slate-500 mb-2 font-mono gap-2 px-2">
+              <div className="flex gap-4">
+                <span className="flex items-center gap-1 text-cyan-400 font-bold">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400/20 border border-cyan-400"></div> Value
+                </span>
+                <span className="flex items-center gap-1 text-amber-500 font-bold">
+                  <div className="w-2 h-2 rounded-full bg-amber-500/20 border border-amber-500"></div> Rank (Top 15)
+                </span>
+              </div>
+              <span className="text-[10px] sm:text-xs text-slate-400 italic font-sans text-right">
+                *Rate/Negative stats (AVG, ERA, SO, etc.) require PA/IP top 60% qualification to rank. Counting stats rank all players.
+              </span>
+            </div>
+
+            {/* 如果正在載入數據，顯示遮罩與 Spinner */}
+            {fetchingStats && (
+              <div className="absolute inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center rounded-2xl mt-8">
+                <div className="flex flex-col items-center gap-3 bg-slate-800 p-6 rounded-2xl border border-purple-500/30 shadow-2xl">
+                  <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-400 rounded-full animate-spin"></div>
+                  <span className="text-purple-300 font-bold text-sm tracking-widest animate-pulse">LOADING STATS...</span>
+                </div>
+              </div>
+            )}
+
             <table className="w-full">
               <thead className="bg-slate-900/60 border-b border-purple-500/20">
                 <tr>
