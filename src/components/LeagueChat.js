@@ -20,7 +20,7 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
 
     const fetchMessages = useCallback(async () => {
         if (!leagueId) return;
-        
+
         try {
             const res = await fetch(`/api/league-chat?league_id=${leagueId}&limit=100`);
             const data = await res.json();
@@ -108,7 +108,7 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
         const date = new Date(timestamp);
         const now = new Date();
         const isToday = date.toDateString() === now.toDateString();
-        
+
         if (isToday) {
             return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         }
@@ -154,10 +154,10 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
 
                 {/* Chat Body */}
                 {isOpen && (
-                    <div className="flex flex-col flex-1 min-h-[200px] max-h-[300px]">
-                        <div 
+                    <div className="flex flex-col flex-1 min-h-[150px] max-h-[250px]">
+                        <div
                             ref={chatContainerRef}
-                            className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar"
+                            className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar"
                         >
                             {loading ? (
                                 <div className="text-slate-500 text-sm text-center py-4">Loading...</div>
@@ -165,15 +165,14 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
                                 <div className="text-slate-500 text-sm text-center py-4">No messages yet</div>
                             ) : (
                                 messages.map((msg) => (
-                                    <div 
-                                        key={msg.id} 
-                                        className={`rounded-lg px-2 py-1.5 ${getMessageTypeStyle(msg.message_type)} ${
-                                            msg.message_type === 'chat' 
-                                                ? msg.manager_id === managerId 
-                                                    ? 'bg-purple-600/30 ml-4' 
-                                                    : 'bg-slate-700/50 mr-4'
+                                    <div
+                                        key={msg.id}
+                                        className={`rounded-md px-2 py-1 ${getMessageTypeStyle(msg.message_type)} ${msg.message_type === 'chat'
+                                                ? msg.manager_id === managerId
+                                                    ? 'bg-purple-600/30 ml-3'
+                                                    : 'bg-slate-700/50 mr-3'
                                                 : ''
-                                        }`}
+                                            }`}
                                     >
                                         {msg.message_type === 'chat' && (
                                             <div className="flex items-center gap-2 mb-0.5">
@@ -183,7 +182,7 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
                                                 <span className="text-[10px] text-slate-500">{formatTime(msg.created_at)}</span>
                                             </div>
                                         )}
-                                        <p className="text-sm text-slate-200 break-words">{msg.message}</p>
+                                        <p className="text-xs text-slate-200 break-words leading-snug">{msg.message}</p>
                                     </div>
                                 ))
                             )}
@@ -198,12 +197,12 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder="Type a message..."
                                 maxLength={500}
-                                className="flex-1 bg-slate-900/60 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                className="flex-1 bg-slate-900/60 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                             />
                             <button
                                 type="submit"
                                 disabled={!newMessage.trim() || sending}
-                                className="px-3 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-600 disabled:cursor-not-allowed rounded-lg text-white font-bold text-sm transition-colors"
+                                className="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-600 disabled:cursor-not-allowed rounded-lg text-white font-bold text-xs transition-colors"
                             >
                                 {sending ? '...' : '↑'}
                             </button>
@@ -226,9 +225,9 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
             </div>
 
             {/* Messages */}
-            <div 
+            <div
                 ref={chatContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar min-h-[300px] max-h-[400px]"
+                className="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar min-h-[250px] max-h-[350px]"
             >
                 {loading ? (
                     <div className="text-slate-500 text-sm text-center py-8">Loading messages...</div>
@@ -238,25 +237,24 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
                     </div>
                 ) : (
                     messages.map((msg) => (
-                        <div 
-                            key={msg.id} 
-                            className={`rounded-xl px-4 py-2 ${getMessageTypeStyle(msg.message_type)} ${
-                                msg.message_type === 'chat' 
-                                    ? msg.manager_id === managerId 
-                                        ? 'bg-purple-600/20 border border-purple-500/30 ml-8' 
-                                        : 'bg-slate-700/30 border border-slate-600/30 mr-8'
+                        <div
+                            key={msg.id}
+                            className={`rounded-lg px-3 py-1.5 ${getMessageTypeStyle(msg.message_type)} ${msg.message_type === 'chat'
+                                    ? msg.manager_id === managerId
+                                        ? 'bg-purple-600/20 border border-purple-500/30 ml-6'
+                                        : 'bg-slate-700/30 border border-slate-600/30 mr-6'
                                     : ''
-                            }`}
+                                }`}
                         >
                             {msg.message_type === 'chat' && (
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className={`text-sm font-bold ${msg.manager_id === managerId ? 'text-purple-300' : 'text-cyan-300'}`}>
+                                <div className="flex items-center justify-between mb-0.5">
+                                    <span className={`text-xs font-bold ${msg.manager_id === managerId ? 'text-purple-300' : 'text-cyan-300'}`}>
                                         {getSenderName(msg)}
                                     </span>
-                                    <span className="text-xs text-slate-500">{formatTime(msg.created_at)}</span>
+                                    <span className="text-[10px] text-slate-500">{formatTime(msg.created_at)}</span>
                                 </div>
                             )}
-                            <p className="text-slate-200 break-words">{msg.message}</p>
+                            <p className="text-sm text-slate-200 break-words leading-snug">{msg.message}</p>
                         </div>
                     ))
                 )}
@@ -264,19 +262,19 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSend} className="p-4 border-t border-white/10 flex gap-3">
+            <form onSubmit={handleSend} className="p-3 border-t border-white/10 flex gap-2">
                 <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type a message..."
                     maxLength={500}
-                    className="flex-1 bg-slate-900/60 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 bg-slate-900/60 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
                 <button
                     type="submit"
                     disabled={!newMessage.trim() || sending}
-                    className="px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-600 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-600 disabled:cursor-not-allowed rounded-lg text-white font-bold text-sm transition-colors flex items-center gap-2"
                 >
                     {sending ? (
                         <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>

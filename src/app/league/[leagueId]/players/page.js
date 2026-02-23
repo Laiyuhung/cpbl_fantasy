@@ -282,7 +282,7 @@ export default function PlayersPage() {
   // Toggle watch status (optimistic update)
   const handleToggleWatch = async (player, isCurrentlyWatched) => {
     if (!myManagerId || !leagueId) return;
-    
+
     // Optimistic update - update UI immediately
     if (isCurrentlyWatched) {
       setWatchedPlayerIds(prev => {
@@ -293,7 +293,7 @@ export default function PlayersPage() {
     } else {
       setWatchedPlayerIds(prev => new Set([...prev, player.player_id]));
     }
-    
+
     try {
       const res = await fetch('/api/watched', {
         method: isCurrentlyWatched ? 'DELETE' : 'POST',
@@ -585,6 +585,58 @@ export default function PlayersPage() {
     const hasForced = pitcherStatCategories.some(c => getStatAbbr(c) === 'IP');
     return hasForced ? pitcherStatCategories : [forced, ...pitcherStatCategories];
   }, [pitcherStatCategories]);
+
+  // Ordinal suffix helper: 1 -> "1st", 2 -> "2nd", 3 -> "3rd", etc.
+  const getOrdinal = (n) => {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  // Stats where lower value = better ranking
+  const lowerIsBetterStats = new Set(['era', 'whip', 'bb', 'h', 'er', 'hr', 'l', 'bs']);
+
+  // Compute CPBL stat rankings for PA/IP-qualified players (top 60%)
+  const cpblStatRankings = useMemo(() => {
+    if (!playerStats || Object.keys(playerStats).length === 0) return {};
+
+    const allStats = Object.entries(playerStats);
+    const qualifyKey = filterType === 'batter' ? 'pa' : 'ip';
+    const categories = filterType === 'batter' ? batterStatCategories : pitcherStatCategories;
+
+    // Sort all players by PA/IP descending
+    const sorted = allStats
+      .filter(([_, s]) => s[qualifyKey] != null && Number(s[qualifyKey]) > 0)
+      .sort((a, b) => Number(b[1][qualifyKey]) - Number(a[1][qualifyKey]));
+
+    // Top 60% cutoff
+    const cutoff = Math.ceil(sorted.length * 0.6);
+    const qualifiedIds = new Set(sorted.slice(0, cutoff).map(([id]) => id));
+
+    // For each scoring category, rank qualified players
+    const rankings = {}; // { player_id: { statAbbr: rank } }
+
+    categories.forEach(cat => {
+      const abbr = getStatAbbr(cat).toLowerCase();
+      const isLowerBetter = lowerIsBetterStats.has(abbr);
+
+      // Collect qualified players with valid stat values
+      const entries = sorted
+        .filter(([id]) => qualifiedIds.has(id))
+        .map(([id, s]) => ({ id, val: Number(s[abbr]) || 0 }))
+        .filter(e => e.val !== 0 || !isLowerBetter) // keep 0s for counting stats
+        .sort((a, b) => isLowerBetter ? a.val - b.val : b.val - a.val);
+
+      entries.forEach((entry, idx) => {
+        if (!rankings[entry.id]) rankings[entry.id] = {};
+        rankings[entry.id][abbr] = idx + 1;
+      });
+    });
+
+    // Also store qualified set for quick lookup
+    rankings._qualifiedIds = qualifiedIds;
+    return rankings;
+  }, [playerStats, filterType, batterStatCategories, pitcherStatCategories]);
 
   const getTeamAbbr = (team) => {
     switch (team) {
@@ -1922,11 +1974,10 @@ export default function PlayersPage() {
                               {/* Watch Button */}
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                                  watchedPlayerIds.has(player.player_id)
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${watchedPlayerIds.has(player.player_id)
                                     ? 'bg-amber-500 text-white hover:bg-amber-400'
                                     : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
-                                }`}
+                                  }`}
                                 title={watchedPlayerIds.has(player.player_id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
                               >
                                 {watchedPlayerIds.has(player.player_id) ? '★' : '☆'}
@@ -1997,17 +2048,27 @@ export default function PlayersPage() {
                       {/* 動態顯示統計數據 */}
                       {filterType === 'batter' && displayBatterCats.map((stat) => {
                         const isForced = !batterStatCategories.includes(stat);
+                        const statAbbr = getStatAbbr(stat).toLowerCase();
+                        const rank = !isForced && cpblStatRankings[player.player_id]?.[statAbbr];
                         return (
                           <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                            {getPlayerStat(player.player_id, stat)}
+                            <div>{getPlayerStat(player.player_id, stat)}</div>
+                            {rank && (
+                              <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)} in CPBL</div>
+                            )}
                           </td>
                         );
                       })}
                       {filterType === 'pitcher' && displayPitcherCats.map((stat) => {
                         const isForced = !pitcherStatCategories.includes(stat);
+                        const statAbbr = getStatAbbr(stat).toLowerCase();
+                        const rank = !isForced && cpblStatRankings[player.player_id]?.[statAbbr];
                         return (
                           <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                            {getPlayerStat(player.player_id, stat)}
+                            <div>{getPlayerStat(player.player_id, stat)}</div>
+                            {rank && (
+                              <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)} in CPBL</div>
+                            )}
                           </td>
                         );
                       })}
