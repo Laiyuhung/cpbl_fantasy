@@ -51,8 +51,8 @@ export default function DraftPage() {
 
     // Sidebar State
     const [sidebarTab, setSidebarTab] = useState('history'); // 'history' (recent), 'future' (upcoming)
-    const [isSidebarHistoryOpen, setSidebarHistoryOpen] = useState(false);
-    const [isSidebarTeamOpen, setSidebarTeamOpen] = useState(false);
+    const [isSidebarHistoryOpen, setSidebarHistoryOpen] = useState(true);
+    const [isSidebarTeamOpen, setSidebarTeamOpen] = useState(true);
 
     // League Rosters State (Opponent View)
     const [draftRosterAssignments, setDraftRosterAssignments] = useState([]);
@@ -1027,7 +1027,7 @@ export default function DraftPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white p-4 font-sans">
+        <div className="h-screen bg-slate-900 text-white p-4 font-sans flex flex-col overflow-hidden">
             <LegendModal
                 isOpen={showLegend}
                 onClose={() => setShowLegend(false)}
@@ -1297,7 +1297,7 @@ export default function DraftPage() {
             </div>
 
             {mainTab === 'players' && (
-                <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-230px)]">
+                <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
                     {/* Center: Player Pool */}
                     <div className="flex-[3] bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
                         {/* Filter Bar */}
@@ -1528,7 +1528,7 @@ export default function DraftPage() {
                     {/* Right: Info Panels */}
                     <div className="flex-1 flex flex-col gap-4 min-w-[300px] lg:max-w-[350px]">
                         {/* Draft History / Future Sidebar */}
-                        <div className={`bg-slate-800/40 rounded-xl border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl transition-all duration-300 overflow-hidden ${isSidebarHistoryOpen ? (isSidebarTeamOpen ? 'h-1/2' : 'flex-1') : 'h-auto shrink-0 flex-none'
+                        <div className={`bg-slate-800/40 rounded-xl border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl transition-all duration-300 overflow-hidden ${isSidebarHistoryOpen ? (isSidebarTeamOpen ? 'h-1/2' : 'flex-1') : 'h-[42px] shrink-0 flex-none'
                             }`}>
                             <div className="flex justify-between items-center px-4 pt-3 pb-2 border-b border-slate-700/50">
                                 <div className="flex gap-4">
@@ -1616,18 +1616,18 @@ export default function DraftPage() {
                         </div>
 
                         {/* My Team & Queue & Roster Tabs */}
-                        <div className={`bg-slate-800/40 rounded-xl border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl transition-all duration-300 overflow-hidden ${isSidebarTeamOpen ? (isSidebarHistoryOpen ? 'h-1/2' : 'flex-1') : 'h-auto shrink-0 flex-none'
+                        <div className={`bg-slate-800/40 rounded-xl border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl transition-all duration-300 overflow-hidden ${isSidebarTeamOpen ? (isSidebarHistoryOpen ? 'h-1/2' : 'flex-1') : 'h-[42px] shrink-0 flex-none'
                             }`}>
                             <div className="flex justify-between items-center px-4 pt-3 pb-2 border-b border-slate-700/50">
                                 <div className="flex gap-4">
                                     <button onClick={() => setActiveTab('team')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'team' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                        Team ({myTeam.length})
+                                        Team
                                     </button>
                                     <button onClick={() => setActiveTab('queue')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'queue' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                        Queue ({queue.length})
+                                        Queue
                                     </button>
                                     <button onClick={() => setActiveTab('roster')} className={`text-sm font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${activeTab === 'roster' ? 'text-white border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                                        Roster ({draftRosterAssignments.length})
+                                        Roster
                                     </button>
                                 </div>
 
@@ -2252,7 +2252,6 @@ export default function DraftPage() {
                                                     <div className="flex bg-slate-800/60 p-2 text-xs font-bold text-slate-400 border-b border-slate-700">
                                                         <div className="w-12 text-center">Slot</div>
                                                         <div className="flex-1 pl-2">Player</div>
-                                                        <div className="w-10 text-center">Team</div>
                                                         <div className="flex ml-2 gap-2">
                                                             {statCats && statCats.length > 0 ? statCats.map(cat => {
                                                                 const isForced = isPitcher
@@ -2308,15 +2307,12 @@ export default function DraftPage() {
                                                                                     {assignment.identity?.toLowerCase() === 'foreigner' && (
                                                                                         <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
                                                                                     )}
+                                                                                    <span className={`px-1 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
+                                                                                        {getTeamAbbr(assignment.team)}
+                                                                                    </span>
                                                                                 </div>
                                                                                 <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
                                                                             </div>
-                                                                        </div>
-
-                                                                        <div className="w-10 text-center shrink-0">
-                                                                            <span className={`text-[10px] px-1 py-0.5 rounded border ${getTeamColor(assignment.team)}`}>
-                                                                                {getTeamAbbr(assignment.team)}
-                                                                            </span>
                                                                         </div>
 
                                                                         <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
@@ -2463,7 +2459,7 @@ export default function DraftPage() {
                                     }
 
                                     // Flatten slots logic
-                                    // Need to expand counts: { C: 1, OF: 3 } -> [C, OF, OF, OF] -> [C, OF1, OF2, OF3]
+                                    // Need to expand counts: {C: 1, OF: 3 } -> [C, OF, OF, OF] -> [C, OF1, OF2, OF3]
                                     const allSlots = Object.keys(rosterPositions).flatMap(slot => {
                                         const count = rosterPositions[slot];
                                         return Array.from({ length: count }).map((_, idx) => {
@@ -2494,7 +2490,8 @@ export default function DraftPage() {
                             </>
                         )}
                     </div>
-                )}
+                )
+            }
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar {

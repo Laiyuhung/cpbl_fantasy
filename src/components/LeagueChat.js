@@ -7,7 +7,7 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
-    const [isOpen, setIsOpen] = useState(!isCompact);
+    const [isOpen, setIsOpen] = useState(false);
     const messagesEndRef = useRef(null);
     const chatContainerRef = useRef(null);
     const pollIntervalRef = useRef(null);
@@ -149,7 +149,16 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
                             </span>
                         )}
                     </div>
-                    <span className="text-slate-500 text-sm">{isOpen ? '▼' : '◀'}</span>
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md p-1.5 transition-all flex items-center justify-center w-7 h-7 border border-slate-600/50 hover:border-slate-500"
+                    >
+                        {isOpen ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        )}
+                    </button>
                 </button>
 
                 {/* Chat Body */}
