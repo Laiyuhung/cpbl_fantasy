@@ -24,6 +24,7 @@ export default function CpblScheduleAdmin() {
     const [editingId, setEditingId] = useState(null); // UUID of game being edited
     const [editForm, setEditForm] = useState({}); // Form data for editing
     const [scheduleTab, setScheduleTab] = useState('major'); // 'major' or 'minor'
+    const [stageTab, setStageTab] = useState('regular_season'); // 'regular_season' or 'spring_training'
 
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
@@ -494,8 +495,8 @@ export default function CpblScheduleAdmin() {
                     <button
                         onClick={() => setScheduleTab('major')}
                         className={`flex-1 py-2 px-3 text-sm font-bold rounded-md transition-all ${scheduleTab === 'major'
-                                ? 'bg-blue-600 text-white shadow-lg'
-                                : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
                             }`}
                     >
                         一軍 (Major)
@@ -503,19 +504,49 @@ export default function CpblScheduleAdmin() {
                     <button
                         onClick={() => setScheduleTab('minor')}
                         className={`flex-1 py-2 px-3 text-sm font-bold rounded-md transition-all ${scheduleTab === 'minor'
-                                ? 'bg-slate-600 text-white shadow-lg'
-                                : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                            ? 'bg-slate-600 text-white shadow-lg'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
                             }`}
                     >
                         二軍 (Minor)
                     </button>
                 </div>
 
-                {existingSchedule.filter(g => scheduleTab === 'major' ? g.major_game !== false : g.major_game === false).length === 0 ? (
+                {/* Stage Tabs */}
+                <div className="flex mb-4 bg-slate-900/50 rounded-lg p-1">
+                    <button
+                        onClick={() => setStageTab('regular_season')}
+                        className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all ${stageTab === 'regular_season'
+                            ? 'bg-purple-600 text-white shadow-lg'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                            }`}
+                    >
+                        Regular Season
+                    </button>
+                    <button
+                        onClick={() => setStageTab('spring_training')}
+                        className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all ${stageTab === 'spring_training'
+                            ? 'bg-emerald-600 text-white shadow-lg'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                            }`}
+                    >
+                        Spring Training
+                    </button>
+                </div>
+
+                {existingSchedule.filter(g => {
+                    const majorMatch = scheduleTab === 'major' ? g.major_game !== false : g.major_game === false;
+                    const stageMatch = stageTab === 'spring_training' ? g.stage === 'spring_training' : g.stage !== 'spring_training';
+                    return majorMatch && stageMatch;
+                }).length === 0 ? (
                     <p className="text-slate-500 text-sm text-center py-4">No games found.</p>
                 ) : (
                     <div className="space-y-3">
-                        {existingSchedule.filter(g => scheduleTab === 'major' ? g.major_game !== false : g.major_game === false).map((game) => (
+                        {existingSchedule.filter(g => {
+                            const majorMatch = scheduleTab === 'major' ? g.major_game !== false : g.major_game === false;
+                            const stageMatch = stageTab === 'spring_training' ? g.stage === 'spring_training' : g.stage !== 'spring_training';
+                            return majorMatch && stageMatch;
+                        }).map((game) => (
                             <div key={game.uuid || game.id} className="bg-slate-700/50 p-3 rounded border border-slate-600 hover:bg-slate-700 transition-colors relative group">
                                 {editingId === game.uuid ? (
                                     // EDIT MODE
