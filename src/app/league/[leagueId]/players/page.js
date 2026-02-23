@@ -1886,15 +1886,7 @@ export default function PlayersPage() {
 
           <div className="overflow-x-auto relative min-h-[400px]">
 
-            {/* 如果正在載入數據，顯示遮罩與 Spinner */}
-            {fetchingStats && (
-              <div className="absolute inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center rounded-2xl mt-8">
-                <div className="flex flex-col items-center gap-3 bg-slate-800 p-6 rounded-2xl border border-purple-500/30 shadow-2xl">
-                  <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-400 rounded-full animate-spin"></div>
-                  <span className="text-purple-300 font-bold text-sm tracking-widest animate-pulse">LOADING STATS...</span>
-                </div>
-              </div>
-            )}
+
 
             <table className="w-full">
               <thead className="bg-slate-900/60 border-b border-purple-500/20">
@@ -1974,7 +1966,16 @@ export default function PlayersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-500/10">
-                {filteredPlayers.length === 0 ? (
+                {fetchingStats ? (
+                  <tr>
+                    <td colSpan={4 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)} className="px-6 py-24 text-center">
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <div className="w-10 h-10 border-4 border-purple-500/30 border-t-purple-400 rounded-full animate-spin"></div>
+                        <span className="text-purple-300 font-bold tracking-widest animate-pulse">LOADING STATS & SORTING...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredPlayers.length === 0 ? (
                   <tr>
                     <td colSpan={4 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)} className="px-6 py-12 text-center">
                       <div className="text-purple-300/50 text-lg">
@@ -2080,10 +2081,10 @@ export default function PlayersPage() {
                         const statAbbr = getStatAbbr(stat).toLowerCase();
                         const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
                         return (
-                          <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                            <div>{getPlayerStat(player.player_id, stat)}</div>
+                          <td key={stat} className={`px-4 py-4 text-center font-mono relative ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                            <div className="w-full text-center">{getPlayerStat(player.player_id, stat)}</div>
                             {rank && rank <= 15 && (
-                              <div className="text-[11px] font-bold text-amber-400 font-sans mt-0.5">{getOrdinal(rank)}</div>
+                              <div className="absolute left-0 right-0 bottom-1.5 text-[11px] font-black text-amber-500 font-sans tracking-wide leading-none">{getOrdinal(rank)}</div>
                             )}
                           </td>
                         );
@@ -2093,10 +2094,10 @@ export default function PlayersPage() {
                         const statAbbr = getStatAbbr(stat).toLowerCase();
                         const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
                         return (
-                          <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                            <div>{getPlayerStat(player.player_id, stat)}</div>
+                          <td key={stat} className={`px-4 py-4 text-center font-mono relative ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                            <div className="w-full text-center">{getPlayerStat(player.player_id, stat)}</div>
                             {rank && rank <= 15 && (
-                              <div className="text-[11px] font-bold text-amber-400 font-sans mt-0.5">{getOrdinal(rank)}</div>
+                              <div className="absolute left-0 right-0 bottom-1.5 text-[11px] font-black text-amber-500 font-sans tracking-wide leading-none">{getOrdinal(rank)}</div>
                             )}
                           </td>
                         );

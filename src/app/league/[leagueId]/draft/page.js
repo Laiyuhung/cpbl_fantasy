@@ -1505,10 +1505,10 @@ export default function DraftPage() {
                                                     const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
 
                                                     return (
-                                                        <td key={cat} className={`p-2 text-center text-xs font-mono py-2 ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
-                                                            <div>{formatStat(val)}</div>
+                                                        <td key={cat} className={`p-2 relative text-center text-xs font-mono py-2 ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
+                                                            <div className="w-full text-center">{formatStat(val)}</div>
                                                             {rank && rank <= 15 && (
-                                                                <div className="text-[11px] font-bold text-amber-400 font-sans mt-0.5">{getOrdinal(rank)}</div>
+                                                                <div className="absolute left-0 right-0 bottom-0.5 text-[10px] sm:text-[11px] font-black text-amber-500 font-sans tracking-wide leading-none">{getOrdinal(rank)}</div>
                                                             )}
                                                         </td>
                                                     );
