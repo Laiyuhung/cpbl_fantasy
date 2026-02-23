@@ -1102,13 +1102,15 @@ export default function RosterPage() {
                                                             >
                                                                 {player.name}
                                                             </button>
-                                                            {player.original_name && player.original_name !== player.name && (
-                                                                <span className="text-purple-300/60 text-sm font-normal ml-2">({player.original_name})</span>
-                                                            )}
                                                             <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
                                                             <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                         </div>
                                                         <div className="mt-1 flex items-center gap-2">
+                                                            {player.original_name && player.original_name !== player.name && (
+                                                                <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2">
+                                                                    {player.original_name}
+                                                                </span>
+                                                            )}
                                                             <span className="text-xs text-slate-400 font-mono">
                                                                 {player.game_info ? (
                                                                     <>
@@ -1204,13 +1206,15 @@ export default function RosterPage() {
                                                             >
                                                                 {player.name}
                                                             </button>
-                                                            {player.original_name && player.original_name !== player.name && (
-                                                                <span className="text-purple-300/60 text-sm font-normal ml-2">({player.original_name})</span>
-                                                            )}
                                                             <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
                                                             <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                         </div>
                                                         <div className="mt-1 flex items-center gap-2">
+                                                            {player.original_name && player.original_name !== player.name && (
+                                                                <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2">
+                                                                    {player.original_name}
+                                                                </span>
+                                                            )}
                                                             <span className="text-xs text-slate-400 font-mono">
                                                                 {player.game_info ? (
                                                                     <>

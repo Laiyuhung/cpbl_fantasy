@@ -2024,11 +2024,6 @@ export default function PlayersPage() {
                                 onClick={() => setSelectedPlayerModal(player)}
                               >
                                 {player.name || 'Unknown'}
-                                {player.original_name && player.original_name !== player.name && (
-                                  <span className="text-purple-300/60 text-sm font-normal ml-1">
-                                    ({player.original_name})
-                                  </span>
-                                )}
                                 <span className="text-purple-300/70 font-normal ml-2">
                                   - {filterPositions(player)}
                                 </span>
@@ -2039,6 +2034,11 @@ export default function PlayersPage() {
                               {renderStatusTag(player)}
                             </div>
                             <div className="flex items-center gap-2 mt-1">
+                              {player.original_name && player.original_name !== player.name && (
+                                <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2 mr-1">
+                                  {player.original_name}
+                                </span>
+                              )}
                               <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
                                 {player.game_info ? (
                                   <>
