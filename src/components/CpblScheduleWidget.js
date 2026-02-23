@@ -216,7 +216,14 @@ export default function CpblScheduleWidget() {
                         {games.map((game) => (
                             <div key={game.uuid || game.id} className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 hover:border-purple-500/30 transition-colors group">
                                 <div className="flex justify-between text-[10px] text-slate-400 mb-2 font-mono">
-                                    <span>#{game.game_no}</span>
+                                    <span className="flex items-center gap-1.5">
+                                        #{game.game_no}
+                                        {game.stage === 'spring_training' && (
+                                            <span className="text-[9px] font-bold bg-emerald-900/50 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30 uppercase tracking-wider not-italic">
+                                                Spring Training
+                                            </span>
+                                        )}
+                                    </span>
                                     <span>
                                         {(() => {
                                             if (!game.time) return 'TBD';

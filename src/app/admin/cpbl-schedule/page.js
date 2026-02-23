@@ -12,7 +12,8 @@ export default function CpblScheduleAdmin() {
         homeTeam: '',
         awayTeam: '',
         stadium: '',
-        majorGame: true
+        majorGame: true,
+        stage: 'regular_season'
     });
 
     // Stage 2: Generated Games (Editable)
@@ -106,7 +107,8 @@ export default function CpblScheduleAdmin() {
                 home: config.homeTeam,
                 away: config.awayTeam,
                 stadium: config.stadium,
-                major_game: config.majorGame
+                major_game: config.majorGame,
+                stage: config.stage
             });
         }
         setGames(generatedGames);
@@ -333,16 +335,30 @@ export default function CpblScheduleAdmin() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 mt-4">
-                                <input
-                                    type="checkbox"
-                                    id="majorGame"
-                                    name="majorGame"
-                                    checked={config.majorGame}
-                                    onChange={(e) => setConfig(prev => ({ ...prev, majorGame: e.target.checked }))}
-                                    className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-2 focus:ring-purple-500"
-                                />
-                                <label htmlFor="majorGame" className="text-sm font-medium text-slate-300">一軍 (Major League)</label>
+                            <div className="flex items-center gap-6 mt-4">
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="majorGame"
+                                        name="majorGame"
+                                        checked={config.majorGame}
+                                        onChange={(e) => setConfig(prev => ({ ...prev, majorGame: e.target.checked }))}
+                                        className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-2 focus:ring-purple-500"
+                                    />
+                                    <label htmlFor="majorGame" className="text-sm font-medium text-slate-300">一軍 (Major League)</label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-medium text-slate-400">Stage:</label>
+                                    <select
+                                        name="stage"
+                                        value={config.stage}
+                                        onChange={handleConfigChange}
+                                        className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                    >
+                                        <option value="regular_season">Regular Season</option>
+                                        <option value="spring_training">Spring Training</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="pt-4">
@@ -477,21 +493,19 @@ export default function CpblScheduleAdmin() {
                 <div className="flex mb-4 bg-slate-900/50 rounded-lg p-1">
                     <button
                         onClick={() => setScheduleTab('major')}
-                        className={`flex-1 py-2 px-3 text-sm font-bold rounded-md transition-all ${
-                            scheduleTab === 'major'
+                        className={`flex-1 py-2 px-3 text-sm font-bold rounded-md transition-all ${scheduleTab === 'major'
                                 ? 'bg-blue-600 text-white shadow-lg'
                                 : 'text-slate-400 hover:text-white hover:bg-slate-700'
-                        }`}
+                            }`}
                     >
                         一軍 (Major)
                     </button>
                     <button
                         onClick={() => setScheduleTab('minor')}
-                        className={`flex-1 py-2 px-3 text-sm font-bold rounded-md transition-all ${
-                            scheduleTab === 'minor'
+                        className={`flex-1 py-2 px-3 text-sm font-bold rounded-md transition-all ${scheduleTab === 'minor'
                                 ? 'bg-slate-600 text-white shadow-lg'
                                 : 'text-slate-400 hover:text-white hover:bg-slate-700'
-                        }`}
+                            }`}
                     >
                         二軍 (Minor)
                     </button>
