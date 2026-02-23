@@ -600,7 +600,7 @@ export default function RosterPage() {
             try {
                 const res = await fetch('/api/photo/resolve', { method: 'POST', get headers() { return { 'Content-Type': 'application/json' }; }, body: JSON.stringify({ players: batchPayload }) });
                 const data = await res.json();
-                if (!cancelled && data.results) setPhotoSrcMap(data.results);
+                if (data.results) setPhotoSrcMap(data.results);
             } catch { /* Ignore */ }
         };
         resolvePhotos();
