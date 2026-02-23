@@ -827,6 +827,59 @@ export default function DraftPage() {
         return result.slice(0, 500);
     }, [players, takenIds, searchTerm, filterType, filterPos, filterTeam, filterIdentity, sortConfig, playerStats, playerRankings]);
 
+    // Ordinal suffix helper: 1 -> "1st", 2 -> "2nd", 3 -> "3rd", etc.
+    const getOrdinal = (n) => {
+        const s = ['th', 'st', 'nd', 'rd'];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+
+    // Stats where lower value = better ranking (separated by player type)
+    const batterLowerIsBetter = new Set(['cs', 'k', 'gidp']);
+    const pitcherLowerIsBetter = new Set(['era', 'whip', 'bb/9', 'bb', 'er', 'ra', 'h/9', 'h', 'hbp', 'hr', 'ibb', 'l', 'obpa', 'rl']);
+
+    // Compute CPBL stat rankings for PA/IP-qualified players (top 60%)
+    const cpblStatRankings = useMemo(() => {
+        if (!playerStats || Object.keys(playerStats).length === 0) return {};
+
+        const allStats = Object.entries(playerStats);
+        const qualifyKey = filterType === 'batter' ? 'pa' : 'ip';
+        const categories = filterType === 'batter' ? batterStatCategories : pitcherStatCategories;
+        const lowerBetterSet = filterType === 'batter' ? batterLowerIsBetter : pitcherLowerIsBetter;
+
+        // Sort all players by PA/IP descending
+        const sorted = allStats
+            .filter(([_, s]) => s[qualifyKey] != null && Number(s[qualifyKey]) > 0)
+            .sort((a, b) => Number(b[1][qualifyKey]) - Number(a[1][qualifyKey]));
+
+        // Top 60% cutoff
+        const cutoff = Math.ceil(sorted.length * 0.6);
+        const qualifiedIds = new Set(sorted.slice(0, cutoff).map(([id]) => String(id)));
+
+        // For each scoring category, rank qualified players
+        const rankings = {}; // { player_id_string: { statAbbr: rank } }
+
+        categories.forEach(cat => {
+            const abbr = getStatAbbr(cat).toLowerCase();
+            const isLowerBetter = lowerBetterSet.has(abbr);
+
+            // Collect qualified players with valid (non-null) stat values
+            const entries = sorted
+                .filter(([id]) => qualifiedIds.has(String(id)))
+                .map(([id, s]) => ({ id: String(id), val: s[abbr] }))
+                .filter(e => e.val != null && e.val !== '' && !isNaN(Number(e.val)))
+                .map(e => ({ ...e, val: Number(e.val) }))
+                .sort((a, b) => isLowerBetter ? a.val - b.val : b.val - a.val);
+
+            entries.forEach((entry, idx) => {
+                if (!rankings[entry.id]) rankings[entry.id] = {};
+                rankings[entry.id][abbr] = idx + 1;
+            });
+        });
+
+        return rankings;
+    }, [playerStats, filterType, batterStatCategories, pitcherStatCategories]);
+
     // Helpers
     const getTeamAbbr = (team) => {
         switch (team) {
@@ -1432,9 +1485,15 @@ export default function DraftPage() {
                                                 {currentStatCats.map(cat => {
                                                     const val = getPlayerStat(player.player_id, cat);
                                                     const isForced = !baseStatCats.includes(cat);
+                                                    const statAbbr = getStatAbbr(cat).toLowerCase();
+                                                    const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
+
                                                     return (
-                                                        <td key={cat} className={`p-2 text-center text-xs font-mono ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
-                                                            {formatStat(val)}
+                                                        <td key={cat} className={`p-2 text-center text-xs font-mono py-2 ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
+                                                            <div>{formatStat(val)}</div>
+                                                            {rank && rank <= 15 && (
+                                                                <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)}</div>
+                                                            )}
                                                         </td>
                                                     );
                                                 })}
@@ -1730,9 +1789,9 @@ export default function DraftPage() {
                         </div>
 
                         {/* League Chat */}
-                        <LeagueChat 
-                            leagueId={leagueId} 
-                            managerId={myManagerId} 
+                        <LeagueChat
+                            leagueId={leagueId}
+                            managerId={myManagerId}
                             isCompact={true}
                             pollInterval={5000}
                             enablePolling={draftState?.status !== 'complete'}

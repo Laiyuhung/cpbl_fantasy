@@ -2055,7 +2055,7 @@ export default function PlayersPage() {
                           <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                             <div>{getPlayerStat(player.player_id, stat)}</div>
                             {rank && rank <= 15 && (
-                              <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)} in CPBL</div>
+                              <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)}</div>
                             )}
                           </td>
                         );
@@ -2068,7 +2068,7 @@ export default function PlayersPage() {
                           <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                             <div>{getPlayerStat(player.player_id, stat)}</div>
                             {rank && rank <= 15 && (
-                              <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)} in CPBL</div>
+                              <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)}</div>
                             )}
                           </td>
                         );
