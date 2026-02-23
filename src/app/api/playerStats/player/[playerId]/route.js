@@ -13,6 +13,7 @@ const TIME_WINDOWS = [
   'Last 14 Days',
   'Last 30 Days',
   '2026 Season',
+  '2026 Spring Training',
   '2025 Season'
 ];
 

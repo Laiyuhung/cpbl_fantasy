@@ -8,6 +8,7 @@ const TIME_WINDOWS = [
     'Last 14 Days',
     'Last 30 Days',
     '2026 Season',
+    '2026 Spring Training',
     '2025 Season'
 ];
 
@@ -351,8 +352,8 @@ export default function PlayerDetailModal({
                 onClick={handleWatchClick}
                 disabled={watchLoading}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg ${isWatched
-                        ? 'bg-amber-500 hover:bg-amber-400 text-white'
-                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-600'
+                    ? 'bg-amber-500 hover:bg-amber-400 text-white'
+                    : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-600'
                     }`}
                 title={isWatched ? 'Remove from Watchlist' : 'Add to Watchlist'}
             >
@@ -476,8 +477,8 @@ export default function PlayerDetailModal({
                         <button
                             onClick={() => setActiveTab('split')}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'split'
-                                    ? 'bg-purple-600 text-white shadow-lg'
-                                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                                ? 'bg-purple-600 text-white shadow-lg'
+                                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
                                 }`}
                         >
                             Split Stats
@@ -485,8 +486,8 @@ export default function PlayerDetailModal({
                         <button
                             onClick={() => setActiveTab('recent')}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'recent'
-                                    ? 'bg-purple-600 text-white shadow-lg'
-                                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                                ? 'bg-purple-600 text-white shadow-lg'
+                                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
                                 }`}
                         >
                             Recent Games

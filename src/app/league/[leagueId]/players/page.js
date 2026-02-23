@@ -1837,6 +1837,7 @@ export default function PlayersPage() {
                   <option value="Last 14 Days">Last 14 Days</option>
                   <option value="Last 30 Days">Last 30 Days</option>
                   <option value="2026 Season">2026 Season</option>
+                  <option value="2026 Spring Training">2026 Spring Training</option>
                   <option value="2025 Season">2025 Season</option>
                 </select>
               </div>

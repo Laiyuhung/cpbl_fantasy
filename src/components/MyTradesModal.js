@@ -321,6 +321,7 @@ export default function MyTradesModal({ isOpen, onClose, leagueId, managerId, me
                             <option value="last_14">Last 14 Days</option>
                             <option value="last_30">Last 30 Days</option>
                             <option value="2026 Season">2026 Season</option>
+                            <option value="2026 Spring Training">2026 Spring Training</option>
                             <option value="2025 Season">2025 Season</option>
                         </select>
                         <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
