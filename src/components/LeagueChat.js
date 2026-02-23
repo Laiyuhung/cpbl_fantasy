@@ -165,24 +165,27 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
                                 <div className="text-slate-500 text-sm text-center py-4">No messages yet</div>
                             ) : (
                                 messages.map((msg) => (
-                                    <div
-                                        key={msg.id}
-                                        className={`rounded-md px-2 py-1 ${getMessageTypeStyle(msg.message_type)} ${msg.message_type === 'chat'
+                                    <div key={msg.id} className={`flex w-full mb-1 ${msg.manager_id === managerId ? 'justify-end' : 'justify-start'}`}>
+                                        <div
+                                            className={`rounded-md px-2 py-1 w-fit max-w-[66%] break-words ${getMessageTypeStyle(msg.message_type)} ${msg.message_type === 'chat'
                                                 ? msg.manager_id === managerId
-                                                    ? 'bg-purple-600/30 ml-3'
-                                                    : 'bg-slate-700/50 mr-3'
-                                                : ''
-                                            }`}
-                                    >
-                                        {msg.message_type === 'chat' && (
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                                <span className={`text-xs font-bold ${msg.manager_id === managerId ? 'text-purple-300' : 'text-cyan-300'}`}>
-                                                    {getSenderName(msg)}
-                                                </span>
-                                                <span className="text-[10px] text-slate-500">{formatTime(msg.created_at)}</span>
-                                            </div>
-                                        )}
-                                        <p className="text-xs text-slate-200 break-words leading-snug">{msg.message}</p>
+                                                    ? 'bg-purple-600/30'
+                                                    : 'bg-slate-700/50'
+                                                : 'mx-auto w-full max-w-full'
+                                                }`}
+                                        >
+                                            {msg.message_type === 'chat' && (
+                                                <div className={`flex items-center gap-2 mb-0.5 ${msg.manager_id === managerId ? 'justify-end' : 'justify-start'}`}>
+                                                    <span className={`text-[10px] sm:text-xs font-bold ${msg.manager_id === managerId ? 'text-purple-300' : 'text-cyan-300'}`}>
+                                                        {getSenderName(msg)}
+                                                    </span>
+                                                    <span className="text-[9px] text-slate-500 whitespace-nowrap">{formatTime(msg.created_at)}</span>
+                                                </div>
+                                            )}
+                                            <p className={`text-xs text-slate-200 leading-snug whitespace-pre-wrap break-words ${msg.message_type === 'chat' && msg.manager_id === managerId ? 'text-right' : 'text-left'}`}>
+                                                {msg.message}
+                                            </p>
+                                        </div>
                                     </div>
                                 ))
                             )}
@@ -237,24 +240,27 @@ export default function LeagueChat({ leagueId, managerId, isCompact = false, cla
                     </div>
                 ) : (
                     messages.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`rounded-lg px-3 py-1.5 ${getMessageTypeStyle(msg.message_type)} ${msg.message_type === 'chat'
+                        <div key={msg.id} className={`flex w-full ${msg.manager_id === managerId ? 'justify-end' : 'justify-start'}`}>
+                            <div
+                                className={`rounded-lg px-3 py-1.5 w-fit max-w-[66%] break-words ${getMessageTypeStyle(msg.message_type)} ${msg.message_type === 'chat'
                                     ? msg.manager_id === managerId
-                                        ? 'bg-purple-600/20 border border-purple-500/30 ml-6'
-                                        : 'bg-slate-700/30 border border-slate-600/30 mr-6'
-                                    : ''
-                                }`}
-                        >
-                            {msg.message_type === 'chat' && (
-                                <div className="flex items-center justify-between mb-0.5">
-                                    <span className={`text-xs font-bold ${msg.manager_id === managerId ? 'text-purple-300' : 'text-cyan-300'}`}>
-                                        {getSenderName(msg)}
-                                    </span>
-                                    <span className="text-[10px] text-slate-500">{formatTime(msg.created_at)}</span>
-                                </div>
-                            )}
-                            <p className="text-sm text-slate-200 break-words leading-snug">{msg.message}</p>
+                                        ? 'bg-purple-600/20 border border-purple-500/30'
+                                        : 'bg-slate-700/30 border border-slate-600/30'
+                                    : 'mx-auto w-full max-w-full'
+                                    }`}
+                            >
+                                {msg.message_type === 'chat' && (
+                                    <div className={`flex items-center gap-2 mb-0.5 ${msg.manager_id === managerId ? 'justify-end' : 'justify-start'}`}>
+                                        <span className={`text-xs font-bold ${msg.manager_id === managerId ? 'text-purple-300' : 'text-cyan-300'}`}>
+                                            {getSenderName(msg)}
+                                        </span>
+                                        <span className="text-[10px] text-slate-500 whitespace-nowrap">{formatTime(msg.created_at)}</span>
+                                    </div>
+                                )}
+                                <p className={`text-sm text-slate-200 leading-snug whitespace-pre-wrap break-words ${msg.message_type === 'chat' && msg.manager_id === managerId ? 'text-right' : 'text-left'}`}>
+                                    {msg.message}
+                                </p>
+                            </div>
                         </div>
                     ))
                 )}
