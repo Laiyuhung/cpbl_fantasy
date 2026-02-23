@@ -49,6 +49,7 @@ export default function PlayersPage() {
   const [playerStats, setPlayerStats] = useState({}); // 球員統計數據
   const [fetchingStats, setFetchingStats] = useState(false); // 統計數據讀取中
   const [playerRankings, setPlayerRankings] = useState({}); // Z-score rankings
+  const [fetchingRankings, setFetchingRankings] = useState(false); // 排名讀取中
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeTargetManagerId, setTradeTargetManagerId] = useState(null);
   const [selectedMyPlayers, setSelectedMyPlayers] = useState([]);
@@ -378,6 +379,7 @@ export default function PlayersPage() {
   useEffect(() => {
     if (!timeWindow) return; // Wait for timeWindow to be set
     const fetchRankings = async () => {
+      setFetchingRankings(true);
       try {
         const res = await fetch(`/api/league/${leagueId}/rankings?time_window=${encodeURIComponent(timeWindow)}`);
         const data = await res.json();
@@ -390,6 +392,8 @@ export default function PlayersPage() {
         }
       } catch (e) {
         console.error('Failed to fetch rankings', e);
+      } finally {
+        setFetchingRankings(false);
       }
     };
     fetchRankings();
@@ -1966,7 +1970,7 @@ export default function PlayersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-500/10">
-                {fetchingStats ? (
+                {fetchingStats || fetchingRankings ? (
                   <tr>
                     <td colSpan={4 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)} className="px-6 py-24 text-center">
                       <div className="flex flex-col items-center justify-center gap-4">

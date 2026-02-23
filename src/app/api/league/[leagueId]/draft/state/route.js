@@ -6,9 +6,8 @@ const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// Helper: Pick Random Player
-// Helper: Pick Random Player
-async function getRandomAvailablePlayer(leagueId, excludePlayerIds = []) {
+// Helper: Pick Best Ranked Available Player
+async function getBestRankedAvailablePlayer(leagueId, excludePlayerIds = [], requestUrl = null) {
     const { data: taken } = await supabase
         .from('draft_picks')
         .select('player_id')
@@ -16,17 +15,45 @@ async function getRandomAvailablePlayer(leagueId, excludePlayerIds = []) {
         .not('player_id', 'is', null);
 
     const takenIds = taken ? taken.map(p => p.player_id) : [];
-    const allExcluded = [...takenIds, ...excludePlayerIds];
+    const allExcluded = new Set([...takenIds, ...excludePlayerIds]);
 
     const { data: allPlayers } = await supabase
         .from('player_list')
         .select('player_id')
-        .eq('available', true);  // Only select available players
+        .eq('available', true);
 
-    const validPlayers = allPlayers?.filter(p => !allExcluded.includes(p.player_id)) || [];
-
+    const validPlayers = allPlayers?.filter(p => !allExcluded.has(p.player_id)) || [];
     if (validPlayers.length === 0) return null;
 
+    // To get the best ranked player, we fetch the dynamic rankings for this league
+    // Need absolute URL for fetch inside server action if URL is provided
+    try {
+        let rankingsUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/league/${leagueId}/rankings`;
+        if (requestUrl) {
+            const parsedUrl = new URL(requestUrl);
+            rankingsUrl = `${parsedUrl.origin}/api/league/${leagueId}/rankings`;
+        }
+
+        const res = await fetch(rankingsUrl, { cache: 'no-store' });
+        const data = await res.json();
+
+        if (data.success && data.rankings && data.rankings.length > 0) {
+            // Rankings is sorted by rank ascending (1st is index 0)
+            const rankedIds = data.rankings.map(r => r.player_id);
+
+            // Find the first valid player in the sorted rankings list
+            for (const pid of rankedIds) {
+                // Confirm they are actually in our available pool
+                if (validPlayers.some(vp => vp.player_id === pid)) {
+                    return pid;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('[Draft AutoPick] Failed to fetch rankings for fallback, using random fallback', e);
+    }
+
+    // Ultimate fallback if rankings fetch fails or no valid players were in the ranking list
     const randomIndex = Math.floor(Math.random() * validPlayers.length);
     return validPlayers[randomIndex].player_id;
 }
@@ -301,10 +328,10 @@ export async function GET(request, { params }) {
                     }
                 }
 
-                // 2. Random Fallback
+                // 2. Ranking Fallback
                 if (!pickedPlayerId) {
                     const exclusions = excludeForeigners ? Array.from(foreignIds) : [];
-                    pickedPlayerId = await getRandomAvailablePlayer(leagueId, exclusions);
+                    pickedPlayerId = await getBestRankedAvailablePlayer(leagueId, exclusions, request.url);
                 }
 
                 if (pickedPlayerId) {
