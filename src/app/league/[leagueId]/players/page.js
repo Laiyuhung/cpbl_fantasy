@@ -593,8 +593,9 @@ export default function PlayersPage() {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   };
 
-  // Stats where lower value = better ranking
-  const lowerIsBetterStats = new Set(['era', 'whip', 'bb', 'h', 'er', 'hr', 'l', 'bs']);
+  // Stats where lower value = better ranking (separated by player type)
+  const batterLowerIsBetter = new Set(['cs', 'k', 'gidp']);
+  const pitcherLowerIsBetter = new Set(['era', 'whip', 'bb/9', 'bb', 'er', 'ra', 'h/9', 'h', 'hbp', 'hr', 'ibb', 'l', 'obpa', 'rl']);
 
   // Compute CPBL stat rankings for PA/IP-qualified players (top 60%)
   const cpblStatRankings = useMemo(() => {
@@ -603,6 +604,7 @@ export default function PlayersPage() {
     const allStats = Object.entries(playerStats);
     const qualifyKey = filterType === 'batter' ? 'pa' : 'ip';
     const categories = filterType === 'batter' ? batterStatCategories : pitcherStatCategories;
+    const lowerBetterSet = filterType === 'batter' ? batterLowerIsBetter : pitcherLowerIsBetter;
 
     // Sort all players by PA/IP descending
     const sorted = allStats
@@ -611,20 +613,21 @@ export default function PlayersPage() {
 
     // Top 60% cutoff
     const cutoff = Math.ceil(sorted.length * 0.6);
-    const qualifiedIds = new Set(sorted.slice(0, cutoff).map(([id]) => id));
+    const qualifiedIds = new Set(sorted.slice(0, cutoff).map(([id]) => String(id)));
 
     // For each scoring category, rank qualified players
-    const rankings = {}; // { player_id: { statAbbr: rank } }
+    const rankings = {}; // { player_id_string: { statAbbr: rank } }
 
     categories.forEach(cat => {
       const abbr = getStatAbbr(cat).toLowerCase();
-      const isLowerBetter = lowerIsBetterStats.has(abbr);
+      const isLowerBetter = lowerBetterSet.has(abbr);
 
-      // Collect qualified players with valid stat values
+      // Collect qualified players with valid (non-null) stat values
       const entries = sorted
-        .filter(([id]) => qualifiedIds.has(id))
-        .map(([id, s]) => ({ id, val: Number(s[abbr]) || 0 }))
-        .filter(e => e.val !== 0 || !isLowerBetter) // keep 0s for counting stats
+        .filter(([id]) => qualifiedIds.has(String(id)))
+        .map(([id, s]) => ({ id: String(id), val: s[abbr] }))
+        .filter(e => e.val != null && e.val !== '' && !isNaN(Number(e.val)))
+        .map(e => ({ ...e, val: Number(e.val) }))
         .sort((a, b) => isLowerBetter ? a.val - b.val : b.val - a.val);
 
       entries.forEach((entry, idx) => {
@@ -633,8 +636,6 @@ export default function PlayersPage() {
       });
     });
 
-    // Also store qualified set for quick lookup
-    rankings._qualifiedIds = qualifiedIds;
     return rankings;
   }, [playerStats, filterType, batterStatCategories, pitcherStatCategories]);
 
@@ -1975,8 +1976,8 @@ export default function PlayersPage() {
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
                                 className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${watchedPlayerIds.has(player.player_id)
-                                    ? 'bg-amber-500 text-white hover:bg-amber-400'
-                                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
+                                  ? 'bg-amber-500 text-white hover:bg-amber-400'
+                                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
                                   }`}
                                 title={watchedPlayerIds.has(player.player_id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
                               >
@@ -2049,11 +2050,11 @@ export default function PlayersPage() {
                       {filterType === 'batter' && displayBatterCats.map((stat) => {
                         const isForced = !batterStatCategories.includes(stat);
                         const statAbbr = getStatAbbr(stat).toLowerCase();
-                        const rank = !isForced && cpblStatRankings[player.player_id]?.[statAbbr];
+                        const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
                         return (
                           <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                             <div>{getPlayerStat(player.player_id, stat)}</div>
-                            {rank && (
+                            {rank && rank <= 15 && (
                               <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)} in CPBL</div>
                             )}
                           </td>
@@ -2062,11 +2063,11 @@ export default function PlayersPage() {
                       {filterType === 'pitcher' && displayPitcherCats.map((stat) => {
                         const isForced = !pitcherStatCategories.includes(stat);
                         const statAbbr = getStatAbbr(stat).toLowerCase();
-                        const rank = !isForced && cpblStatRankings[player.player_id]?.[statAbbr];
+                        const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
                         return (
                           <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                             <div>{getPlayerStat(player.player_id, stat)}</div>
-                            {rank && (
+                            {rank && rank <= 15 && (
                               <div className="text-[9px] text-amber-400/80 font-sans mt-0.5">{getOrdinal(rank)} in CPBL</div>
                             )}
                           </td>
