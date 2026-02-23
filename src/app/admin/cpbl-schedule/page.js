@@ -93,13 +93,7 @@ export default function CpblScheduleAdmin() {
             gameDate.setDate(gameDate.getDate() + i);
             const dateStr = gameDate.toISOString().split('T')[0];
 
-            const day = gameDate.getDay();
-            let defaultTime = config.time;
-            if (day === 0 || day === 6) {
-                defaultTime = '17:05';
-            } else {
-                defaultTime = '18:35';
-            }
+            const defaultTime = config.time;
 
             generatedGames.push({
                 date: dateStr,
