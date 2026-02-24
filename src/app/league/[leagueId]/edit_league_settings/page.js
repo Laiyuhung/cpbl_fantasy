@@ -155,7 +155,7 @@ const settingOptions = {
   ],
   'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 3 weeks'],
   'Playoffs start': ['2026.8.24', '2026.8.31', '2026.9.7', '2026.9.14', '2026.9.21'],
-  'Playoff/ranking Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
+  'Playoff/ranking Tie-Breaker': ['Higher seed wins', 'Head-to-head'],
   'Playoff Reseeding': ['Yes', 'No'],
   'Lock Eliminated Teams': ['Yes', 'No'],
   'Make League Publicly Viewable': ['Yes', 'No'],
@@ -1733,9 +1733,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                       }`}
                                   >
                                     {(() => {
-                                      const options = key === 'Playoff/ranking Tie-Breaker' && settings.playoffs['Playoffs'] === 'No playoffs'
-                                        ? (settingOptions[key] || []).filter((o) => o !== 'Better record wins')
-                                        : settingOptions[key];
+                                      const options = settingOptions[key];
                                       return options?.map((option) => (
                                         <option key={option} value={option}>
                                           {option}
