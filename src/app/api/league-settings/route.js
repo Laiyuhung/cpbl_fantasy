@@ -109,9 +109,6 @@ const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsType) => 
       playoffLabels = ['Semifinal', 'Final'];
     } else if (playoffTeams >= 5 && playoffTeams <= 8) {
       playoffLabels = ['Quarterfinal', 'Semifinal', 'Final'];
-      if (playoffWeeks === 4) {
-        playoffLabels.unshift('First Round');
-      }
     }
 
     // 在季后赛前插入补赛周

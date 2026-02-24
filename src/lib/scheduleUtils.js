@@ -4,7 +4,7 @@ export const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsTy
   const maxWeeks = 23; // 总共可用周次（week_id 1-23）
   const reservedWeek = 23; // 保留周（补赛周）
   const maxRegularAndPlayoff = 21; // 例行赛+季后赛不能超过21周（留1周给补赛）
-  
+
   // 解析日期 (格式: YYYY.M.D)
   const parseDate = (dateStr) => {
     if (!dateStr) return null;
@@ -64,9 +64,6 @@ export const generateLeagueSchedule = (startScoringOn, playoffsStart, playoffsTy
       playoffLabels = ['Semifinal', 'Final'];
     } else if (playoffTeams >= 5 && playoffTeams <= 8) {
       playoffLabels = ['Quarterfinal', 'Semifinal', 'Final'];
-      if (playoffWeeks === 4) {
-        playoffLabels.unshift('First Round');
-      }
     }
 
     // 在季后赛前插入补赛周

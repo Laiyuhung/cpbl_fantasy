@@ -153,7 +153,7 @@ const settingOptions = {
     'Hits Per Nine Innings (H/9)',
     'On-base Percentage Against (OBPA)',
   ],
-  'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 4 weeks'],
+  'Playoffs': ['2 teams - 1 week', '4 teams - 2 weeks', '6 teams - 3 weeks', '8 teams - 3 weeks'],
   'Playoffs start': ['2026.8.24', '2026.8.31', '2026.9.7', '2026.9.14', '2026.9.21'],
   'Playoff/ranking Tie-Breaker': ['Higher seed wins', 'Better record wins', 'Head-to-head'],
   'Playoff Reseeding': ['Yes', 'No'],
@@ -304,7 +304,7 @@ function SchedulePreview({ leagueId, settings, onValidationChange, onScheduleCha
       } else if (playoffTeams === 6) {
         playoffLabels = ['Quarterfinal', 'Semifinal', 'Final'];
       } else if (playoffTeams >= 8) {
-        playoffLabels = ['First Round', 'Quarterfinal', 'Semifinal', 'Final'];
+        playoffLabels = ['Quarterfinal', 'Semifinal', 'Final'];
       }
     }
 
