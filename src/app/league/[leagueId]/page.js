@@ -1032,24 +1032,39 @@ export default function LeaguePage() {
 
           {/* STANDINGS Section */}
           <div className="mt-12">
-            {/* Tie-Break Rules Collapsible */}
-            <div className="mb-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2 h-6 bg-cyan-500 rounded-full"></span>
+                Standings
+              </h2>
               <button
-                onClick={() => setShowTieBreakRules(!showTieBreakRules)}
-                className="flex items-center gap-2 text-sm font-bold text-purple-300 hover:text-purple-200 transition-colors group"
+                onClick={() => setShowTieBreakRules(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all bg-slate-800/60 text-slate-400 border-white/10 hover:bg-purple-500/20 hover:text-purple-300 hover:border-purple-500/30"
               >
-                <svg
-                  className={`w-4 h-4 transition-transform duration-200 ${showTieBreakRules ? 'rotate-90' : ''}`}
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="group-hover:underline">📋 Playoff Tie-Break Rules</span>
+                Tie-Break Rules
               </button>
-              {showTieBreakRules && (
-                <div className="mt-3 p-4 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-purple-500/20 rounded-xl text-sm space-y-3 animate-fadeIn">
-                  <p className="text-purple-200 font-semibold mb-2">When two or more teams are tied in the standings, the following steps are used to break the tie:</p>
-                  <div className="space-y-2">
+            </div>
+
+            {/* Tie-Break Rules Modal */}
+            {showTieBreakRules && (
+              <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowTieBreakRules(false)}>
+                <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold text-white">Tie-Break Rules</h3>
+                    <button
+                      onClick={() => setShowTieBreakRules(false)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="text-purple-200 text-sm mb-4">When two or more teams are tied in the standings, the following steps are used:</p>
+                  <div className="space-y-3 text-sm">
                     <div className="flex gap-3">
                       <span className="text-purple-400 font-black min-w-[24px]">1.</span>
                       <span className="text-slate-300">
@@ -1070,14 +1085,17 @@ export default function LeaguePage() {
                       <span className="text-slate-300">If still tied, determined by random draw.</span>
                     </div>
                   </div>
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={() => setShowTieBreakRules(false)}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all font-medium shadow-lg"
+                    >
+                      Got it
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-
-            <h2 className="text-xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-2 h-6 bg-cyan-500 rounded-full"></span>
-              Standings
-            </h2>
+              </div>
+            )}
 
             {standingsLoading ? (
               <div className="w-full h-48 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
