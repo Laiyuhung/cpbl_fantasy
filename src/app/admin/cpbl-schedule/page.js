@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 
@@ -330,7 +330,7 @@ export default function CpblScheduleAdmin() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6 mt-4">
+                            <div className="flex flex-wrap items-center gap-4 md:gap-6 mt-4">
                                 <div className="flex items-center gap-3">
                                     <input
                                         type="checkbox"
@@ -376,7 +376,7 @@ export default function CpblScheduleAdmin() {
                             <button onClick={handleReset} className="text-sm text-red-400 hover:text-red-300">Clear All</button>
                         </div>
                         {games.map((game, idx) => (
-                            <div key={idx} className="bg-slate-800 rounded-xl p-4 shadow-md border border-slate-700 flex flex-wrap gap-4 items-end">
+                            <div key={idx} className="bg-slate-800 rounded-xl p-4 shadow-md border border-slate-700 grid grid-cols-2 sm:flex sm:flex-wrap gap-3 md:gap-4 items-end">
                                 <div>
                                     <label className="block text-xs text-slate-400 mb-1">Date</label>
                                     <input
@@ -459,7 +459,7 @@ export default function CpblScheduleAdmin() {
             </div>
 
             {/* SIDEBAR (Existing Schedule) - Right Side */}
-            <div className="w-full md:w-96 bg-slate-800 p-4 rounded-xl border border-slate-700 h-fit max-h-[calc(100vh-2rem)] overflow-y-auto ml-auto">
+            <div className="w-full md:w-96 bg-slate-800 p-4 rounded-xl border border-slate-700 h-fit max-h-[calc(100vh-2rem)] overflow-y-auto md:ml-auto">
                 {/* ... Header ... */}
                 <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-700">
                     <h3 className="text-lg font-bold text-white">Recent Games</h3>
