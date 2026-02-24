@@ -304,6 +304,7 @@ export default function LeaguePage() {
   const [transLoading, setTransLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('transactions'); // 'transactions' | 'waivers'
   const [viewAll, setViewAll] = useState(false);
+  const [showTieBreakRules, setShowTieBreakRules] = useState(false);
   const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
   // Watch state
@@ -778,12 +779,12 @@ export default function LeaguePage() {
             </h1>
             <div className="flex items-center gap-2 mt-2">
               <span className={`px-3 py-0.5 rounded-full text-xs font-bold border shadow-lg ${leagueStatus === 'pre-draft' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-                  leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
-                    leagueStatus === 'drafting now' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30 animate-pulse' :
-                      leagueStatus === 'in season' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
-                        leagueStatus === 'playoffs' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
-                          leagueStatus === 'finished' ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' :
-                            'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                leagueStatus === 'post-draft & pre-season' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+                  leagueStatus === 'drafting now' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30 animate-pulse' :
+                    leagueStatus === 'in season' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                      leagueStatus === 'playoffs' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                        leagueStatus === 'finished' ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' :
+                          'bg-gray-500/20 text-gray-300 border-gray-500/30'
                 }`}>
                 {leagueStatus === 'pre-draft' ? 'Pre-Draft' :
                   leagueStatus === 'post-draft & pre-season' ? 'Post-Draft & Pre-Season' :
@@ -1031,6 +1032,48 @@ export default function LeaguePage() {
 
           {/* STANDINGS Section */}
           <div className="mt-12">
+            {/* Tie-Break Rules Collapsible */}
+            <div className="mb-4">
+              <button
+                onClick={() => setShowTieBreakRules(!showTieBreakRules)}
+                className="flex items-center gap-2 text-sm font-bold text-purple-300 hover:text-purple-200 transition-colors group"
+              >
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${showTieBreakRules ? 'rotate-90' : ''}`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                <span className="group-hover:underline">📋 Playoff Tie-Break Rules</span>
+              </button>
+              {showTieBreakRules && (
+                <div className="mt-3 p-4 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-purple-500/20 rounded-xl text-sm space-y-3 animate-fadeIn">
+                  <p className="text-purple-200 font-semibold mb-2">When two or more teams are tied in the standings, the following steps are used to break the tie:</p>
+                  <div className="space-y-2">
+                    <div className="flex gap-3">
+                      <span className="text-purple-400 font-black min-w-[24px]">1.</span>
+                      <span className="text-slate-300">
+                        {leagueSettings?.scoring_type === 'Head-to-Head Fantasy Points'
+                          ? 'Compare regular season head-to-head record (wins/losses). If still tied, compare total fantasy points scored in head-to-head matchups.'
+                          : leagueSettings?.scoring_type === 'Head-to-Head One Win'
+                            ? 'Compare regular season head-to-head record (wins/losses). If still tied, compare total matchup scores in head-to-head matchups (e.g., 8:6 + 2:5 → total 10:11, the higher total wins).'
+                            : 'Compare regular season head-to-head matchup score (total category wins).'
+                        }
+                      </span>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-purple-400 font-black min-w-[24px]">2.</span>
+                      <span className="text-slate-300">If still tied, compare last week&apos;s net score (own score minus opponent&apos;s score).</span>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-purple-400 font-black min-w-[24px]">3.</span>
+                      <span className="text-slate-300">If still tied, determined by random draw.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <h2 className="text-xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2">
               <span className="w-2 h-6 bg-cyan-500 rounded-full"></span>
               Standings
