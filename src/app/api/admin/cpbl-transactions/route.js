@@ -5,23 +5,15 @@ import supabase from '@/lib/supabase'
  * 中文 action → enum_transaction_type 對應表
  */
 const ACTION_MAP = {
-    '新登錄': 'NEW_REGISTRATION',
-    '登錄': 'NEW_REGISTRATION',
+    '新註冊': 'NEW_REGISTRATION',
     '升一軍': 'PROMOTION',
-    '升': 'PROMOTION',
     '降二軍': 'DEMOTION',
-    '降': 'DEMOTION',
-    '註銷': 'DEREGISTERED',
+    '註冊註銷': 'DEREGISTERED',
     '除役': 'DEREGISTERED',
 }
 
 const TEAM_VARIANTS = {
-    '統一獅': ['統一7-ELEVEn獅', '統一7-eleven獅', '統一7-11獅', '統一獅', '統一'],
-    '中信兄弟': ['中信兄弟', '兄弟'],
-    '樂天桃猿': ['樂天桃猿', '桃猿', '樂天'],
-    '富邦悍將': ['富邦悍將', '悍將', '富邦'],
-    '味全龍': ['味全龍', '味全'],
-    '台鋼雄鷹': ['台鋼雄鷹', '雄鷹', '台鋼'],
+    '統一獅': ['統一7-ELEVEn獅', '統一7-eleven獅', '統一7-11獅'],
 }
 
 function normalizeTeam(rawTeam) {

@@ -4,12 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 const TEAM_VARIANTS = {
-    '統一獅': ['統一7-ELEVEn獅', '統一7-eleven獅', '統一7-11獅', '統一獅', '統一'],
-    '中信兄弟': ['中信兄弟', '兄弟'],
-    '樂天桃猿': ['樂天桃猿', '桃猿', '樂天'],
-    '富邦悍將': ['富邦悍將', '悍將', '富邦'],
-    '味全龍': ['味全龍', '味全'],
-    '台鋼雄鷹': ['台鋼雄鷹', '雄鷹', '台鋼'],
+    '統一獅': ['統一7-ELEVEn獅', '統一7-eleven獅', '統一7-11獅'],
 }
 
 function normalizeTeam(rawTeam) {
@@ -234,8 +229,8 @@ export default function CpblTransactionsPage() {
                 {message.text && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                         <div className={`relative max-w-lg w-full mx-4 p-8 rounded-2xl shadow-2xl ${message.type === 'success'
-                                ? 'bg-gradient-to-br from-green-900 to-green-800 border-2 border-green-400'
-                                : 'bg-gradient-to-br from-red-900 to-red-800 border-2 border-red-400'
+                            ? 'bg-gradient-to-br from-green-900 to-green-800 border-2 border-green-400'
+                            : 'bg-gradient-to-br from-red-900 to-red-800 border-2 border-red-400'
                             }`}>
                             <div className="text-center">
                                 <div className={`text-6xl mb-4 ${message.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
@@ -247,8 +242,8 @@ export default function CpblTransactionsPage() {
                                 <button
                                     onClick={() => setMessage({ type: '', text: '' })}
                                     className={`px-6 py-2 rounded-lg font-semibold transition-colors ${message.type === 'success'
-                                            ? 'bg-green-500 hover:bg-green-600 text-white'
-                                            : 'bg-red-500 hover:bg-red-600 text-white'
+                                        ? 'bg-green-500 hover:bg-green-600 text-white'
+                                        : 'bg-red-500 hover:bg-red-600 text-white'
                                         }`}
                                 >
                                     確認
@@ -303,8 +298,8 @@ export default function CpblTransactionsPage() {
                         onClick={handleSubmit}
                         disabled={loading || validCount === 0}
                         className={`px-8 py-3 rounded-lg font-bold text-white transition-all ${loading || validCount === 0
-                                ? 'bg-slate-600 cursor-not-allowed opacity-50'
-                                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 shadow-lg hover:shadow-purple-500/25'
+                            ? 'bg-slate-600 cursor-not-allowed opacity-50'
+                            : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 shadow-lg hover:shadow-purple-500/25'
                             }`}
                     >
                         {loading ? '處理中...' : `送出升降異動 (${validCount} 筆)`}
