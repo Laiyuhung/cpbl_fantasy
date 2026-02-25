@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 export default function StatsEntryPage() {
   const router = useRouter()
-  
+
   // Get Taiwan today's date
   const getTaiwanToday = () => {
     const now = new Date()
@@ -13,13 +13,13 @@ export default function StatsEntryPage() {
     const taiwanTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + taiwanOffset)
     return taiwanTime.toISOString().split('T')[0]
   }
-  
+
   // Common states
   const [date, setDate] = useState(getTaiwanToday())
   const [isAdmin, setIsAdmin] = useState(false)
   const [checkingAdmin, setCheckingAdmin] = useState(true)
-  const [playerMap, setPlayerMap] = useState({}) // name -> player_id
-  
+  const [playerMap, setPlayerMap] = useState({}) // name -> [{player_id, team}]
+
   // Games for date (ALL games, both major and minor)
   const [gamesForDate, setGamesForDate] = useState([])
   const [fetchingGames, setFetchingGames] = useState(false)
@@ -35,7 +35,7 @@ export default function StatsEntryPage() {
   const [battingPreview, setBattingPreview] = useState([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
-  
+
   // Entry log - track which teams have been logged
   const [entryLog, setEntryLog] = useState([]) // { game_uuid, team }[]
   const [detectedMinor, setDetectedMinor] = useState(false) // true if "二軍" detected
@@ -73,13 +73,13 @@ export default function StatsEntryPage() {
       try {
         const res = await fetch('/api/admin/check')
         const data = await res.json()
-        
+
         if (!data.isAdmin) {
           alert('You do not have admin privileges')
           router.push('/home')
           return
         }
-        
+
         setIsAdmin(true)
       } catch (err) {
         console.error('Failed to check admin status:', err)
@@ -93,6 +93,19 @@ export default function StatsEntryPage() {
   }, [router])
 
   // Fetch all players for name matching
+  // Resolve player_id by name + team (handles same-name players)
+  const resolvePlayerId = (name, team) => {
+    const entries = playerMap[name]
+    if (!entries || entries.length === 0) return null
+    if (entries.length === 1) return entries[0].player_id
+    // Multiple entries: try team match first
+    if (team) {
+      const match = entries.find(e => e.team === team)
+      if (match) return match.player_id
+    }
+    return entries[0].player_id // fallback to first
+  }
+
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
@@ -101,7 +114,8 @@ export default function StatsEntryPage() {
         if (data.success && data.players) {
           const map = {}
           data.players.forEach(p => {
-            map[p.name] = p.player_id
+            if (!map[p.name]) map[p.name] = []
+            map[p.name].push({ player_id: p.player_id, team: p.team })
           })
           setPlayerMap(map)
         }
@@ -126,7 +140,7 @@ export default function StatsEntryPage() {
           setSelectedGameUuid('')
           setAwayScore('')
           setHomeScore('')
-          
+
           // Fetch entry log for this date
           const logRes = await fetch(`/api/admin/stats-entry-log?date=${date}`)
           const logData = await logRes.json()
@@ -207,7 +221,7 @@ export default function StatsEntryPage() {
     const firstLine = lines[0]
     const detectedTeamName = detectTeam(firstLine)
     setDetectedTeam(detectedTeamName || '')
-    
+
     // Detect if minor league from header (contains "二軍")
     const isMinorLeague = firstLine.includes('二軍')
     setDetectedMinor(isMinorLeague)
@@ -255,15 +269,15 @@ export default function StatsEntryPage() {
     const pitchingData = pitchingLines.map(line => {
       line = line.replace(/（/g, '(').replace(/）/g, ')')
       const parts = line.split(/\s+/)
-      
+
       // Skip if not starting with number (sequence)
       if (isNaN(parseInt(parts[0]))) return null
-      
+
       const sequence = parseInt(parts[0]) || 0
       let name = (parts[1] || '').replace(/[*#◎]/g, '')
       let record = null
       let statStart = 2
-      
+
       if (parts[2] && /^\(.*\)$/.test(parts[2])) {
         // Handle formats like (W,5-2) or (W) - extract first part before comma
         let rawRecord = parts[2].replace(/[()]/g, '').split(',')[0].toUpperCase()
@@ -274,10 +288,10 @@ export default function StatsEntryPage() {
         record = validRecords.includes(rawRecord) ? rawRecord : null
         statStart = 3
       }
-      
+
       const stats = parts.slice(statStart).map(p => p.replace(/[()]/g, ''))
       while (stats.length < 17) stats.push('0')
-      
+
       const toInt = val => parseInt(val) || 0
       const toFloat = val => parseFloat(val) || 0
 
@@ -303,7 +317,7 @@ export default function StatsEntryPage() {
         errors: toInt(stats[14]),
         era: toFloat(stats[15]),
         whip: toFloat(stats[16]),
-        player_id: playerMap[name] || null
+        player_id: resolvePlayerId(name, detectedTeamName) || null
       }
     }).filter(p => p !== null)
 
@@ -311,9 +325,9 @@ export default function StatsEntryPage() {
     const battingData = battingLines.map(line => {
       line = line.replace(/（0）/g, '0').replace(/（/g, '(').replace(/）/g, ')')
       const parts = line.split(/\s+/)
-      
+
       let name, rawPos, stats
-      
+
       if (!isNaN(parts[0])) {
         name = (parts[1] || '').replace(/[*#◎]/g, '')
         rawPos = parts[2]
@@ -327,7 +341,7 @@ export default function StatsEntryPage() {
       if (!name) return null
 
       const position = extractPositions(rawPos)
-      
+
       const toInt = val => parseInt(val) || 0
       const toFloat = val => parseFloat(val) || 0
 
@@ -352,7 +366,7 @@ export default function StatsEntryPage() {
         caught_stealing: toInt(stats[15]),
         errors: toInt(stats[16]),
         avg: toFloat(stats[17]),
-        player_id: playerMap[name] || null
+        player_id: resolvePlayerId(name, detectedTeamName) || null
       }
     }).filter(p => p !== null)
 
@@ -369,7 +383,7 @@ export default function StatsEntryPage() {
   const getIsMajor = () => {
     // If detected minor league from header (二軍), always return false
     if (detectedMinor) return false
-    
+
     // Otherwise check selected game
     if (!selectedGameUuid) return true
     const game = gamesForDate.find(g => g.uuid === selectedGameUuid)
@@ -450,7 +464,7 @@ export default function StatsEntryPage() {
       if (pitchingPreview.length > 0) {
         // complete_game = 1 if only one pitcher, else 0
         const isCompleteGame = pitchingPreview.length === 1 ? 1 : 0
-        
+
         const pitchingRes = await fetch('/api/pitching-insert', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -519,21 +533,21 @@ export default function StatsEntryPage() {
             })
           })
         }
-        
+
         setMessage({ type: 'success', text: `✅ 成功插入: ${results.join(', ')}` })
         setStatsText('')
         setPitchingPreview([])
         setBattingPreview([])
         setDetectedTeam('')
         setDetectedMinor(false)
-        
+
         // Refresh games and entry log
         const gamesRes = await fetch(`/api/admin/cpbl-schedule?date=${date}`)
         const gamesData = await gamesRes.json()
         if (gamesData.success) {
           setGamesForDate(gamesData.data)
         }
-        
+
         const logRes = await fetch(`/api/admin/stats-entry-log?date=${date}`)
         const logData = await logRes.json()
         if (logData.success) {
@@ -575,7 +589,7 @@ export default function StatsEntryPage() {
       const scoreData = await scoreRes.json()
       if (scoreData.success) {
         setMessage({ type: 'success', text: '✅ 比分已更新' })
-        
+
         // Refresh games
         const gamesRes = await fetch(`/api/admin/cpbl-schedule?date=${date}`)
         const gamesData = await gamesRes.json()
@@ -597,12 +611,12 @@ export default function StatsEntryPage() {
   // Separate games by league
   const majorGames = gamesForDate.filter(g => g.major_game !== false)
   const minorGames = gamesForDate.filter(g => g.major_game === false)
-  
+
   // Helper to check if a team is logged for a game
   const isTeamLogged = (gameUuid, team) => {
     return entryLog.some(log => log.game_uuid === gameUuid && log.team === team)
   }
-  
+
   // Get pending teams for display
   const getPendingTeams = () => {
     const pending = []
@@ -616,7 +630,7 @@ export default function StatsEntryPage() {
     })
     return pending
   }
-  
+
   const pendingTeams = getPendingTeams()
 
   if (checkingAdmin) {
@@ -652,11 +666,10 @@ export default function StatsEntryPage() {
         {/* Message Modal - Centered */}
         {message.text && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className={`relative max-w-md w-full mx-4 p-8 rounded-2xl shadow-2xl transform animate-bounce-in ${
-              message.type === 'success' 
-                ? 'bg-gradient-to-br from-green-900 to-green-800 border-2 border-green-400' 
+            <div className={`relative max-w-md w-full mx-4 p-8 rounded-2xl shadow-2xl transform animate-bounce-in ${message.type === 'success'
+                ? 'bg-gradient-to-br from-green-900 to-green-800 border-2 border-green-400'
                 : 'bg-gradient-to-br from-red-900 to-red-800 border-2 border-red-400'
-            }`}>
+              }`}>
               <div className="text-center">
                 <div className={`text-6xl mb-4 ${message.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
                   {message.type === 'success' ? '✓' : '✗'}
@@ -666,11 +679,10 @@ export default function StatsEntryPage() {
                 </div>
                 <button
                   onClick={() => setMessage({ type: '', text: '' })}
-                  className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-                    message.type === 'success'
+                  className={`px-6 py-2 rounded-lg font-semibold transition-colors ${message.type === 'success'
                       ? 'bg-green-500 hover:bg-green-600 text-white'
                       : 'bg-red-500 hover:bg-red-600 text-white'
-                  }`}
+                    }`}
                 >
                   確認
                 </button>
@@ -712,7 +724,7 @@ export default function StatsEntryPage() {
             <label className="block text-purple-300 text-sm font-semibold mb-2">
               {date} 當日比賽 {fetchingGames && '(載入中...)'}
             </label>
-            
+
             {gamesForDate.length === 0 ? (
               <p className="text-slate-400 text-sm">當日無比賽</p>
             ) : (
@@ -728,18 +740,17 @@ export default function StatsEntryPage() {
                         const isDetectedGame = detectedTeam && (game.away === detectedTeam || game.home === detectedTeam)
                         const awayLogged = isTeamLogged(game.uuid, game.away)
                         const homeLogged = isTeamLogged(game.uuid, game.home)
-                        
+
                         return (
                           <div
                             key={game.uuid}
                             onClick={() => setSelectedGameUuid(isSelected ? '' : game.uuid)}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'bg-purple-600/30 border-purple-400' 
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected
+                                ? 'bg-purple-600/30 border-purple-400'
                                 : isDetectedGame
                                   ? 'bg-blue-600/20 border-blue-400/50 hover:bg-blue-600/30'
                                   : 'bg-slate-800/50 border-slate-600 hover:border-purple-400/50'
-                            }`}
+                              }`}
                           >
                             <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
                               <span>#{game.game_no}</span>
@@ -774,18 +785,17 @@ export default function StatsEntryPage() {
                         const isDetectedGame = detectedTeam && (game.away === detectedTeam || game.home === detectedTeam)
                         const awayLogged = isTeamLogged(game.uuid, game.away)
                         const homeLogged = isTeamLogged(game.uuid, game.home)
-                        
+
                         return (
                           <div
                             key={game.uuid}
                             onClick={() => setSelectedGameUuid(isSelected ? '' : game.uuid)}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'bg-purple-600/30 border-purple-400' 
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected
+                                ? 'bg-purple-600/30 border-purple-400'
                                 : isDetectedGame
                                   ? 'bg-orange-600/20 border-orange-400/50 hover:bg-orange-600/30'
                                   : 'bg-slate-800/50 border-slate-600 hover:border-purple-400/50'
-                            }`}
+                              }`}
                           >
                             <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
                               <span>#{game.game_no}</span>

@@ -16,13 +16,13 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/admin/check')
       const data = await res.json()
-      
+
       if (!data.isAdmin) {
         alert('You do not have admin privileges')
         router.push('/home')
         return
       }
-      
+
       setIsAdmin(true)
     } catch (err) {
       console.error('Failed to check admin status:', err)
@@ -55,7 +55,7 @@ export default function AdminPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* 球员管理 */}
-          <div 
+          <div
             onClick={() => router.push('/admin/player_manage')}
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
           >
@@ -69,7 +69,7 @@ export default function AdminPage() {
           </div>
 
           {/* CPBL Schedule */}
-          <div 
+          <div
             onClick={() => router.push('/admin/cpbl-schedule')}
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
           >
@@ -83,7 +83,7 @@ export default function AdminPage() {
           </div>
 
           {/* Stats Entry */}
-          <div 
+          <div
             onClick={() => router.push('/admin/stats-entry')}
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
           >
@@ -96,15 +96,18 @@ export default function AdminPage() {
             <p className="text-gray-600">Bulk insert pitching & batting statistics</p>
           </div>
 
-          {/* 未来功能预留位 */}
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 opacity-50">
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg mb-4">
-              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          {/* CPBL 升降登錄 */}
+          <div
+            onClick={() => router.push('/admin/cpbl-transactions')}
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
+          >
+            <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mb-4">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">System Settings</h2>
-            <p className="text-gray-600">Coming Soon</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">CPBL Transactions</h2>
+            <p className="text-gray-600">Manage CPBL player promotions, demotions & registrations</p>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 opacity-50">
