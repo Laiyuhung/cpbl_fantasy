@@ -174,7 +174,9 @@ export async function POST(req) {
                 player_id: playerId,
                 transaction_date: dateStr,
                 transaction_type: transactionType,
-                notes: `${name} - ${action}`,
+                notes: '', // 稍後填入 [PREV:xxx]
+                _name: name,
+                _action: action,
             })
         }
 
@@ -185,8 +187,35 @@ export async function POST(req) {
             }, { status: 400 })
         }
 
-        // ✅ 當日重送覆蓋：刪除所有涉及日期的舊資料
+        // ==========================================
+        // Step 1: 回滾舊資料的狀態變更
+        // ==========================================
         for (const d of uniqueDates) {
+            // 讀取該日既有的 transactions（含 notes 裡的前一個狀態）
+            const { data: oldRecords } = await supabase
+                .from('real_life_transactions')
+                .select('player_id, notes')
+                .eq('transaction_date', d)
+
+            if (oldRecords && oldRecords.length > 0) {
+                for (const old of oldRecords) {
+                    // 從 notes 解析 [PREV:XXX]
+                    const match = old.notes?.match(/\[PREV:(\w+)\]/)
+                    if (match) {
+                        const prevStatus = match[1]
+                        // 恢復該球員的 real_life_player_status 到前一個狀態
+                        await supabase
+                            .from('real_life_player_status')
+                            .update({
+                                status: prevStatus,
+                                updated_at: new Date().toISOString(),
+                            })
+                            .eq('player_id', old.player_id)
+                    }
+                }
+            }
+
+            // 刪除該日舊資料
             const { error: deleteError } = await supabase
                 .from('real_life_transactions')
                 .delete()
@@ -198,10 +227,30 @@ export async function POST(req) {
             }
         }
 
-        // ✅ 批次插入新資料
+        // ==========================================
+        // Step 2: 查詢每位球員的「當前狀態」寫入 notes
+        // ==========================================
+        for (const record of parsed) {
+            const { data: statusRow } = await supabase
+                .from('real_life_player_status')
+                .select('status')
+                .eq('player_id', record.player_id)
+                .limit(1)
+                .single()
+
+            const currentStatus = statusRow?.status || 'UNREGISTERED'
+            record.notes = `[PREV:${currentStatus}] ${record._name} - ${record._action}`
+        }
+
+        // 移除暫時欄位，準備插入
+        const insertData = parsed.map(({ _name, _action, ...rest }) => rest)
+
+        // ==========================================
+        // Step 3: 插入新資料（trigger 會自動更新狀態）
+        // ==========================================
         const { error: insertError } = await supabase
             .from('real_life_transactions')
-            .insert(parsed)
+            .insert(insertData)
 
         if (insertError) {
             console.error('❌ 插入新資料錯誤:', insertError)
@@ -210,7 +259,7 @@ export async function POST(req) {
 
         return NextResponse.json({
             success: true,
-            inserted: parsed.length,
+            inserted: insertData.length,
             dates: [...uniqueDates],
             warnings,
         })
