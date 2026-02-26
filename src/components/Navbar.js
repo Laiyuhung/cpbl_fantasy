@@ -16,6 +16,7 @@ export default function Navbar() {
   const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false)
   const [currentLeague, setCurrentLeague] = useState(null)
   const [taiwanTime, setTaiwanTime] = useState('')
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false)
 
   // Update Taiwan time every second
   useEffect(() => {
@@ -59,10 +60,13 @@ export default function Navbar() {
       if (leagueDropdownOpen && !e.target.closest('.league-dropdown')) {
         setLeagueDropdownOpen(false)
       }
+      if (userDropdownOpen && !e.target.closest('.user-dropdown')) {
+        setUserDropdownOpen(false)
+      }
     }
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
-  }, [leagueDropdownOpen])
+  }, [leagueDropdownOpen, userDropdownOpen])
 
   // 當使用者登入或登出時，更新 navbar 顯示
   useEffect(() => {
@@ -357,51 +361,56 @@ export default function Navbar() {
               <div className="w-16 h-4 bg-slate-600 rounded animate-pulse"></div>
             </div>
           ) : userName ? (
-            <div className="relative group">
+            <div className="relative user-dropdown">
               <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                 className="flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200"
               >
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-xs font-bold shadow-lg shadow-blue-500/20">
                   {userName.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm font-medium">{userName}</span>
-                <svg className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
               {/* Dropdown Menu */}
-              <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 text-white rounded-xl shadow-2xl border border-blue-500/30 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-blue-500/20 transition-colors border-b border-white/5"
-                >
-                  <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="text-sm font-medium">Profile Settings</span>
-                </Link>
-                {isAdmin && (
+              {userDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 text-white rounded-xl shadow-2xl border border-blue-500/30 overflow-hidden z-50">
                   <Link
-                    href="/admin"
+                    href="/profile"
                     className="flex items-center gap-3 px-4 py-3 hover:bg-blue-500/20 transition-colors border-b border-white/5"
+                    onClick={() => setUserDropdownOpen(false)}
                   >
-                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="text-sm font-medium">Admin Dashboard</span>
+                    <span className="text-sm font-medium">Profile Settings</span>
                   </Link>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-red-300 hover:text-red-200 transition-colors text-left"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  <span className="text-sm font-medium">Logout</span>
-                </button>
-              </div>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-blue-500/20 transition-colors border-b border-white/5"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                      </svg>
+                      <span className="text-sm font-medium">Admin Dashboard</span>
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => { setUserDropdownOpen(false); handleLogout(); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-red-300 hover:text-red-200 transition-colors text-left"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span className="text-sm font-medium">Logout</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : null}
         </div>
