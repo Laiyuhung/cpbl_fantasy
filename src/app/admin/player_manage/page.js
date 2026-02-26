@@ -14,7 +14,11 @@ export default function PlayerManagePage() {
   const [typeFilter, setTypeFilter] = useState('')
   const [identityFilter, setIdentityFilter] = useState('')
   const [availableFilter, setAvailableFilter] = useState('')
+  const [registrationFilter, setRegistrationFilter] = useState('')
+  const [majorFilter, setMajorFilter] = useState('')
   const [sortBy, setSortBy] = useState('add_date')
+  const [registeredPlayerIds, setRegisteredPlayerIds] = useState(new Set())
+  const [majorPlayerIds, setMajorPlayerIds] = useState(new Set())
   const [showModal, setShowModal] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
   const [formData, setFormData] = useState({
@@ -34,25 +38,27 @@ export default function PlayerManagePage() {
   useEffect(() => {
     if (isAdmin) {
       fetchAllPlayers()
+      fetchRegistrations()
+      fetchMajors()
     }
   }, [isAdmin])
 
   // 在前端進行篩選和排序
   useEffect(() => {
     filterAndSortPlayers()
-  }, [allPlayers, search, teamFilter, typeFilter, identityFilter, availableFilter, sortBy])
+  }, [allPlayers, search, teamFilter, typeFilter, identityFilter, availableFilter, registrationFilter, majorFilter, sortBy, registeredPlayerIds, majorPlayerIds])
 
   const checkAdminStatus = async () => {
     try {
       const res = await fetch('/api/admin/check')
       const data = await res.json()
-      
+
       if (!data.isAdmin) {
         alert('You do not have admin privileges')
         router.push('/home')
         return
       }
-      
+
       setIsAdmin(true)
     } catch (err) {
       console.error('Failed to check admin status:', err)
@@ -69,7 +75,7 @@ export default function PlayerManagePage() {
       // 不帶任何篩選參數，載入所有球員
       const res = await fetch('/api/admin/players')
       const data = await res.json()
-      
+
       if (data.players) {
         setAllPlayers(data.players)
       }
@@ -80,13 +86,37 @@ export default function PlayerManagePage() {
     }
   }
 
+  const fetchRegistrations = async () => {
+    try {
+      const res = await fetch('/api/admin/season-registration')
+      const data = await res.json()
+      if (data.playerIds) {
+        setRegisteredPlayerIds(new Set(data.playerIds))
+      }
+    } catch (err) {
+      console.error('Failed to fetch registrations:', err)
+    }
+  }
+
+  const fetchMajors = async () => {
+    try {
+      const res = await fetch('/api/admin/season-major')
+      const data = await res.json()
+      if (data.playerIds) {
+        setMajorPlayerIds(new Set(data.playerIds))
+      }
+    } catch (err) {
+      console.error('Failed to fetch majors:', err)
+    }
+  }
+
   const filterAndSortPlayers = () => {
     let filtered = [...allPlayers]
 
     // 搜尋篩選
     if (search) {
       const searchLower = search.toLowerCase()
-      filtered = filtered.filter(player => 
+      filtered = filtered.filter(player =>
         player.name?.toLowerCase().includes(searchLower) ||
         player.original_name?.toLowerCase().includes(searchLower) ||
         player.team?.toLowerCase().includes(searchLower)
@@ -112,6 +142,22 @@ export default function PlayerManagePage() {
     if (availableFilter) {
       const isAvailable = availableFilter === 'true'
       filtered = filtered.filter(player => player.available === isAvailable)
+    }
+
+    // 季初登錄篩選
+    if (registrationFilter) {
+      const isRegistered = registrationFilter === 'true'
+      filtered = filtered.filter(player =>
+        isRegistered ? registeredPlayerIds.has(player.player_id) : !registeredPlayerIds.has(player.player_id)
+      )
+    }
+
+    // 開季一軍篩選
+    if (majorFilter) {
+      const isMajor = majorFilter === 'true'
+      filtered = filtered.filter(player =>
+        isMajor ? majorPlayerIds.has(player.player_id) : !majorPlayerIds.has(player.player_id)
+      )
     }
 
     // 排序
@@ -169,7 +215,7 @@ export default function PlayerManagePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     try {
       if (editingPlayer) {
         // 更新球员
@@ -181,12 +227,12 @@ export default function PlayerManagePage() {
             ...formData
           })
         })
-        
+
         if (!res.ok) {
           const data = await res.json()
           throw new Error(data.error || 'Update failed')
         }
-        
+
         alert('Updated successfully')
       } else {
         // Add new player
@@ -195,15 +241,15 @@ export default function PlayerManagePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
         })
-        
+
         if (!res.ok) {
           const data = await res.json()
           throw new Error(data.error || 'Create failed')
         }
-        
+
         alert('Created successfully')
       }
-      
+
       handleCloseModal()
       fetchAllPlayers()
     } catch (err) {
@@ -215,17 +261,17 @@ export default function PlayerManagePage() {
     if (!confirm(`Are you sure you want to delete player "${playerName}"?`)) {
       return
     }
-    
+
     try {
       const res = await fetch(`/api/admin/players?player_id=${playerId}`, {
         method: 'DELETE'
       })
-      
+
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || 'Delete failed')
       }
-      
+
       alert('Deleted successfully')
       fetchAllPlayers()
     } catch (err) {
@@ -243,13 +289,88 @@ export default function PlayerManagePage() {
           available: !player.available
         })
       })
-      
+
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || 'Update failed')
       }
-      
+
       fetchAllPlayers()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  const toggleRegistration = async (player) => {
+    const isCurrentlyRegistered = registeredPlayerIds.has(player.player_id)
+    try {
+      if (isCurrentlyRegistered) {
+        // 如果目前是一軍，先移除一軍
+        if (majorPlayerIds.has(player.player_id)) {
+          const majorRes = await fetch(`/api/admin/season-major?player_id=${player.player_id}`, {
+            method: 'DELETE'
+          })
+          if (!majorRes.ok) {
+            const data = await majorRes.json()
+            throw new Error(data.error || 'Failed to remove major status')
+          }
+        }
+        // DELETE registration
+        const res = await fetch(`/api/admin/season-registration?player_id=${player.player_id}`, {
+          method: 'DELETE'
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to unregister')
+        }
+      } else {
+        // POST
+        const res = await fetch('/api/admin/season-registration', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: player.player_id })
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to register')
+        }
+      }
+      // Refresh both states
+      fetchRegistrations()
+      fetchMajors()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  const toggleMajor = async (player) => {
+    // 前端驗證：未登錄不能設定一軍
+    if (!registeredPlayerIds.has(player.player_id)) {
+      alert('該球員尚未季初登錄，無法設定開季一軍')
+      return
+    }
+    const isCurrentlyMajor = majorPlayerIds.has(player.player_id)
+    try {
+      if (isCurrentlyMajor) {
+        const res = await fetch(`/api/admin/season-major?player_id=${player.player_id}`, {
+          method: 'DELETE'
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to remove major')
+        }
+      } else {
+        const res = await fetch('/api/admin/season-major', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: player.player_id })
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to set major')
+        }
+      }
+      fetchMajors()
     } catch (err) {
       alert(err.message)
     }
@@ -362,6 +483,30 @@ export default function PlayerManagePage() {
               </select>
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">季初登錄</label>
+              <select
+                value={registrationFilter}
+                onChange={(e) => setRegistrationFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All</option>
+                <option value="true">已登錄</option>
+                <option value="false">未登錄</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">開季一軍</label>
+              <select
+                value={majorFilter}
+                onChange={(e) => setMajorFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All</option>
+                <option value="true">一軍</option>
+                <option value="false">非一軍</option>
+              </select>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
               <select
                 value={sortBy}
@@ -390,6 +535,8 @@ export default function PlayerManagePage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identity</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">季初登錄</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">開季一軍</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Added</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -397,7 +544,7 @@ export default function PlayerManagePage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {players.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
                       No players found
                     </td>
                   </tr>
@@ -414,33 +561,55 @@ export default function PlayerManagePage() {
                         {player.original_name || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          player.batter_or_pitcher === 'batter' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs ${player.batter_or_pitcher === 'batter'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-blue-100 text-blue-800'
+                          }`}>
                           {player.batter_or_pitcher === 'batter' ? 'Batter' : 'Pitcher'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          player.identity === 'local' 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs ${player.identity === 'local'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-orange-100 text-orange-800'
+                          }`}>
                           {player.identity === 'local' ? 'Local' : 'Foreigner'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
                           onClick={() => toggleAvailable(player)}
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            player.available
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
+                          className={`px-2 py-1 rounded-full text-xs ${player.available
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                            }`}
                         >
                           {player.available ? 'Available' : 'Unavailable'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => toggleRegistration(player)}
+                          className={`px-2 py-1 rounded-full text-xs ${registeredPlayerIds.has(player.player_id)
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-500'
+                            }`}
+                        >
+                          {registeredPlayerIds.has(player.player_id) ? '已登錄' : '未登錄'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => toggleMajor(player)}
+                          disabled={!registeredPlayerIds.has(player.player_id)}
+                          className={`px-2 py-1 rounded-full text-xs ${!registeredPlayerIds.has(player.player_id)
+                            ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                            : majorPlayerIds.has(player.player_id)
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-500'
+                            }`}
+                        >
+                          {majorPlayerIds.has(player.player_id) ? '一軍' : '非一軍'}
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
