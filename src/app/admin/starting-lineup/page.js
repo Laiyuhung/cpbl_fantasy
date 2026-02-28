@@ -44,7 +44,7 @@ export default function StartingLineupPage() {
     // Pitcher State: { team: { name: '', is_confirmed: false } }
     const [pitchers, setPitchers] = useState(() => {
         const init = {}
-        TEAMS.forEach(t => { init[t] = { name: '', is_confirmed: false } })
+        TEAMS.forEach(t => { init[t] = { name: '' } })
         return init
     })
 
@@ -102,11 +102,11 @@ export default function StartingLineupPage() {
 
             // Reset pitchers
             const newPitchers = {}
-            TEAMS.forEach(t => { newPitchers[t] = { name: '', is_confirmed: false } })
+            TEAMS.forEach(t => { newPitchers[t] = { name: '' } })
             if (pitcherData.success && pitcherData.data) {
                 pitcherData.data.forEach(p => {
                     if (newPitchers[p.team]) {
-                        newPitchers[p.team] = { name: p.name, is_confirmed: p.is_confirmed || false }
+                        newPitchers[p.team] = { name: p.name }
                     }
                 })
             }
@@ -138,8 +138,7 @@ export default function StartingLineupPage() {
         try {
             const pitcherList = TEAMS.map(t => ({
                 team: t,
-                name: pitchers[t].name,
-                is_confirmed: pitchers[t].is_confirmed
+                name: pitchers[t].name
             })).filter(p => p.name.trim())
 
             const res = await fetch('/api/admin/starting-pitcher', {
@@ -331,15 +330,6 @@ export default function StartingLineupPage() {
                                         placeholder="投手姓名"
                                         className="flex-1 bg-slate-800/60 border border-slate-600/40 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-slate-500"
                                     />
-                                    <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
-                                        <input
-                                            type="checkbox"
-                                            checked={pitchers[team].is_confirmed}
-                                            onChange={e => updatePitcher(team, 'is_confirmed', e.target.checked)}
-                                            className="w-4 h-4 rounded border-slate-500 bg-slate-700 text-purple-500 focus:ring-purple-500 focus:ring-offset-0"
-                                        />
-                                        <span className="text-xs text-slate-400">確認</span>
-                                    </label>
                                 </div>
                             </div>
                         ))}
@@ -429,7 +419,6 @@ export default function StartingLineupPage() {
                                         {pitcher?.name?.trim() && (
                                             <div className="text-xs text-slate-300 mb-1">
                                                 <span className="text-purple-400">SP:</span> {pitcher.name}
-                                                {pitcher.is_confirmed && <span className="ml-1 text-green-400">✓</span>}
                                             </div>
                                         )}
                                         {filled.length > 0 && (

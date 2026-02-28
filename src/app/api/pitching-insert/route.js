@@ -4,14 +4,14 @@ import supabase from '@/lib/supabase'
 export async function POST(req) {
   try {
     const body = await req.json()
-    
+
     // New format: pre-parsed records with table specification
     if (body.records && Array.isArray(body.records)) {
       const { records, table } = body
       const targetTable = table || 'pitching_stats_2026'
-      
+
       // Validate table name to prevent SQL injection
-      const allowedTables = ['pitching_stats', 'pitching_stats_2026']
+      const allowedTables = ['pitching_stats', 'pitching_stats_2025', 'pitching_stats_2026']
       if (!allowedTables.includes(targetTable)) {
         return NextResponse.json({ error: 'Invalid table name' }, { status: 400 })
       }
@@ -40,7 +40,7 @@ export async function POST(req) {
     const parseInnings = (str) => {
       if (str.includes('/')) {
         const [whole, fraction] = str.split('/').map(Number)
-    
+
         if (!isNaN(whole) && !isNaN(fraction) && fraction === 3) {
           if (whole < 10) {
             // 純 1/3 或 2/3
@@ -52,13 +52,13 @@ export async function POST(req) {
             return intPart + (outPart === 1 ? 0.1 : outPart === 2 ? 0.2 : 0)
           }
         }
-    
+
         return 0
       }
-    
+
       return parseFloat(str) || 0
     }
-    
+
 
     const parseLine = (line, index) => {
       const parts = line.trim().split(/\s+/)

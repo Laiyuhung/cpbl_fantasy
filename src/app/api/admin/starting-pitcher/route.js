@@ -58,8 +58,7 @@ export async function POST(request) {
             const rows = validPitchers.map(p => ({
                 date,
                 team: p.team,
-                name: p.name.trim(),
-                is_confirmed: p.is_confirmed || false
+                name: p.name.trim()
             }));
 
             const { error: insertError } = await supabase
