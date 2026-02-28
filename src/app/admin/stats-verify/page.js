@@ -28,6 +28,10 @@ export default function StatsVerifyPage() {
     const [statsLoading, setStatsLoading] = useState(false)
     const [statsType, setStatsType] = useState('batting') // auto-set from player type
 
+    // Verification tracking
+    const [verifiedMap, setVerifiedMap] = useState({}) // player_id -> { id, status, verified_type, notes, verified_at }
+    const [totalPlayers, setTotalPlayers] = useState(0)
+
     // Data entry (same method as stats-entry)
     const [date, setDate] = useState(getTaiwanToday())
     const [statsText, setStatsText] = useState('')
@@ -86,24 +90,79 @@ export default function StatsVerifyPage() {
         check()
     }, [router])
 
-    // Fetch players
+    // Fetch players + verify log
     useEffect(() => {
-        const fetchPlayers = async () => {
+        const fetchAll = async () => {
             try {
-                const res = await fetch('/api/playerslist')
-                const data = await res.json()
-                if (data.success && data.players) {
+                const [playersRes, verifyRes] = await Promise.all([
+                    fetch('/api/playerslist'),
+                    fetch('/api/admin/stats-verify-log')
+                ])
+                const playersData = await playersRes.json()
+                const verifyData = await verifyRes.json()
+
+                if (playersData.success && playersData.players) {
                     const map = {}
-                    data.players.forEach(p => {
+                    playersData.players.forEach(p => {
                         if (!map[p.name]) map[p.name] = []
                         map[p.name].push({ player_id: p.player_id, team: p.team, batter_or_pitcher: p.batter_or_pitcher, name: p.name })
                     })
                     setPlayerMap(map)
+                    setTotalPlayers(playersData.players.length)
                 }
-            } catch (err) { console.error('Failed to fetch players:', err) }
+
+                if (verifyData.success && verifyData.data) {
+                    const vMap = {}
+                    verifyData.data.forEach(v => { vMap[v.player_id] = v })
+                    setVerifiedMap(vMap)
+                }
+            } catch (err) { console.error('Failed to fetch data:', err) }
         }
-        fetchPlayers()
+        fetchAll()
     }, [])
+
+    const verifiedCount = Object.keys(verifiedMap).length
+
+    // Mark player as verified
+    const handleMarkVerified = async () => {
+        if (!selectedPlayer) return
+        try {
+            const res = await fetch('/api/admin/stats-verify-log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    player_id: selectedPlayer.player_id,
+                    player_name: selectedPlayer.name,
+                    verified_type: statsType,
+                    status: 'checked'
+                })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setVerifiedMap(prev => ({ ...prev, [selectedPlayer.player_id]: data.data }))
+                setMessage({ type: 'success', text: `✅ ${selectedPlayer.name} 已標記為已檢查` })
+            }
+        } catch (err) { setMessage({ type: 'error', text: `❌ ${err.message}` }) }
+    }
+
+    // Unmark player verification
+    const handleUnmarkVerified = async () => {
+        if (!selectedPlayer) return
+        const entry = verifiedMap[selectedPlayer.player_id]
+        if (!entry) return
+        try {
+            const res = await fetch('/api/admin/stats-verify-log', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: entry.id })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setVerifiedMap(prev => { const next = { ...prev }; delete next[selectedPlayer.player_id]; return next })
+                setMessage({ type: 'success', text: `↩ ${selectedPlayer.name} 已取消檢查標記` })
+            }
+        } catch (err) { setMessage({ type: 'error', text: `❌ ${err.message}` }) }
+    }
 
     // Search players
     useEffect(() => {
@@ -323,12 +382,12 @@ export default function StatsVerifyPage() {
         finally { setLoading(false) }
     }
 
-    // Batting columns
-    const battingCols = ['game_date', 'is_major', 'position', 'AB', 'R', 'H', 'RBI', '2B', '3B', 'HR', 'GDP', 'BB', 'IBB', 'HBP', 'K', 'SAC', 'SF', 'SB', 'CS', 'E', 'AVG']
-    const battingKeys = ['game_date', 'is_major', 'position', 'at_bats', 'runs', 'hits', 'rbis', 'doubles', 'triples', 'home_runs', 'double_plays', 'walks', 'ibb', 'hbp', 'strikeouts', 'sacrifice_bunts', 'sacrifice_flies', 'stolen_bases', 'caught_stealing', 'errors', 'avg']
+    // Batting columns (no is_major since split by section)
+    const battingCols = ['game_date', 'position', 'AB', 'R', 'H', 'RBI', '2B', '3B', 'HR', 'GDP', 'BB', 'IBB', 'HBP', 'K', 'SAC', 'SF', 'SB', 'CS', 'E', 'AVG']
+    const battingKeys = ['game_date', 'position', 'at_bats', 'runs', 'hits', 'rbis', 'doubles', 'triples', 'home_runs', 'double_plays', 'walks', 'ibb', 'hbp', 'strikeouts', 'sacrifice_bunts', 'sacrifice_flies', 'stolen_bases', 'caught_stealing', 'errors', 'avg']
 
-    const pitchingCols = ['game_date', 'is_major', 'Pos', 'Record', 'IP', 'BF', 'P', 'S', 'H', 'HR', 'BB', 'IBB', 'HBP', 'K', 'WP', 'BK', 'R', 'ER', 'E', 'ERA', 'WHIP', 'CG']
-    const pitchingKeys = ['game_date', 'is_major', 'position', 'record', 'innings_pitched', 'batters_faced', 'pitches_thrown', 'strikes_thrown', 'hits_allowed', 'home_runs_allowed', 'walks', 'ibb', 'hbp', 'strikeouts', 'wild_pitches', 'balks', 'runs_allowed', 'earned_runs', 'errors', 'era', 'whip', 'complete_game']
+    const pitchingCols = ['game_date', 'Pos', 'Record', 'IP', 'BF', 'P', 'S', 'H', 'HR', 'BB', 'IBB', 'HBP', 'K', 'WP', 'BK', 'R', 'ER', 'E', 'ERA', 'WHIP', 'CG']
+    const pitchingKeys = ['game_date', 'position', 'record', 'innings_pitched', 'batters_faced', 'pitches_thrown', 'strikes_thrown', 'hits_allowed', 'home_runs_allowed', 'walks', 'ibb', 'hbp', 'strikeouts', 'wild_pitches', 'balks', 'runs_allowed', 'earned_runs', 'errors', 'era', 'whip', 'complete_game']
 
     if (checkingAdmin) {
         return (
@@ -387,6 +446,21 @@ export default function StatsVerifyPage() {
                             ← 返回
                         </button>
                     </div>
+                    {/* Progress Bar */}
+                    {totalPlayers > 0 && (
+                        <div className="mt-4">
+                            <div className="flex items-center justify-between text-sm mb-2">
+                                <span className="text-purple-300 font-semibold">檢查進度</span>
+                                <span className="text-white font-bold">{verifiedCount} / {totalPlayers} <span className="text-slate-400 font-normal">({totalPlayers > 0 ? ((verifiedCount / totalPlayers) * 100).toFixed(1) : 0}%)</span></span>
+                            </div>
+                            <div className="w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all duration-500"
+                                    style={{ width: `${totalPlayers > 0 ? (verifiedCount / totalPlayers) * 100 : 0}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -415,6 +489,7 @@ export default function StatsVerifyPage() {
                                                 : 'hover:bg-slate-700/50 border border-transparent'
                                                 }`}
                                         >
+                                            {verifiedMap[p.player_id] && <span className="text-green-400 mr-1">✓</span>}
                                             <span className="text-white font-bold">{p.name}</span>
                                             <span className="text-slate-400 ml-2 text-xs">{p.team}</span>
                                             <span className={`ml-2 text-xs ${p.batter_or_pitcher === 'pitcher' ? 'text-blue-400' : 'text-green-400'}`}>
@@ -458,6 +533,33 @@ export default function StatsVerifyPage() {
                                             投手
                                         </button>
                                     </div>
+
+                                    {/* Verify Button */}
+                                    <div className="mt-3">
+                                        {verifiedMap[selectedPlayer.player_id] ? (
+                                            <div>
+                                                <div className="flex items-center gap-2 text-green-400 text-xs mb-2">
+                                                    <span>✓ 已檢查</span>
+                                                    <span className="text-slate-500">
+                                                        {new Date(verifiedMap[selectedPlayer.player_id].verified_at).toLocaleDateString('zh-TW')}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={handleUnmarkVerified}
+                                                    className="w-full px-3 py-1.5 bg-slate-700/50 hover:bg-red-500/20 text-slate-400 hover:text-red-300 border border-slate-600/30 hover:border-red-500/30 rounded text-xs font-bold transition-all"
+                                                >
+                                                    取消檢查標記
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={handleMarkVerified}
+                                                className="w-full px-3 py-2 bg-green-600/30 hover:bg-green-600/50 text-green-300 border border-green-500/50 rounded-lg text-sm font-bold transition-all"
+                                            >
+                                                ✓ 標記為已檢查
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -468,59 +570,75 @@ export default function StatsVerifyPage() {
 
                         {/* Stats List */}
                         {selectedPlayer && (
-                            <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-5 shadow-2xl overflow-x-auto">
-                                <h2 className="text-lg font-bold text-white mb-4">
-                                    {selectedPlayer.name} — {statsType === 'batting' ? '打擊' : '投手'}紀錄 ({playerStats.length} 筆)
-                                </h2>
-
+                            <div className="space-y-6">
                                 {statsLoading ? (
-                                    <div className="text-center py-8">
-                                        <div className="inline-block w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-5 shadow-2xl">
+                                        <div className="text-center py-8">
+                                            <div className="inline-block w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
                                     </div>
                                 ) : playerStats.length === 0 ? (
-                                    <div className="text-center py-8 text-slate-400">無紀錄</div>
-                                ) : (
-                                    <table className="w-full text-xs text-white">
-                                        <thead>
-                                            <tr className="border-b border-purple-500/30">
-                                                {(statsType === 'batting' ? battingCols : pitchingCols).map(col => (
-                                                    <th key={col} className="p-1.5 text-center text-purple-300 font-bold whitespace-nowrap">{col}</th>
-                                                ))}
-                                                <th className="p-1.5 text-center text-red-300">Del</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {playerStats.map(row => {
-                                                const keys = statsType === 'batting' ? battingKeys : pitchingKeys
-                                                return (
-                                                    <tr key={row.id} className="border-b border-purple-500/10 hover:bg-purple-500/10">
-                                                        {keys.map(key => {
-                                                            let val = row[key]
-                                                            if (key === 'is_major') val = val ? '1軍' : '2軍'
-                                                            if (key === 'avg' && val != null) val = Number(val).toFixed(3)
-                                                            if (key === 'era' && val != null) val = Number(val).toFixed(2)
-                                                            if (key === 'whip' && val != null) val = Number(val).toFixed(2)
-                                                            return (
-                                                                <td key={key} className="p-1.5 text-center whitespace-nowrap">
-                                                                    {val ?? '-'}
-                                                                </td>
-                                                            )
-                                                        })}
-                                                        <td className="p-1.5 text-center">
-                                                            <button
-                                                                onClick={() => handleDelete(row.id)}
-                                                                className="text-red-400 hover:text-red-300 transition-colors"
-                                                                title="刪除"
-                                                            >
-                                                                ✗
-                                                            </button>
-                                                        </td>
+                                    <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-5 shadow-2xl">
+                                        <div className="text-center py-8 text-slate-400">無紀錄</div>
+                                    </div>
+                                ) : (() => {
+                                    const majorStats = playerStats.filter(s => s.is_major === true)
+                                    const minorStats = playerStats.filter(s => s.is_major === false)
+                                    const cols = statsType === 'batting' ? battingCols : pitchingCols
+                                    const keys = statsType === 'batting' ? battingKeys : pitchingKeys
+
+                                    const renderTable = (rows, label, color) => (
+                                        <div className={`bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border rounded-2xl p-5 shadow-2xl overflow-x-auto ${color === 'blue' ? 'border-blue-500/30' : 'border-orange-500/30'}`}>
+                                            <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                                                <span className={`w-2 h-5 rounded-full ${color === 'blue' ? 'bg-blue-500' : 'bg-orange-500'}`}></span>
+                                                {selectedPlayer.name} — {label} ({statsType === 'batting' ? '打擊' : '投手'}) ({rows.length} 筆)
+                                            </h2>
+                                            <table className="w-full text-xs text-white">
+                                                <thead>
+                                                    <tr className="border-b border-purple-500/30">
+                                                        {cols.map(col => (
+                                                            <th key={col} className="p-1.5 text-center text-purple-300 font-bold whitespace-nowrap">{col}</th>
+                                                        ))}
+                                                        <th className="p-1.5 text-center text-red-300">Del</th>
                                                     </tr>
-                                                )
-                                            })}
-                                        </tbody>
-                                    </table>
-                                )}
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map(row => (
+                                                        <tr key={row.id} className="border-b border-purple-500/10 hover:bg-purple-500/10">
+                                                            {keys.map(key => {
+                                                                let val = row[key]
+                                                                if (key === 'avg' && val != null) val = Number(val).toFixed(3)
+                                                                if (key === 'era' && val != null) val = Number(val).toFixed(2)
+                                                                if (key === 'whip' && val != null) val = Number(val).toFixed(2)
+                                                                return (
+                                                                    <td key={key} className="p-1.5 text-center whitespace-nowrap">
+                                                                        {val ?? '-'}
+                                                                    </td>
+                                                                )
+                                                            })}
+                                                            <td className="p-1.5 text-center">
+                                                                <button
+                                                                    onClick={() => handleDelete(row.id)}
+                                                                    className="text-red-400 hover:text-red-300 transition-colors"
+                                                                    title="刪除"
+                                                                >
+                                                                    ✗
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )
+
+                                    return (
+                                        <>
+                                            {majorStats.length > 0 && renderTable(majorStats, '一軍', 'blue')}
+                                            {minorStats.length > 0 && renderTable(minorStats, '二軍', 'orange')}
+                                        </>
+                                    )
+                                })()}
                             </div>
                         )}
 
