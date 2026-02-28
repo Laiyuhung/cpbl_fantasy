@@ -20,7 +20,6 @@ export default function StatsVerifyPage() {
     // Player search
     const [playerMap, setPlayerMap] = useState({}) // name -> [{player_id, team, batter_or_pitcher}]
     const [searchTerm, setSearchTerm] = useState('')
-    const [searchResults, setSearchResults] = useState([])
     const [selectedPlayer, setSelectedPlayer] = useState(null) // { player_id, name, team, batter_or_pitcher }
 
     // Stats data for selected player
@@ -39,6 +38,11 @@ export default function StatsVerifyPage() {
     const [battingPreview, setBattingPreview] = useState([])
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState({ type: '', text: '' })
+
+    // Player list filters
+    const [filterTeam, setFilterTeam] = useState('all')
+    const [filterType, setFilterType] = useState('all') // all, batter, pitcher
+    const [showOnlyUnchecked, setShowOnlyUnchecked] = useState(false)
 
     // Team detection
     const teamVariants = {
@@ -164,18 +168,6 @@ export default function StatsVerifyPage() {
         } catch (err) { setMessage({ type: 'error', text: `❌ ${err.message}` }) }
     }
 
-    // Search players
-    useEffect(() => {
-        if (!searchTerm.trim()) { setSearchResults([]); return }
-        const term = searchTerm.toLowerCase()
-        const results = []
-        for (const [name, entries] of Object.entries(playerMap)) {
-            if (name.toLowerCase().includes(term)) {
-                entries.forEach(e => results.push({ ...e, name }))
-            }
-        }
-        setSearchResults(results.slice(0, 20))
-    }, [searchTerm, playerMap])
 
     // Fetch stats when player selected
     useEffect(() => {
@@ -465,42 +457,113 @@ export default function StatsVerifyPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    {/* Left: Player Search */}
+                    {/* Left: Player List */}
                     <div className="lg:col-span-1">
-                        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-5 shadow-2xl sticky top-4">
-                            <h2 className="text-lg font-bold text-purple-300 mb-4">🔍 搜尋球員</h2>
+                        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-4 shadow-2xl sticky top-4">
+
+                            {/* Search */}
                             <input
                                 type="text"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                placeholder="輸入球員名稱..."
+                                placeholder="搜尋球員..."
                                 className="w-full bg-slate-800/60 border border-purple-500/30 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-slate-500 mb-3"
                             />
 
-                            {/* Search Results */}
-                            {searchResults.length > 0 && (
-                                <div className="space-y-1 max-h-[400px] overflow-y-auto">
-                                    {searchResults.map((p, idx) => (
-                                        <div
-                                            key={`${p.player_id}-${idx}`}
-                                            onClick={() => { setSelectedPlayer(p); setSearchTerm(''); setSearchResults([]) }}
-                                            className={`p-2 rounded-lg cursor-pointer transition-all text-sm ${selectedPlayer?.player_id === p.player_id
-                                                ? 'bg-purple-600/30 border border-purple-400'
-                                                : 'hover:bg-slate-700/50 border border-transparent'
-                                                }`}
-                                        >
-                                            {verifiedMap[p.player_id] && <span className="text-green-400 mr-1">✓</span>}
-                                            <span className="text-white font-bold">{p.name}</span>
-                                            <span className="text-slate-400 ml-2 text-xs">{p.team}</span>
-                                            <span className={`ml-2 text-xs ${p.batter_or_pitcher === 'pitcher' ? 'text-blue-400' : 'text-green-400'}`}>
-                                                {p.batter_or_pitcher === 'pitcher' ? '投' : '打'}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            {/* Team Tabs */}
+                            <div className="flex flex-wrap gap-1 mb-3">
+                                {['all', '統一獅', '中信兄弟', '樂天桃猿', '富邦惍將', '味全龍', '台鋼雄鷹'].map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setFilterTeam(t)}
+                                        className={`px-2 py-1 rounded text-xs font-bold transition-all ${filterTeam === t
+                                            ? 'bg-purple-500/40 text-purple-200 border border-purple-400/50'
+                                            : 'bg-slate-700/30 text-slate-400 border border-transparent hover:text-white'}`}
+                                    >
+                                        {t === 'all' ? '全部' : t}
+                                    </button>
+                                ))}
+                            </div>
 
-                            {/* Selected Player */}
+                            {/* Type + Unchecked filter */}
+                            <div className="flex items-center gap-2 mb-3">
+                                {['all', 'batter', 'pitcher'].map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setFilterType(t)}
+                                        className={`px-2 py-1 rounded text-xs font-bold transition-all ${filterType === t
+                                            ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
+                                            : 'bg-slate-700/30 text-slate-400 border border-transparent hover:text-white'}`}
+                                    >
+                                        {t === 'all' ? '全' : t === 'batter' ? '打' : '投'}
+                                    </button>
+                                ))}
+                                <label className="flex items-center gap-1 cursor-pointer ml-auto">
+                                    <input
+                                        type="checkbox"
+                                        checked={showOnlyUnchecked}
+                                        onChange={e => setShowOnlyUnchecked(e.target.checked)}
+                                        className="w-3.5 h-3.5 rounded border-slate-500 bg-slate-700 text-orange-500 focus:ring-0"
+                                    />
+                                    <span className="text-xs text-orange-400 font-bold">未檢</span>
+                                </label>
+                            </div>
+
+                            {/* Player List */}
+                            {(() => {
+                                // Build flat list from playerMap
+                                let allPlayers = []
+                                for (const [name, entries] of Object.entries(playerMap)) {
+                                    entries.forEach(e => allPlayers.push({ ...e, name }))
+                                }
+
+                                // Apply filters
+                                let filtered = allPlayers
+                                if (searchTerm.trim()) {
+                                    const term = searchTerm.toLowerCase()
+                                    filtered = filtered.filter(p => p.name.toLowerCase().includes(term))
+                                }
+                                if (filterTeam !== 'all') filtered = filtered.filter(p => p.team === filterTeam)
+                                if (filterType !== 'all') filtered = filtered.filter(p => p.batter_or_pitcher === filterType)
+                                if (showOnlyUnchecked) filtered = filtered.filter(p => !verifiedMap[p.player_id])
+
+                                // Sort: unchecked first, then by name
+                                filtered.sort((a, b) => {
+                                    const aV = verifiedMap[a.player_id] ? 1 : 0
+                                    const bV = verifiedMap[b.player_id] ? 1 : 0
+                                    if (aV !== bV) return aV - bV
+                                    return a.name.localeCompare(b.name, 'zh-Hant')
+                                })
+
+                                return (
+                                    <>
+                                        <div className="text-xs text-slate-500 mb-1">共 {filtered.length} 人</div>
+                                        <div className="space-y-0.5 max-h-[400px] overflow-y-auto pr-1">
+                                            {filtered.map((p, idx) => {
+                                                const isSelected = selectedPlayer?.player_id === p.player_id
+                                                const isVerified = !!verifiedMap[p.player_id]
+                                                return (
+                                                    <div
+                                                        key={`${p.player_id}-${idx}`}
+                                                        onClick={() => { setSelectedPlayer(p); setSearchTerm('') }}
+                                                        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-sm ${isSelected
+                                                            ? 'bg-purple-600/40 border border-purple-400'
+                                                            : 'hover:bg-slate-700/50 border border-transparent'}`}
+                                                    >
+                                                        {isVerified && <span className="text-green-400 text-xs shrink-0">✓</span>}
+                                                        <span className={`font-bold truncate ${isVerified ? 'text-slate-400' : 'text-white'}`}>{p.name}</span>
+                                                        <span className={`ml-auto text-xs shrink-0 ${p.batter_or_pitcher === 'pitcher' ? 'text-blue-400' : 'text-green-400'}`}>
+                                                            {p.batter_or_pitcher === 'pitcher' ? '投' : '打'}
+                                                        </span>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </>
+                                )
+                            })()}
+
+                            {/* Selected Player Panel */}
                             {selectedPlayer && (
                                 <div className="mt-4 p-3 bg-slate-800/50 border border-purple-500/30 rounded-lg">
                                     <div className="text-white font-bold text-lg">{selectedPlayer.name}</div>
@@ -512,14 +575,13 @@ export default function StatsVerifyPage() {
                                         資料筆數: {playerStats.length}
                                     </div>
 
-                                    {/* Toggle type for dual-role players */}
+                                    {/* Toggle type */}
                                     <div className="mt-3 flex gap-2">
                                         <button
                                             onClick={() => { setStatsType('batting'); fetchPlayerStats(selectedPlayer.player_id, 'batting') }}
                                             className={`px-3 py-1 rounded text-xs font-bold transition-all ${statsType === 'batting'
                                                 ? 'bg-green-500/30 text-green-300 border border-green-500/50'
-                                                : 'bg-slate-700/50 text-slate-400 border border-slate-600/30 hover:text-white'
-                                                }`}
+                                                : 'bg-slate-700/50 text-slate-400 border border-slate-600/30 hover:text-white'}`}
                                         >
                                             打擊
                                         </button>
@@ -527,8 +589,7 @@ export default function StatsVerifyPage() {
                                             onClick={() => { setStatsType('pitching'); fetchPlayerStats(selectedPlayer.player_id, 'pitching') }}
                                             className={`px-3 py-1 rounded text-xs font-bold transition-all ${statsType === 'pitching'
                                                 ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50'
-                                                : 'bg-slate-700/50 text-slate-400 border border-slate-600/30 hover:text-white'
-                                                }`}
+                                                : 'bg-slate-700/50 text-slate-400 border border-slate-600/30 hover:text-white'}`}
                                         >
                                             投手
                                         </button>
