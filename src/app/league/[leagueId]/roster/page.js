@@ -1114,13 +1114,33 @@ export default function RosterPage() {
                                                             )}
                                                             <span className="text-xs text-slate-400 font-mono">
                                                                 {player.game_info ? (
-                                                                    <>
-                                                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                                                        {' '}
-                                                                        {player.game_info.is_home ? 'vs' : '@'}
-                                                                        {' '}
-                                                                        {player.game_info.opponent}
-                                                                    </>
+                                                                    player.game_info.is_postponed ? (
+                                                                        <span className="text-red-400">PPD</span>
+                                                                    ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
+                                                                        (() => {
+                                                                            const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
+                                                                            const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
+                                                                            const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
+                                                                            const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
+                                                                            return (
+                                                                                <>
+                                                                                    <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
+                                                                                    {' '}
+                                                                                    {player.game_info.is_home ? 'vs' : '@'}
+                                                                                    {' '}
+                                                                                    {player.game_info.opponent}
+                                                                                </>
+                                                                            );
+                                                                        })()
+                                                                    ) : (
+                                                                        <>
+                                                                            {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                            {' '}
+                                                                            {player.game_info.is_home ? 'vs' : '@'}
+                                                                            {' '}
+                                                                            {player.game_info.opponent}
+                                                                        </>
+                                                                    )
                                                                 ) : (
                                                                     'No game'
                                                                 )}
@@ -1218,13 +1238,33 @@ export default function RosterPage() {
                                                             )}
                                                             <span className="text-xs text-slate-400 font-mono">
                                                                 {player.game_info ? (
-                                                                    <>
-                                                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                                                        {' '}
-                                                                        {player.game_info.is_home ? 'vs' : '@'}
-                                                                        {' '}
-                                                                        {player.game_info.opponent}
-                                                                    </>
+                                                                    player.game_info.is_postponed ? (
+                                                                        <span className="text-red-400">PPD</span>
+                                                                    ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
+                                                                        (() => {
+                                                                            const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
+                                                                            const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
+                                                                            const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
+                                                                            const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
+                                                                            return (
+                                                                                <>
+                                                                                    <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
+                                                                                    {' '}
+                                                                                    {player.game_info.is_home ? 'vs' : '@'}
+                                                                                    {' '}
+                                                                                    {player.game_info.opponent}
+                                                                                </>
+                                                                            );
+                                                                        })()
+                                                                    ) : (
+                                                                        <>
+                                                                            {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                            {' '}
+                                                                            {player.game_info.is_home ? 'vs' : '@'}
+                                                                            {' '}
+                                                                            {player.game_info.opponent}
+                                                                        </>
+                                                                    )
                                                                 ) : (
                                                                     'No game'
                                                                 )}

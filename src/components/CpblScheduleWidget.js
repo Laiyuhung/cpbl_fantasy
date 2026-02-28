@@ -256,57 +256,38 @@ export default function CpblScheduleWidget() {
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    {(() => {
-                                        const hasScore = game.away_team_score != null && game.home_team_score != null;
-                                        const awayWin = hasScore && game.away_team_score > game.home_team_score;
-                                        const homeWin = hasScore && game.home_team_score > game.away_team_score;
-                                        return (
-                                            <>
-                                                {/* Away Team */}
-                                                <div className="flex-1 text-left">
-                                                    <div className={`font-bold text-sm transition-transform group-hover:scale-105 ${hasScore
-                                                            ? awayWin
-                                                                ? `${teamColors[game.away] || 'text-white'} drop-shadow-[0_0_6px_rgba(255,255,255,0.5)]`
-                                                                : 'text-slate-500'
-                                                            : (teamColors[game.away] || 'text-white')
-                                                        }`}>
-                                                        {game.away}
-                                                    </div>
-                                                </div>
+                                    {/* Away Team */}
+                                    <div className="flex-1 text-left">
+                                        <div className={`font-bold text-sm transition-transform group-hover:scale-105 ${teamColors[game.away] || 'text-white'}`}>
+                                            {game.away}
+                                        </div>
+                                    </div>
 
-                                                {/* Score / VS / Status */}
-                                                <div className="px-2 text-xs font-bold">
-                                                    {game.is_postponed ? (
-                                                        <span className="text-red-400 bg-red-900/30 px-1.5 py-0.5 rounded text-[10px]">PPD</span>
-                                                    ) : hasScore ? (
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className={`text-base font-black tabular-nums ${awayWin ? 'text-green-400' : 'text-slate-500'}`}>
-                                                                {game.away_team_score}
-                                                            </span>
-                                                            <span className="text-[10px] text-slate-600">:</span>
-                                                            <span className={`text-base font-black tabular-nums ${homeWin ? 'text-green-400' : 'text-slate-500'}`}>
-                                                                {game.home_team_score}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-slate-600 group-hover:text-slate-400 transition-colors">VS</span>
-                                                    )}
-                                                </div>
+                                    {/* Score / VS / Status */}
+                                    <div className="px-2 text-xs font-bold">
+                                        {game.is_postponed ? (
+                                            <span className="text-red-400 bg-red-900/30 px-1.5 py-0.5 rounded text-[10px]">PPD</span>
+                                        ) : game.away_team_score != null && game.home_team_score != null ? (
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`text-base font-black tabular-nums ${game.away_team_score > game.home_team_score ? 'text-green-400' : game.away_team_score < game.home_team_score ? 'text-slate-500' : 'text-cyan-300'}`}>
+                                                    {game.away_team_score}
+                                                </span>
+                                                <span className="text-[10px] text-slate-600">:</span>
+                                                <span className={`text-base font-black tabular-nums ${game.home_team_score > game.away_team_score ? 'text-green-400' : game.home_team_score < game.away_team_score ? 'text-slate-500' : 'text-cyan-300'}`}>
+                                                    {game.home_team_score}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-600 group-hover:text-slate-400 transition-colors">VS</span>
+                                        )}
+                                    </div>
 
-                                                {/* Home Team */}
-                                                <div className="flex-1 text-right">
-                                                    <div className={`font-bold text-sm transition-transform group-hover:scale-105 ${hasScore
-                                                            ? homeWin
-                                                                ? `${teamColors[game.home] || 'text-white'} drop-shadow-[0_0_6px_rgba(255,255,255,0.5)]`
-                                                                : 'text-slate-500'
-                                                            : (teamColors[game.home] || 'text-white')
-                                                        }`}>
-                                                        {game.home}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        );
-                                    })()}
+                                    {/* Home Team */}
+                                    <div className="flex-1 text-right">
+                                        <div className={`font-bold text-sm transition-transform group-hover:scale-105 ${teamColors[game.home] || 'text-white'}`}>
+                                            {game.home}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}

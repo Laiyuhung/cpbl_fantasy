@@ -624,34 +624,52 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         // Game info — vivid inline display
         let gameInfoEl = null;
         if (!isEmpty && p.game_info) {
-            const timeStr = formatTime(p.game_info.time);
-            const vsAt = p.game_info.is_home ? 'vs' : '@';
-            const opp = p.game_info.opponent || '';
+            if (p.game_info.is_postponed) {
+                gameInfoEl = <span className="text-[11px] text-red-400 font-bold flex-shrink-0 ml-1">PPD</span>;
+            } else if (p.game_info.away_team_score != null && p.game_info.home_team_score != null) {
+                const myScore = p.game_info.is_home ? p.game_info.home_team_score : p.game_info.away_team_score;
+                const oppScore = p.game_info.is_home ? p.game_info.away_team_score : p.game_info.home_team_score;
+                const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
+                const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
+                const vsAt = p.game_info.is_home ? 'vs' : '@';
+                const opp = p.game_info.opponent || '';
+                gameInfoEl = (
+                    <span className="flex items-center gap-1 flex-shrink-0 ml-1 font-mono text-[11px]">
+                        <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
+                        <span className="text-cyan-400">{vsAt}</span>
+                        <span className="text-cyan-400 font-bold">{opp}</span>
+                    </span>
+                );
+            } else {
+                const timeStr = formatTime(p.game_info.time);
+                const vsAt = p.game_info.is_home ? 'vs' : '@';
+                const opp = p.game_info.opponent || '';
 
-            // Check if game date differs from selected date (cross-day game)
-            let datePrefix = '';
-            if (p.game_info.time) {
-                try {
-                    const gameDate = new Date(p.game_info.time);
-                    const gameDateStr = gameDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }); // YYYY-MM-DD format
-                    if (gameDateStr !== selectedDate) {
-                        const month = gameDate.getMonth() + 1;
-                        const day = gameDate.getDate();
-                        datePrefix = `${month}/${day} `;
+                // Check if game date differs from selected date (cross-day game)
+                let datePrefix = '';
+                if (p.game_info.time) {
+                    try {
+                        const gameDate = new Date(p.game_info.time);
+                        const gameDateStr = gameDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }); // YYYY-MM-DD format
+                        if (gameDateStr !== selectedDate) {
+                            const month = gameDate.getMonth() + 1;
+                            const day = gameDate.getDate();
+                            datePrefix = `${month}/${day} `;
+                        }
+                    } catch (e) {
+                        // Ignore date parsing errors
                     }
-                } catch (e) {
-                    // Ignore date parsing errors
                 }
-            }
 
-            gameInfoEl = (
-                <span className="flex items-center gap-1 flex-shrink-0 ml-1 text-cyan-400 font-mono text-[11px]">
-                    {datePrefix && <span>{datePrefix}</span>}
-                    <span className="font-bold">{timeStr}</span>
-                    <span>{vsAt}</span>
-                    <span className="font-bold">{opp}</span>
-                </span>
-            );
+                gameInfoEl = (
+                    <span className="flex items-center gap-1 flex-shrink-0 ml-1 text-cyan-400 font-mono text-[11px]">
+                        {datePrefix && <span>{datePrefix}</span>}
+                        <span className="font-bold">{timeStr}</span>
+                        <span>{vsAt}</span>
+                        <span className="font-bold">{opp}</span>
+                    </span>
+                );
+            }
         } else if (!isEmpty && !p.game_info) {
             gameInfoEl = <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">No game</span>;
         }

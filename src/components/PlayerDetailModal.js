@@ -447,13 +447,33 @@ export default function PlayerDetailModal({
                                 {positionStr}
                             </span>
                             {player.game_info && (
-                                <span className="text-slate-400 font-mono text-xs">
-                                    {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                    {' '}
-                                    {player.game_info.is_home ? 'vs' : '@'}
-                                    {' '}
-                                    {player.game_info.opponent}
-                                </span>
+                                player.game_info.is_postponed ? (
+                                    <span className="text-red-400 font-mono text-xs font-bold">PPD</span>
+                                ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
+                                    (() => {
+                                        const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
+                                        const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
+                                        const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
+                                        const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
+                                        return (
+                                            <span className="text-slate-400 font-mono text-xs">
+                                                <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
+                                                {' '}
+                                                {player.game_info.is_home ? 'vs' : '@'}
+                                                {' '}
+                                                {player.game_info.opponent}
+                                            </span>
+                                        );
+                                    })()
+                                ) : (
+                                    <span className="text-slate-400 font-mono text-xs">
+                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        {' '}
+                                        {player.game_info.is_home ? 'vs' : '@'}
+                                        {' '}
+                                        {player.game_info.opponent}
+                                    </span>
+                                )
                             )}
                             {!player.game_info && (
                                 <span className="text-slate-400 text-xs">No game</span>

@@ -91,8 +91,8 @@ export async function GET(req) {
     const gameMap = {};
     if (scheduleData) {
       scheduleData.forEach(game => {
-        gameMap[game.home] = { opponent: game.away, is_home: true, time: game.time };
-        gameMap[game.away] = { opponent: game.home, is_home: false, time: game.time };
+        gameMap[game.home] = { opponent: game.away, is_home: true, time: game.time, away_team_score: game.away_team_score, home_team_score: game.home_team_score, is_postponed: game.is_postponed };
+        gameMap[game.away] = { opponent: game.home, is_home: false, time: game.time, away_team_score: game.away_team_score, home_team_score: game.home_team_score, is_postponed: game.is_postponed };
       });
     }
 

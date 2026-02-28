@@ -220,14 +220,20 @@ export async function GET(request, { params }) {
                     opponent: game.away,
                     is_home: true,
                     time: game.time,
-                    place: game.place || 'Stadium'
+                    place: game.place || 'Stadium',
+                    away_team_score: game.away_team_score,
+                    home_team_score: game.home_team_score,
+                    is_postponed: game.is_postponed
                 };
                 // Map Away Team Key
                 gameMap[game.away] = {
                     opponent: game.home,
                     is_home: false,
                     time: game.time,
-                    place: game.place || 'Stadium'
+                    place: game.place || 'Stadium',
+                    away_team_score: game.away_team_score,
+                    home_team_score: game.home_team_score,
+                    is_postponed: game.is_postponed
                 };
             });
         }
