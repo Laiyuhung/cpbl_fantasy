@@ -472,7 +472,7 @@ export default function StatsVerifyPage() {
 
                             {/* Team Tabs */}
                             <div className="flex flex-wrap gap-1 mb-3">
-                                {['all', '統一獅', '中信兄弟', '樂天桃猿', '富邦惍將', '味全龍', '台鋼雄鷹'].map(t => (
+                                {['all', '統一獅', '中信兄弟', '樂天桃猿', '富邦悍將', '味全龍', '台鋼雄鷹'].map(t => (
                                     <button
                                         key={t}
                                         onClick={() => setFilterTeam(t)}
