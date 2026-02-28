@@ -276,7 +276,7 @@ export default function StatsVerifyPage() {
             const toInt = val => parseInt(val) || 0
             const toFloat = val => parseFloat(val) || 0
             return {
-                sequence, name, record, position: sequence === 1 ? 'SP' : 'RP',
+                name, record, position: sequence === 1 ? 'SP' : 'RP',
                 innings_pitched: parseInnings(stats[0]), batters_faced: toInt(stats[1]),
                 pitches_thrown: toInt(stats[2]), strikes_thrown: toInt(stats[3]),
                 hits_allowed: toInt(stats[4]), home_runs_allowed: toInt(stats[5]),
@@ -648,50 +648,98 @@ export default function StatsVerifyPage() {
                                     const cols = statsType === 'batting' ? battingCols : pitchingCols
                                     const keys = statsType === 'batting' ? battingKeys : pitchingKeys
 
-                                    const renderTable = (rows, label, color) => (
-                                        <div className={`bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border rounded-2xl p-5 shadow-2xl overflow-x-auto ${color === 'blue' ? 'border-blue-500/30' : 'border-orange-500/30'}`}>
-                                            <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                                                <span className={`w-2 h-5 rounded-full ${color === 'blue' ? 'bg-blue-500' : 'bg-orange-500'}`}></span>
-                                                {selectedPlayer.name} — {label} ({statsType === 'batting' ? '打擊' : '投手'}) ({rows.length} 筆)
-                                            </h2>
-                                            <table className="w-full text-xs text-white">
-                                                <thead>
-                                                    <tr className="border-b border-purple-500/30">
-                                                        {cols.map(col => (
-                                                            <th key={col} className="p-1.5 text-center text-purple-300 font-bold whitespace-nowrap">{col}</th>
-                                                        ))}
-                                                        <th className="p-1.5 text-center text-red-300">Del</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {rows.map(row => (
-                                                        <tr key={row.id} className="border-b border-purple-500/10 hover:bg-purple-500/10">
-                                                            {keys.map(key => {
-                                                                let val = row[key]
-                                                                if (key === 'avg' && val != null) val = Number(val).toFixed(3)
-                                                                if (key === 'era' && val != null) val = Number(val).toFixed(2)
-                                                                if (key === 'whip' && val != null) val = Number(val).toFixed(2)
-                                                                return (
-                                                                    <td key={key} className="p-1.5 text-center whitespace-nowrap">
-                                                                        {val ?? '-'}
-                                                                    </td>
-                                                                )
-                                                            })}
-                                                            <td className="p-1.5 text-center">
-                                                                <button
-                                                                    onClick={() => handleDelete(row.id)}
-                                                                    className="text-red-400 hover:text-red-300 transition-colors"
-                                                                    title="刪除"
-                                                                >
-                                                                    ✗
-                                                                </button>
-                                                            </td>
+                                    const renderTable = (rows, label, color) => {
+                                        // Compute totals for 一軍
+                                        const showTotal = color === 'blue'
+                                        const battingSumKeys = ['at_bats', 'runs', 'hits', 'rbis', 'doubles', 'triples', 'home_runs', 'double_plays', 'walks', 'ibb', 'hbp', 'strikeouts', 'sacrifice_bunts', 'sacrifice_flies', 'stolen_bases', 'caught_stealing', 'errors']
+                                        const pitchingSumKeys = ['batters_faced', 'pitches_thrown', 'strikes_thrown', 'hits_allowed', 'home_runs_allowed', 'walks', 'ibb', 'hbp', 'strikeouts', 'wild_pitches', 'balks', 'runs_allowed', 'earned_runs', 'errors', 'complete_game']
+
+                                        let totals = {}
+                                        if (showTotal && rows.length > 0) {
+                                            const sumKeys = statsType === 'batting' ? battingSumKeys : pitchingSumKeys
+                                            sumKeys.forEach(k => { totals[k] = rows.reduce((sum, r) => sum + (Number(r[k]) || 0), 0) })
+
+                                            if (statsType === 'batting') {
+                                                totals.avg = totals.at_bats > 0 ? (totals.hits / totals.at_bats) : 0
+                                            } else {
+                                                // Sum IP: convert decimal IP (e.g. 5.2 = 5 + 2/3) to total outs then back
+                                                let totalOuts = 0
+                                                rows.forEach(r => {
+                                                    const ip = Number(r.innings_pitched) || 0
+                                                    const full = Math.floor(ip)
+                                                    const frac = Math.round((ip - full) * 10)
+                                                    totalOuts += full * 3 + frac
+                                                })
+                                                const totalIP = Math.floor(totalOuts / 3) + (totalOuts % 3) * 0.1
+                                                totals.innings_pitched = totalIP
+                                                const ipForCalc = totalOuts / 3
+                                                totals.era = ipForCalc > 0 ? (totals.earned_runs * 9 / ipForCalc) : 0
+                                                totals.whip = ipForCalc > 0 ? ((totals.hits_allowed + totals.walks) / ipForCalc) : 0
+                                            }
+                                        }
+
+                                        return (
+                                            <div className={`bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border rounded-2xl p-5 shadow-2xl overflow-x-auto ${color === 'blue' ? 'border-blue-500/30' : 'border-orange-500/30'}`}>
+                                                <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                                                    <span className={`w-2 h-5 rounded-full ${color === 'blue' ? 'bg-blue-500' : 'bg-orange-500'}`}></span>
+                                                    {selectedPlayer.name} — {label} ({statsType === 'batting' ? '打擊' : '投手'}) ({rows.length} 筆)
+                                                </h2>
+                                                <table className="w-full text-xs text-white">
+                                                    <thead>
+                                                        <tr className="border-b border-purple-500/30">
+                                                            {cols.map(col => (
+                                                                <th key={col} className="p-1.5 text-center text-purple-300 font-bold whitespace-nowrap">{col}</th>
+                                                            ))}
+                                                            <th className="p-1.5 text-center text-red-300">Del</th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )
+                                                    </thead>
+                                                    <tbody>
+                                                        {/* Total row at top for quick reference */}
+                                                        {showTotal && rows.length > 0 && (
+                                                            <tr className="border-b-2 border-yellow-500/50 bg-yellow-500/10 font-bold">
+                                                                {keys.map(key => {
+                                                                    if (key === 'game_date') return <td key={key} className="p-1.5 text-center text-yellow-300 whitespace-nowrap">TOTAL</td>
+                                                                    if (key === 'position' || key === 'record') return <td key={key} className="p-1.5 text-center">-</td>
+                                                                    let val = totals[key]
+                                                                    if (val == null) return <td key={key} className="p-1.5 text-center">-</td>
+                                                                    if (key === 'avg') val = val.toFixed(3)
+                                                                    else if (key === 'era') val = val.toFixed(2)
+                                                                    else if (key === 'whip') val = val.toFixed(2)
+                                                                    else if (key === 'innings_pitched') val = val.toFixed(1)
+                                                                    return <td key={key} className="p-1.5 text-center text-yellow-200 whitespace-nowrap">{val}</td>
+                                                                })}
+                                                                <td className="p-1.5 text-center">-</td>
+                                                            </tr>
+                                                        )}
+                                                        {rows.map(row => (
+                                                            <tr key={row.id} className="border-b border-purple-500/10 hover:bg-purple-500/10">
+                                                                {keys.map(key => {
+                                                                    let val = row[key]
+                                                                    if (key === 'avg' && val != null) val = Number(val).toFixed(3)
+                                                                    if (key === 'era' && val != null) val = Number(val).toFixed(2)
+                                                                    if (key === 'whip' && val != null) val = Number(val).toFixed(2)
+                                                                    return (
+                                                                        <td key={key} className="p-1.5 text-center whitespace-nowrap">
+                                                                            {val ?? '-'}
+                                                                        </td>
+                                                                    )
+                                                                })}
+                                                                <td className="p-1.5 text-center">
+                                                                    <button
+                                                                        onClick={() => handleDelete(row.id)}
+                                                                        className="text-red-400 hover:text-red-300 transition-colors"
+                                                                        title="刪除"
+                                                                    >
+                                                                        ✗
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )
+                                    }
 
                                     return (
                                         <>
