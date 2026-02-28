@@ -5,15 +5,15 @@ export async function GET(request, { params }) {
     const { leagueId } = await params;
     const { searchParams } = new URL(request.url);
     const managerId = searchParams.get('manager_id');
+    const dateParam = searchParams.get('date');
 
     if (!managerId) {
         return NextResponse.json({ success: false, error: 'Missing manager_id' }, { status: 400 });
     }
 
     try {
-        // Determine current week (Taiwan time)
-        const now = new Date();
-        const todayTw = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+        // Use provided date, or fall back to today (Taiwan time)
+        const todayTw = dateParam || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 
         const { data: weekData } = await supabase
             .from('league_schedule')

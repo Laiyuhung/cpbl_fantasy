@@ -389,10 +389,10 @@ export default function RosterPage() {
 
     // Fetch Weekly IP & Add Count
     useEffect(() => {
-        if (!myManagerId || !leagueId) return;
+        if (!myManagerId || !leagueId || !selectedDate) return;
         const fetchWeeklyIP = async () => {
             try {
-                const res = await fetch(`/api/league/${leagueId}/weekly-ip?manager_id=${myManagerId}`);
+                const res = await fetch(`/api/league/${leagueId}/weekly-ip?manager_id=${myManagerId}&date=${selectedDate}`);
                 const data = await res.json();
                 if (data.success) {
                     setWeeklyIP(data.ip);
@@ -401,7 +401,7 @@ export default function RosterPage() {
             } catch (e) { console.error('Failed to fetch weekly IP:', e); }
         };
         fetchWeeklyIP();
-    }, [leagueId, myManagerId]);
+    }, [leagueId, myManagerId, selectedDate]);
 
     // Fetch Roster Percentage
     useEffect(() => {
