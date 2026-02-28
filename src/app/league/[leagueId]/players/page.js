@@ -67,7 +67,7 @@ export default function PlayersPage() {
 
   // Watch State
   const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
-  const [filterOwnership, setFilterOwnership] = useState('available'); // all, available, myteam, watched
+  const [filterOwnership, setFilterOwnership] = useState('market'); // all, market, available, myteam, watched
   const [filterTeam, setFilterTeam] = useState('all'); // Team filter
   const [filterPosition, setFilterPosition] = useState('all'); // Position filter
 
@@ -535,7 +535,10 @@ export default function PlayersPage() {
       // Ownership filter
       const ownership = ownerships.find(o => o.player_id === player.player_id);
       let matchesOwnership = true;
-      if (filterOwnership === 'available') {
+      if (filterOwnership === 'market') {
+        // FA + Waiver (not on any team)
+        matchesOwnership = !ownership || (ownership.status || '').toLowerCase() === 'waiver';
+      } else if (filterOwnership === 'available') {
         matchesOwnership = !ownership; // Free agents only
       } else if (filterOwnership === 'myteam') {
         matchesOwnership = ownership && ownership.manager_id === myManagerId;
@@ -1813,6 +1816,7 @@ export default function PlayersPage() {
                   className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All Players</option>
+                  <option value="market">Market</option>
                   <option value="available">Free Agents</option>
                   <option value="myteam">My Team</option>
                   <option value="watched">★ Watched</option>

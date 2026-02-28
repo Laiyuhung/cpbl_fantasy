@@ -83,7 +83,7 @@ export default function CpblScheduleWidget() {
     const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 
     return (
-        <div className="bg-slate-900/50 border border-purple-500/20 rounded-xl overflow-visible shadow-lg h-fit">
+        <div className="bg-slate-900/50 border border-purple-500/20 rounded-xl overflow-visible shadow-lg h-fit relative z-10">
             {/* Header: Date Navigation */}
             <div className="bg-purple-900/20 p-3 flex items-center justify-between border-b border-purple-500/20 gap-2 relative">
 
