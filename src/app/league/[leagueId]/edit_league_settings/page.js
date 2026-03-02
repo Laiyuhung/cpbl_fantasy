@@ -1438,6 +1438,23 @@ const EditLeagueSettingsPage = ({ params }) => {
         .animate-scaleIn {
           animation: scaleIn 0.4s ease-out;
         }
+        @media (max-width: 639px) {
+          .settings-table tr {
+            display: flex;
+            flex-direction: column;
+          }
+          .settings-table td {
+            width: 100% !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+          .settings-table td:first-child {
+            padding-bottom: 0.25rem !important;
+          }
+          .settings-table td:last-child {
+            padding-top: 0.25rem !important;
+          }
+        }
       `}</style>
 
       {activeHelpKey && (
@@ -1469,9 +1486,9 @@ const EditLeagueSettingsPage = ({ params }) => {
         </div>
       )}
 
-      <div className="relative max-w-7xl mx-auto space-y-8 p-8 pt-24 z-0">
-        <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
-          <h1 className="text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-4">Edit League Settings</h1>
+      <div className="relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-8 pt-20 sm:pt-24 z-0">
+        <div className="mb-6 sm:mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-4 sm:p-8 shadow-2xl">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-2 sm:mb-4">Edit League Settings</h1>
           <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-sm font-semibold border border-purple-500/50">
             <span>Status:</span>
             <span>{status || 'unknown'}</span>
@@ -1484,15 +1501,15 @@ const EditLeagueSettingsPage = ({ params }) => {
               key={section.key}
               className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
-                <h2 className="flex items-center gap-3 text-3xl font-black text-white">
-                  <span className="text-2xl">{section.icon}</span>
+              <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-4 sm:p-6 border-b border-blue-400/30">
+                <h2 className="flex items-center gap-2 sm:gap-3 text-xl sm:text-3xl font-black text-white">
+                  <span className="text-lg sm:text-2xl">{section.icon}</span>
                   {section.label}
                 </h2>
               </div>
               <div className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full settings-table">
                     <tbody>
                       {Object.entries(settings[section.key]).map(([key, value], index) => {
                         if (
@@ -1518,7 +1535,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                             className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'
                               } hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}
                           >
-                            <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-purple-200 w-2/5 text-sm sm:text-base">
                               <div className="flex items-center gap-2">
                                 {key}
                                 {getSettingDescription(key) && (
@@ -1532,7 +1549,7 @@ const EditLeagueSettingsPage = ({ params }) => {
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-purple-300 w-3/5">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-purple-300 w-3/5">
                               {isMultilineField(key) ? (
                                 <div>
                                   <textarea
@@ -1768,7 +1785,7 @@ const EditLeagueSettingsPage = ({ params }) => {
 
 
 
-        <div className="mt-8 flex justify-end gap-4">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:justify-end gap-3 sm:gap-4">
           {saveMessage && (
             <div className={`px-4 py-2 rounded-md ${saveMessage.includes('✅')
               ? 'bg-green-500/20 text-green-300 border border-green-500/50'

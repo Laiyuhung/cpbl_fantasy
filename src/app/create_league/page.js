@@ -957,6 +957,23 @@ const CreateLeaguePage = () => {
         @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
         .animate-scaleIn { animation: scaleIn 0.4s ease-out; }
+        @media (max-width: 639px) {
+          .settings-table tr {
+            display: flex;
+            flex-direction: column;
+          }
+          .settings-table td {
+            width: 100% !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+          .settings-table td:first-child {
+            padding-bottom: 0.25rem !important;
+          }
+          .settings-table td:last-child {
+            padding-top: 0.25rem !important;
+          }
+        }
       `}</style>
 
       {showSuccessAnimation && (
@@ -1002,21 +1019,21 @@ const CreateLeaguePage = () => {
         </div>
       )}
 
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8 pt-24 z-0">
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8 pt-20 sm:pt-24 z-0">
         {/* Enhanced Header Section */}
-        <div className="max-w-7xl mx-auto mb-12">
+        <div className="max-w-7xl mx-auto mb-6 sm:mb-12">
           <div className="relative">
             {/* Decorative background glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-blue-500/20 blur-3xl -z-10"></div>
 
             {/* Header content */}
-            <div className="relative bg-gradient-to-br from-purple-600/10 to-blue-600/10 backdrop-blur-sm border border-purple-500/20 rounded-3xl p-8 shadow-2xl">
-              <div className="flex items-center gap-6">
+            <div className="relative bg-gradient-to-br from-purple-600/10 to-blue-600/10 backdrop-blur-sm border border-purple-500/20 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl">
+              <div className="flex items-center gap-3 sm:gap-6">
                 {/* Icon */}
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-blue-500 blur-2xl opacity-50 animate-pulse"></div>
-                  <div className="relative bg-gradient-to-br from-purple-600 to-blue-600 p-6 rounded-2xl shadow-xl">
-                    <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="relative bg-gradient-to-br from-purple-600 to-blue-600 p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-xl">
+                    <svg className="w-8 h-8 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                   </div>
@@ -1024,10 +1041,10 @@ const CreateLeaguePage = () => {
 
                 {/* Title and subtitle */}
                 <div className="flex-1">
-                  <h1 className="text-6xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-2 tracking-tight">
+                  <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent mb-1 sm:mb-2 tracking-tight">
                     CREATE NEW LEAGUE
                   </h1>
-                  <p className="text-lg text-purple-300/80 font-medium">
+                  <p className="text-sm sm:text-lg text-purple-300/80 font-medium">
                     Set up your fantasy baseball league with custom rules and settings
                   </p>
                 </div>
@@ -1052,15 +1069,15 @@ const CreateLeaguePage = () => {
               key={section.key}
               className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-6 border-b border-blue-400/30">
-                <h2 className="flex items-center gap-3 text-3xl font-black text-white">
-                  <span className="text-2xl">{section.icon}</span>
+              <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-4 sm:p-6 border-b border-blue-400/30">
+                <h2 className="flex items-center gap-2 sm:gap-3 text-xl sm:text-3xl font-black text-white">
+                  <span className="text-lg sm:text-2xl">{section.icon}</span>
                   {section.label}
                 </h2>
               </div>
               <div className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full settings-table">
                     <tbody>
                       {Object.entries(settings[section.key]).map(([key, value], index) => {
                         if (section.key === 'trading' && key !== 'Trade Review' && settings.trading['Trade Review'] === 'No review') return null;
@@ -1068,7 +1085,7 @@ const CreateLeaguePage = () => {
                         if (section.key === 'general' && settings.general['Draft Type'] !== 'Live Draft' && ['Live Draft Pick Time', 'Live Draft Time'].includes(key)) return null;
                         return (
                           <tr key={key} className={`${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/40'} hover:bg-purple-500/20 transition-colors border-b border-purple-500/20`}>
-                            <td className="px-6 py-4 font-bold text-purple-200 w-2/5">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-purple-200 w-2/5 text-sm sm:text-base">
                               <div className="flex items-center gap-2">
                                 {key}
                                 {getSettingDescription(key) && (
@@ -1076,7 +1093,7 @@ const CreateLeaguePage = () => {
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-purple-300 w-3/5">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-purple-300 w-3/5">
                               {isMultilineField(key) ? (
                                 <div>
                                   <textarea value={value} onChange={(e) => handleSettingChange(section.key, key, e.target.value)} rows="3" className={`w-full px-3 py-2 bg-slate-800/60 border rounded-md text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm ${!value || value.trim() === '' ? 'border-red-500 bg-red-900/30' : 'border-purple-500/30'}`} />
@@ -1183,12 +1200,14 @@ const CreateLeaguePage = () => {
             <SchedulePreview settings={settings} onValidationChange={handleScheduleValidation} onScheduleChange={handleScheduleChange} />
           </div>
 
-          <div className="flex justify-end gap-4">
-            {saveMessage && <div className={`px-4 py-2 rounded-md ${saveMessage.includes('✅') ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-red-100 text-red-800 border border-red-300'}`}>{saveMessage.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 sm:gap-4">
+            {saveMessage && <div className={`px-4 py-2 rounded-md text-sm ${saveMessage.includes('✅') ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-red-100 text-red-800 border border-red-300'}`}>{saveMessage.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
             {scheduleError && <div className="px-4 py-2 rounded-md bg-yellow-100 text-yellow-800 border border-yellow-300 text-sm">Button disabled: Schedule validation error</div>}
             {hasWeightErrors() && <div className="px-4 py-2 rounded-md bg-red-100 text-red-800 border border-red-300 text-sm">Button disabled: Invalid weight values detected</div>}
-            <button onClick={() => { setSettings(cloneSettings(initialSettings)); setSaveMessage(''); setLeagueId(null); setScheduleData([]); }} className="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-400 transition-colors">Reset to Default</button>
-            <button onClick={handleSave} disabled={isSaving || scheduleError || hasWeightErrors()} title={scheduleError ? 'Schedule validation failed' : hasWeightErrors() ? 'Invalid weight values' : ''} className={`px-6 py-2 font-semibold rounded-md transition-colors ${isSaving || scheduleError || hasWeightErrors() ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>{isSaving ? 'Creating...' : 'Create a new league'}</button>
+            <div className="flex gap-3 sm:gap-4">
+              <button onClick={() => { setSettings(cloneSettings(initialSettings)); setSaveMessage(''); setLeagueId(null); setScheduleData([]); }} className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-400 transition-colors text-sm sm:text-base">Reset</button>
+              <button onClick={handleSave} disabled={isSaving || scheduleError || hasWeightErrors()} title={scheduleError ? 'Schedule validation failed' : hasWeightErrors() ? 'Invalid weight values' : ''} className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 font-semibold rounded-md transition-colors text-sm sm:text-base ${isSaving || scheduleError || hasWeightErrors() ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>{isSaving ? 'Creating...' : 'Create League'}</button>
+            </div>
           </div>
         </div>
       </div>
