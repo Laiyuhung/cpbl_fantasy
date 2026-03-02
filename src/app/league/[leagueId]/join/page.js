@@ -136,8 +136,8 @@ export default function JoinLeaguePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-8">
-        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-12 shadow-2xl">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 sm:p-8">
+        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-6 sm:p-12 shadow-2xl">
           <div className="w-20 h-20 mx-auto mb-6 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-white text-center">Loading league information...</p>
         </div>
@@ -147,8 +147,8 @@ export default function JoinLeaguePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-8">
-        <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-12 shadow-2xl max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 sm:p-8">
+        <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-6 sm:p-12 shadow-2xl max-w-md">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center">
               <svg className="w-12 h-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,8 +171,8 @@ export default function JoinLeaguePage() {
 
   if (joinStatus === 'success') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-8">
-        <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 backdrop-blur-lg border border-green-500/30 rounded-2xl p-12 shadow-2xl max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 sm:p-8">
+        <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 backdrop-blur-lg border border-green-500/30 rounded-2xl p-6 sm:p-12 shadow-2xl max-w-md">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
               <svg className="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +189,7 @@ export default function JoinLeaguePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-3 sm:p-8 pt-16 sm:pt-20">
       <div className={`max-w-4xl mx-auto transition-all duration-300 ${joinBlockedReason ? 'blur-sm pointer-events-none' : ''}`}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -213,133 +213,133 @@ export default function JoinLeaguePage() {
 
         {/* League Information */}
         <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-6 border-b border-purple-400/30">
-            <h2 className="text-2xl font-black text-white">League Settings</h2>
+          <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-3 sm:p-6 border-b border-purple-400/30">
+            <h2 className="text-lg sm:text-2xl font-black text-white">League Settings</h2>
           </div>
-          <div className="p-6 space-y-6">
+          <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
             {/* Basic Settings */}
             <div>
-              <h3 className="text-lg font-bold text-purple-300 mb-3">⚙️ Basic Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Teams</span>
-                  <p className="text-white text-lg font-bold mt-1">
+              <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 sm:mb-3">⚙️ Basic Settings</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Teams</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">
                     {currentMembers} / {maxTeams || leagueSettings.max_teams || 'N/A'}
                     {currentMembers >= maxTeams && maxTeams > 0 && (
                       <span className="ml-2 text-xs font-normal text-red-400">(Full)</span>
                     )}
                   </p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Scoring Type</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.scoring_type || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Scoring Type</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.scoring_type || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Start Scoring On</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.start_scoring_on || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Start Scoring On</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.start_scoring_on || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Publicly Viewable</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.make_league_publicly_viewable || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Publicly Viewable</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.make_league_publicly_viewable || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Invite Permissions</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.invite_permissions || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Invite Permissions</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.invite_permissions || 'N/A'}</p>
                 </div>
               </div>
             </div>
 
             {/* Draft Settings */}
             <div>
-              <h3 className="text-lg font-bold text-purple-300 mb-3">🎯 Draft Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Draft Type</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.draft_type || 'N/A'}</p>
+              <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 sm:mb-3">🎯 Draft Settings</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Draft Type</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.draft_type || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Live Draft Time</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.live_draft_time ? new Date(leagueSettings.live_draft_time).toLocaleString() : 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Live Draft Time</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.live_draft_time ? new Date(leagueSettings.live_draft_time).toLocaleString() : 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Live Draft Pick Time</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.live_draft_pick_time || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Pick Time</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.live_draft_pick_time || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Post Draft Waiver Time</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.post_draft_players_unfreeze_time || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Post Draft Waiver</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.post_draft_players_unfreeze_time || 'N/A'}</p>
                 </div>
               </div>
             </div>
 
             {/* Trade Settings */}
             <div>
-              <h3 className="text-lg font-bold text-purple-300 mb-3">🔄 Trade Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Trade Review</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_review || 'N/A'}</p>
+              <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 sm:mb-3">🔄 Trade Settings</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Trade Review</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.trade_review || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Trade Reject Time</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_reject_time || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Reject Time</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.trade_reject_time || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Trade Reject Percentage</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_reject_percentage || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Reject %</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.trade_reject_percentage || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Trade Deadline</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.trade_end_date || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Trade Deadline</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.trade_end_date || 'N/A'}</p>
                 </div>
               </div>
             </div>
 
             {/* Waiver & Acquisition Settings */}
             <div>
-              <h3 className="text-lg font-bold text-purple-300 mb-3">📋 Waiver & Acquisition</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Max Acquisitions/Week</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.max_acquisitions_per_week || 'N/A'}</p>
+              <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 sm:mb-3">📋 Waiver & Acquisition</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Max Acq/Week</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.max_acquisitions_per_week || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Waiver Players Time</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.waiver_players_unfreeze_time || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Waiver Time</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.waiver_players_unfreeze_time || 'N/A'}</p>
                 </div>
               </div>
             </div>
 
             {/* Roster Settings */}
             <div>
-              <h3 className="text-lg font-bold text-purple-300 mb-3">👥 Roster Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Allow Minor from Waivers/FA</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.allow_injured_to_injury_slot || 'N/A'}</p>
+              <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 sm:mb-3">👥 Roster Settings</h3>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Minor from Waivers</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.allow_injured_to_injury_slot || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Min IP Per Week</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.min_innings_pitched_per_week || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Min IP/Week</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.min_innings_pitched_per_week || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Foreigner On Team Limit</span>
-                  <p className="text-white text-lg font-bold mt-1">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Foreign Team Limit</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">
                     {leagueSettings.foreigner_on_team_limit === null ? 'No limit' : leagueSettings.foreigner_on_team_limit}
                   </p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Foreigner Active Limit</span>
-                  <p className="text-white text-lg font-bold mt-1">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Foreign Active Limit</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">
                     {leagueSettings.foreigner_active_limit === null ? 'No limit' : leagueSettings.foreigner_active_limit}
                   </p>
                 </div>
                 {leagueSettings.roster_positions && (
-                  <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4 md:col-span-2">
-                    <span className="text-purple-400 text-sm font-medium">Roster Positions</span>
-                    <div className="text-white text-sm mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4 col-span-2">
+                    <span className="text-purple-400 text-xs sm:text-sm font-medium">Roster Positions</span>
+                    <div className="text-white text-xs sm:text-sm mt-1.5 sm:mt-2 grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2">
                       {Object.entries(leagueSettings.roster_positions).map(([pos, count]) => (
-                        <div key={pos} className="bg-slate-700/40 rounded px-2 py-1">
+                        <div key={pos} className="bg-slate-700/40 rounded px-1.5 sm:px-2 py-0.5 sm:py-1">
                           <span className="font-bold text-purple-300">{pos}:</span> {count}
                         </div>
                       ))}
@@ -351,27 +351,27 @@ export default function JoinLeaguePage() {
 
             {/* Playoff Settings */}
             <div>
-              <h3 className="text-lg font-bold text-purple-300 mb-3">🏆 Playoff Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Playoffs</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.playoffs || 'N/A'}</p>
+              <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 sm:mb-3">🏆 Playoff Settings</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Playoffs</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.playoffs || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Playoffs Start</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.playoffs_start || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Start</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.playoffs_start || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Tie Breaker</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.playoff_tie_breaker || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Tie Breaker</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.playoff_tie_breaker || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Reseeding</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.playoff_reseeding || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Reseeding</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.playoff_reseeding || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                  <span className="text-purple-400 text-sm font-medium">Lock Eliminated Teams</span>
-                  <p className="text-white text-lg font-bold mt-1">{leagueSettings.lock_eliminated_teams || 'N/A'}</p>
+                <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                  <span className="text-purple-400 text-xs sm:text-sm font-medium">Lock Eliminated</span>
+                  <p className="text-white text-sm sm:text-lg font-bold mt-0.5 sm:mt-1">{leagueSettings.lock_eliminated_teams || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -379,11 +379,11 @@ export default function JoinLeaguePage() {
             {/* Stat Categories */}
             {(leagueSettings.batter_stat_categories?.length > 0 || leagueSettings.pitcher_stat_categories?.length > 0) && (
               <div>
-                <h3 className="text-lg font-bold text-purple-300 mb-3">📊 Stat Categories</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 sm:mb-3">📊 Stat Categories</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
                   {leagueSettings.batter_stat_categories?.length > 0 && (
-                    <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                      <span className="text-purple-400 text-sm font-medium">Batter Stats</span>
+                    <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                      <span className="text-purple-400 text-xs sm:text-sm font-medium">Batter Stats</span>
                       <div className="text-white text-sm mt-2 space-y-1">
                         {leagueSettings.batter_stat_categories.map((stat, idx) => (
                           <div key={idx} className="bg-slate-700/40 rounded px-2 py-1 text-purple-200 flex justify-between items-center">
@@ -397,8 +397,8 @@ export default function JoinLeaguePage() {
                     </div>
                   )}
                   {leagueSettings.pitcher_stat_categories?.length > 0 && (
-                    <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-4">
-                      <span className="text-purple-400 text-sm font-medium">Pitcher Stats</span>
+                    <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg p-2.5 sm:p-4">
+                      <span className="text-purple-400 text-xs sm:text-sm font-medium">Pitcher Stats</span>
                       <div className="text-white text-sm mt-2 space-y-1">
                         {leagueSettings.pitcher_stat_categories.map((stat, idx) => (
                           <div key={idx} className="bg-slate-700/40 rounded px-2 py-1 text-purple-200 flex justify-between items-center">
@@ -419,7 +419,7 @@ export default function JoinLeaguePage() {
 
         {/* Join Error Message - Above Buttons */}
         {joinStatus === 'error' && (
-          <div className="bg-gradient-to-r from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/50 rounded-2xl p-6 shadow-2xl mb-6">
+          <div className="bg-gradient-to-r from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/50 rounded-2xl p-3 sm:p-6 shadow-2xl mb-4 sm:mb-6">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -435,17 +435,17 @@ export default function JoinLeaguePage() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
           <button
             onClick={() => router.push('/home')}
-            className="flex-1 bg-slate-800/60 hover:bg-slate-700/60 border border-purple-500/30 text-purple-300 font-bold py-4 rounded-lg transition-all"
+            className="flex-1 bg-slate-800/60 hover:bg-slate-700/60 border border-purple-500/30 text-purple-300 font-bold py-3 sm:py-4 rounded-lg transition-all text-sm sm:text-base"
           >
             Cancel
           </button>
           <button
             onClick={handleJoin}
             disabled={joining}
-            className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+            className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 sm:py-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center text-sm sm:text-base"
           >
             {joining ? (
               <>
@@ -465,7 +465,7 @@ export default function JoinLeaguePage() {
 
         {/* Login Warning - Below Buttons */}
         {!isLoggedIn && (
-          <div className="mt-6 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 backdrop-blur-lg border border-yellow-500/50 rounded-2xl p-6 shadow-2xl">
+          <div className="mt-4 sm:mt-6 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 backdrop-blur-lg border border-yellow-500/50 rounded-2xl p-3 sm:p-6 shadow-2xl">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -485,7 +485,7 @@ export default function JoinLeaguePage() {
       {joinBlockedReason && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-          <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 border border-red-500/30 rounded-2xl p-8 shadow-2xl max-w-md w-full animate-in fade-in zoom-in">
+          <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 border border-red-500/30 rounded-2xl p-5 sm:p-8 shadow-2xl max-w-md w-full animate-in fade-in zoom-in">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-red-500/20 rounded-full flex items-center justify-center">
                 <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
