@@ -459,6 +459,17 @@ function SchedulePreview({ leagueId, settings, onValidationChange, onScheduleCha
     );
   }
 
+  const formatDateShort = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('.');
+    if (parts.length === 3) {
+      const m = parseInt(parts[1]);
+      const d = parseInt(parts[2]);
+      return `${m}/${d}`;
+    }
+    return dateStr;
+  };
+
   return (
     <div className="mb-8 p-3 sm:p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
       <h2 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4">📅 Schedule Preview</h2>
@@ -503,12 +514,25 @@ function SchedulePreview({ leagueId, settings, onValidationChange, onScheduleCha
                     {week.week_type === 'playoffs' ? 'Playoffs' : week.week_type === 'makeup' ? 'Makeup' : week.week_type === 'preparation' ? 'Preparation' : 'Regular'}
                   </span>
                 </td>
-                <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-purple-200">{week.week_start}</td>
-                <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-purple-200">{week.week_end}</td>
+                <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-purple-200">
+                  <span className="sm:hidden">{formatDateShort(week.week_start)}</span>
+                  <span className="hidden sm:inline">{week.week_start}</span>
+                </td>
+                <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-purple-200">
+                  <span className="sm:hidden">{formatDateShort(week.week_end)}</span>
+                  <span className="hidden sm:inline">{week.week_end}</span>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {/* Mobile dot legend */}
+        <div className="sm:hidden flex flex-wrap gap-3 mt-3 px-1 text-xs text-purple-300">
+          <div className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-blue-400"></span>Regular</div>
+          <div className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-purple-400"></span>Playoffs</div>
+          <div className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-yellow-400"></span>Makeup</div>
+          <div className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>Preparation</div>
+        </div>
         {scheduleValidationError && (
           <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded text-sm text-red-300">
             <p className="font-semibold">❌ {scheduleValidationError}</p>
