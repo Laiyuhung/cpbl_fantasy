@@ -980,9 +980,9 @@ export default function DraftPage() {
                 </div>
                 <button
                     onClick={() => handlePick(player.player_id)}
-                    disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(player.player_id) || (player.identity?.toLowerCase() === 'foreigner' && foreignerLimit !== null && foreignerCount >= foreignerLimit)}
+                    disabled={!!pickingId || draftState?.status !== 'active' || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(player.player_id) || (player.identity?.toLowerCase() === 'foreigner' && foreignerLimit !== null && foreignerCount >= foreignerLimit)}
                     className={`mt-2 w-full py-1 rounded text-xs font-bold transition-all flex items-center justify-center gap-2
-                        ${draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id) && !(player.identity?.toLowerCase() === 'foreigner' && foreignerLimit !== null && foreignerCount >= foreignerLimit)
+                        ${draftState?.status === 'active' && draftState?.currentPick?.manager_id === myManagerId && !takenIds.has(player.player_id) && !(player.identity?.toLowerCase() === 'foreigner' && foreignerLimit !== null && foreignerCount >= foreignerLimit)
                             ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg'
                             : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
                         }`}
@@ -1503,9 +1503,9 @@ export default function DraftPage() {
                                                         </button>
                                                         <button
                                                             onClick={() => handlePick(player.player_id)}
-                                                            disabled={!!pickingId || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id)) || (isForeigner && foreignerLimit !== null && foreignerCount >= foreignerLimit)}
+                                                            disabled={!!pickingId || draftState?.status !== 'active' || draftState?.currentPick?.manager_id !== myManagerId || takenIds.has(String(player.player_id)) || (isForeigner && foreignerLimit !== null && foreignerCount >= foreignerLimit)}
                                                             className={`px-4 py-1.5 rounded-[4px] text-xs font-bold shadow-md transition-all flex items-center gap-2
-                                                            ${draftState?.currentPick?.manager_id === myManagerId && !pickingId && !(isForeigner && foreignerLimit !== null && foreignerCount >= foreignerLimit)
+                                                            ${draftState?.status === 'active' && draftState?.currentPick?.manager_id === myManagerId && !pickingId && !(isForeigner && foreignerLimit !== null && foreignerCount >= foreignerLimit)
                                                                     ? 'bg-green-600 hover:bg-green-500 text-white hover:scale-105 active:scale-95'
                                                                     : 'bg-slate-700/50 text-slate-600 cursor-not-allowed'
                                                                 }`}
