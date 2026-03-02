@@ -946,7 +946,7 @@ export default function LeaguePage() {
 
               {/* Custom Dropdown Content */}
               {weekDropdownOpen && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[280px] bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="absolute top-full right-0 sm:left-1/2 sm:-translate-x-1/2 mt-4 w-[280px] max-w-[90vw] bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in duration-200">
                   <div className="max-h-[400px] overflow-y-auto py-2 px-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                     {scheduleData.map((week) => (
                       <button
@@ -1034,8 +1034,8 @@ export default function LeaguePage() {
                           <div className="flex-1">
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-4 flex-1">
-                                {/* Team Rank A */}
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black bg-slate-800 text-slate-300 border border-white/10 shadow-lg">
+                                {/* Team Rank A (Desktop Only) */}
+                                <div className="hidden sm:flex w-10 h-10 rounded-full flex-col font-black bg-slate-800 text-slate-300 border border-white/10 shadow-lg justify-center items-center">
                                   {rankA || '?'}
                                 </div>
                                 {/* Team Info A */}
@@ -1043,8 +1043,9 @@ export default function LeaguePage() {
                                   <div className="text-sm sm:text-lg font-black text-white group-hover:text-purple-300 transition-colors leading-tight truncate">
                                     {managerA?.nickname || 'Unknown'}
                                   </div>
-                                  <div className="text-xs font-bold text-yellow-400 uppercase tracking-wider mt-1">
-                                    {recordA || '0-0-0'}
+                                  <div className="text-[10px] sm:text-xs font-bold text-yellow-400 uppercase tracking-wider mt-1">
+                                    <span className="sm:hidden">{recordA || '0-0-0'} | #{rankA || '?'}</span>
+                                    <span className="hidden sm:inline">{recordA || '0-0-0'}</span>
                                   </div>
                                 </div>
                               </div>
@@ -1073,8 +1074,8 @@ export default function LeaguePage() {
                           <div className="flex-1">
                             <div className="flex items-center justify-between gap-3 flex-row-reverse">
                               <div className="flex items-center gap-4 flex-1 flex-row-reverse">
-                                {/* Team Rank B */}
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black bg-slate-800 text-slate-300 border border-white/10 shadow-lg">
+                                {/* Team Rank B (Desktop Only) */}
+                                <div className="hidden sm:flex w-10 h-10 rounded-full flex-col font-black bg-slate-800 text-slate-300 border border-white/10 shadow-lg justify-center items-center">
                                   {rankB || '?'}
                                 </div>
                                 {/* Team Info B */}
@@ -1082,8 +1083,9 @@ export default function LeaguePage() {
                                   <div className="text-sm sm:text-lg font-black text-white group-hover:text-cyan-300 transition-colors leading-tight truncate">
                                     {managerB?.nickname || 'Unknown'}
                                   </div>
-                                  <div className="text-xs font-bold text-yellow-400 uppercase tracking-wider mt-1">
-                                    {recordB || '0-0-0'}
+                                  <div className="text-[10px] sm:text-xs font-bold text-yellow-400 uppercase tracking-wider mt-1">
+                                    <span className="sm:hidden">#{rankB || '?'} | {recordB || '0-0-0'}</span>
+                                    <span className="hidden sm:inline">{recordB || '0-0-0'}</span>
                                   </div>
                                 </div>
                               </div>
@@ -1292,6 +1294,10 @@ export default function LeaguePage() {
                           }`}>
                           {team.streak}
                         </span>
+                        <div className="flex flex-col items-center flex-shrink-0 min-w-[30px]">
+                          <span className="text-[8px] text-slate-500 uppercase tracking-tighter leading-none mb-0.5">Waiver</span>
+                          <span className="text-xs font-bold text-purple-200 leading-none">{team.waiver_rank || '-'}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
