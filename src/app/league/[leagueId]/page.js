@@ -818,9 +818,9 @@ export default function LeaguePage() {
               <button
                 onClick={() => handleWeekChange(-1)}
                 disabled={currentWeek <= 1 || matchupsLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
 
               <button
@@ -836,18 +836,23 @@ export default function LeaguePage() {
                   </svg>
                 </div>
                 {weekDetails && (
-                  <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest">
-                    {new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
+                  <>
+                    <span className="text-[10px] font-bold text-cyan-300/80 sm:hidden">
+                      {new Date(weekDetails.week_start).getMonth() + 1}/{new Date(weekDetails.week_start).getDate()}-{new Date(weekDetails.week_end).getMonth() + 1}/{new Date(weekDetails.week_end).getDate()}
+                    </span>
+                    <span className="text-xs font-bold text-cyan-300/80 uppercase tracking-widest hidden sm:block">
+                      {new Date(weekDetails.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weekDetails.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </>
                 )}
               </button>
 
               <button
                 onClick={() => handleWeekChange(1)}
                 disabled={currentWeek >= (scheduleData.length || 0) || matchupsLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
 
               {/* Custom Dropdown Content */}
@@ -968,12 +973,10 @@ export default function LeaguePage() {
                           </div>
 
                           {/* VS Divider */}
-                          <div className="flex flex-col items-center px-1 sm:px-4">
-                            <div className="w-px h-16 bg-gradient-to-b from-transparent via-purple-500/50 to-transparent"></div>
-                            <div className="absolute">
-                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-purple-500/30 flex items-center justify-center">
-                                <span className="text-xs font-black text-purple-400 uppercase tracking-wider">VS</span>
-                              </div>
+                          <div className="flex flex-col items-center justify-center px-1 sm:px-4 relative">
+                            <div className="w-px h-full absolute bg-gradient-to-b from-transparent via-purple-500/50 to-transparent"></div>
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-purple-500/30 flex items-center justify-center z-10">
+                              <span className="text-[10px] sm:text-xs font-black text-purple-400 uppercase">VS</span>
                             </div>
                           </div>
 
@@ -1177,49 +1180,29 @@ export default function LeaguePage() {
                 {/* Mobile Cards */}
                 <div className="md:hidden divide-y divide-white/5">
                   {standings.map((team) => (
-                    <div key={team.manager_id} className="p-4 hover:bg-purple-500/10 transition-colors">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                            team.rank === 2 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
-                              team.rank === 3 ? 'bg-orange-600/20 text-orange-300 border border-orange-600/30' :
-                                'bg-slate-700/40 text-slate-400'
-                            }`}>
-                            {team.rank}
+                    <div key={team.manager_id} className="px-3 py-2.5 hover:bg-purple-500/10 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                          team.rank === 2 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
+                            team.rank === 3 ? 'bg-orange-600/20 text-orange-300 border border-orange-600/30' :
+                              'bg-slate-700/40 text-slate-400'
+                          }`}>
+                          {team.rank}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-black text-white text-sm leading-tight truncate block">
+                            {team.nickname}
                           </span>
-                          <div className="flex flex-col">
-                            <span className="font-black text-white text-base leading-tight">
-                              {team.nickname}
-                            </span>
-                            <span className="text-xs font-bold text-slate-500 tracking-tight mt-0.5">
-                              {(() => {
-                                const member = getManagerDetails(team.manager_id);
-                                return member?.managers?.name || 'Unknown';
-                              })()}
-                            </span>
-                          </div>
                         </div>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                          team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                            team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                        <span className="font-mono text-cyan-300 text-xs font-semibold flex-shrink-0">{team.record_display}</span>
+                        <span className="font-mono text-purple-300 text-xs font-semibold flex-shrink-0">{team.win_pct.toFixed(3)}</span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300' :
+                          team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300' :
+                            team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300' :
                               'bg-slate-700/40 text-slate-400'
                           }`}>
                           {team.streak}
                         </span>
-                      </div>
-                      <div className="flex justify-around text-sm">
-                        <div className="text-center">
-                          <div className="text-slate-400 text-xs uppercase mb-1">Record</div>
-                          <div className="font-mono text-cyan-300 font-semibold">{team.record_display}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-slate-400 text-xs uppercase mb-1">Win %</div>
-                          <div className="font-mono text-purple-300 font-semibold">{team.win_pct.toFixed(3)}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-slate-400 text-xs uppercase mb-1">Waiver</div>
-                          <div className="font-mono text-slate-300 font-bold">{team.waiver_rank || '-'}</div>
-                        </div>
                       </div>
                     </div>
                   ))}
@@ -1358,61 +1341,63 @@ export default function LeaguePage() {
                     ) : (
                       <div className="divide-y divide-white/5">
                         {(viewAll ? waiverResults : waiverResults.slice(0, 5)).map((w) => (
-                          <div key={w.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all duration-300">
-                            {/* Left: Icons and Players */}
-                            <div className="flex flex-col gap-3 min-w-[200px]">
-                              <div className="flex items-center gap-5">
-                                <div className="w-6 flex justify-center flex-shrink-0">
-                                  <span className="text-2xl font-black text-green-500 leading-none">+</span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span
-                                    className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight"
-                                    onClick={() => w.player && setSelectedPlayerModal(w.player)}
-                                  >
-                                    {w.player?.name}
-                                  </span>
-                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                                    From Waivers
-                                  </span>
-                                </div>
-                              </div>
-                              {w.drop_player && (
-                                <div className="flex items-center gap-5">
-                                  <div className="w-6 flex justify-center flex-shrink-0">
-                                    <span className="text-2xl font-black text-red-500 leading-none">-</span>
+                          <div key={w.id} className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-white/5 transition-all duration-300">
+                            <div className="flex items-start justify-between">
+                              {/* Left: Icons and Players */}
+                              <div className="flex flex-col gap-2 sm:gap-3 min-w-0 flex-1">
+                                <div className="flex items-center gap-3 sm:gap-5">
+                                  <div className="w-5 sm:w-6 flex justify-center flex-shrink-0">
+                                    <span className="text-xl sm:text-2xl font-black text-green-500 leading-none">+</span>
                                   </div>
-                                  <div className="flex flex-col">
+                                  <div className="flex flex-col min-w-0">
                                     <span
-                                      className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight"
-                                      onClick={() => w.drop_player && setSelectedPlayerModal(w.drop_player)}
+                                      className="text-sm sm:text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight truncate"
+                                      onClick={() => w.player && setSelectedPlayerModal(w.player)}
                                     >
-                                      {w.drop_player?.name}
+                                      {w.player?.name}
                                     </span>
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
-                                      To Waivers
+                                      From Waivers
                                     </span>
                                   </div>
                                 </div>
-                              )}
-                            </div>
-
-                            {/* Middle: Status Result */}
-                            <div className="shrink-0 flex justify-center px-4">
-                              <span className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider ${w.status?.toLowerCase().includes('success') ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
-                                'bg-red-500/10 text-red-500 border border-red-500/20'
-                                }`}>
-                                {w.status}
-                              </span>
-                            </div>
-
-                            {/* Right: Manager and Date */}
-                            <div className="text-right flex-shrink-0 ml-8">
-                              <div className="text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
-                                {w.manager?.nickname}
+                                {w.drop_player && (
+                                  <div className="flex items-center gap-3 sm:gap-5">
+                                    <div className="w-5 sm:w-6 flex justify-center flex-shrink-0">
+                                      <span className="text-xl sm:text-2xl font-black text-red-500 leading-none">-</span>
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                      <span
+                                        className="text-sm sm:text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight truncate"
+                                        onClick={() => w.drop_player && setSelectedPlayerModal(w.drop_player)}
+                                      >
+                                        {w.drop_player?.name}
+                                      </span>
+                                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">
+                                        To Waivers
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                                {/* Status - on next line */}
+                                <div className="flex items-center gap-3 sm:gap-5">
+                                  <div className="w-5 sm:w-6 flex-shrink-0"></div>
+                                  <span className={`px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold uppercase tracking-wider ${w.status?.toLowerCase().includes('success') ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                                    'bg-red-500/10 text-red-500 border border-red-500/20'
+                                    }`}>
+                                    {w.status}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
-                                {new Date(w.off_waiver).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+
+                              {/* Right: Manager and Date */}
+                              <div className="text-right flex-shrink-0 ml-3 sm:ml-8">
+                                <div className="text-sm sm:text-base font-black text-blue-400 hover:text-blue-300 cursor-pointer transition-colors mb-0.5">
+                                  {w.manager?.nickname}
+                                </div>
+                                <div className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-tighter">
+                                  {new Date(w.off_waiver).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </div>
                               </div>
                             </div>
                           </div>
