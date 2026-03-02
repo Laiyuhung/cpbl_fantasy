@@ -274,9 +274,6 @@ export default function MoveModal({
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="text-xs font-mono font-medium text-slate-400 max-w-[150px] truncate">
-                                                    {getStatsReview(occ.player_id)}
-                                                </div>
                                             </button>
                                         );
                                     })}

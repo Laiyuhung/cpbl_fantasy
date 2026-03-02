@@ -1096,7 +1096,7 @@ export default function RosterPage() {
                                                         {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
                                                     </div>
                                                     <div>
-                                                        <div className="font-bold text-white text-sm sm:text-lg flex items-center flex-wrap">
+                                                        <div className="font-bold text-white text-sm sm:text-lg flex items-center whitespace-nowrap">
                                                             <button
                                                                 onClick={() => setSelectedPlayerModal(player)}
                                                                 className="hover:text-purple-300 transition-colors cursor-pointer"
@@ -1220,7 +1220,7 @@ export default function RosterPage() {
                                                         {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
                                                     </div>
                                                     <div>
-                                                        <div className="font-bold text-white text-sm sm:text-lg flex items-center flex-wrap">
+                                                        <div className="font-bold text-white text-sm sm:text-lg flex items-center whitespace-nowrap">
                                                             <button
                                                                 onClick={() => setSelectedPlayerModal(player)}
                                                                 className="hover:text-purple-300 transition-colors cursor-pointer"
