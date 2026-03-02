@@ -1062,7 +1062,7 @@ export default function RosterPage() {
                                     {displayBatterCats.map(stat => {
                                         const isForced = !batterStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
+                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16 hidden sm:table-cell`}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
@@ -1073,93 +1073,113 @@ export default function RosterPage() {
                                 {batterRoster.length === 0 ? (
                                     <tr><td colSpan={10} className="p-4 text-center text-purple-300">No Batters</td></tr>
                                 ) : batterRoster.map(player => (
-                                    <tr key={player.id} className="hover:bg-purple-500/5 transition">
-                                        <td className="px-3 sm:px-6 py-2 sm:py-4">
-                                            <button
-                                                onClick={() => handleSlotClick(player)}
-                                                disabled={player.isEmpty || !isMoveAllowed(player)}
-                                                className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
-                                                    !isMoveAllowed(player) ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60' :
-                                                        ['BN', 'IL', 'NA'].includes(player.position)
-                                                            ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
-                                                            : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
-                                                    }`}>
-                                                {player.position}
-                                            </button>
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-2 sm:py-4">
-                                            {player.isEmpty ? (
-                                                <div className="flex items-center gap-2 sm:gap-4 text-slate-500 font-bold italic">Empty</div>
-                                            ) : (
-                                                <div className="flex items-center gap-2 sm:gap-4">
-                                                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
-                                                        {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-white text-sm sm:text-lg flex items-center whitespace-nowrap">
-                                                            <button
-                                                                onClick={() => setSelectedPlayerModal(player)}
-                                                                className="hover:text-purple-300 transition-colors cursor-pointer"
-                                                            >
-                                                                {player.name}
-                                                            </button>
-                                                            <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
-                                                            <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
+                                    <React.Fragment key={player.id}>
+                                        <tr className="hover:bg-purple-500/5 transition">
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4">
+                                                <button
+                                                    onClick={() => handleSlotClick(player)}
+                                                    disabled={player.isEmpty || !isMoveAllowed(player)}
+                                                    className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
+                                                        !isMoveAllowed(player) ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60' :
+                                                            ['BN', 'IL', 'NA'].includes(player.position)
+                                                                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
+                                                                : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
+                                                        }`}>
+                                                    {player.position}
+                                                </button>
+                                            </td>
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4">
+                                                {player.isEmpty ? (
+                                                    <div className="flex items-center gap-2 sm:gap-4 text-slate-500 font-bold italic">Empty</div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 sm:gap-4">
+                                                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                            {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
                                                         </div>
-                                                        <div className="mt-1 flex items-center gap-2">
-                                                            {player.original_name && player.original_name !== player.name && (
-                                                                <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2">
-                                                                    {player.original_name}
-                                                                </span>
-                                                            )}
-                                                            <span className="text-xs text-slate-400 font-mono">
-                                                                {player.game_info ? (
-                                                                    player.game_info.is_postponed ? (
-                                                                        <span className="text-red-400">PPD</span>
-                                                                    ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
-                                                                        (() => {
-                                                                            const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
-                                                                            const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
-                                                                            const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
-                                                                            const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
-                                                                            return (
-                                                                                <>
-                                                                                    <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
-                                                                                    {' '}
-                                                                                    {player.game_info.is_home ? 'vs' : '@'}
-                                                                                    {' '}
-                                                                                    {player.game_info.opponent}
-                                                                                </>
-                                                                            );
-                                                                        })()
-                                                                    ) : (
-                                                                        <>
-                                                                            {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                                                            {' '}
-                                                                            {player.game_info.is_home ? 'vs' : '@'}
-                                                                            {' '}
-                                                                            {player.game_info.opponent}
-                                                                        </>
-                                                                    )
-                                                                ) : (
-                                                                    'No game'
+                                                        <div>
+                                                            <div className="font-bold text-white text-sm sm:text-lg flex items-center whitespace-nowrap">
+                                                                <button
+                                                                    onClick={() => setSelectedPlayerModal(player)}
+                                                                    className="hover:text-purple-300 transition-colors cursor-pointer"
+                                                                >
+                                                                    {player.name}
+                                                                </button>
+                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
+                                                                <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
+                                                            </div>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                {player.original_name && player.original_name !== player.name && (
+                                                                    <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2">
+                                                                        {player.original_name}
+                                                                    </span>
                                                                 )}
-                                                            </span>
-                                                            {renderPlayerBadges(player)}
+                                                                <span className="text-xs text-slate-400 font-mono">
+                                                                    {player.game_info ? (
+                                                                        player.game_info.is_postponed ? (
+                                                                            <span className="text-red-400">PPD</span>
+                                                                        ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
+                                                                            (() => {
+                                                                                const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
+                                                                                const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
+                                                                                const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
+                                                                                const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
+                                                                                return (
+                                                                                    <>
+                                                                                        <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
+                                                                                        {' '}
+                                                                                        {player.game_info.is_home ? 'vs' : '@'}
+                                                                                        {' '}
+                                                                                        {player.game_info.opponent}
+                                                                                    </>
+                                                                                );
+                                                                            })()
+                                                                        ) : (
+                                                                            <>
+                                                                                {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                                {' '}
+                                                                                {player.game_info.is_home ? 'vs' : '@'}
+                                                                                {' '}
+                                                                                {player.game_info.opponent}
+                                                                            </>
+                                                                        )
+                                                                    ) : (
+                                                                        'No game'
+                                                                    )}
+                                                                </span>
+                                                                {renderPlayerBadges(player)}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </td>
-                                        {displayBatterCats.map(stat => {
-                                            const isForced = !batterStatCategories.includes(stat);
-                                            return (
-                                                <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                                                    {formatStat(getPlayerStat(player.player_id, stat))}
+                                                )}
+                                            </td>
+                                            {displayBatterCats.map(stat => {
+                                                const isForced = !batterStatCategories.includes(stat);
+                                                return (
+                                                    <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm hidden sm:table-cell ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                                                        {formatStat(getPlayerStat(player.player_id, stat))}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                        {/* 手機版：stats 第二行 */}
+                                        {!player.isEmpty && (
+                                            <tr className="sm:hidden border-t border-purple-500/5">
+                                                <td colSpan={2} className="px-3 pb-2 pt-0">
+                                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                                                        {displayBatterCats.map(stat => {
+                                                            const isForced = !batterStatCategories.includes(stat);
+                                                            return (
+                                                                <span key={stat} className="text-[10px] font-mono">
+                                                                    <span className={isForced ? 'text-slate-500' : 'text-purple-300/70'}>{parseStatName(stat)} </span>
+                                                                    <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat))}</span>
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </td>
-                                            );
-                                        })}
-                                    </tr>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 ))}
                             </tbody>
                         </table>
@@ -1186,7 +1206,7 @@ export default function RosterPage() {
                                     {displayPitcherCats.map(stat => {
                                         const isForced = !pitcherStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
+                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16 hidden sm:table-cell`}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
@@ -1197,93 +1217,113 @@ export default function RosterPage() {
                                 {pitcherRoster.length === 0 ? (
                                     <tr><td colSpan={10} className="p-4 text-center text-purple-300">No Pitchers</td></tr>
                                 ) : pitcherRoster.map(player => (
-                                    <tr key={player.id} className="hover:bg-purple-500/5 transition">
-                                        <td className="px-3 sm:px-6 py-2 sm:py-4">
-                                            <button
-                                                onClick={() => handleSlotClick(player)}
-                                                disabled={player.isEmpty || !isMoveAllowed(player)}
-                                                className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
-                                                    !isMoveAllowed(player) ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60' :
-                                                        ['BN', 'IL', 'NA'].includes(player.position)
-                                                            ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
-                                                            : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
-                                                    }`}>
-                                                {player.position}
-                                            </button>
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-2 sm:py-4">
-                                            {player.isEmpty ? (
-                                                <div className="flex items-center gap-2 sm:gap-4 text-slate-500 font-bold italic">Empty</div>
-                                            ) : (
-                                                <div className="flex items-center gap-2 sm:gap-4">
-                                                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
-                                                        {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-white text-sm sm:text-lg flex items-center whitespace-nowrap">
-                                                            <button
-                                                                onClick={() => setSelectedPlayerModal(player)}
-                                                                className="hover:text-purple-300 transition-colors cursor-pointer"
-                                                            >
-                                                                {player.name}
-                                                            </button>
-                                                            <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
-                                                            <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
+                                    <React.Fragment key={player.id}>
+                                        <tr className="hover:bg-purple-500/5 transition">
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4">
+                                                <button
+                                                    onClick={() => handleSlotClick(player)}
+                                                    disabled={player.isEmpty || !isMoveAllowed(player)}
+                                                    className={`inline-block px-2 py-1 rounded text-xs font-bold w-12 text-center transition-transform active:scale-95 ${player.isEmpty ? 'bg-slate-800 text-slate-500 cursor-default' :
+                                                        !isMoveAllowed(player) ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60' :
+                                                            ['BN', 'IL', 'NA'].includes(player.position)
+                                                                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer shadow-sm'
+                                                                : 'bg-purple-600 text-white hover:bg-purple-500 cursor-pointer shadow-sm'
+                                                        }`}>
+                                                    {player.position}
+                                                </button>
+                                            </td>
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4">
+                                                {player.isEmpty ? (
+                                                    <div className="flex items-center gap-2 sm:gap-4 text-slate-500 font-bold italic">Empty</div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 sm:gap-4">
+                                                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                            {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
                                                         </div>
-                                                        <div className="mt-1 flex items-center gap-2">
-                                                            {player.original_name && player.original_name !== player.name && (
-                                                                <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2">
-                                                                    {player.original_name}
-                                                                </span>
-                                                            )}
-                                                            <span className="text-xs text-slate-400 font-mono">
-                                                                {player.game_info ? (
-                                                                    player.game_info.is_postponed ? (
-                                                                        <span className="text-red-400">PPD</span>
-                                                                    ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
-                                                                        (() => {
-                                                                            const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
-                                                                            const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
-                                                                            const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
-                                                                            const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
-                                                                            return (
-                                                                                <>
-                                                                                    <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
-                                                                                    {' '}
-                                                                                    {player.game_info.is_home ? 'vs' : '@'}
-                                                                                    {' '}
-                                                                                    {player.game_info.opponent}
-                                                                                </>
-                                                                            );
-                                                                        })()
-                                                                    ) : (
-                                                                        <>
-                                                                            {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                                                            {' '}
-                                                                            {player.game_info.is_home ? 'vs' : '@'}
-                                                                            {' '}
-                                                                            {player.game_info.opponent}
-                                                                        </>
-                                                                    )
-                                                                ) : (
-                                                                    'No game'
+                                                        <div>
+                                                            <div className="font-bold text-white text-sm sm:text-lg flex items-center whitespace-nowrap">
+                                                                <button
+                                                                    onClick={() => setSelectedPlayerModal(player)}
+                                                                    className="hover:text-purple-300 transition-colors cursor-pointer"
+                                                                >
+                                                                    {player.name}
+                                                                </button>
+                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
+                                                                <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
+                                                            </div>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                {player.original_name && player.original_name !== player.name && (
+                                                                    <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2">
+                                                                        {player.original_name}
+                                                                    </span>
                                                                 )}
-                                                            </span>
-                                                            {renderPlayerBadges(player)}
+                                                                <span className="text-xs text-slate-400 font-mono">
+                                                                    {player.game_info ? (
+                                                                        player.game_info.is_postponed ? (
+                                                                            <span className="text-red-400">PPD</span>
+                                                                        ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
+                                                                            (() => {
+                                                                                const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
+                                                                                const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
+                                                                                const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
+                                                                                const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
+                                                                                return (
+                                                                                    <>
+                                                                                        <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
+                                                                                        {' '}
+                                                                                        {player.game_info.is_home ? 'vs' : '@'}
+                                                                                        {' '}
+                                                                                        {player.game_info.opponent}
+                                                                                    </>
+                                                                                );
+                                                                            })()
+                                                                        ) : (
+                                                                            <>
+                                                                                {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                                {' '}
+                                                                                {player.game_info.is_home ? 'vs' : '@'}
+                                                                                {' '}
+                                                                                {player.game_info.opponent}
+                                                                            </>
+                                                                        )
+                                                                    ) : (
+                                                                        'No game'
+                                                                    )}
+                                                                </span>
+                                                                {renderPlayerBadges(player)}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </td>
-                                        {displayPitcherCats.map(stat => {
-                                            const isForced = !pitcherStatCategories.includes(stat);
-                                            return (
-                                                <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                                                    {formatStat(getPlayerStat(player.player_id, stat))}
+                                                )}
+                                            </td>
+                                            {displayPitcherCats.map(stat => {
+                                                const isForced = !pitcherStatCategories.includes(stat);
+                                                return (
+                                                    <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm hidden sm:table-cell ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                                                        {formatStat(getPlayerStat(player.player_id, stat))}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                        {/* 手機版：stats 第二行 */}
+                                        {!player.isEmpty && (
+                                            <tr className="sm:hidden border-t border-purple-500/5">
+                                                <td colSpan={2} className="px-3 pb-2 pt-0">
+                                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                                                        {displayPitcherCats.map(stat => {
+                                                            const isForced = !pitcherStatCategories.includes(stat);
+                                                            return (
+                                                                <span key={stat} className="text-[10px] font-mono">
+                                                                    <span className={isForced ? 'text-slate-500' : 'text-purple-300/70'}>{parseStatName(stat)} </span>
+                                                                    <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat))}</span>
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </td>
-                                            );
-                                        })}
-                                    </tr>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 ))}
                             </tbody>
                         </table>
