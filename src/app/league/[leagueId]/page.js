@@ -887,8 +887,8 @@ export default function LeaguePage() {
           </div>
 
           {/* MATCHUPS Section Header with Week Selector */}
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
               <h2 className="text-base sm:text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
                 <span className="w-1.5 sm:w-2 h-5 sm:h-6 bg-purple-500 rounded-full"></span>
                 Matchups
@@ -896,7 +896,8 @@ export default function LeaguePage() {
 
               {/* Week Type Badge */}
               {weekDetails && (
-                <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${getWeekTypeColor(weekDetails.week_type)}`}>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold shadow-lg border border-white/10 backdrop-blur-sm w-fit ${getWeekTypeColor(weekDetails.week_type)}`}>
+                  <svg className="w-3 h-3 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   {getWeekTypeLabel(weekDetails.week_type)}
                 </span>
               )}
@@ -1519,7 +1520,7 @@ export default function LeaguePage() {
         {/* Right Sidebar: CPBL Schedule */}
         {/* Right Sidebar: CPBL Schedule */}
         <div className="w-full lg:w-[30%] space-y-4 sm:space-y-8 lg:sticky lg:top-8 lg:h-fit">
-          <div className="bg-gradient-to-br from-slate-900/50 to-purple-900/20 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-white/5 p-4 sm:p-6 shadow-xl">
+          <div className="bg-gradient-to-br from-slate-900/50 to-purple-900/20 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-white/5 p-4 sm:p-6 shadow-xl relative z-30">
             <h3 className="text-base sm:text-xl font-black text-white mb-4 sm:mb-6 uppercase tracking-wider flex items-center gap-2">
               <span className="w-1.5 sm:w-2 h-5 sm:h-6 bg-purple-500 rounded-full"></span>
               CPBL Schedule
@@ -1528,7 +1529,9 @@ export default function LeaguePage() {
           </div>
 
           {/* Daily Roster Widget */}
-          <LeagueDailyRoster leagueId={leagueId} members={members} />
+          <div className="relative z-10">
+            <LeagueDailyRoster leagueId={leagueId} members={members} />
+          </div>
 
           {/* League Chat */}
           <LeagueChat
