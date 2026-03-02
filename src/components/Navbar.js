@@ -430,12 +430,12 @@ export default function Navbar() {
       {menuOpen && (
         <div className="fixed inset-0 z-[999] lg:hidden" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-          <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-blue-500/30">
+          <div className="absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-blue-500/30">
               <div className="flex items-center gap-3">
                 {userName && (
                   <>
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-sm font-bold">
                       {userName.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -452,61 +452,61 @@ export default function Navbar() {
               </button>
             </div>
 
-            <div className="overflow-y-auto h-[calc(100%-180px)] p-4 space-y-1">
+            <div className="overflow-y-auto h-[calc(100%-160px)] p-3 space-y-1">
               {currentLeague ? (
                 <>
-                  <div className="text-xs text-blue-300/70 mb-3 px-4 font-semibold tracking-wider">LEAGUE NAV</div>
+                  <div className="text-xs text-blue-300/70 mb-2 px-3 font-semibold tracking-wider">LEAGUE NAV</div>
                   <Link
                     href={`/league/${currentLeague.league_id}`}
-                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname === `/league/${currentLeague.league_id}` ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    className={`block px-3 py-2.5 rounded-lg transition-colors font-medium text-sm ${pathname === `/league/${currentLeague.league_id}` ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}`; }}
                   >
                     OVERVIEW
                   </Link>
                   <Link
                     href={`/league/${currentLeague.league_id}/players`}
-                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/players') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    className={`block px-3 py-2.5 rounded-lg transition-colors font-medium text-sm ${pathname?.includes('/players') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/players`; }}
                   >
                     PLAYERS
                   </Link>
                   <Link
                     href={`/league/${currentLeague.league_id}/roster`}
-                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/roster') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    className={`block px-3 py-2.5 rounded-lg transition-colors font-medium text-sm ${pathname?.includes('/roster') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/roster`; }}
                   >
                     ROSTER
                   </Link>
                   <Link
                     href={`/league/${currentLeague.league_id}/matchups`}
-                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/matchups') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    className={`block px-3 py-2.5 rounded-lg transition-colors font-medium text-sm ${pathname?.includes('/matchups') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/matchups`; }}
                   >
                     MATCHUPS
                   </Link>
                   <Link
                     href={`/league/${currentLeague.league_id}/league_settings`}
-                    className={`block px-4 py-3 rounded-lg transition-colors font-medium ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    className={`block px-3 py-2.5 rounded-lg transition-colors font-medium text-sm ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/league_settings`; }}
                   >
-                    LEAGUE SETTINGS
+                    SETTINGS
                   </Link>
                 </>
               ) : null}
 
 
-              <div className="border-t border-blue-500/30 mt-4 pt-4">
-                <div className="text-xs text-blue-300/70 mb-3 px-4 font-semibold tracking-wider">MY LEAGUES</div>
+              <div className="border-t border-blue-500/30 mt-3 pt-3">
+                <div className="text-xs text-blue-300/70 mb-2 px-3 font-semibold tracking-wider">MY LEAGUES</div>
 
                 {new Date() < new Date('2026-04-16') ? (
                   <>
-                    <Link href="/public_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/public_league'; }}>
+                    <Link href="/public_league" className="flex items-center gap-2 px-3 py-2.5 mb-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 font-medium text-sm" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/public_league'; }}>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       <span className="text-sm font-bold">JOIN PUBLIC LEAGUE</span>
                     </Link>
-                    <Link href="/create_league" className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/create_league'; }}>
+                    <Link href="/create_league" className="flex items-center gap-2 px-3 py-2.5 mb-1 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium text-sm" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/create_league'; }}>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
@@ -521,7 +521,7 @@ export default function Navbar() {
 
                 {leagues.length > 0 ? (
                   leagues.map(league => (
-                    <Link key={league.league_id} href={`/league/${league.league_id}`} className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${league.league_id}`; }}>
+                    <Link key={league.league_id} href={`/league/${league.league_id}`} className="block px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${league.league_id}`; }}>
                       <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
                       <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
                     </Link>
@@ -534,20 +534,30 @@ export default function Navbar() {
 
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-500/30 bg-slate-900/50">
+            <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-blue-500/30 bg-slate-900/50 space-y-1.5">
+              <Link
+                href="/profile"
+                className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-blue-500/20 text-cyan-300 hover:bg-blue-500/30 transition-all duration-200 font-medium text-sm border border-blue-500/30"
+                onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/profile'; }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Profile Settings
+              </Link>
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 mb-2 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-all duration-200 font-medium border border-purple-500/30"
+                  className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-all duration-200 font-medium text-sm border border-purple-500/30"
                   onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/admin'; }}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                   </svg>
                   Admin Dashboard
                 </Link>
               )}
-              <button onClick={handleLogout} className="w-full px-4 py-3 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all duration-200 font-medium border border-red-500/30">
+              <button onClick={handleLogout} className="w-full px-3 py-2.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all duration-200 font-medium text-sm border border-red-500/30">
                 Logout
               </button>
             </div>
