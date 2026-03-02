@@ -232,6 +232,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
 
 export default function LeaguePage() {
   const params = useParams();
+  const router = useRouter();
   const leagueId = params.leagueId;
 
   const [leagueSettings, setLeagueSettings] = useState(null);
@@ -1529,7 +1530,25 @@ export default function LeaguePage() {
                 })}
               </div>
 
-              {draftTimeStatus === 'passed' ? (
+              {leagueStatus === 'drafting now' ? (
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
+                    <span className="text-lg sm:text-2xl font-black text-green-300 uppercase tracking-wider">Draft is Live!</span>
+                  </div>
+                  <button
+                    onClick={() => router.push(`/league/${leagueId}/draft`)}
+                    className="group relative bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black text-lg sm:text-xl px-8 sm:px-12 py-4 sm:py-5 rounded-2xl border border-green-400/50 shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 hover:scale-105 animate-pulse"
+                  >
+                    <span className="flex items-center gap-3">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Enter Draft Room
+                    </span>
+                  </button>
+                </div>
+              ) : draftTimeStatus === 'passed' ? (
                 <div className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600/80 to-pink-600/80 backdrop-blur-md px-8 py-4 rounded-full border border-red-400/50 shadow-lg shadow-red-500/30">
                   <svg className="w-6 h-6 text-red-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
