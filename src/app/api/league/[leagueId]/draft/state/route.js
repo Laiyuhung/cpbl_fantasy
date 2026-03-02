@@ -99,7 +99,9 @@ export async function GET(request, { params }) {
         if (totalPicks === 0) {
             return NextResponse.json({
                 status: 'pre-draft',
-                message: 'Draft order not generated'
+                message: 'Draft order not generated',
+                startTime: settings?.live_draft_time || null,
+                serverTime: now.toISOString()
             });
         }
 
