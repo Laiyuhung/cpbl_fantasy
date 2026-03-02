@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function CpblScheduleWidget() {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -83,7 +84,7 @@ export default function CpblScheduleWidget() {
     const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 
     return (
-        <div className="bg-slate-900/50 border border-purple-500/20 rounded-xl overflow-visible shadow-lg h-fit relative z-20">
+        <div className="bg-slate-900/50 border border-purple-500/20 rounded-xl overflow-visible shadow-lg h-fit relative">
             {/* Header: Date Navigation */}
             <div className="bg-purple-900/20 p-3 flex items-center justify-between border-b border-purple-500/20 gap-2 relative">
 
@@ -120,74 +121,77 @@ export default function CpblScheduleWidget() {
                         </svg>
                     </button>
 
-                    {/* Date Picker Popup */}
-                    {showDatePicker && (
-                        <div className="absolute top-full left-0 mt-2 z-[999] bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[260px] max-w-[90vw]">
-                            {/* Month Nav */}
-                            <div className="flex justify-between items-center mb-4">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const newDate = new Date(viewDate);
-                                        newDate.setMonth(newDate.getMonth() - 1);
-                                        setViewDate(newDate);
-                                    }}
-                                    className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                                </button>
-                                <span className="text-white font-bold text-sm">
-                                    {viewDate.toLocaleString('en-US', { month: 'short', year: 'numeric' })}
-                                </span>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const newDate = new Date(viewDate);
-                                        newDate.setMonth(newDate.getMonth() + 1);
-                                        setViewDate(newDate);
-                                    }}
-                                    className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                                </button>
-                            </div>
+                    {/* Date Picker Popup — rendered via portal */}
+                    {showDatePicker && createPortal(
+                        <div className="fixed inset-0 z-[890] flex items-start justify-center pt-[20vh]" onClick={() => setShowDatePicker(false)}>
+                            <div className="bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[260px] max-w-[90vw] z-[900]" onClick={(e) => e.stopPropagation()}>
+                                {/* Month Nav */}
+                                <div className="flex justify-between items-center mb-4">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const newDate = new Date(viewDate);
+                                            newDate.setMonth(newDate.getMonth() - 1);
+                                            setViewDate(newDate);
+                                        }}
+                                        className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                    </button>
+                                    <span className="text-white font-bold text-sm">
+                                        {viewDate.toLocaleString('en-US', { month: 'short', year: 'numeric' })}
+                                    </span>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const newDate = new Date(viewDate);
+                                            newDate.setMonth(newDate.getMonth() + 1);
+                                            setViewDate(newDate);
+                                        }}
+                                        className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                    </button>
+                                </div>
 
-                            {/* Days Grid */}
-                            <div className="grid grid-cols-7 mb-2">
-                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-                                    <div key={d} className="text-center text-[10px] font-bold text-slate-500">{d}</div>
-                                ))}
-                            </div>
-                            <div className="grid grid-cols-7 gap-1">
-                                {Array.from({ length: getFirstDayOfMonth(viewDate.getFullYear(), viewDate.getMonth()) }).map((_, i) => (
-                                    <div key={`empty-${i}`} />
-                                ))}
-                                {Array.from({ length: getDaysInMonth(viewDate.getFullYear(), viewDate.getMonth()) }).map((_, i) => {
-                                    const day = i + 1;
-                                    const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-                                    const isSelected = date.toDateString() === currentDate.toDateString();
-                                    const isTodayDate = isToday(date);
+                                {/* Days Grid */}
+                                <div className="grid grid-cols-7 mb-2">
+                                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                                        <div key={d} className="text-center text-[10px] font-bold text-slate-500">{d}</div>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-7 gap-1">
+                                    {Array.from({ length: getFirstDayOfMonth(viewDate.getFullYear(), viewDate.getMonth()) }).map((_, i) => (
+                                        <div key={`empty-${i}`} />
+                                    ))}
+                                    {Array.from({ length: getDaysInMonth(viewDate.getFullYear(), viewDate.getMonth()) }).map((_, i) => {
+                                        const day = i + 1;
+                                        const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+                                        const isSelected = date.toDateString() === currentDate.toDateString();
+                                        const isTodayDate = isToday(date);
 
-                                    return (
-                                        <button
-                                            key={day}
-                                            onClick={() => {
-                                                setCurrentDate(date);
-                                                setShowDatePicker(false);
-                                            }}
-                                            className={`
-                                                h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all
-                                                ${isSelected ? 'bg-purple-600 text-white shadow' : ''}
-                                                ${!isSelected && isTodayDate ? 'border border-green-500 text-green-400' : ''}
-                                                ${!isSelected && !isTodayDate ? 'text-slate-300 hover:bg-purple-500/20 hover:text-white' : ''}
-                                            `}
-                                        >
-                                            {day}
-                                        </button>
-                                    );
-                                })}
+                                        return (
+                                            <button
+                                                key={day}
+                                                onClick={() => {
+                                                    setCurrentDate(date);
+                                                    setShowDatePicker(false);
+                                                }}
+                                                className={`
+                                                    h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all
+                                                    ${isSelected ? 'bg-purple-600 text-white shadow' : ''}
+                                                    ${!isSelected && isTodayDate ? 'border border-green-500 text-green-400' : ''}
+                                                    ${!isSelected && !isTodayDate ? 'text-slate-300 hover:bg-purple-500/20 hover:text-white' : ''}
+                                                `}
+                                            >
+                                                {day}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>
 
