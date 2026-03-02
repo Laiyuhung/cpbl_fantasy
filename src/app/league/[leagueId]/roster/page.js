@@ -760,7 +760,7 @@ export default function RosterPage() {
 
     if (error) {
         return (
-            <div className="p-8 text-center text-red-300 bg-red-900/20 rounded-xl border border-red-500/30 mx-8 mt-8">
+            <div className="p-4 sm:p-8 text-center text-red-300 bg-red-900/20 rounded-xl border border-red-500/30 mx-4 sm:mx-8 mt-4 sm:mt-8">
                 {error}
             </div>
         );
@@ -782,7 +782,7 @@ export default function RosterPage() {
             {notification && (
                 <div className="fixed inset-0 z-[100020] flex items-center justify-center pointer-events-none">
                     <div className="pointer-events-auto animate-fade-in-down">
-                        <div className={`px-8 py-6 rounded-2xl shadow-2xl border-2 backdrop-blur-md flex flex-col gap-2 items-center min-w-[400px]
+                        <div className={`px-6 sm:px-8 py-4 sm:py-6 rounded-2xl shadow-2xl border-2 backdrop-blur-md flex flex-col gap-2 items-center min-w-0 sm:min-w-[400px] max-w-[90vw]
                             ${notification.type === 'success'
                                 ? 'bg-green-900/90 border-green-500/70 text-white'
                                 : 'bg-red-900/90 border-red-500/70 text-white'}
@@ -797,7 +797,7 @@ export default function RosterPage() {
                                         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
                                     </div>
                                 )}
-                                <span className="font-bold text-2xl tracking-wide">{notification.message}</span>
+                                <span className="font-bold text-lg sm:text-2xl tracking-wide">{notification.message}</span>
                             </div>
                             {notification.details && notification.details.length > 0 && (
                                 <div className="mt-3 space-y-2 w-full border-t border-white/20 pt-3">
@@ -814,13 +814,13 @@ export default function RosterPage() {
                 </div>
             )}
 
-            <div className="p-8 max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+            <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+                    <h1 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
                         My Roster
                     </h1>
-                    <div className="flex flex-col items-end gap-3">
-                        <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-start sm:items-end gap-2 sm:gap-3">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                             <select
                                 value={timeWindow}
                                 onChange={(e) => setTimeWindow(e.target.value)}
@@ -837,7 +837,7 @@ export default function RosterPage() {
                             </select>
 
                             {/* Date Selector */}
-                            <div className="flex items-center gap-2 bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-500/30">
+                            <div className="flex items-center gap-1.5 sm:gap-2 bg-purple-900/30 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-purple-500/30">
                                 <button
                                     onClick={() => {
                                         const currentIndex = availableDates.indexOf(selectedDate);
@@ -872,7 +872,7 @@ export default function RosterPage() {
                                         <svg className="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <span className="text-white font-bold font-mono min-w-[100px] text-center group-hover:text-purple-100 transition-colors relative">
+                                        <span className="text-white font-bold font-mono min-w-[80px] sm:min-w-[100px] text-center text-xs sm:text-sm group-hover:text-purple-100 transition-colors relative">
                                             {selectedDate || date}
                                         </span>
                                         {(() => {
@@ -994,7 +994,7 @@ export default function RosterPage() {
                         </div>
 
                         {/* Buttons Row */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                             {/* IP Requirement Badge */}
                             {minIPRequired !== null && weeklyIP !== null && (
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold tracking-wider flex items-center gap-1 ${weeklyIP < minIPRequired ? 'bg-red-600 text-white' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'}`}>
@@ -1043,12 +1043,12 @@ export default function RosterPage() {
                 </div>
 
                 {/* Batter Table */}
-                <div className="mb-8">
-                    <h2 className="text-xl font-bold text-purple-300 mb-2 flex items-center gap-2">
+                <div className="mb-6 sm:mb-8">
+                    <h2 className="text-lg sm:text-xl font-bold text-purple-300 mb-2 flex items-center gap-2">
                         <span className="w-2 h-6 bg-pink-500 rounded-full"></span>
                         Batter Roster
                     </h2>
-                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl overflow-x-auto">
                         {loading && (
                             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20">
                                 <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
@@ -1057,12 +1057,12 @@ export default function RosterPage() {
                         <table className="w-full">
                             <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 w-24">Slot</th>
-                                    <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Player</th>
+                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
+                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 min-w-[180px] sm:min-w-0">Player</th>
                                     {displayBatterCats.map(stat => {
                                         const isForced = !batterStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`px-4 py-4 text-center text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-16`}>
+                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
@@ -1074,7 +1074,7 @@ export default function RosterPage() {
                                     <tr><td colSpan={10} className="p-4 text-center text-purple-300">No Batters</td></tr>
                                 ) : batterRoster.map(player => (
                                     <tr key={player.id} className="hover:bg-purple-500/5 transition">
-                                        <td className="px-6 py-4">
+                                        <td className="px-3 sm:px-6 py-2 sm:py-4">
                                             <button
                                                 onClick={() => handleSlotClick(player)}
                                                 disabled={player.isEmpty || !isMoveAllowed(player)}
@@ -1087,16 +1087,16 @@ export default function RosterPage() {
                                                 {player.position}
                                             </button>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-3 sm:px-6 py-2 sm:py-4">
                                             {player.isEmpty ? (
-                                                <div className="flex items-center gap-4 text-slate-500 font-bold italic">Empty</div>
+                                                <div className="flex items-center gap-2 sm:gap-4 text-slate-500 font-bold italic">Empty</div>
                                             ) : (
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                <div className="flex items-center gap-2 sm:gap-4">
+                                                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
                                                         {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
                                                     </div>
                                                     <div>
-                                                        <div className="font-bold text-white text-lg flex items-center">
+                                                        <div className="font-bold text-white text-sm sm:text-lg flex items-center flex-wrap">
                                                             <button
                                                                 onClick={() => setSelectedPlayerModal(player)}
                                                                 className="hover:text-purple-300 transition-colors cursor-pointer"
@@ -1154,7 +1154,7 @@ export default function RosterPage() {
                                         {displayBatterCats.map(stat => {
                                             const isForced = !batterStatCategories.includes(stat);
                                             return (
-                                                <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                                                <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                                                     {formatStat(getPlayerStat(player.player_id, stat))}
                                                 </td>
                                             );
@@ -1168,11 +1168,11 @@ export default function RosterPage() {
 
                 {/* Pitcher Table */}
                 <div>
-                    <h2 className="text-xl font-bold text-purple-300 mb-2 flex items-center gap-2">
+                    <h2 className="text-lg sm:text-xl font-bold text-purple-300 mb-2 flex items-center gap-2">
                         <span className="w-2 h-6 bg-orange-500 rounded-full"></span>
                         Pitcher Roster
                     </h2>
-                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl overflow-x-auto">
                         {loading && (
                             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20">
                                 <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
@@ -1181,12 +1181,12 @@ export default function RosterPage() {
                         <table className="w-full">
                             <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 w-24">Slot</th>
-                                    <th className="px-6 py-4 text-left text-sm font-bold text-purple-200">Player</th>
+                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
+                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 min-w-[180px] sm:min-w-0">Player</th>
                                     {displayPitcherCats.map(stat => {
                                         const isForced = !pitcherStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`px-4 py-4 text-center text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-16`}>
+                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
@@ -1198,7 +1198,7 @@ export default function RosterPage() {
                                     <tr><td colSpan={10} className="p-4 text-center text-purple-300">No Pitchers</td></tr>
                                 ) : pitcherRoster.map(player => (
                                     <tr key={player.id} className="hover:bg-purple-500/5 transition">
-                                        <td className="px-6 py-4">
+                                        <td className="px-3 sm:px-6 py-2 sm:py-4">
                                             <button
                                                 onClick={() => handleSlotClick(player)}
                                                 disabled={player.isEmpty || !isMoveAllowed(player)}
@@ -1211,16 +1211,16 @@ export default function RosterPage() {
                                                 {player.position}
                                             </button>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-3 sm:px-6 py-2 sm:py-4">
                                             {player.isEmpty ? (
-                                                <div className="flex items-center gap-4 text-slate-500 font-bold italic">Empty</div>
+                                                <div className="flex items-center gap-2 sm:gap-4 text-slate-500 font-bold italic">Empty</div>
                                             ) : (
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                <div className="flex items-center gap-2 sm:gap-4">
+                                                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
                                                         {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
                                                     </div>
                                                     <div>
-                                                        <div className="font-bold text-white text-lg flex items-center">
+                                                        <div className="font-bold text-white text-sm sm:text-lg flex items-center flex-wrap">
                                                             <button
                                                                 onClick={() => setSelectedPlayerModal(player)}
                                                                 className="hover:text-purple-300 transition-colors cursor-pointer"
@@ -1278,7 +1278,7 @@ export default function RosterPage() {
                                         {displayPitcherCats.map(stat => {
                                             const isForced = !pitcherStatCategories.includes(stat);
                                             return (
-                                                <td key={stat} className={`px-4 py-4 text-center font-mono ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                                                <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                                                     {formatStat(getPlayerStat(player.player_id, stat))}
                                                 </td>
                                             );
@@ -1292,74 +1292,76 @@ export default function RosterPage() {
 
                 <LegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} batterStats={batterStatCategories} pitcherStats={pitcherStatCategories} />
 
-                {showInfoModal && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100000]" onClick={() => setShowInfoModal(false)}>
-                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center justify-between p-6 border-b border-purple-500/20 flex-shrink-0">
-                                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                                    <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    Position Eligibility Rules
-                                </h3>
-                                <button
-                                    onClick={() => setShowInfoModal(false)}
-                                    className="text-gray-400 hover:text-white transition-colors"
-                                >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-5 text-purple-100">
-                                <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
-                                    <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                                        Batter Position Eligibility
-                                    </h4>
-                                    <p className="text-purple-200 leading-relaxed">
-                                        Players must appear in <span className="font-bold text-green-300">8 or more games</span> at a position to be eligible for that position.
-                                    </p>
+                {
+                    showInfoModal && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100000]" onClick={() => setShowInfoModal(false)}>
+                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-0 max-w-2xl w-full mx-4 border border-purple-500/30 shadow-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-between p-6 border-b border-purple-500/20 flex-shrink-0">
+                                    <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                                        <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Position Eligibility Rules
+                                    </h3>
+                                    <button
+                                        onClick={() => setShowInfoModal(false)}
+                                        className="text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
                                 </div>
 
-                                <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
-                                    <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
-                                        Pitcher Position Eligibility
-                                    </h4>
-                                    <div className="space-y-2 text-purple-200">
-                                        <p className="leading-relaxed">
-                                            <span className="font-bold text-orange-300">SP (Starting Pitcher):</span> Must have <span className="font-bold text-orange-300">3 or more</span> starting appearances.
+                                <div className="p-4 sm:p-8 overflow-y-auto custom-scrollbar flex-1 space-y-4 sm:space-y-5 text-purple-100">
+                                    <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
+                                        <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                                            Batter Position Eligibility
+                                        </h4>
+                                        <p className="text-purple-200 leading-relaxed">
+                                            Players must appear in <span className="font-bold text-green-300">8 or more games</span> at a position to be eligible for that position.
                                         </p>
-                                        <p className="leading-relaxed">
-                                            <span className="font-bold text-orange-300">RP (Relief Pitcher):</span> Must have <span className="font-bold text-orange-300">5 or more</span> relief appearances.
+                                    </div>
+
+                                    <div className="bg-purple-500/10 rounded-lg p-5 border border-purple-500/20">
+                                        <h4 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                                            Pitcher Position Eligibility
+                                        </h4>
+                                        <div className="space-y-2 text-purple-200">
+                                            <p className="leading-relaxed">
+                                                <span className="font-bold text-orange-300">SP (Starting Pitcher):</span> Must have <span className="font-bold text-orange-300">3 or more</span> starting appearances.
+                                            </p>
+                                            <p className="leading-relaxed">
+                                                <span className="font-bold text-orange-300">RP (Relief Pitcher):</span> Must have <span className="font-bold text-orange-300">5 or more</span> relief appearances.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-blue-500/10 rounded-lg p-5 border border-blue-500/20">
+                                        <h4 className="text-lg font-bold text-blue-300 mb-3 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                                            Data Coverage
+                                        </h4>
+                                        <p className="text-blue-200 leading-relaxed">
+                                            Position eligibility is calculated using <span className="font-bold text-blue-300">2025 OR 2026</span> season statistics (union of both seasons).
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="bg-blue-500/10 rounded-lg p-5 border border-blue-500/20">
-                                    <h4 className="text-lg font-bold text-blue-300 mb-3 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                                        Data Coverage
-                                    </h4>
-                                    <p className="text-blue-200 leading-relaxed">
-                                        Position eligibility is calculated using <span className="font-bold text-blue-300">2025 OR 2026</span> season statistics (union of both seasons).
-                                    </p>
+                                <div className="p-6 border-t border-purple-500/20 flex justify-end flex-shrink-0">
+                                    <button
+                                        onClick={() => setShowInfoModal(false)}
+                                        className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+                                    >
+                                        Got it
+                                    </button>
                                 </div>
                             </div>
-
-                            <div className="p-6 border-t border-purple-500/20 flex justify-end flex-shrink-0">
-                                <button
-                                    onClick={() => setShowInfoModal(false)}
-                                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
-                                >
-                                    Got it
-                                </button>
-                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 <MoveModal
                     isOpen={showMoveModal}
@@ -1400,37 +1402,40 @@ export default function RosterPage() {
                 />
 
                 {/* Drop Confirmation Modal */}
-                {showConfirmDrop && playerToDrop && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirmDrop(false)} />
-                        <div className="relative bg-slate-900 border border-red-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl">
-                            <h3 className="text-xl font-bold text-white mb-4">Confirm Drop</h3>
-                            <p className="text-slate-300 mb-6">
-                                Are you sure you want to drop <span className="font-bold text-red-400">{playerToDrop.name}</span>?
-                            </p>
-                            <div className="flex gap-3 justify-end">
-                                <button
-                                    onClick={() => setShowConfirmDrop(false)}
-                                    className="px-4 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDropPlayer}
-                                    disabled={isDropping}
-                                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-50"
-                                >
-                                    {isDropping ? 'Dropping...' : 'Drop'}
-                                </button>
+                {
+                    showConfirmDrop && playerToDrop && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirmDrop(false)} />
+                            <div className="relative bg-slate-900 border border-red-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                                <h3 className="text-xl font-bold text-white mb-4">Confirm Drop</h3>
+                                <p className="text-slate-300 mb-6">
+                                    Are you sure you want to drop <span className="font-bold text-red-400">{playerToDrop.name}</span>?
+                                </p>
+                                <div className="flex gap-3 justify-end">
+                                    <button
+                                        onClick={() => setShowConfirmDrop(false)}
+                                        className="px-4 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDropPlayer}
+                                        disabled={isDropping}
+                                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+                                    >
+                                        {isDropping ? 'Dropping...' : 'Drop'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+            </div >
             {/* Waiver Modal */}
-            <WaiverModal
+            < WaiverModal
                 isOpen={showWaiverModal}
-                onClose={() => setShowWaiverModal(false)}
+                onClose={() => setShowWaiverModal(false)
+                }
                 leagueId={leagueId}
                 managerId={myManagerId}
             />
