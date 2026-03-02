@@ -1968,7 +1968,7 @@ export default function PlayersPage() {
                     </div>
                   </th>
                   <th
-                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none hidden sm:table-cell"
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
                     onClick={() => handleSort('rank')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -1979,7 +1979,7 @@ export default function PlayersPage() {
                     </div>
                   </th>
                   <th
-                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none hidden sm:table-cell"
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
                     onClick={() => handleSort('roster_percentage')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -1998,7 +1998,7 @@ export default function PlayersPage() {
                     return (
                       <th
                         key={stat}
-                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none hidden sm:table-cell`}
+                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
                         onClick={() => handleSort(stat)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -2016,7 +2016,7 @@ export default function PlayersPage() {
                     return (
                       <th
                         key={stat}
-                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none hidden sm:table-cell`}
+                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
                         onClick={() => handleSort(stat)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -2184,44 +2184,41 @@ export default function PlayersPage() {
                           );
                         })}
                       </tr>
-                      {/* 手機版：stats 第二行 */}
-                      <tr className="sm:hidden border-t border-purple-500/5">
-                        <td colSpan={1} className="px-3 pb-2 pt-0">
-                          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              <span className="text-slate-500">Rank </span>
-                              <span className="text-cyan-300 font-bold">{playerRankings[player.player_id] || '-'}</span>
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              <span className="text-slate-500">Own </span>
-                              <span className="text-cyan-300 font-bold">{player.roster_percentage ?? 0}%</span>
-                            </span>
-                            {filterType === 'batter' && displayBatterCats.map((stat) => {
-                              const isForced = !batterStatCategories.includes(stat);
-                              const statAbbr = getStatAbbr(stat).toLowerCase();
-                              const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
-                              return (
-                                <span key={stat} className="text-[10px] font-mono">
-                                  <span className={isForced ? 'text-slate-500' : 'text-purple-300/70'}>{getStatAbbr(stat)} </span>
-                                  <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{getPlayerStat(player.player_id, stat)}</span>
-                                  {rank && rank <= 15 && <span className="text-amber-500 font-black ml-0.5">({getOrdinal(rank)})</span>}
-                                </span>
-                              );
-                            })}
-                            {filterType === 'pitcher' && displayPitcherCats.map((stat) => {
-                              const isForced = !pitcherStatCategories.includes(stat);
-                              const statAbbr = getStatAbbr(stat).toLowerCase();
-                              const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
-                              return (
-                                <span key={stat} className="text-[10px] font-mono">
-                                  <span className={isForced ? 'text-slate-500' : 'text-purple-300/70'}>{getStatAbbr(stat)} </span>
-                                  <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{getPlayerStat(player.player_id, stat)}</span>
-                                  {rank && rank <= 15 && <span className="text-amber-500 font-black ml-0.5">({getOrdinal(rank)})</span>}
-                                </span>
-                              );
-                            })}
-                          </div>
+                      {/* 手機版：stats 第二行 (對齊標頭) */}
+                      <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
+                        {/* 留白給第一欄 (Name) */}
+                        <td className="px-2 py-2"></td>
+
+                        <td className="px-2 py-2 text-center text-[11px] text-cyan-300 font-mono font-bold">
+                          {playerRankings[player.player_id] || '-'}
                         </td>
+                        <td className="px-2 py-2 text-center text-[11px] text-cyan-300 font-mono font-bold">
+                          {player.roster_percentage ?? 0}%
+                        </td>
+
+                        {filterType === 'batter' && displayBatterCats.map((stat) => {
+                          const isForced = !batterStatCategories.includes(stat);
+                          const statAbbr = getStatAbbr(stat).toLowerCase();
+                          const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
+                          return (
+                            <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
+                              <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{getPlayerStat(player.player_id, stat)}</span>
+                              {rank && rank <= 15 && <span className="text-amber-500 font-black ml-0.5 text-[10px]">({getOrdinal(rank)})</span>}
+                            </td>
+                          );
+                        })}
+
+                        {filterType === 'pitcher' && displayPitcherCats.map((stat) => {
+                          const isForced = !pitcherStatCategories.includes(stat);
+                          const statAbbr = getStatAbbr(stat).toLowerCase();
+                          const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
+                          return (
+                            <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
+                              <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{getPlayerStat(player.player_id, stat)}</span>
+                              {rank && rank <= 15 && <span className="text-amber-500 font-black ml-0.5 text-[10px]">({getOrdinal(rank)})</span>}
+                            </td>
+                          );
+                        })}
                       </tr>
                     </React.Fragment>
                   ))

@@ -1063,7 +1063,7 @@ export default function RosterPage() {
                                     {displayBatterCats.map(stat => {
                                         const isForced = !batterStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16 hidden sm:table-cell`}>
+                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
@@ -1162,22 +1162,20 @@ export default function RosterPage() {
                                                 );
                                             })}
                                         </tr>
-                                        {/* 手機版：stats 第二行 */}
+                                        {/* 手機版：stats 第二行 (對齊標頭) */}
                                         {!player.isEmpty && (
-                                            <tr className="sm:hidden border-t border-purple-500/5">
-                                                <td colSpan={2} className="px-3 pb-2 pt-0">
-                                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                                                        {displayBatterCats.map(stat => {
-                                                            const isForced = !batterStatCategories.includes(stat);
-                                                            return (
-                                                                <span key={stat} className="text-[10px] font-mono">
-                                                                    <span className={isForced ? 'text-slate-500' : 'text-purple-300/70'}>{parseStatName(stat)} </span>
-                                                                    <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat))}</span>
-                                                                </span>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </td>
+                                            <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
+                                                {/* 留白給第一欄 (Slot) 和第二欄 (Player) */}
+                                                <td className="px-2 py-2"></td>
+                                                <td className="px-2 py-2"></td>
+                                                {displayBatterCats.map(stat => {
+                                                    const isForced = !batterStatCategories.includes(stat);
+                                                    return (
+                                                        <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
+                                                            <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat))}</span>
+                                                        </td>
+                                                    );
+                                                })}
                                             </tr>
                                         )}
                                     </React.Fragment>
@@ -1207,7 +1205,7 @@ export default function RosterPage() {
                                     {displayPitcherCats.map(stat => {
                                         const isForced = !pitcherStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16 hidden sm:table-cell`}>
+                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
@@ -1306,22 +1304,20 @@ export default function RosterPage() {
                                                 );
                                             })}
                                         </tr>
-                                        {/* 手機版：stats 第二行 */}
+                                        {/* 手機版：stats 第二行 (對齊標頭) */}
                                         {!player.isEmpty && (
-                                            <tr className="sm:hidden border-t border-purple-500/5">
-                                                <td colSpan={2} className="px-3 pb-2 pt-0">
-                                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                                                        {displayPitcherCats.map(stat => {
-                                                            const isForced = !pitcherStatCategories.includes(stat);
-                                                            return (
-                                                                <span key={stat} className="text-[10px] font-mono">
-                                                                    <span className={isForced ? 'text-slate-500' : 'text-purple-300/70'}>{parseStatName(stat)} </span>
-                                                                    <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat))}</span>
-                                                                </span>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </td>
+                                            <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
+                                                {/* 留白給第一欄 (Slot) 和第二欄 (Player) */}
+                                                <td className="px-2 py-2"></td>
+                                                <td className="px-2 py-2"></td>
+                                                {displayPitcherCats.map(stat => {
+                                                    const isForced = !pitcherStatCategories.includes(stat);
+                                                    return (
+                                                        <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
+                                                            <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat))}</span>
+                                                        </td>
+                                                    );
+                                                })}
                                             </tr>
                                         )}
                                     </React.Fragment>
