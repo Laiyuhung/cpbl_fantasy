@@ -45,7 +45,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
       <div className="max-w-[1600px] mx-auto">
 
 
@@ -53,8 +53,8 @@ export default function HomePage() {
           {/* Left Column: League List */}
           <div className="flex-1">
             {/* Header Row */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-black text-white uppercase tracking-wider flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wider flex items-center gap-3">
                 <span className="w-1.5 h-6 bg-purple-400 rounded-full"></span>
                 My Leagues
               </h2>
@@ -63,17 +63,19 @@ export default function HomePage() {
                   <>
                     <Link
                       href="/public_league"
-                      className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-blue-500/50 flex items-center gap-2 text-sm"
+                      className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg hover:shadow-blue-500/50 flex items-center gap-2 text-xs sm:text-sm"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      Join Public League
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      <span className="hidden sm:inline">Join Public League</span>
+                      <span className="sm:hidden">Join</span>
                     </Link>
                     <Link
                       href="/create_league"
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 flex items-center gap-2 text-sm"
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 flex items-center gap-2 text-xs sm:text-sm"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                      Create New League
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                      <span className="hidden sm:inline">Create New League</span>
+                      <span className="sm:hidden">Create</span>
                     </Link>
                   </>
                 ) : (
@@ -103,7 +105,7 @@ export default function HomePage() {
                       <div className="p-5 h-full flex flex-col">
                         {/* Header: League Name */}
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-black text-white group-hover:text-purple-300 transition-colors truncate pr-2">
+                          <h3 className="text-base sm:text-xl font-black text-white group-hover:text-purple-300 transition-colors truncate pr-2">
                             {league.league_name}
                           </h3>
                           <span className={`shrink-0 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${league.status === 'in season' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
@@ -126,10 +128,10 @@ export default function HomePage() {
                             </span>
                           </div>
                         ) : league.matchup ? (
-                          <div className="flex items-center justify-center gap-6 mt-1">
+                          <div className="flex items-center justify-center gap-3 sm:gap-6 mt-1">
                             {/* Left: My Team */}
-                            <div className="text-right w-[35%]">
-                              <div className="font-bold text-base text-blue-300 truncate leading-tight">
+                            <div className="text-right w-[35%] min-w-0">
+                              <div className="font-bold text-sm sm:text-base text-blue-300 truncate leading-tight">
                                 {league.nickname}
                               </div>
                               {league.stats && (
@@ -166,8 +168,8 @@ export default function HomePage() {
                             </div>
 
                             {/* Right: Opponent */}
-                            <div className="text-left w-[35%]">
-                              <div className="font-bold text-base text-blue-300 truncate leading-tight">
+                            <div className="text-left w-[35%] min-w-0">
+                              <div className="font-bold text-sm sm:text-base text-blue-300 truncate leading-tight">
                                 {league.matchup.opponentName}
                               </div>
                               {league.matchup.opponentStats ? (
@@ -205,8 +207,8 @@ export default function HomePage() {
 
           {/* Right Column: CPBL Schedule */}
           <div className="w-full lg:w-[350px] shrink-0">
-            <div className="bg-gradient-to-br from-slate-900/50 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-6 shadow-2xl sticky top-8">
-              <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-3">
+            <div className="bg-gradient-to-br from-slate-900/50 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-4 sm:p-6 shadow-2xl sticky top-8">
+              <h2 className="text-xl sm:text-2xl font-black text-white mb-4 sm:mb-6 uppercase tracking-wider flex items-center gap-3">
                 <span className="w-1.5 h-6 bg-purple-400 rounded-full"></span>
                 CPBL Schedule
               </h2>
