@@ -430,7 +430,7 @@ export default function Navbar() {
       {menuOpen && (
         <div className="fixed inset-0 z-[999] lg:hidden" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-          <div className="absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-blue-500/30">
               <div className="flex items-center gap-3">
                 {userName && (
@@ -452,7 +452,42 @@ export default function Navbar() {
               </button>
             </div>
 
-            <div className="overflow-y-auto h-[calc(100%-160px)] p-3 space-y-1">
+            {/* Action buttons - right after header */}
+            <div className="px-3 py-2 border-b border-blue-500/30 flex gap-1.5">
+              <Link
+                href="/profile"
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg bg-blue-500/20 text-cyan-300 hover:bg-blue-500/30 transition-all text-xs font-medium border border-blue-500/30"
+                onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/profile'; }}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Profile
+              </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-all text-xs font-medium border border-purple-500/30"
+                  onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/admin'; }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Admin
+                </Link>
+              )}
+              <button
+                onClick={() => { setMenuOpen(false); handleLogout(); }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all text-xs font-medium border border-red-500/30"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-3 space-y-1">
               {currentLeague ? (
                 <>
                   <div className="text-xs text-blue-300/70 mb-2 px-3 font-semibold tracking-wider">LEAGUE NAV</div>
@@ -532,34 +567,6 @@ export default function Navbar() {
               </div>
 
 
-            </div>
-
-            <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-blue-500/30 bg-slate-900/50 space-y-1.5">
-              <Link
-                href="/profile"
-                className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-blue-500/20 text-cyan-300 hover:bg-blue-500/30 transition-all duration-200 font-medium text-sm border border-blue-500/30"
-                onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/profile'; }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Profile Settings
-              </Link>
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-all duration-200 font-medium text-sm border border-purple-500/30"
-                  onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/admin'; }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                  Admin Dashboard
-                </Link>
-              )}
-              <button onClick={handleLogout} className="w-full px-3 py-2.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all duration-200 font-medium text-sm border border-red-500/30">
-                Logout
-              </button>
             </div>
           </div>
         </div>
