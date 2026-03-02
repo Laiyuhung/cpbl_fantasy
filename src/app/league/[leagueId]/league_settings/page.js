@@ -826,7 +826,7 @@ export default function LeagueSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
@@ -839,7 +839,7 @@ export default function LeagueSettingsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-8 shadow-2xl">
             <div className="text-xl text-red-300">{error}</div>
@@ -851,7 +851,7 @@ export default function LeagueSettingsPage() {
 
   if (!leagueSettings) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-8 shadow-2xl">
             <div className="text-xl text-purple-300">League settings not found</div>
@@ -866,49 +866,51 @@ export default function LeagueSettingsPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
           <div>
-            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-2">
+            <h1 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-1 sm:mb-2">
               League Settings
             </h1>
-            <p className="text-purple-300/70">{leagueSettings.league_name}</p>
+            <p className="text-purple-300/70 text-sm sm:text-base">{leagueSettings.league_name}</p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-2 sm:gap-4">
             {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && (
               <>
                 <button
                   onClick={handleManagePermissions}
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-3 py-2 sm:px-6 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 text-sm sm:text-base"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
-                  Manage Permissions
+                  <span className="hidden sm:inline">Manage Permissions</span>
+                  <span className="sm:hidden">Permissions</span>
                 </button>
                 {leagueStatus === 'pre-draft' && !hasDraftOrder && (
                   <button
                     onClick={handleFinalizedClick}
-                    className={`font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 ${isFinalized
+                    className={`font-bold px-3 py-2 sm:px-6 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 text-sm sm:text-base ${isFinalized
                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
                       : 'bg-gradient-to-r from-slate-600 to-gray-600 hover:from-slate-700 hover:to-gray-700 text-white'
                       }`}
                   >
                     {isFinalized ? (
                       <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         Finalized ✓
                       </>
                     ) : (
                       <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
-                        Not Finalized
+                        <span className="hidden sm:inline">Not Finalized</span>
+                        <span className="sm:hidden">Finalize</span>
                       </>
                     )}
                   </button>
@@ -918,52 +920,55 @@ export default function LeagueSettingsPage() {
             {canEdit() && (
               <button
                 onClick={handleEditClick}
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-3 py-2 sm:px-6 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 text-sm sm:text-base"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-                Edit Settings
+                <span className="hidden sm:inline">Edit Settings</span>
+                <span className="sm:hidden">Edit</span>
               </button>
             )}
             <button
               onClick={handleEditNickname}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold px-3 py-2 sm:px-6 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 text-sm sm:text-base"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-              Edit Nickname
+              <span className="hidden sm:inline">Edit Nickname</span>
+              <span className="sm:hidden">Nickname</span>
             </button>
             {leagueStatus === 'pre-draft' && !isFinalized && (
               <button
                 onClick={handleDeleteClick}
                 disabled={deleting}
-                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold px-3 py-2 sm:px-6 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                {deleting ? 'Deleting...' : (currentUserRole === 'Commissioner' ? 'Delete League' : 'Delete Team')}
+                <span className="hidden sm:inline">{deleting ? 'Deleting...' : (currentUserRole === 'Commissioner' ? 'Delete League' : 'Delete Team')}</span>
+                <span className="sm:hidden">{deleting ? '...' : 'Delete'}</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Settings Display */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* General Settings */}
           <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 backdrop-blur-sm p-5 border-b border-purple-400/30">
-              <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 backdrop-blur-sm p-3 sm:p-5 border-b border-purple-400/30">
+              <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 General Settings
               </h2>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               <div className="flex justify-between items-center py-3 border-b border-purple-500/20">
                 <span className="text-purple-300/70 font-medium">League Name</span>
                 <span className="text-white font-semibold">{leagueSettings.league_name}</span>
@@ -999,15 +1004,15 @@ export default function LeagueSettingsPage() {
 
           {/* Roster Settings */}
           <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-5 border-b border-blue-400/30">
-              <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gradient-to-r from-blue-600/80 to-cyan-600/80 backdrop-blur-sm p-3 sm:p-5 border-b border-blue-400/30">
+              <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 Roster Positions
               </h2>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="flex justify-between items-center py-2 px-4 bg-slate-900/40 rounded-lg border border-purple-500/20">
                   <span className="text-white font-semibold">Foreigner On Team Limit</span>
@@ -1047,15 +1052,15 @@ export default function LeagueSettingsPage() {
 
           {/* Batter Categories */}
           <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-green-600/80 to-emerald-600/80 backdrop-blur-sm p-5 border-b border-green-400/30">
-              <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gradient-to-r from-green-600/80 to-emerald-600/80 backdrop-blur-sm p-3 sm:p-5 border-b border-green-400/30">
+              <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Batter Categories
               </h2>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="space-y-2">
                 {leagueSettings.batter_stat_categories && leagueSettings.batter_stat_categories.length > 0 ? (
                   leagueSettings.batter_stat_categories.map((cat, index) => (
@@ -1077,15 +1082,15 @@ export default function LeagueSettingsPage() {
 
           {/* Pitcher Categories */}
           <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-orange-600/80 to-red-600/80 backdrop-blur-sm p-5 border-b border-orange-400/30">
-              <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gradient-to-r from-orange-600/80 to-red-600/80 backdrop-blur-sm p-3 sm:p-5 border-b border-orange-400/30">
+              <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 Pitcher Categories
               </h2>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="space-y-2">
                 {leagueSettings.pitcher_stat_categories && leagueSettings.pitcher_stat_categories.length > 0 ? (
                   leagueSettings.pitcher_stat_categories.map((cat, index) => (
@@ -1107,15 +1112,15 @@ export default function LeagueSettingsPage() {
 
           {/* Waiver Settings */}
           <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-teal-600/80 to-emerald-600/80 backdrop-blur-sm p-5 border-b border-teal-400/30">
-              <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gradient-to-r from-teal-600/80 to-emerald-600/80 backdrop-blur-sm p-3 sm:p-5 border-b border-teal-400/30">
+              <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
                 Waiver Settings
               </h2>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               <div className="flex justify-between items-center py-3 border-b border-purple-500/20">
                 <span className="text-purple-300/70 font-medium">Waiver Players Time</span>
                 <span className="text-white font-semibold">{leagueSettings.waiver_players_unfreeze_time || 'N/A'}</span>
@@ -1133,15 +1138,15 @@ export default function LeagueSettingsPage() {
 
           {/* Additional Settings */}
           <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden lg:col-span-2">
-            <div className="bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-sm p-5 border-b border-indigo-400/30">
-              <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-sm p-3 sm:p-5 border-b border-indigo-400/30">
+              <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
                 Additional Settings
               </h2>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
                   <div className="text-purple-300/70 text-sm mb-2">Trade Deadline</div>
@@ -1174,7 +1179,7 @@ export default function LeagueSettingsPage() {
 
         {/* Note for non-commissioners */}
         {!canEdit() && (
-          <div className="bg-gradient-to-br from-yellow-600/20 to-orange-600/20 backdrop-blur-lg border border-yellow-500/30 rounded-2xl p-6 shadow-2xl">
+          <div className="bg-gradient-to-br from-yellow-600/20 to-orange-600/20 backdrop-blur-lg border border-yellow-500/30 rounded-2xl p-4 sm:p-6 shadow-2xl">
             <div className="flex items-start gap-4">
               <svg className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1767,9 +1772,9 @@ export default function LeagueSettingsPage() {
 
       {/* Draft Management / Results */}
       {(hasDraftOrder || (currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner')) && leagueSettings.draft_type === 'Live Draft' && (
-        <div className="mt-8 p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Draft Management</h2>
+        <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+            <h2 className="text-lg sm:text-2xl font-bold text-white">Draft Management</h2>
             <div className="flex items-center gap-3">
               <span className="px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-lg text-sm font-bold border border-purple-500/30 shadow-sm">
                 {leagueSettings.draft_type === 'Live Draft' ? 'Snake Draft' : leagueSettings.draft_type}
@@ -1820,7 +1825,7 @@ export default function LeagueSettingsPage() {
                       </svg>
                     </div>
                     <div>
-                      <span className="text-white font-bold text-lg">
+                      <span className="text-white font-bold text-base sm:text-lg">
                         {draftOrder.some(p => p.player_id) ? 'Draft Results' : 'Draft Order (First Round)'}
                       </span>
                       <p className="text-purple-300/60 text-xs">
@@ -1870,7 +1875,7 @@ export default function LeagueSettingsPage() {
 
                                     <div className="flex flex-col">
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-white font-bold text-lg">{item.player?.name}</span>
+                                        <span className="text-white font-bold text-base sm:text-lg">{item.player?.name}</span>
                                         <span className="text-purple-300/70 text-sm font-normal">
                                           - {filterPositions(item.player)}
                                         </span>
@@ -1912,7 +1917,7 @@ export default function LeagueSettingsPage() {
 
       {/* Viewing Only Alert */}
       {currentUserRole !== 'Commissioner' && currentUserRole !== 'Co-Commissioner' && (
-        <div className="mt-8 p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center gap-4 animate-fadeIn">
+        <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center gap-3 sm:gap-4 animate-fadeIn">
           <div className="bg-yellow-500/20 p-3 rounded-xl flex-shrink-0">
             <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

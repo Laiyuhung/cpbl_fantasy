@@ -76,7 +76,7 @@ export default function PublicLeaguePage() {
             const draftDate = new Date(league.live_draft_time);
             const now = new Date();
             const daysDiff = (draftDate - now) / (1000 * 60 * 60 * 24);
-            
+
             if (filterDraftTime === '3days' && daysDiff > 3) return false;
             if (filterDraftTime === '1week' && daysDiff > 7) return false;
             if (filterDraftTime === '2weeks' && daysDiff > 14) return false;
@@ -88,14 +88,14 @@ export default function PublicLeaguePage() {
     // Check deadline - disable page after 2026-04-16
     if (new Date() >= new Date('2026-04-16')) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-8">
-                <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-12 shadow-2xl max-w-md text-center">
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 sm:p-8">
+                <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-8 sm:p-12 shadow-2xl max-w-md text-center">
                     <div className="w-20 h-20 mx-auto mb-6 bg-slate-700/50 rounded-full flex items-center justify-center">
                         <svg className="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Join Period Ended</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Join Period Ended</h2>
                     <p className="text-slate-400 mb-6">
                         The deadline for joining public leagues was April 15, 2026. New members can no longer join leagues for this season.
                     </p>
@@ -111,32 +111,33 @@ export default function PublicLeaguePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between mb-6 sm:mb-8">
+                    <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                         <button
                             onClick={() => router.back()}
-                            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex-shrink-0"
                         >
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <h1 className="text-3xl font-black text-white uppercase tracking-wider flex items-center gap-3">
-                            <span className="w-1.5 h-8 bg-green-400 rounded-full"></span>
+                        <h1 className="text-xl sm:text-3xl font-black text-white uppercase tracking-wider flex items-center gap-2 sm:gap-3">
+                            <span className="w-1 sm:w-1.5 h-6 sm:h-8 bg-green-400 rounded-full"></span>
                             Public Leagues
                         </h1>
                     </div>
                     <Link
                         href="/create_league"
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 flex items-center gap-2 text-sm"
+                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                        Create League
+                        <span className="hidden sm:inline">Create League</span>
+                        <span className="sm:hidden">Create</span>
                     </Link>
                 </div>
 
@@ -146,7 +147,7 @@ export default function PublicLeaguePage() {
                 </p>
 
                 {/* Filters */}
-                <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
                     <div className="flex items-center gap-2">
                         <label className="text-xs font-bold text-slate-400 uppercase">Scoring:</label>
                         <select
@@ -223,10 +224,10 @@ export default function PublicLeaguePage() {
                                 href={`/league/${league.league_id}/join`}
                                 className="block group relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-white/10 hover:border-green-500/40 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(34,197,94,0.15)]"
                             >
-                                <div className="p-5">
+                                <div className="p-4 sm:p-5">
                                     {/* Header */}
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-xl font-black text-white group-hover:text-green-300 transition-colors truncate pr-4">
+                                        <h3 className="text-base sm:text-xl font-black text-white group-hover:text-green-300 transition-colors truncate pr-4">
                                             {league.league_name}
                                         </h3>
                                         <span className="shrink-0 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-green-500/10 text-green-400 border border-green-500/20">
@@ -235,11 +236,11 @@ export default function PublicLeaguePage() {
                                     </div>
 
                                     {/* Stats Grid */}
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
                                         {/* Teams */}
-                                        <div className="bg-slate-800/50 rounded-xl p-3 border border-white/5">
+                                        <div className="bg-slate-800/50 rounded-xl p-2.5 sm:p-3 border border-white/5">
                                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Teams</div>
-                                            <div className="text-lg font-black text-white">
+                                            <div className="text-base sm:text-lg font-black text-white">
                                                 {league.current_members} / {league.max_teams}
                                             </div>
                                             <div className="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
@@ -251,7 +252,7 @@ export default function PublicLeaguePage() {
                                         </div>
 
                                         {/* Scoring */}
-                                        <div className="bg-slate-800/50 rounded-xl p-3 border border-white/5">
+                                        <div className="bg-slate-800/50 rounded-xl p-2.5 sm:p-3 border border-white/5">
                                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Scoring</div>
                                             <div className="text-sm font-bold text-purple-300">
                                                 {getScoringTypeLabel(league.scoring_type)}
@@ -259,7 +260,7 @@ export default function PublicLeaguePage() {
                                         </div>
 
                                         {/* Live Draft Time */}
-                                        <div className="bg-slate-800/50 rounded-xl p-3 border border-white/5">
+                                        <div className="bg-slate-800/50 rounded-xl p-2.5 sm:p-3 border border-white/5">
                                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Live Draft Time</div>
                                             <div className="text-sm font-bold text-blue-300">
                                                 {league.live_draft_time ? new Date(league.live_draft_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'TBD'}
@@ -267,7 +268,7 @@ export default function PublicLeaguePage() {
                                         </div>
 
                                         {/* Playoffs */}
-                                        <div className="bg-slate-800/50 rounded-xl p-3 border border-white/5">
+                                        <div className="bg-slate-800/50 rounded-xl p-2.5 sm:p-3 border border-white/5">
                                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Playoffs</div>
                                             <div className="text-sm font-bold text-amber-300">
                                                 {league.playoffs || 'TBD'}
