@@ -1671,7 +1671,7 @@ export default function PlayersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
@@ -1684,7 +1684,7 @@ export default function PlayersPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-8 shadow-2xl">
             <div className="text-xl text-red-300">{error}</div>
@@ -1695,30 +1695,30 @@ export default function PlayersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
         {/* Header */}
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-2">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h1 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-1 sm:mb-2">
               Players
             </h1>
             <button
               onClick={() => setShowLegendModal(true)}
-              className="mb-2 px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+              className="mb-1 sm:mb-2 px-2 sm:px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
               title="View Legend"
             >
               LEGEND
             </button>
             <button
               onClick={() => setShowInfoModal(true)}
-              className="mb-2 px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+              className="mb-1 sm:mb-2 px-2 sm:px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
               title="Position Eligibility Rules"
             >
               POS RULES
             </button>
             {acquisitionData && (
-              <div className={`mb-2 px-3 py-1 rounded-full border flex items-center justify-center transition-colors text-xs font-bold tracking-wider ${acquisitionData.limit !== 'No Maximum' && acquisitionData.usage >= acquisitionData.limit
+              <div className={`mb-1 sm:mb-2 px-2 sm:px-3 py-1 rounded-full border flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider ${acquisitionData.limit !== 'No Maximum' && acquisitionData.usage >= acquisitionData.limit
                 ? 'bg-red-500/30 border-red-400/50 text-red-300'
                 : 'bg-emerald-500/30 border-emerald-400/50 text-emerald-300'
                 }`}>
@@ -1731,11 +1731,11 @@ export default function PlayersPage() {
           </div>
 
           {/* Filters */}
-          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg p-3 sm:p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-4">
               {/* Search */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-white mb-1 sm:mb-2">
                   Search
                 </label>
                 <input
@@ -1743,7 +1743,7 @@ export default function PlayersPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search player name or alias"
-                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
@@ -1751,13 +1751,13 @@ export default function PlayersPage() {
 
               {/* Identity */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-white mb-1 sm:mb-2">
                   Identity
                 </label>
                 <select
                   value={filterIdentity}
                   onChange={(e) => setFilterIdentity(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All</option>
                   <option value="local">Local</option>
@@ -1767,13 +1767,13 @@ export default function PlayersPage() {
 
               {/* Team Filter */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-white mb-1 sm:mb-2">
                   Team
                 </label>
                 <select
                   value={filterTeam}
                   onChange={(e) => setFilterTeam(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All Teams</option>
                   <option value="統一獅">統一獅</option>
@@ -1787,13 +1787,13 @@ export default function PlayersPage() {
 
               {/* Position Filter */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-white mb-1 sm:mb-2">
                   Position
                 </label>
                 <select
                   value={filterPosition}
                   onChange={(e) => setFilterPosition(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All Positions</option>
                   {(filterType === 'batter' ? batterPositionOrder : pitcherPositionOrder)
@@ -1807,13 +1807,13 @@ export default function PlayersPage() {
 
               {/* Ownership Filter */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-white mb-1 sm:mb-2">
                   Status
                 </label>
                 <select
                   value={filterOwnership}
                   onChange={(e) => setFilterOwnership(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All Players</option>
                   <option value="market">Market</option>
@@ -1825,14 +1825,14 @@ export default function PlayersPage() {
 
               {/* Time Window */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-white mb-1 sm:mb-2">
                   Stats Period
                 </label>
                 <select
                   value={timeWindow || ''}
                   onChange={(e) => setTimeWindow(e.target.value)}
                   disabled={!timeWindow}
-                  className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-800/60 border border-purple-500/30 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
                 >
                   {!timeWindow && <option value="">Loading...</option>}
                   <option value="Today">Today</option>
@@ -1851,10 +1851,10 @@ export default function PlayersPage() {
 
         {/* Players Table */}
         <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-6 border-b border-purple-400/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-3 sm:p-6 border-b border-purple-400/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 sm:gap-4">
             <div className="flex flex-col gap-1">
-              <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2 sm:gap-3">
+                <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 Player List
@@ -1901,7 +1901,7 @@ export default function PlayersPage() {
               <thead className="bg-slate-900/60 border-b border-purple-500/20">
                 <tr>
                   <th
-                    className="px-6 py-4 text-left text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group"
+                    className="px-6 py-4 text-left text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group min-w-[180px] sm:min-w-0"
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center gap-1">
@@ -1912,7 +1912,7 @@ export default function PlayersPage() {
                     </div>
                   </th>
                   <th
-                    className="px-4 py-4 text-center text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
                     onClick={() => handleSort('rank')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -1923,7 +1923,7 @@ export default function PlayersPage() {
                     </div>
                   </th>
                   <th
-                    className="px-4 py-4 text-center text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
                     onClick={() => handleSort('roster_percentage')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -1942,7 +1942,7 @@ export default function PlayersPage() {
                     return (
                       <th
                         key={stat}
-                        className={`px-4 py-4 text-center text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
+                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
                         onClick={() => handleSort(stat)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -1960,7 +1960,7 @@ export default function PlayersPage() {
                     return (
                       <th
                         key={stat}
-                        className={`px-4 py-4 text-center text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
+                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
                         onClick={() => handleSort(stat)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -2000,13 +2000,13 @@ export default function PlayersPage() {
                       key={player.player_id}
                       className="hover:bg-purple-500/5 transition-colors group"
                     >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
+                      <td className="px-3 sm:px-6 py-2 sm:py-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           {getPlayerActionButton(player)}
                           <img
                             src={getPlayerPhoto(player)}
                             alt={`${player.name} Avatar`}
-                            className="w-12 h-12 rounded-full object-cover"
+                            className="w-8 h-8 sm:w-12 sm:h-12 rounded-full object-cover"
                           />
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
@@ -2025,7 +2025,7 @@ export default function PlayersPage() {
                                 <span className="text-xs font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
                               )}
                               <span
-                                className="text-white font-semibold group-hover:text-purple-300 transition-colors cursor-pointer"
+                                className="text-white font-semibold text-sm sm:text-base group-hover:text-purple-300 transition-colors cursor-pointer whitespace-nowrap"
                                 onClick={() => setSelectedPlayerModal(player)}
                               >
                                 {player.name || 'Unknown'}
@@ -2096,10 +2096,10 @@ export default function PlayersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-center font-mono text-cyan-300">
+                      <td className="px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm text-cyan-300">
                         {playerRankings[player.player_id] || '-'}
                       </td>
-                      <td className="px-4 py-4 text-center font-mono text-cyan-300">
+                      <td className="px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm text-cyan-300">
                         {player.roster_percentage ?? 0}%
                       </td>
 
@@ -2110,7 +2110,7 @@ export default function PlayersPage() {
                         const statAbbr = getStatAbbr(stat).toLowerCase();
                         const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
                         return (
-                          <td key={stat} className={`px-4 py-4 text-center font-mono relative ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                          <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono text-xs sm:text-sm relative ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
                             <div className="w-full text-center">{getPlayerStat(player.player_id, stat)}</div>
                             {rank && rank <= 15 && (
                               <div className="absolute left-0 right-0 bottom-1.5 text-[11px] font-black text-amber-500 font-sans tracking-wide leading-none">{getOrdinal(rank)}</div>

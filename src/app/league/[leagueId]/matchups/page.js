@@ -274,8 +274,8 @@ export default function MatchupsPage() {
                         {weekDropdownOpen && (
                             <>
                                 <div className="fixed inset-0 z-[100]" onClick={() => setWeekDropdownOpen(false)}></div>
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[280px] bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-[101] overflow-hidden animate-in fade-in zoom-in duration-200">
-                                    <div className="max-h-[400px] overflow-y-auto py-2 px-2 custom-scrollbar">
+                                <div className="fixed sm:absolute top-1/2 sm:top-full left-1/2 -translate-x-1/2 -translate-y-1/2 sm:translate-y-0 sm:mt-4 w-[calc(100vw-2rem)] sm:w-[280px] max-w-[320px] bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-[101] overflow-hidden animate-in fade-in zoom-in duration-200">
+                                    <div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto py-2 px-2 custom-scrollbar">
                                         {scheduleData.map((week) => (
                                             <button
                                                 key={week.week_number}
