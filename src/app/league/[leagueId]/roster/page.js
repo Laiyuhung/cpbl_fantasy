@@ -1076,7 +1076,7 @@ export default function RosterPage() {
                                 ) : batterRoster.map(player => (
                                     <React.Fragment key={player.id}>
                                         <tr className="hover:bg-purple-500/5 transition">
-                                            <td className="px-3 sm:px-6 py-2 sm:py-4">
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4 align-top" rowSpan={player.isEmpty ? 1 : 2}>
                                                 <button
                                                     onClick={() => handleSlotClick(player)}
                                                     disabled={player.isEmpty || !isMoveAllowed(player)}
@@ -1089,16 +1089,17 @@ export default function RosterPage() {
                                                     {player.position}
                                                 </button>
                                             </td>
-                                            <td className="px-3 sm:px-6 py-2 sm:py-4">
+                                            {/* 桌面版：Player info (單欄) */}
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4 hidden sm:table-cell">
                                                 {player.isEmpty ? (
-                                                    <div className="flex items-center gap-2 sm:gap-4 text-slate-500 font-bold italic">Empty</div>
+                                                    <div className="flex items-center gap-4 text-slate-500 font-bold italic">Empty</div>
                                                 ) : (
-                                                    <div className="flex items-center gap-2 sm:gap-4">
-                                                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
                                                             {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
                                                         </div>
                                                         <div>
-                                                            <div className="font-bold text-white text-sm sm:text-lg flex items-center whitespace-nowrap">
+                                                            <div className="font-bold text-white text-lg flex items-center whitespace-nowrap">
                                                                 <button
                                                                     onClick={() => setSelectedPlayerModal(player)}
                                                                     className="hover:text-purple-300 transition-colors cursor-pointer"
@@ -1153,6 +1154,42 @@ export default function RosterPage() {
                                                     </div>
                                                 )}
                                             </td>
+                                            {/* 手機版：Player info (colSpan 跨所有 stat 欄位) */}
+                                            <td className="px-3 py-2 sm:hidden" colSpan={displayBatterCats.length}>
+                                                {player.isEmpty ? (
+                                                    <div className="flex items-center gap-2 text-slate-500 font-bold italic">Empty</div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                            {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-white text-sm flex items-center whitespace-nowrap">
+                                                                <button
+                                                                    onClick={() => setSelectedPlayerModal(player)}
+                                                                    className="hover:text-purple-300 transition-colors cursor-pointer"
+                                                                >
+                                                                    {player.name}
+                                                                </button>
+                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
+                                                                <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
+                                                            </div>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                {player.original_name && player.original_name !== player.name && (
+                                                                    <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2">
+                                                                        {player.original_name}
+                                                                    </span>
+                                                                )}
+                                                                <span className="text-xs text-slate-400 font-mono">
+                                                                    {player.game_info ? (
+                                                                        player.game_info.is_home ? 'vs' : '@') : 'No game'}
+                                                                </span>
+                                                                {renderPlayerBadges(player)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </td>
                                             {displayBatterCats.map(stat => {
                                                 const isForced = !batterStatCategories.includes(stat);
                                                 return (
@@ -1162,11 +1199,9 @@ export default function RosterPage() {
                                                 );
                                             })}
                                         </tr>
-                                        {/* 手機版：stats 第二行 (對齊標頭) */}
+                                        {/* 手機版：stats 第二行 (Slot 已 rowSpan，不需留白) */}
                                         {!player.isEmpty && (
                                             <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
-                                                {/* 留白給第一欄 (Slot) */}
-                                                <td className="px-2 py-2"></td>
                                                 {displayBatterCats.map(stat => {
                                                     const isForced = !batterStatCategories.includes(stat);
                                                     return (
@@ -1217,7 +1252,7 @@ export default function RosterPage() {
                                 ) : pitcherRoster.map(player => (
                                     <React.Fragment key={player.id}>
                                         <tr className="hover:bg-purple-500/5 transition">
-                                            <td className="px-3 sm:px-6 py-2 sm:py-4">
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4 align-top" rowSpan={player.isEmpty ? 1 : 2}>
                                                 <button
                                                     onClick={() => handleSlotClick(player)}
                                                     disabled={player.isEmpty || !isMoveAllowed(player)}
@@ -1230,16 +1265,17 @@ export default function RosterPage() {
                                                     {player.position}
                                                 </button>
                                             </td>
-                                            <td className="px-3 sm:px-6 py-2 sm:py-4">
+                                            {/* 桌面版：Player info (單欄) */}
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4 hidden sm:table-cell">
                                                 {player.isEmpty ? (
-                                                    <div className="flex items-center gap-2 sm:gap-4 text-slate-500 font-bold italic">Empty</div>
+                                                    <div className="flex items-center gap-4 text-slate-500 font-bold italic">Empty</div>
                                                 ) : (
-                                                    <div className="flex items-center gap-2 sm:gap-4">
-                                                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
                                                             {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
                                                         </div>
                                                         <div>
-                                                            <div className="font-bold text-white text-sm sm:text-lg flex items-center whitespace-nowrap">
+                                                            <div className="font-bold text-white text-lg flex items-center whitespace-nowrap">
                                                                 <button
                                                                     onClick={() => setSelectedPlayerModal(player)}
                                                                     className="hover:text-purple-300 transition-colors cursor-pointer"
@@ -1294,6 +1330,42 @@ export default function RosterPage() {
                                                     </div>
                                                 )}
                                             </td>
+                                            {/* 手機版：Player info (colSpan 跨所有 stat 欄位) */}
+                                            <td className="px-3 py-2 sm:hidden" colSpan={displayPitcherCats.length}>
+                                                {player.isEmpty ? (
+                                                    <div className="flex items-center gap-2 text-slate-500 font-bold italic">Empty</div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-purple-500/30 bg-slate-800 flex-shrink-0">
+                                                            {getPlayerPhoto(player) && <img src={getPlayerPhoto(player)} alt={player.name} className="w-full h-full object-cover" onError={handleImageError} />}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-white text-sm flex items-center whitespace-nowrap">
+                                                                <button
+                                                                    onClick={() => setSelectedPlayerModal(player)}
+                                                                    className="hover:text-purple-300 transition-colors cursor-pointer"
+                                                                >
+                                                                    {player.name}
+                                                                </button>
+                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
+                                                                <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
+                                                            </div>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                {player.original_name && player.original_name !== player.name && (
+                                                                    <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2">
+                                                                        {player.original_name}
+                                                                    </span>
+                                                                )}
+                                                                <span className="text-xs text-slate-400 font-mono">
+                                                                    {player.game_info ? (
+                                                                        player.game_info.is_home ? 'vs' : '@') : 'No game'}
+                                                                </span>
+                                                                {renderPlayerBadges(player)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </td>
                                             {displayPitcherCats.map(stat => {
                                                 const isForced = !pitcherStatCategories.includes(stat);
                                                 return (
@@ -1303,11 +1375,9 @@ export default function RosterPage() {
                                                 );
                                             })}
                                         </tr>
-                                        {/* 手機版：stats 第二行 (對齊標頭) */}
+                                        {/* 手機版：stats 第二行 (Slot 已 rowSpan，不需留白) */}
                                         {!player.isEmpty && (
                                             <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
-                                                {/* 留白給第一欄 (Slot) */}
-                                                <td className="px-2 py-2"></td>
                                                 {displayPitcherCats.map(stat => {
                                                     const isForced = !pitcherStatCategories.includes(stat);
                                                     return (
