@@ -1356,6 +1356,7 @@ export default function RosterPage() {
                                             <span className="w-2 h-2 bg-green-400 rounded-full"></span>
                                             Batter Position Eligibility
                                         </h4>
+
                                         <p className="text-purple-200 leading-relaxed">
                                             Players must appear in <span className="font-bold text-green-300">8 or more games</span> at a position to be eligible for that position.
                                         </p>
