@@ -1956,6 +1956,7 @@ export default function PlayersPage() {
             <table className="w-full">
               <thead className="bg-slate-900/60 border-b border-purple-500/20">
                 <tr>
+                  <th className="px-2 py-4 w-12"></th>
                   <th className="px-6 py-4 min-w-[180px] sm:min-w-0 hidden sm:table-cell"></th>
                   <th
                     className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
@@ -2044,10 +2045,13 @@ export default function PlayersPage() {
                   filteredPlayers.map((player, index) => (
                     <React.Fragment key={player.player_id}>
                       <tr className="hover:bg-purple-500/5 transition-colors group">
+                        {/* Action button (rowSpan=2, 置中) */}
+                        <td className="px-2 py-2 sm:py-4 align-middle text-center" rowSpan={2}>
+                          {getPlayerActionButton(player)}
+                        </td>
                         {/* 桌面版：Player info (單欄) */}
                         <td className="px-3 sm:px-6 py-2 sm:py-4 hidden sm:table-cell">
                           <div className="flex items-center gap-3">
-                            {getPlayerActionButton(player)}
                             <img
                               src={getPlayerPhoto(player)}
                               alt={`${player.name} Avatar`}
@@ -2140,10 +2144,9 @@ export default function PlayersPage() {
                             </div>
                           </div>
                         </td>
-                        {/* 手機版：Player info (colSpan 跨所有欄位，rowSpan=2) */}
-                        <td className="px-3 py-2 sm:hidden" colSpan={2 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)} rowSpan={2}>
+                        {/* 手機版：Player info (colSpan 跨所有欄位) */}
+                        <td className="px-3 py-2 sm:hidden" colSpan={2 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)}>
                           <div className="flex items-center gap-2">
-                            {getPlayerActionButton(player)}
                             <img
                               src={getPlayerPhoto(player)}
                               alt={`${player.name} Avatar`}

@@ -1076,7 +1076,7 @@ export default function RosterPage() {
                                 ) : batterRoster.map(player => (
                                     <React.Fragment key={player.id}>
                                         <tr className="hover:bg-purple-500/5 transition">
-                                            <td className="px-3 sm:px-6 py-2 sm:py-4 align-top" rowSpan={player.isEmpty ? 1 : 2}>
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4 align-middle text-center" rowSpan={player.isEmpty ? 1 : 2}>
                                                 <button
                                                     onClick={() => handleSlotClick(player)}
                                                     disabled={player.isEmpty || !isMoveAllowed(player)}
@@ -1252,7 +1252,7 @@ export default function RosterPage() {
                                 ) : pitcherRoster.map(player => (
                                     <React.Fragment key={player.id}>
                                         <tr className="hover:bg-purple-500/5 transition">
-                                            <td className="px-3 sm:px-6 py-2 sm:py-4 align-top" rowSpan={player.isEmpty ? 1 : 2}>
+                                            <td className="px-3 sm:px-6 py-2 sm:py-4 align-middle text-center" rowSpan={player.isEmpty ? 1 : 2}>
                                                 <button
                                                     onClick={() => handleSlotClick(player)}
                                                     disabled={player.isEmpty || !isMoveAllowed(player)}
