@@ -1956,17 +1956,7 @@ export default function PlayersPage() {
             <table className="w-full">
               <thead className="bg-slate-900/60 border-b border-purple-500/20">
                 <tr>
-                  <th
-                    className="px-6 py-4 text-left text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group min-w-[180px] sm:min-w-0"
-                    onClick={() => handleSort('name')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Name
-                      {sortConfig.key === 'name' && (
-                        <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                      )}
-                    </div>
-                  </th>
+                  <th className="px-6 py-4 min-w-[180px] sm:min-w-0 hidden sm:table-cell"></th>
                   <th
                     className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
                     onClick={() => handleSort('rank')}
@@ -2186,8 +2176,6 @@ export default function PlayersPage() {
                       </tr>
                       {/* 手機版：stats 第二行 (對齊標頭) */}
                       <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
-                        {/* 留白給第一欄 (Name) */}
-                        <td className="px-2 py-2"></td>
 
                         <td className="px-2 py-2 text-center text-[11px] text-cyan-300 font-mono font-bold">
                           {playerRankings[player.player_id] || '-'}

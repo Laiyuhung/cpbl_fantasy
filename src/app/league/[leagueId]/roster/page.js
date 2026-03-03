@@ -1059,7 +1059,7 @@ export default function RosterPage() {
                             <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
                                     <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
-                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 min-w-[180px] sm:min-w-0">Player</th>
+                                    <th className="px-3 sm:px-6 py-3 sm:py-4 min-w-[180px] sm:min-w-0 hidden sm:table-cell"></th>
                                     {displayBatterCats.map(stat => {
                                         const isForced = !batterStatCategories.includes(stat);
                                         return (
@@ -1165,8 +1165,7 @@ export default function RosterPage() {
                                         {/* 手機版：stats 第二行 (對齊標頭) */}
                                         {!player.isEmpty && (
                                             <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
-                                                {/* 留白給第一欄 (Slot) 和第二欄 (Player) */}
-                                                <td className="px-2 py-2"></td>
+                                                {/* 留白給第一欄 (Slot) */}
                                                 <td className="px-2 py-2"></td>
                                                 {displayBatterCats.map(stat => {
                                                     const isForced = !batterStatCategories.includes(stat);
@@ -1201,7 +1200,7 @@ export default function RosterPage() {
                             <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
                                     <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
-                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 min-w-[180px] sm:min-w-0">Player</th>
+                                    <th className="px-3 sm:px-6 py-3 sm:py-4 min-w-[180px] sm:min-w-0 hidden sm:table-cell"></th>
                                     {displayPitcherCats.map(stat => {
                                         const isForced = !pitcherStatCategories.includes(stat);
                                         return (
@@ -1307,8 +1306,7 @@ export default function RosterPage() {
                                         {/* 手機版：stats 第二行 (對齊標頭) */}
                                         {!player.isEmpty && (
                                             <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
-                                                {/* 留白給第一欄 (Slot) 和第二欄 (Player) */}
-                                                <td className="px-2 py-2"></td>
+                                                {/* 留白給第一欄 (Slot) */}
                                                 <td className="px-2 py-2"></td>
                                                 {displayPitcherCats.map(stat => {
                                                     const isForced = !pitcherStatCategories.includes(stat);
