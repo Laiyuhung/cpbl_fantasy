@@ -1352,22 +1352,17 @@ export default function DraftPage() {
             {mainTab === 'players' && (
                 <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
                     {/* Center: Player Pool */}
-                    <div className="flex-[3] bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl">
+                    <div className="flex-[3] bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl overflow-hidden">
                         {/* Filter Bar */}
-                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-700 mb-4 flex flex-wrap gap-4 items-center justify-between">
-                            <div className="flex items-center gap-4 w-full md:w-auto overflow-hidden">
-                                <div className="flex flex-col gap-1 justify-center">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-white font-bold text-lg mr-2">Players</span>
-                                        <span className="text-[10px] md:text-xs text-slate-500 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700">2025 Season Stats</span>
-                                    </div>
-                                    <span className="text-[10px] text-slate-400 italic font-sans max-w-[200px] md:max-w-none break-words">
-                                        *Rate/Negative stats require PA/IP top 60% qualification to rank.
-                                    </span>
+                        <div className="bg-slate-900 p-2 rounded-lg border border-slate-700 mb-3 flex flex-wrap gap-2 items-center justify-between shrink-0">
+                            <div className="flex items-center gap-2 w-full md:w-auto overflow-hidden">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-white font-bold text-sm">Players</span>
+                                    <span className="text-[9px] text-slate-500 font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 hidden sm:inline">2025 Stats</span>
                                 </div>
-                                <div className="flex bg-slate-800 rounded p-1 border border-slate-700 shrink-0 self-start mt-1 relative z-10">
+                                <div className="flex bg-slate-800 rounded p-0.5 border border-slate-700 shrink-0 relative z-10">
                                     <button
-                                        className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                        className={`px-2 py-0.5 text-xs rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
                                         onClick={() => {
                                             setFilterType('batter');
                                             if (batterStatCategories.length > 0) {
@@ -1376,7 +1371,7 @@ export default function DraftPage() {
                                         }}
                                     >Batter</button>
                                     <button
-                                        className={`px-4 py-1 text-sm rounded transition-all ${filterType === 'pitcher' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                        className={`px-2 py-0.5 text-xs rounded transition-all ${filterType === 'pitcher' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
                                         onClick={() => {
                                             setFilterType('pitcher');
                                             if (pitcherStatCategories.length > 0) {
@@ -1387,11 +1382,11 @@ export default function DraftPage() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap gap-2 items-center">
+                            <div className="flex flex-wrap gap-1.5 items-center">
                                 {/* Legend Button moved here */}
                                 <button
                                     onClick={() => setShowLegend(true)}
-                                    className="bg-slate-800 border border-slate-600 text-purple-400 hover:text-white hover:bg-purple-600/50 hover:border-purple-500 px-3 py-1.5 rounded text-xs transition-all font-bold"
+                                    className="bg-slate-800 border border-slate-600 text-purple-400 hover:text-white hover:bg-purple-600/50 hover:border-purple-500 px-2 py-1 rounded text-[10px] transition-all font-bold"
                                 >
                                     Legend
                                 </button>
@@ -2014,24 +2009,24 @@ export default function DraftPage() {
                                 <div className="mb-6" key={title}>
                                     <h3 className="text-md font-bold text-purple-300 mb-2 border-l-4 border-purple-500 pl-2">{title}</h3>
                                     <div className="bg-slate-900/40 rounded-lg border border-slate-700/50 overflow-x-auto">
-                                        <div className="min-w-[600px]">
+                                        <div className="min-w-[450px]">
                                         {/* Header Row */}
                                         <div className="flex bg-slate-800/60 p-2 text-xs font-bold text-slate-400 border-b border-slate-700">
-                                            <div className="w-12 text-center">Slot</div>
-                                            <div className="flex-1 pl-2">Player</div>
-                                            <div className="flex ml-2 gap-2">
+                                            <div className="w-10 text-center shrink-0">Slot</div>
+                                            <div className="w-32 pl-2 shrink-0">Player</div>
+                                            <div className="flex gap-1">
                                                 {statCats && statCats.length > 0 ? statCats.map(cat => {
                                                     const isForced = isPitcher
                                                         ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
                                                         : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
                                                     return (
-                                                        <div key={cat} className={`w-[30px] text-center ${isForced ? 'text-slate-600' : ''}`} title={cat}>{getStatAbbr(cat)}</div>
+                                                        <div key={cat} className={`w-[28px] text-center text-[9px] ${isForced ? 'text-slate-600' : ''}`} title={cat}>{getStatAbbr(cat)}</div>
                                                     );
                                                 }) : (
                                                     <div className="text-slate-600 text-[10px] italic">Stats</div>
                                                 )}
                                                 {/* Remove Button Placeholder for alignment if needed, though usually fixed width */}
-                                                <div className="w-16 text-center">Action</div>
+                                                <div className="w-12 text-center text-[9px]">Action</div>
                                             </div>
                                         </div>
 
@@ -2058,55 +2053,56 @@ export default function DraftPage() {
                                                 <div
                                                     key={slotKey}
                                                     onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
-                                                    className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                    className={`flex items-center p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
                                                         ? 'bg-slate-900/80'
                                                         : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
                                                         }`}
                                                 >
-                                                    <div className="w-12 text-center shrink-0">
-                                                        <span className="font-mono font-bold text-stone-500 text-xs">{slotLabel}</span>
+                                                    <div className="w-10 text-center shrink-0">
+                                                        <span className="font-mono font-bold text-stone-500 text-[10px]">{slotLabel}</span>
                                                     </div>
 
                                                     {assignment ? (
                                                         <>
-                                                            <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
-                                                                <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                            <div className="w-32 shrink-0 flex items-center gap-1.5 pl-2">
+                                                                <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
                                                                     <img
                                                                         src={getPlayerPhoto(assignment)}
                                                                         onError={(e) => handleImageError(e, assignment)}
                                                                         className="w-full h-full object-cover"
                                                                     />
                                                                 </div>
-                                                                <div className="min-w-0">
-                                                                    <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="text-[10px] font-bold text-slate-200 truncate flex items-center gap-0.5">
                                                                         {playerRankings[assignment.player_id] && (
-                                                                            <span className="text-[10px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
+                                                                            <span className="text-[8px] font-bold text-cyan-400">#{playerRankings[assignment.player_id]}</span>
                                                                         )}
                                                                         {assignment.name}
-                                                                        {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                            <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                        )}
-                                                                        <span className={`px-1 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
+                                                                    </div>
+                                                                    <div className="text-[8px] text-slate-500 truncate flex items-center gap-0.5">
+                                                                        <span className={`px-0.5 rounded text-[7px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
                                                                             {getTeamAbbr(assignment.team)}
                                                                         </span>
+                                                                        {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                            <span className="text-[7px] font-bold bg-purple-900/50 text-purple-300 px-0.5 rounded border border-purple-500/30">F</span>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
+                                                            <div className="flex gap-1 text-[9px] text-slate-300 font-mono">
                                                                 {statCats.map(cat => {
                                                                     const isForced = isPitcher
                                                                         ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
                                                                         : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
                                                                     return (
-                                                                        <div key={cat} className={`w-[30px] text-center ${isForced ? 'text-slate-500' : ''}`}>
+                                                                        <div key={cat} className={`w-[28px] text-center ${isForced ? 'text-slate-500' : ''}`}>
                                                                             {formatStat(getPlayerStat(assignment.player_id, cat))}
                                                                         </div>
                                                                     );
                                                                 })}
 
-                                                                <div className="w-16 flex justify-center">
+                                                                <div className="w-12 flex justify-center">
                                                                     {!isLeagueView && (
                                                                         <button
                                                                             onClick={(e) => {
@@ -2144,7 +2140,7 @@ export default function DraftPage() {
                                 <div className="mb-6" key="Bench">
                                     <h3 className="text-md font-bold text-slate-400 mb-2 border-l-4 border-slate-500 pl-2">Bench</h3>
                                     <div className="bg-slate-900/40 rounded-lg border border-slate-700/50 overflow-x-auto">
-                                        <div className="min-w-[600px]">
+                                        <div className="min-w-[450px]">
                                         {slots.map((slotKey) => {
                                             const slotLabel = slotKey.replace(/\d+$/, '');
                                             const isLeagueView = mainTab === 'league_rosters';
@@ -2164,19 +2160,19 @@ export default function DraftPage() {
                                                 <div
                                                     key={slotKey}
                                                     onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
-                                                    className={`flex items-center justify-between p-3 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                    className={`flex items-center p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
                                                         ? 'bg-slate-900/80'
                                                         : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
                                                         }`}
                                                 >
-                                                    <div className="w-14 text-center shrink-0">
-                                                        <span className="font-mono font-bold text-slate-500 text-sm uppercase">{slotLabel}</span>
+                                                    <div className="w-10 text-center shrink-0">
+                                                        <span className="font-mono font-bold text-slate-500 text-[10px] uppercase">{slotLabel}</span>
                                                     </div>
 
                                                     {assignment ? (
                                                         <>
-                                                            <div className="flex-1 min-w-0 flex items-center gap-3 pl-2">
-                                                                <div className="w-12 h-12 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0 shadow-lg">
+                                                            <div className="w-32 shrink-0 flex items-center gap-1.5 pl-2">
+                                                                <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
                                                                     <img
                                                                         src={getPlayerPhoto(assignment)}
                                                                         onError={(e) => handleImageError(e, assignment)}
@@ -2184,24 +2180,25 @@ export default function DraftPage() {
                                                                     />
                                                                 </div>
                                                                 <div className="min-w-0 flex-1">
-                                                                    <div className="text-base font-bold text-slate-200 truncate flex items-center gap-2">
+                                                                    <div className="text-[10px] font-bold text-slate-200 truncate flex items-center gap-0.5">
                                                                         {playerRankings[assignment.player_id] && (
-                                                                            <span className="text-[11px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
+                                                                            <span className="text-[8px] font-bold text-cyan-400">#{playerRankings[assignment.player_id]}</span>
                                                                         )}
                                                                         {assignment.name}
-                                                                        <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
+                                                                    </div>
+                                                                    <div className="text-[8px] text-slate-500 truncate flex items-center gap-0.5">
+                                                                        <span className={`px-0.5 rounded text-[7px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
                                                                             {getTeamAbbr(assignment.team)}
                                                                         </span>
                                                                         {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                            <span className="text-[10px] font-bold bg-purple-900/50 text-purple-300 px-1.5 rounded border border-purple-500/30">F</span>
+                                                                            <span className="text-[7px] font-bold bg-purple-900/50 text-purple-300 px-0.5 rounded border border-purple-500/30">F</span>
                                                                         )}
                                                                     </div>
-                                                                    <div className="text-xs text-slate-500 truncate mt-0.5">{assignment.position_list}</div>
                                                                 </div>
                                                             </div>
 
                                                             {/* Inline Stats for Bench */}
-                                                            <div className="flex ml-4 gap-3 text-[11px] text-slate-400 overflow-x-auto hide-scrollbar max-w-[500px]">
+                                                            <div className="flex gap-1 text-[9px] text-slate-400 overflow-x-auto hide-scrollbar">
                                                                 {playerStatCats.map(cat => {
                                                                     const isPitcher = assignment?.batter_or_pitcher === 'pitcher';
                                                                     const isForced = isPitcher
@@ -2209,15 +2206,14 @@ export default function DraftPage() {
                                                                         : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
 
                                                                     return (
-                                                                        <div key={cat} className="flex flex-col items-center min-w-[32px]">
-                                                                            <span className={`mb-0.5 text-[9px] font-bold ${isForced ? 'text-slate-500/60' : 'text-slate-600'}`}>{getStatAbbr(cat)}</span>
-                                                                            <span className={`font-mono ${isForced ? 'text-slate-500' : 'text-slate-200'}`}>{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                        <div key={cat} className={`w-[28px] text-center font-mono ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
+                                                                            {formatStat(getPlayerStat(assignment.player_id, cat))}
                                                                         </div>
                                                                     );
                                                                 })}
                                                             </div>
 
-                                                            <div className="w-20 flex justify-center shrink-0 ml-4">
+                                                            <div className="w-12 flex justify-center shrink-0">
                                                                 {!isLeagueView && (
                                                                     <button
                                                                         onClick={(e) => {
@@ -2225,18 +2221,18 @@ export default function DraftPage() {
                                                                             handleRemoveAssignment(assignment.assignment_id);
                                                                         }}
                                                                         disabled={assigning}
-                                                                        className="bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500/50 px-2 py-1 rounded text-[10px] font-bold transition-all disabled:opacity-50"
+                                                                        className="text-slate-500 hover:text-red-400 text-[10px] font-bold transition-all disabled:opacity-50"
                                                                     >
                                                                         {assigning && assigningId === assignment.assignment_id ? (
                                                                             <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
-                                                                        ) : 'REMOVE'}
+                                                                        ) : '×'}
                                                                     </button>
                                                                 )}
                                                             </div>
                                                         </>
                                                     ) : (
-                                                        <div className="flex-1 pl-2 text-slate-600 italic text-sm">
-                                                            Empty Slot
+                                                        <div className="flex-1 pl-2 text-slate-600 italic text-[10px]">
+                                                            Empty
                                                         </div>
                                                     )}
                                                 </div>
@@ -2393,23 +2389,23 @@ export default function DraftPage() {
                                             <div className="mb-6" key={title}>
                                                 <h3 className="text-md font-bold text-purple-300 mb-2 border-l-4 border-purple-500 pl-2">{title}</h3>
                                                 <div className="bg-slate-900/40 rounded-lg border border-slate-700/50 overflow-x-auto">
-                                                    <div className="min-w-[600px]">
+                                                    <div className="min-w-[450px]">
                                                     {/* Header Row */}
                                                     <div className="flex bg-slate-800/60 p-2 text-xs font-bold text-slate-400 border-b border-slate-700">
-                                                        <div className="w-12 text-center">Slot</div>
-                                                        <div className="flex-1 pl-2">Player</div>
-                                                        <div className="flex ml-2 gap-2">
+                                                        <div className="w-10 text-center shrink-0">Slot</div>
+                                                        <div className="w-32 pl-2 shrink-0">Player</div>
+                                                        <div className="flex gap-1">
                                                             {statCats && statCats.length > 0 ? statCats.map(cat => {
                                                                 const isForced = isPitcher
                                                                     ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
                                                                     : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
                                                                 return (
-                                                                    <div key={cat} className={`w-[30px] text-center ${isForced ? 'text-slate-600' : ''}`} title={cat}>{getStatAbbr(cat)}</div>
+                                                                    <div key={cat} className={`w-[28px] text-center text-[9px] ${isForced ? 'text-slate-600' : ''}`} title={cat}>{getStatAbbr(cat)}</div>
                                                                 );
                                                             }) : (
                                                                 <div className="text-slate-600 text-[10px] italic">Stats</div>
                                                             )}
-                                                            <div className="w-8"></div>
+                                                            <div className="w-6"></div>
                                                         </div>
                                                     </div>
 
@@ -2425,56 +2421,57 @@ export default function DraftPage() {
                                                             <div
                                                                 key={slotKey}
                                                                 onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
-                                                                className={`flex items-center justify-between p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                                className={`flex items-center p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
                                                                     ? 'bg-slate-900/80'
                                                                     : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
                                                                     }`}
                                                             >
-                                                                <div className="w-12 text-center shrink-0">
-                                                                    <span className="font-mono font-bold text-stone-500 text-xs">{slotLabel}</span>
+                                                                <div className="w-10 text-center shrink-0">
+                                                                    <span className="font-mono font-bold text-stone-500 text-[10px]">{slotLabel}</span>
                                                                 </div>
 
                                                                 {assignment ? (
                                                                     <>
-                                                                        <div className="flex-1 min-w-0 flex items-center gap-2 pl-2">
-                                                                            <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
+                                                                        <div className="w-32 shrink-0 flex items-center gap-1.5 pl-2">
+                                                                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
                                                                                 <img
                                                                                     src={getPlayerPhoto(assignment)}
                                                                                     onError={(e) => handleImageError(e, assignment)}
                                                                                     className="w-full h-full object-cover"
                                                                                 />
                                                                             </div>
-                                                                            <div className="min-w-0">
-                                                                                <div className="text-xs font-bold text-slate-200 truncate flex items-center gap-1">
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <div className="text-[10px] font-bold text-slate-200 truncate flex items-center gap-0.5">
                                                                                     {playerRankings[assignment.player_id] && (
-                                                                                        <span className="text-[10px] font-bold text-cyan-400 mr-0.5">#{playerRankings[assignment.player_id]}</span>
+                                                                                        <span className="text-[8px] font-bold text-cyan-400">#{playerRankings[assignment.player_id]}</span>
                                                                                     )}
                                                                                     {assignment.name}
-                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                                        <span className="text-[8px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30">F</span>
-                                                                                    )}
-                                                                                    <span className={`px-1 py-0.5 rounded-[4px] text-[9px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
+                                                                                </div>
+                                                                                <div className="text-[8px] text-slate-500 truncate flex items-center gap-0.5">
+                                                                                    <span className={`px-0.5 rounded text-[7px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
                                                                                         {getTeamAbbr(assignment.team)}
                                                                                     </span>
+                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                                        <span className="text-[7px] font-bold bg-purple-900/50 text-purple-300 px-0.5 rounded border border-purple-500/30">F</span>
+                                                                                    )}
                                                                                 </div>
-                                                                                <div className="text-[10px] text-slate-500 truncate">{assignment.position_list}</div>
                                                                             </div>
                                                                         </div>
 
-                                                                        <div className="flex ml-2 gap-2 text-[10px] text-slate-300 font-mono">
+                                                                        <div className="flex gap-1 text-[9px] text-slate-300 font-mono">
                                                                             {statCats.map(cat => {
                                                                                 const isForced = isPitcher
                                                                                     ? (cat === 'Innings Pitched (IP)' && !pitcherStatCategories.includes(cat))
                                                                                     : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
 
                                                                                 return (
-                                                                                    <div key={cat} className={`w-[30px] text-center ${isForced ? 'text-slate-500' : ''}`}>
+                                                                                    <div key={cat} className={`w-[28px] text-center ${isForced ? 'text-slate-500' : ''}`}>
                                                                                         {formatStat(getPlayerStat(assignment.player_id, cat))}
                                                                                     </div>
                                                                                 );
                                                                             })}
 
-                                                                            <div className="w-8 flex justify-center">
+                                                                            <div className="w-6 flex justify-center">
                                                                                 {!isLeagueView && (
                                                                                     <button
                                                                                         onClick={(e) => {
@@ -2512,7 +2509,7 @@ export default function DraftPage() {
                                             <div className="mb-6" key="Bench">
                                                 <h3 className="text-md font-bold text-slate-400 mb-2 border-l-4 border-slate-500 pl-2">Bench</h3>
                                                 <div className="bg-slate-900/40 rounded-lg border border-slate-700/50 overflow-x-auto">
-                                                    <div className="min-w-[600px]">
+                                                    <div className="min-w-[450px]">
                                                     {slots.map((slotKey) => {
                                                         const slotLabel = slotKey.replace(/\d+$/, '');
                                                         const isLeagueView = mainTab === 'league_rosters';
@@ -2526,19 +2523,19 @@ export default function DraftPage() {
                                                             <div
                                                                 key={slotKey}
                                                                 onClick={() => !assignment && !isLeagueView && setAssignModalSlot(slotKey)}
-                                                                className={`flex items-center justify-between p-3 border-b border-slate-700/30 last:border-0 transition-all ${assignment
+                                                                className={`flex items-center p-2 border-b border-slate-700/30 last:border-0 transition-all ${assignment
                                                                     ? 'bg-slate-900/80'
                                                                     : isLeagueView ? 'bg-slate-900/10' : 'bg-slate-900/20 cursor-pointer hover:bg-slate-800/50'
                                                                     }`}
                                                             >
-                                                                <div className="w-14 text-center shrink-0">
-                                                                    <span className="font-mono font-bold text-slate-500 text-sm uppercase">{slotLabel}</span>
+                                                                <div className="w-10 text-center shrink-0">
+                                                                    <span className="font-mono font-bold text-slate-500 text-[10px] uppercase">{slotLabel}</span>
                                                                 </div>
 
                                                                 {assignment ? (
                                                                     <>
-                                                                        <div className="flex-1 min-w-0 flex items-center gap-3 pl-2">
-                                                                            <div className="w-12 h-12 rounded-full bg-slate-700 overflow-hidden border-2 border-slate-600 shrink-0 shadow-lg">
+                                                                        <div className="w-32 shrink-0 flex items-center gap-1.5 pl-2">
+                                                                            <div className="w-6 h-6 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shrink-0">
                                                                                 <img
                                                                                     src={getPlayerPhoto(assignment)}
                                                                                     onError={(e) => handleImageError(e, assignment)}
@@ -2546,21 +2543,22 @@ export default function DraftPage() {
                                                                                 />
                                                                             </div>
                                                                             <div className="min-w-0 flex-1">
-                                                                                <div className="text-base font-bold text-slate-200 truncate flex items-center gap-2">
+                                                                                <div className="text-[10px] font-bold text-slate-200 truncate flex items-center gap-0.5">
                                                                                     {assignment.name}
-                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
-                                                                                        <span className="text-[10px] font-bold bg-purple-900/50 text-purple-300 px-1.5 rounded border border-purple-500/30">F</span>
-                                                                                    )}
-                                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border font-bold ${getTeamColor(assignment.team)}`}>
+                                                                                </div>
+                                                                                <div className="text-[8px] text-slate-500 truncate flex items-center gap-0.5">
+                                                                                    <span className={`px-0.5 rounded text-[7px] font-bold border leading-none ${getTeamColor(assignment.team)}`}>
                                                                                         {getTeamAbbr(assignment.team)}
                                                                                     </span>
+                                                                                    {assignment.identity?.toLowerCase() === 'foreigner' && (
+                                                                                        <span className="text-[7px] font-bold bg-purple-900/50 text-purple-300 px-0.5 rounded border border-purple-500/30">F</span>
+                                                                                    )}
                                                                                 </div>
-                                                                                <div className="text-xs text-slate-500 truncate mt-0.5">{assignment.position_list}</div>
                                                                             </div>
                                                                         </div>
 
                                                                         {/* Inline Stats for Bench */}
-                                                                        <div className="flex ml-4 gap-3 text-[11px] text-slate-400 overflow-x-auto hide-scrollbar max-w-[500px]">
+                                                                        <div className="flex gap-1 text-[9px] text-slate-400 overflow-x-auto hide-scrollbar">
                                                                             {playerStatCats.map(cat => {
                                                                                 const isPitcher = assignment?.batter_or_pitcher === 'pitcher';
                                                                                 const isForced = isPitcher
@@ -2568,15 +2566,14 @@ export default function DraftPage() {
                                                                                     : (cat === 'At Bats (AB)' && !batterStatCategories.includes(cat));
 
                                                                                 return (
-                                                                                    <div key={cat} className="flex flex-col items-center min-w-[32px]">
-                                                                                        <span className={`mb-0.5 text-[9px] font-bold ${isForced ? 'text-slate-500/60' : 'text-slate-600'}`}>{getStatAbbr(cat)}</span>
-                                                                                        <span className={`font-mono ${isForced ? 'text-slate-500' : 'text-slate-200'}`}>{formatStat(getPlayerStat(assignment.player_id, cat))}</span>
+                                                                                    <div key={cat} className={`w-[28px] text-center font-mono ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
+                                                                                        {formatStat(getPlayerStat(assignment.player_id, cat))}
                                                                                     </div>
                                                                                 );
                                                                             })}
                                                                         </div>
 
-                                                                        <div className="w-10 flex justify-center shrink-0 ml-4">
+                                                                        <div className="w-6 flex justify-center shrink-0">
                                                                             {!isLeagueView && (
                                                                                 <button
                                                                                     onClick={(e) => {
@@ -2594,8 +2591,8 @@ export default function DraftPage() {
                                                                         </div>
                                                                     </>
                                                                 ) : (
-                                                                    <div className="flex-1 pl-2 text-slate-600 italic text-sm">
-                                                                        Empty Slot
+                                                                    <div className="flex-1 pl-2 text-slate-600 italic text-[10px]">
+                                                                        Empty
                                                                     </div>
                                                                 )}
                                                             </div>
