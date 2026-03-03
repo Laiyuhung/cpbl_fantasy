@@ -1519,8 +1519,8 @@ export default function DraftPage() {
                                                         </div>
                                                     </td>
 
-                                                    {/* Rank - visible on both mobile and desktop */}
-                                                    <td className="p-2 text-center text-xs sm:text-sm font-bold text-slate-400">
+                                                    {/* Rank - desktop only in row 1 */}
+                                                    <td className="p-2 text-center text-sm font-bold text-slate-400 hidden sm:table-cell">
                                                         {playerRankings[player.player_id] || '-'}
                                                     </td>
 
@@ -1569,8 +1569,8 @@ export default function DraftPage() {
                                                         </div>
                                                     </td>
 
-                                                    {/* Mobile: Player Info spanning all stat columns */}
-                                                    <td className="px-3 py-2 sm:hidden" colSpan={currentStatCats.length}>
+                                                    {/* Mobile: Player Info spanning Rank + all stat columns */}
+                                                    <td className="px-3 py-2 sm:hidden" colSpan={currentStatCats.length + 1}>
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600 shadow-sm relative shrink-0">
                                                                 <img
@@ -1633,6 +1633,10 @@ export default function DraftPage() {
                                                 </tr>
                                                 {/* Mobile: Stats Row */}
                                                 <tr className="sm:hidden border-b border-slate-700/50">
+                                                    {/* Rank cell on mobile row 2 */}
+                                                    <td className="px-1 py-1 text-center text-[10px] font-bold text-slate-400">
+                                                        {playerRankings[player.player_id] || '-'}
+                                                    </td>
                                                     {currentStatCats.map(cat => {
                                                         const val = getPlayerStat(player.player_id, cat);
                                                         const isForced = !baseStatCats.includes(cat);
@@ -1641,10 +1645,9 @@ export default function DraftPage() {
 
                                                         return (
                                                             <td key={cat} className={`px-1 py-1 relative text-center text-[10px] font-mono ${isForced ? 'text-slate-500' : 'text-slate-300'}`}>
-                                                                <div className="text-[8px] text-slate-600 leading-none mb-0.5">{getStatAbbr(cat)}</div>
                                                                 <div>{formatStat(val)}</div>
                                                                 {rank && rank <= 15 && (
-                                                                    <div className="text-[9px] font-black text-amber-500 font-sans leading-none">{getOrdinal(rank)}</div>
+                                                                    <div className="text-[8px] font-black text-amber-500 font-sans leading-none">{getOrdinal(rank)}</div>
                                                                 )}
                                                             </td>
                                                         );
