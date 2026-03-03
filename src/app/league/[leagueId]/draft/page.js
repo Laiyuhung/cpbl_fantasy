@@ -1439,7 +1439,7 @@ export default function DraftPage() {
                                 <thead className="bg-slate-900/95 sticky top-0 z-10 text-[10px] text-slate-400 uppercase tracking-wider font-semibold shadow-md">
                                     <tr>
                                         <th className="p-2 border-b border-slate-700 w-12"></th>
-                                        <th className="p-2 border-b border-slate-700 min-w-[50px] text-center cursor-pointer hover:text-white transition-colors hidden sm:table-cell" onClick={() => handleSort('rank')}>
+                                        <th className="p-2 border-b border-slate-700 min-w-[40px] sm:min-w-[50px] text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>
                                             <div className="flex items-center justify-center gap-1">
                                                 Rank
                                                 {sortConfig.key === 'rank' && (<span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>)}
@@ -1519,8 +1519,8 @@ export default function DraftPage() {
                                                         </div>
                                                     </td>
 
-                                                    {/* Desktop: Rank */}
-                                                    <td className="p-2 text-center text-sm font-bold text-slate-400 hidden sm:table-cell">
+                                                    {/* Rank - visible on both mobile and desktop */}
+                                                    <td className="p-2 text-center text-xs sm:text-sm font-bold text-slate-400">
                                                         {playerRankings[player.player_id] || '-'}
                                                     </td>
 
@@ -1582,9 +1582,6 @@ export default function DraftPage() {
                                                             </div>
                                                             <div className="flex flex-col">
                                                                 <div className="flex items-center gap-1 flex-wrap">
-                                                                    {playerRankings[player.player_id] && (
-                                                                        <span className="text-[10px] font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
-                                                                    )}
                                                                     <span className="font-bold text-slate-200 text-sm flex-wrap">{player.name}</span>
                                                                     <span className="text-slate-400 text-xs">- {filterPositions(player)}</span>
                                                                     <span className={`px-1 py-0.5 rounded-[3px] text-[9px] font-bold border leading-none ${getTeamColor(player.team)}`}>
