@@ -1402,12 +1402,12 @@ export default function DraftPage() {
                                     onChange={e => setFilterTeam(e.target.value)}
                                 >
                                     <option value="All">All Teams</option>
-                                    <option value="中信兄弟">Brothers</option>
-                                    <option value="統一獅">Lions</option>
-                                    <option value="樂天桃猿">Monkeys</option>
-                                    <option value="富邦悍將">Guardians</option>
-                                    <option value="味全龍">Dragons</option>
-                                    <option value="台鋼雄鷹">Hawks</option>
+                                    <option value="中信兄弟">中信兄弟</option>
+                                    <option value="統一獅">統一獅</option>
+                                    <option value="樂天桃猿">樂天桃猿</option>
+                                    <option value="富邦悍將">富邦悍將</option>
+                                    <option value="味全龍">味全龍</option>
+                                    <option value="台鋼雄鷹">台鋼雄鷹</option>
                                 </select>
 
                                 <select
@@ -2280,13 +2280,13 @@ export default function DraftPage() {
 
             {
                 mainTab === 'league_rosters' && (
-                    <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 230px)' }}>
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="flex items-center gap-4">
-                                <h2 className="text-xl font-bold text-purple-300">League Rosters</h2>
-                                <div className="text-xs text-slate-400">View other managers&apos; assignments</div>
+                    <div className="bg-slate-800/40 rounded-xl p-4 lg:p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 230px)' }}>
+                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 mb-4">
+                            <div className="flex flex-wrap items-center gap-2 lg:gap-4">
+                                <h2 className="text-lg lg:text-xl font-bold text-purple-300">League Rosters</h2>
+                                <div className="hidden lg:block text-xs text-slate-400">View other managers&apos; assignments</div>
                                 {foreignerLimit !== null && (
-                                    <div className="flex items-center gap-1.5 bg-slate-900/60 px-3 py-1 rounded border border-slate-700 shadow-sm">
+                                    <div className="flex items-center gap-1.5 bg-slate-900/60 px-2 lg:px-3 py-1 rounded border border-slate-700 shadow-sm">
                                         <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Foreigners</span>
                                         <div className="flex items-center gap-1">
                                             <span className={`text-sm font-bold ${(managerForeignerCounts[String(viewingManagerId)] || 0) >= foreignerLimit ? 'text-red-400' : 'text-purple-300'}`}>
@@ -2305,7 +2305,7 @@ export default function DraftPage() {
                                 </button>
                             </div>
                             <select
-                                className="bg-slate-700 text-white p-2 rounded border border-slate-600 outline-none focus:border-purple-500 min-w-[200px]"
+                                className="bg-slate-700 text-white p-2 rounded border border-slate-600 outline-none focus:border-purple-500 w-full lg:w-auto lg:min-w-[200px]"
                                 value={viewingManagerId || ''}
                                 onChange={(e) => setViewingManagerId(e.target.value)}
                             >
@@ -2725,7 +2725,7 @@ export default function DraftPage() {
                     <LeagueChat
                         leagueId={leagueId}
                         managerId={myManagerId}
-                        isCompact={true}
+                        isCompact={false}
                         pollInterval={5000}
                         enablePolling={draftState?.status !== 'complete'}
                     />
