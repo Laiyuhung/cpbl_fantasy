@@ -24,6 +24,7 @@ export default function PlayerDetailModal({
     tradeEndDate,
     seasonYear,
     isPlayerLocked,     // Boolean: is this player locked in a pending trade?
+    isDropLockedByGameStart, // Boolean: is drop locked because game has started and player is in active lineup?
     onAdd,              // (player, isWaiver) => void
     onDrop,             // (player) => void
     onTrade,            // (player, ownerManagerId) => void
@@ -300,6 +301,14 @@ export default function PlayerDetailModal({
                     return (
                         <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-600 text-slate-400 flex items-center gap-1.5 cursor-not-allowed" title="Locked in pending trade">
                             🔒 Locked
+                        </span>
+                    );
+                }
+                // Check if drop is locked due to game started
+                if (isDropLockedByGameStart) {
+                    return (
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-600 text-slate-400 flex items-center gap-1.5 cursor-not-allowed" title="Cannot drop - game has started and player is in active lineup">
+                            🔒 In Game
                         </span>
                     );
                 }

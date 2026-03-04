@@ -116,14 +116,10 @@ export async function POST(request, { params }) {
         // 2. Process DROP first (to free up space/limits)
         if (dropPlayerId) {
             // --- DROP RESTRICTION CHECK ---
-            // 1. Get Taiwan Today Date
+            // 1. Get Taiwan Time for proper comparison
             const dropTime = new Date();
-            const taiwanDateStr = dropTime.toLocaleDateString('zh-TW', {
-                timeZone: 'Asia/Taipei',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            }).replace(/\//g, '-');
+            const taiwanTime = new Date(dropTime.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+            const taiwanDateStr = taiwanTime.toISOString().split('T')[0]; // YYYY-MM-DD format
 
             // 2. Fetch Dropped Player Team
             const { data: dropPlayerInfo, error: dpError } = await supabase
@@ -149,14 +145,19 @@ export async function POST(request, { params }) {
                 // 4. Check Schedule for Team on Today
                 const { data: teamGame, error: gameError } = await supabase
                     .from('cpbl_schedule_2026')
-                    .select('time')
+                    .select('time, is_postponed')
                     .eq('date', taiwanDateStr)
                     .or(`home.eq.${dropPlayerInfo.team},away.eq.${dropPlayerInfo.team}`)
                     .single();
 
-                if (teamGame && teamGame.time) {
-                    const gameTime = new Date(teamGame.time);
-                    if (dropTime >= gameTime) {
+                if (teamGame && teamGame.time && !teamGame.is_postponed) {
+                    // teamGame.time is stored as timestamptz (e.g., '2026-03-09 10:35:00+00')
+                    // Compare directly using UTC
+                    const gameTimeUTC = new Date(teamGame.time);
+                    const nowUTC = new Date();
+
+                    const isGameStarted = nowUTC >= gameTimeUTC;
+                    if (isGameStarted) {
                         return NextResponse.json({
                             success: false,
                             error: `Cannot drop ${dropPlayerInfo.name} - Game has started and player is in active lineup (${rosterPos.position}).`

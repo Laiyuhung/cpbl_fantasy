@@ -146,14 +146,13 @@ export default function MoveModal({
         // --- Game Status Check for BN/NA Moves ---
         // If Player is BN/NA and Game Started -> Can ONLY move to BN/NA
         if (['BN', 'NA'].includes(player.position)) {
-            if (player.game_info && player.game_info.time) {
-                const now = new Date();
-                const taiwanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
-                const [gHour, gMin] = player.game_info.time.split(':').map(Number);
-                const gameDateObj = new Date(taiwanTime);
-                gameDateObj.setHours(gHour, gMin, 0, 0);
+            if (player.game_info && player.game_info.time && !player.game_info.is_postponed) {
+                // game_info.time is stored as timestamptz (e.g., '2026-03-09 10:35:00+00')
+                // Compare directly using UTC
+                const gameTimeUTC = new Date(player.game_info.time);
+                const nowUTC = new Date();
 
-                if (taiwanTime >= gameDateObj) {
+                if (nowUTC >= gameTimeUTC) {
                     // Game Started -> Filter Options
                     distinctPositions = distinctPositions.filter(p => ['BN', 'NA'].includes(p));
                 }

@@ -50,17 +50,12 @@ export async function POST(request, { params }) {
                 .single();
 
             if (gameData) {
-                const gameTimeStr = `${gameData.date}T${gameData.time}:00`;
-                const gameTime = new Date(gameTimeStr);
-                // Adjust gameTime to Taiwan Time object comparisons if needed, 
-                // but since iso string is usually local time in schedule, treat as Taiwan Time.
-                // Actually, let's just compare HH:mm if date matches.
+                // gameData.time is stored as timestamptz (e.g., '2026-03-09 10:35:00+00')
+                // Compare directly using UTC
+                const gameTimeUTC = new Date(gameData.time);
+                const nowUTC = new Date();
 
-                const [gHour, gMin] = gameData.time.split(':').map(Number);
-                const gameDateObj = new Date(taiwanTime);
-                gameDateObj.setHours(gHour, gMin, 0, 0);
-
-                const isGameStarted = taiwanTime >= gameDateObj;
+                const isGameStarted = nowUTC >= gameTimeUTC;
                 const isPostponed = gameData.is_postponed === true;
 
                 if (isGameStarted && !isPostponed) {

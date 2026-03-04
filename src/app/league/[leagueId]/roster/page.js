@@ -630,15 +630,13 @@ export default function RosterPage() {
 
         // 2. Game Time Check (Only for Today)
         if (selectedDate === todayStr && player.game_info && player.game_info.time) {
-            // Parse Game Time
-            const [gHour, gMin] = player.game_info.time.split(':').map(Number);
-            const gameDateObj = new Date(taiwanTime);
-            gameDateObj.setHours(gHour, gMin, 0, 0);
+            // game_info.time is stored as timestamptz (e.g., '2026-03-09 10:35:00+00')
+            // Compare directly using UTC
+            const gameTimeUTC = new Date(player.game_info.time);
+            const nowUTC = new Date();
+            const isGameStarted = nowUTC >= gameTimeUTC;
 
-            const isGameStarted = taiwanTime >= gameDateObj;
-            // TODO: Add PPD check if available in game_info, currently assuming not PPD if valid time
-
-            if (isGameStarted) {
+            if (isGameStarted && !player.game_info.is_postponed) {
                 // Starter Locked
                 if (!['BN', 'NA'].includes(player.position)) {
                     return false;
@@ -648,6 +646,34 @@ export default function RosterPage() {
         }
 
         return true;
+    };
+
+    // Drop Lock Helper - Check if player cannot be dropped due to game start
+    const isDropLockedByGameStart = (player) => {
+        if (!player || !player.game_info) return false;
+
+        // Only lock drop for starters (not BN/NA)
+        if (['BN', 'NA'].includes(player.position)) return false;
+
+        // Check if game has started (not postponed)
+        if (player.game_info.is_postponed) return false;
+
+        const now = new Date();
+        const taiwanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+        const todayStr = taiwanTime.toISOString().split('T')[0];
+
+        // Only check for today's games
+        if (selectedDate !== todayStr) return false;
+
+        if (player.game_info.time) {
+            // game_info.time is stored as timestamptz
+            const gameTimeUTC = new Date(player.game_info.time);
+            const nowUTC = new Date();
+            const isGameStarted = nowUTC >= gameTimeUTC;
+            return isGameStarted;
+        }
+
+        return false;
     };
 
     // Badge Helper
@@ -1589,6 +1615,7 @@ export default function RosterPage() {
                     tradeEndDate={tradeEndDate}
                     seasonYear={seasonYear}
                     isPlayerLocked={selectedPlayerModal ? activeTradePlayerIds.has(selectedPlayerModal.player_id) : false}
+                    isDropLockedByGameStart={selectedPlayerModal ? isDropLockedByGameStart(selectedPlayerModal) : false}
                     onDrop={(player) => handleDropPlayer(player)}
                     // Watch Props
                     isWatched={selectedPlayerModal ? watchedPlayerIds.has(selectedPlayerModal.player_id) : false}

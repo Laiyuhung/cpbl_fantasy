@@ -422,12 +422,9 @@ export async function DELETE(req, { params }) {
 
     // --- DROP RESTRICTION CHECK ---
     const checkNow = new Date();
-    const checkDateStr = checkNow.toLocaleDateString('zh-TW', {
-      timeZone: 'Asia/Taipei',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).replace(/\//g, '-');
+    // Get Taiwan time for proper comparison
+    const taiwanTime = new Date(checkNow.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+    const checkDateStr = taiwanTime.toISOString().split('T')[0]; // YYYY-MM-DD format
 
     const { data: dropPlayerInfo } = await supabase
       .from('player_list')
@@ -448,14 +445,19 @@ export async function DELETE(req, { params }) {
       if (rosterPos && !['BN', 'NA'].includes(rosterPos.position)) {
         const { data: teamGame } = await supabase
           .from('cpbl_schedule_2026')
-          .select('time')
+          .select('time, is_postponed')
           .eq('date', checkDateStr)
           .or(`home.eq.${dropPlayerInfo.team},away.eq.${dropPlayerInfo.team}`)
           .single();
 
-        if (teamGame && teamGame.time) {
-          const gameTime = new Date(teamGame.time);
-          if (checkNow >= gameTime) {
+        if (teamGame && teamGame.time && !teamGame.is_postponed) {
+          // teamGame.time is stored as timestamptz (e.g., '2026-03-09 10:35:00+00')
+          // Compare directly using UTC
+          const gameTimeUTC = new Date(teamGame.time);
+          const nowUTC = new Date();
+
+          const isGameStarted = nowUTC >= gameTimeUTC;
+          if (isGameStarted) {
             return NextResponse.json({
               success: false,
               error: `Cannot drop ${dropPlayerInfo.name} - Game has started and player is in active lineup (${rosterPos.position}).`
