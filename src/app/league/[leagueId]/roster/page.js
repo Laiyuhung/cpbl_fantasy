@@ -1021,27 +1021,27 @@ export default function RosterPage() {
                         </div>
 
                         {/* Buttons Row */}
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                             {/* IP Requirement Badge */}
                             {minIPRequired !== null && weeklyIP !== null && (
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold tracking-wider flex items-center gap-1 ${weeklyIP < minIPRequired ? 'bg-red-600 text-white' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'}`}>
+                                <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wider flex items-center gap-1 ${weeklyIP < minIPRequired ? 'bg-red-600 text-white' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'}`}>
                                     IP: {weeklyIP}/{minIPRequired}
                                 </span>
                             )}
                             {/* Add Limit Badge */}
                             {maxAcquisitions !== null && (
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold tracking-wider flex items-center gap-1 ${weeklyAddCount >= maxAcquisitions ? 'bg-red-600 text-white' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'}`}>
+                                <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wider flex items-center gap-1 ${weeklyAddCount >= maxAcquisitions ? 'bg-red-600 text-white' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'}`}>
                                     ADD: {weeklyAddCount}/{maxAcquisitions}
                                 </span>
                             )}
                             {!isTradeDeadlinePassed() && (
                                 <button
                                     onClick={() => setShowMyTradesModal(true)}
-                                    className="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center gap-2 transition-colors text-xs font-bold tracking-wider"
+                                    className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center gap-1 sm:gap-2 transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
                                 >
                                     <span>TRADES</span>
                                     {pendingTradeCount > 0 && (
-                                        <span className="w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[8px] font-bold shadow-lg">
+                                        <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[7px] sm:text-[8px] font-bold shadow-lg">
                                             {pendingTradeCount}
                                         </span>
                                     )}
@@ -1049,19 +1049,19 @@ export default function RosterPage() {
                             )}
                             <button
                                 onClick={() => setShowWaiverModal(true)}
-                                className="px-3 py-1 rounded-full bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                                className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300 flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
                             >
                                 WAIVER
                             </button>
                             <button
                                 onClick={() => setShowLegendModal(true)}
-                                className="px-3 py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                                className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400/50 text-blue-300 flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
                             >
                                 LEGEND
                             </button>
                             <button
                                 onClick={() => setShowInfoModal(true)}
-                                className="px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-xs font-bold tracking-wider"
+                                className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 border border-purple-400/50 text-purple-300 flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
                             >
                                 POS RULES
                             </button>
