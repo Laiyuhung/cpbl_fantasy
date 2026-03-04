@@ -49,7 +49,7 @@ export default function CpblScheduleWidget() {
         fetchGames(currentDate);
     }, [currentDate]);
 
-    // Close date picker when clicking outside
+    // Close date picker when clicking outside (supports both mouse and touch)
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (datePickerRef.current && !datePickerRef.current.contains(event.target)) {
@@ -57,7 +57,11 @@ export default function CpblScheduleWidget() {
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
     }, []);
 
     const changeDate = (days) => {
@@ -92,9 +96,13 @@ export default function CpblScheduleWidget() {
                 <div className="flex items-center gap-2 flex-1 justify-between bg-slate-800/50 rounded-lg p-1 border border-white/5" ref={datePickerRef}>
                     <button
                         onClick={() => changeDate(-1)}
-                        className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-slate-400 hover:text-white"
+                        onTouchEnd={(e) => {
+                            e.preventDefault();
+                            changeDate(-1);
+                        }}
+                        className="p-2 hover:bg-white/10 active:bg-white/20 rounded-md transition-colors text-slate-400 hover:text-white touch-manipulation"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
@@ -104,7 +112,12 @@ export default function CpblScheduleWidget() {
                             setViewDate(currentDate);
                             setShowDatePicker(!showDatePicker);
                         }}
-                        className="text-white font-bold text-sm tracking-wide flex items-center gap-2 hover:text-purple-300 transition-colors"
+                        onTouchEnd={(e) => {
+                            e.preventDefault();
+                            setViewDate(currentDate);
+                            setShowDatePicker(!showDatePicker);
+                        }}
+                        className="text-white font-bold text-sm tracking-wide flex items-center gap-2 hover:text-purple-300 active:text-purple-400 transition-colors py-2 px-1 touch-manipulation"
                     >
                         {displayDate}
                         <svg className={`w-3 h-3 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,17 +127,32 @@ export default function CpblScheduleWidget() {
 
                     <button
                         onClick={() => changeDate(1)}
-                        className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-slate-400 hover:text-white"
+                        onTouchEnd={(e) => {
+                            e.preventDefault();
+                            changeDate(1);
+                        }}
+                        className="p-2 hover:bg-white/10 active:bg-white/20 rounded-md transition-colors text-slate-400 hover:text-white touch-manipulation"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
 
                     {/* Date Picker Popup — rendered via portal */}
                     {showDatePicker && createPortal(
-                        <div className="fixed inset-0 z-[890] flex items-start justify-center pt-[20vh]" onClick={() => setShowDatePicker(false)}>
-                            <div className="bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[260px] max-w-[90vw] z-[900]" onClick={(e) => e.stopPropagation()}>
+                        <div 
+                            className="fixed inset-0 z-[890] flex items-start justify-center pt-[20vh]" 
+                            onClick={() => setShowDatePicker(false)}
+                            onTouchEnd={(e) => {
+                                e.preventDefault();
+                                setShowDatePicker(false);
+                            }}
+                        >
+                            <div 
+                                className="bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[260px] max-w-[90vw] z-[900]" 
+                                onClick={(e) => e.stopPropagation()}
+                                onTouchEnd={(e) => e.stopPropagation()}
+                            >
                                 {/* Month Nav */}
                                 <div className="flex justify-between items-center mb-4">
                                     <button
@@ -134,9 +162,16 @@ export default function CpblScheduleWidget() {
                                             newDate.setMonth(newDate.getMonth() - 1);
                                             setViewDate(newDate);
                                         }}
-                                        className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                        onTouchEnd={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            const newDate = new Date(viewDate);
+                                            newDate.setMonth(newDate.getMonth() - 1);
+                                            setViewDate(newDate);
+                                        }}
+                                        className="p-2 hover:bg-slate-700 active:bg-slate-600 rounded text-purple-300 transition-colors touch-manipulation"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                                     </button>
                                     <span className="text-white font-bold text-sm">
                                         {viewDate.toLocaleString('en-US', { month: 'short', year: 'numeric' })}
@@ -148,9 +183,16 @@ export default function CpblScheduleWidget() {
                                             newDate.setMonth(newDate.getMonth() + 1);
                                             setViewDate(newDate);
                                         }}
-                                        className="p-1 hover:bg-slate-700 rounded text-purple-300 transition-colors"
+                                        onTouchEnd={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            const newDate = new Date(viewDate);
+                                            newDate.setMonth(newDate.getMonth() + 1);
+                                            setViewDate(newDate);
+                                        }}
+                                        className="p-2 hover:bg-slate-700 active:bg-slate-600 rounded text-purple-300 transition-colors touch-manipulation"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                                     </button>
                                 </div>
 
@@ -177,11 +219,17 @@ export default function CpblScheduleWidget() {
                                                     setCurrentDate(date);
                                                     setShowDatePicker(false);
                                                 }}
+                                                onTouchEnd={(e) => {
+                                                    e.stopPropagation();
+                                                    e.preventDefault();
+                                                    setCurrentDate(date);
+                                                    setShowDatePicker(false);
+                                                }}
                                                 className={`
-                                                    h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all
+                                                    min-h-[32px] min-w-[32px] rounded-full flex items-center justify-center text-xs font-bold transition-all touch-manipulation
                                                     ${isSelected ? 'bg-purple-600 text-white shadow' : ''}
                                                     ${!isSelected && isTodayDate ? 'border border-green-500 text-green-400' : ''}
-                                                    ${!isSelected && !isTodayDate ? 'text-slate-300 hover:bg-purple-500/20 hover:text-white' : ''}
+                                                    ${!isSelected && !isTodayDate ? 'text-slate-300 hover:bg-purple-500/20 active:bg-purple-500/30 hover:text-white' : ''}
                                                 `}
                                             >
                                                 {day}
@@ -198,7 +246,11 @@ export default function CpblScheduleWidget() {
                 {/* Today Button */}
                 <button
                     onClick={() => setCurrentDate(new Date())}
-                    className="p-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded-lg border border-purple-500/20 transition-all flex flex-col items-center justify-center gap-0.5 group"
+                    onTouchEnd={(e) => {
+                        e.preventDefault();
+                        setCurrentDate(new Date());
+                    }}
+                    className="p-2 bg-purple-500/10 hover:bg-purple-500/20 active:bg-purple-500/30 text-purple-300 rounded-lg border border-purple-500/20 transition-all flex flex-col items-center justify-center gap-0.5 group touch-manipulation"
                     title="Go to Today"
                 >
                     <span className="text-[10px] font-bold uppercase leading-none">Today</span>
