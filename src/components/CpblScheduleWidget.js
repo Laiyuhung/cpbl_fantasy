@@ -13,6 +13,7 @@ export default function CpblScheduleWidget() {
     const [viewDate, setViewDate] = useState(new Date());
     const datePickerRef = useRef(null);
     const datePickerPopupRef = useRef(null);
+    const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
 
     const teamColors = {
         '統一獅': 'text-orange-400',
@@ -56,7 +57,7 @@ export default function CpblScheduleWidget() {
             // Check if click is outside both the trigger button area and the popup
             const isOutsideTrigger = datePickerRef.current && !datePickerRef.current.contains(event.target);
             const isOutsidePopup = datePickerPopupRef.current && !datePickerPopupRef.current.contains(event.target);
-            
+
             // Only close if click is outside both areas
             if (isOutsideTrigger && (isOutsidePopup || !datePickerPopupRef.current)) {
                 setShowDatePicker(false);
@@ -115,11 +116,29 @@ export default function CpblScheduleWidget() {
 
                     <button
                         onClick={() => {
+                            if (!showDatePicker && datePickerRef.current) {
+                                const rect = datePickerRef.current.getBoundingClientRect();
+                                let top = rect.bottom + 8;
+                                let left = rect.left;
+                                if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+                                if (left < 10) left = 10;
+                                if (top + 320 > window.innerHeight) top = rect.top - 328;
+                                setPickerPosition({ top, left });
+                            }
                             setViewDate(currentDate);
                             setShowDatePicker(!showDatePicker);
                         }}
                         onTouchEnd={(e) => {
                             e.preventDefault();
+                            if (!showDatePicker && datePickerRef.current) {
+                                const rect = datePickerRef.current.getBoundingClientRect();
+                                let top = rect.bottom + 8;
+                                let left = rect.left;
+                                if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+                                if (left < 10) left = 10;
+                                if (top + 320 > window.innerHeight) top = rect.top - 328;
+                                setPickerPosition({ top, left });
+                            }
                             setViewDate(currentDate);
                             setShowDatePicker(!showDatePicker);
                         }}
@@ -146,8 +165,8 @@ export default function CpblScheduleWidget() {
 
                     {/* Date Picker Popup — rendered via portal */}
                     {showDatePicker && createPortal(
-                        <div 
-                            className="fixed inset-0 z-[890] flex items-start justify-center pt-[20vh]" 
+                        <div
+                            className="fixed inset-0 z-[890]"
                             onClick={() => setShowDatePicker(false)}
                             onTouchEnd={(e) => {
                                 // Only close if tapping the backdrop, not the popup content
@@ -157,9 +176,10 @@ export default function CpblScheduleWidget() {
                                 }
                             }}
                         >
-                            <div 
+                            <div
                                 ref={datePickerPopupRef}
-                                className="bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px] max-w-[90vw] z-[900]" 
+                                className="fixed bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px] max-w-[90vw] z-[900]"
+                                style={{ top: pickerPosition.top, left: pickerPosition.left }}
                                 onClick={(e) => e.stopPropagation()}
                                 onTouchStart={(e) => e.stopPropagation()}
                                 onTouchEnd={(e) => e.stopPropagation()}

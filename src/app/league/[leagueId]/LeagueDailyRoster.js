@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import PlayerDetailModal from '../../../components/PlayerDetailModal';
 
@@ -54,6 +54,8 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     // Date Picker State
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [viewDate, setViewDate] = useState(new Date());
+    const dateControlRef = useRef(null);
+    const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
 
     const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
@@ -746,7 +748,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
             {/* Controls — Date + Manager on same row */}
             <div className="flex items-center gap-2 mb-6">
                 {/* Date Selector */}
-                <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-white/10 flex-shrink-0">
+                <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-white/10 flex-shrink-0" ref={dateControlRef}>
                     <button onClick={() => handleDateChange(-1)} disabled={!canGoPrev} className={`p-1.5 rounded transition-colors ${canGoPrev ? 'hover:bg-white/10 text-slate-300' : 'text-slate-700 cursor-not-allowed'}`}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                     </button>
@@ -761,6 +763,15 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                                         initDate = new Date(y, m - 1, d);
                                     }
                                     setViewDate(initDate);
+                                    if (dateControlRef.current) {
+                                        const rect = dateControlRef.current.getBoundingClientRect();
+                                        let top = rect.bottom + 8;
+                                        let left = rect.left;
+                                        if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+                                        if (left < 10) left = 10;
+                                        if (top + 320 > window.innerHeight) top = rect.top - 328;
+                                        setPickerPosition({ top, left });
+                                    }
                                 }
                                 setShowDatePicker(!showDatePicker);
                             }}
@@ -774,8 +785,8 @@ export default function LeagueDailyRoster({ leagueId, members }) {
 
                         {/* Calendar — rendered via portal to escape stacking context */}
                         {showDatePicker && createPortal(
-                            <div className="fixed inset-0 z-[890] flex items-start justify-center pt-[20vh]" onClick={() => setShowDatePicker(false)}>
-                                <div className="bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px] max-w-[90vw] z-[900]" onClick={(e) => e.stopPropagation()}>
+                            <div className="fixed inset-0 z-[890]" onClick={() => setShowDatePicker(false)}>
+                                <div className="fixed bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl p-4 w-[280px] max-w-[90vw] z-[900]" style={{ top: pickerPosition.top, left: pickerPosition.left }} onClick={(e) => e.stopPropagation()}>
                                     <div className="flex justify-between items-center mb-4">
                                         <button onClick={(e) => { e.stopPropagation(); const nd = new Date(viewDate); nd.setMonth(nd.getMonth() - 1); setViewDate(nd); }} className="p-1 hover:bg-slate-700 rounded text-purple-300">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
