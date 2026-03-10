@@ -366,11 +366,11 @@ export default function LeagueMonitorPage() {
                                                 {/* Actions */}
                                                 <td className="px-3 py-3 text-center whitespace-nowrap">
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <a href={`/league/${league.league_id}/matchups`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">賽程</a>
+                                                        <a href={`/admin/league-monitor/${league.league_id}/matchups`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">賽程</a>
                                                         <span className="text-gray-300">|</span>
-                                                        <a href={`/league/${league.league_id}/roster`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">陣容</a>
+                                                        <a href={`/admin/league-monitor/${league.league_id}/rosters`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">陣容</a>
                                                         <span className="text-gray-300">|</span>
-                                                        <a href={`/league/${league.league_id}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline" title="Go to Overview for transactions">異動</a>
+                                                        <a href={`/admin/league-monitor/${league.league_id}/transactions`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">異動</a>
                                                     </div>
                                                 </td>
                                             </tr>
