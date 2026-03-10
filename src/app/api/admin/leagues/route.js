@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -9,21 +10,20 @@ const supabase = createClient(
 export async function GET(request) {
     try {
         // 1. Admin check
-        const cookieHeader = request.headers.get('cookie') || '';
-        const userIdMatch = cookieHeader.match(/(?:^|;\s*)user_id=([^;]*)/);
-        const userId = userIdMatch ? userIdMatch[1] : null;
+        const cookieStore = await cookies();
+        const userId = cookieStore.get('user_id')?.value;
 
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { data: manager } = await supabase
-            .from('managers')
-            .select('is_admin')
+        const { data: adminRecord, error: adminError } = await supabase
+            .from('admin')
+            .select('manager_id')
             .eq('manager_id', userId)
             .single();
 
-        if (!manager?.is_admin) {
+        if (adminError || !adminRecord) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
