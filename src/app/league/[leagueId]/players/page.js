@@ -2029,7 +2029,7 @@ export default function PlayersPage() {
                               className="w-12 h-12 rounded-full object-cover"
                             />
                             <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
                                   className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${watchedPlayerIds.has(player.player_id)
@@ -2044,7 +2044,7 @@ export default function PlayersPage() {
                                   <span className="text-xs font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
                                 )}
                                 <span
-                                  className="text-white font-semibold text-base group-hover:text-purple-300 transition-colors cursor-pointer flex-wrap"
+                                  className="text-white font-semibold text-base group-hover:text-purple-300 transition-colors cursor-pointer whitespace-nowrap"
                                   onClick={() => setSelectedPlayerModal(player)}
                                 >
                                   {player.name || 'Unknown'}
@@ -2057,7 +2057,7 @@ export default function PlayersPage() {
                                 </span>
                                 {renderStatusTag(player)}
                               </div>
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center gap-2 mt-1 flex-nowrap whitespace-nowrap">
                                 {player.original_name && player.original_name !== player.name && (
                                   <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2 mr-1">
                                     {player.original_name}
@@ -2124,7 +2124,7 @@ export default function PlayersPage() {
                               className="w-8 h-8 rounded-full object-cover"
                             />
                             <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
                                   className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${watchedPlayerIds.has(player.player_id)
@@ -2152,7 +2152,7 @@ export default function PlayersPage() {
                                 </span>
                                 {renderStatusTag(player)}
                               </div>
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center gap-2 mt-1 flex-nowrap whitespace-nowrap">
                                 {player.original_name && player.original_name !== player.name && (
                                   <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2 mr-1">
                                     {player.original_name}
