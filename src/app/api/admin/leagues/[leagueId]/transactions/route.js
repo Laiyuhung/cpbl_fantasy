@@ -1,89 +1,115 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import supabase from '../../../../../../lib/supabase';
 import { cookies } from 'next/headers';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
 
 export async function GET(request, { params }) {
     try {
-        const { leagueId } = params;
+        const { leagueId } = await params;
 
         // 1. Admin check
         const cookieStore = await cookies();
-        const userId = cookieStore.get('user_id')?.value;
+        const userIdCookie = cookieStore.get('user_id');
 
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!userIdCookie || !userIdCookie.value) {
+            return NextResponse.json({ success: false, error: 'Unauthorized: No user cookie' }, { status: 401 });
         }
+        const loggedInManagerId = userIdCookie.value;
 
         const { data: adminRecord, error: adminError } = await supabase
             .from('admin')
             .select('manager_id')
-            .eq('manager_id', userId)
+            .eq('manager_id', loggedInManagerId)
             .single();
 
         if (adminError || !adminRecord) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required.' }, { status: 403 });
         }
 
-        // 2. Fetch league members for manager mapping
-        const { data: members, error: membersError } = await supabase
-            .from('league_members')
-            .select('manager_id, nickname')
-            .eq('league_id', leagueId);
+        // 2. Fetch transactions and waiver claims (Mimicking Overview)
+        const [transRes, waiverRes, membersRes] = await Promise.all([
+            supabase
+                .from('transactions_2026')
+                .select('*')
+                .eq('league_id', leagueId)
+                .order('transaction_time', { ascending: false }),
+            supabase
+                .from('waiver_claims')
+                .select('*')
+                .eq('league_id', leagueId)
+                .not('status', 'in', '("pending","canceled")')
+                .lte('off_waiver', new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString().split('T')[0])
+                .order('updated_at', { ascending: false }),
+            supabase
+                .from('league_members')
+                .select('manager_id, nickname')
+                .eq('league_id', leagueId)
+        ]);
 
-        const memberMap = {};
-        if (members) {
-            members.forEach(m => {
-                memberMap[m.manager_id] = m.nickname;
-            });
-        }
+        if (transRes.error) throw transRes.error;
+        if (waiverRes.error) throw waiverRes.error;
+        if (membersRes.error) throw membersRes.error;
 
-        // 3. Fetch transactions
-        const { data: transactions, error: txError } = await supabase
-            .from('transactions')
-            .select('*')
-            .eq('league_id', leagueId)
-            .order('timestamp', { ascending: false });
-
-        if (txError) {
-            return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
-        }
-
-        // 4. Fetch player data for dropped/added/traded players
+        // 3. Fetch all relevant player names
         const playerIds = new Set();
-        (transactions || []).forEach(tx => {
-            if (tx.player_id) playerIds.add(tx.player_id);
-            if (tx.details?.addedPlayers) tx.details.addedPlayers.forEach(id => playerIds.add(id));
-            if (tx.details?.droppedPlayers) tx.details.droppedPlayers.forEach(id => playerIds.add(id));
-            if (tx.details?.offeredPlayers) tx.details.offeredPlayers.forEach(id => playerIds.add(id));
-            if (tx.details?.requestedPlayers) tx.details.requestedPlayers.forEach(id => playerIds.add(id));
+        transRes.data.forEach(t => {
+            if (t.player_id) playerIds.add(t.player_id);
+        });
+        waiverRes.data.forEach(w => {
+            if (w.player_id) playerIds.add(w.player_id);
+            if (w.drop_player_id) playerIds.add(w.drop_player_id);
         });
 
-        let playersMap = {};
+        let playerMap = {};
         if (playerIds.size > 0) {
-            const { data: players } = await supabase
-                .from('players')
-                .select('player_id, name, team, primary_position, photo_url')
+            const { data: players, error: pError } = await supabase
+                .from('player_list')
+                .select('player_id, name, batter_or_pitcher, team')
                 .in('player_id', Array.from(playerIds));
 
-            (players || []).forEach(p => {
-                playersMap[p.player_id] = p;
-            });
+            // Fetch positions too for better modal display
+            const { data: batterPos } = await supabase.from('v_batter_positions').select('*').in('player_id', Array.from(playerIds));
+            const { data: pitcherPos } = await supabase.from('v_pitcher_positions').select('*').in('player_id', Array.from(playerIds));
+
+            const posMap = {};
+            if (batterPos) batterPos.forEach(p => posMap[p.player_id] = p.position_list);
+            if (pitcherPos) pitcherPos.forEach(p => posMap[p.player_id] = p.position_list);
+
+            if (!pError && players) {
+                players.forEach(p => {
+                    playerMap[p.player_id] = {
+                        ...p,
+                        position_list: posMap[p.player_id]
+                    };
+                });
+            }
         }
+
+        // 4. Map nicknames
+        const memberMap = {};
+        membersRes.data.forEach(m => memberMap[m.manager_id] = m.nickname);
+
+        // 5. Enrich data
+        const enrichedTransactions = transRes.data.map(t => ({
+            ...t,
+            player: playerMap[t.player_id] || { name: 'Unknown' },
+            manager: { nickname: memberMap[t.manager_id] || 'Unknown' }
+        }));
+
+        const enrichedWaivers = waiverRes.data.map(w => ({
+            ...w,
+            player: playerMap[w.player_id] || { name: 'Unknown' },
+            drop_player: w.drop_player_id ? (playerMap[w.drop_player_id] || { name: 'Unknown' }) : null,
+            manager: { nickname: memberMap[w.manager_id] || 'Unknown' }
+        }));
 
         return NextResponse.json({
             success: true,
-            transactions: transactions || [],
-            memberMap,
-            playersMap
+            transactions: enrichedTransactions,
+            waivers: enrichedWaivers
         });
 
     } catch (error) {
         console.error('Admin transactions error:', error);
-        return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Server error', details: error.message }, { status: 500 });
     }
 }
