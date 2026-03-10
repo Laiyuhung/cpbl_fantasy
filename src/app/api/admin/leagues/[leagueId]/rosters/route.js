@@ -40,15 +40,7 @@ export async function GET(request, { params }) {
                 manager_id,
                 player_id,
                 position,
-                status,
-                player:playerslist(
-                    name, 
-                    team, 
-                    position_list, 
-                    batter_or_pitcher, 
-                    identity, 
-                    real_life_status
-                )
+                status
             `)
             .eq('league_id', leagueId)
             .eq('status', 'On Team'); // Only active roster players
@@ -60,6 +52,19 @@ export async function GET(request, { params }) {
         const { data: ownerships, error: ownershipsError } = await query;
 
         if (ownershipsError) throw ownershipsError;
+
+        // Fetch players details separately to avoid relationship cache issues
+        const playerIds = [...new Set(ownerships.map(o => o.player_id))];
+        let playersMap = {};
+        if (playerIds.length > 0) {
+            const { data: players, error: playersError } = await supabase
+                .from('playerslist')
+                .select('player_id, name, team, position_list, batter_or_pitcher, identity, real_life_status')
+                .in('player_id', playerIds);
+
+            if (playersError) throw playersError;
+            players.forEach(p => { playersMap[p.player_id] = p; });
+        }
 
         // 3. Process game dates to check for game info
         let gameDate = new Date();
@@ -92,7 +97,7 @@ export async function GET(request, { params }) {
 
         // 4. Format roster data
         const formattedRoster = ownerships.map(o => {
-            const playerInfo = o.player || {};
+            const playerInfo = playersMap[o.player_id] || {};
             const team = playerInfo.team;
             const gameInfo = team ? gamesByTeam[team] : null;
 
