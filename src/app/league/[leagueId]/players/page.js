@@ -1788,8 +1788,8 @@ export default function PlayersPage() {
         </div>
 
         {/* Filters */}
-        <div className="sticky top-0 z-40 py-2 -my-2 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] p-3 sm:p-6 space-y-3 border border-purple-500/30">
+        <div className="sticky top-[49px] sm:top-[73px] z-40 py-2 -my-2 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] p-2 sm:p-6 space-y-2 sm:space-y-3 border border-purple-500/30">
             {/* Search - full width on top */}
             <input
               type="text"
@@ -1876,18 +1876,20 @@ export default function PlayersPage() {
 
         {/* Players Table */}
         <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-3 sm:p-6 border-b border-purple-400/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 sm:gap-4">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2 sm:gap-3">
-                <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                Player List
-              </h2>
-              <span className="text-[10px] sm:text-xs text-white/70 italic font-sans md:ml-10">
-                *Rate/Negative stats require PA/IP top 60% qualification to rank.
-              </span>
-            </div>
+          <div className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm p-2 sm:p-6 border-b border-purple-400/30 flex items-center justify-between gap-2 sm:gap-4">
+            <h2 className="text-base sm:text-2xl font-black text-white flex items-center gap-1.5 sm:gap-3">
+              <svg className="w-4 h-4 sm:w-7 sm:h-7 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span>Player List</span>
+              <button
+                onClick={() => alert('*Rate/Negative stats require PA/IP top 60% qualification to rank.')}
+                className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-[10px] sm:text-xs text-purple-200 transition-colors ml-1"
+                title="*Rate/Negative stats require PA/IP top 60% qualification to rank."
+              >
+                i
+              </button>
+            </h2>
             <div className="flex bg-slate-900/40 p-1 rounded-md border border-white/20">
               <button
                 onClick={() => {
@@ -1925,46 +1927,45 @@ export default function PlayersPage() {
             <table className="w-full relative">
               <thead className="bg-slate-900/95 sticky top-0 z-30 shadow-md backdrop-blur-md outline outline-1 outline-purple-500/20">
                 <tr>
-                  <th className="px-2 py-4 w-12"></th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-purple-300 hidden sm:table-cell">Name</th>
+                  <th className="px-2 py-4 w-12 sticky left-0 z-40 bg-slate-900/95 shadow-[2px_0_5px_rgba(0,0,0,0.1)]"></th>
+                  <th className="px-3 sm:px-6 py-4 text-left text-xs sm:text-sm font-bold text-purple-300 sticky left-12 z-40 bg-slate-900/95 shadow-[10px_0_15px_-3px_rgba(0,0,0,0.5)]">Name</th>
                   <th
-                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-[10px] sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
                     onClick={() => handleSort('rank')}
                   >
                     <div className="flex items-center justify-center gap-1">
                       Rank
                       {sortConfig.key === 'rank' && (
-                        <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                        <span className="text-[10px] sm:text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                       )}
                     </div>
                   </th>
                   <th
-                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center text-[10px] sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
                     onClick={() => handleSort('roster_percentage')}
                   >
                     <div className="flex items-center justify-center gap-1">
                       Roster%
                       {sortConfig.key === 'roster_percentage' && (
-                        <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                        <span className="text-[10px] sm:text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                       )}
                     </div>
                   </th>
 
-
-                  {/* 動態顯示統計項目 - 桌面版 */}
+                  {/* 動態顯示統計項目 - 共用 */}
                   {filterType === 'batter' && displayBatterCats.map((stat) => {
                     const displayName = getStatAbbr(stat);
                     const isForced = !batterStatCategories.includes(stat);
                     return (
                       <th
                         key={stat}
-                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
+                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-[10px] sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
                         onClick={() => handleSort(stat)}
                       >
-                        <div className="flex items-center justify-center gap-1">
-                          {displayName}
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                          <span>{displayName}</span>
                           {sortConfig.key === stat && (
-                            <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                            <span className="text-[10px] sm:text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                           )}
                         </div>
                       </th>
@@ -1976,13 +1977,13 @@ export default function PlayersPage() {
                     return (
                       <th
                         key={stat}
-                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
+                        className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-[10px] sm:text-sm font-bold ${isForced ? 'text-purple-300/60' : 'text-purple-300'} cursor-pointer hover:text-white transition-colors select-none`}
                         onClick={() => handleSort(stat)}
                       >
-                        <div className="flex items-center justify-center gap-1">
-                          {displayName}
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                          <span>{displayName}</span>
                           {sortConfig.key === stat && (
-                            <span className="text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                            <span className="text-[10px] sm:text-xs">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                           )}
                         </div>
                       </th>
@@ -2014,17 +2015,12 @@ export default function PlayersPage() {
                   filteredPlayers.map((player, index) => (
                     <React.Fragment key={player.player_id}>
                       <tr className="hover:bg-purple-500/5 transition-colors group">
-                        {/* 桌面版：Action button (無 rowSpan) */}
-                        <td className="px-4 py-4 align-middle text-center hidden sm:table-cell">
+                        <td className="px-2 sm:px-4 py-2 sm:py-4 align-middle text-center sticky left-0 z-20 bg-slate-900/95 group-hover:bg-slate-800/95 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.1)]">
                           {getPlayerActionButton(player)}
                         </td>
-                        {/* 手機版：Action button (rowSpan=2, 置中) */}
-                        <td className="px-2 py-2 sm:py-4 align-middle text-center sm:hidden" rowSpan={2}>
-                          {getPlayerActionButton(player)}
-                        </td>
-                        {/* 桌面版：Player info (單欄) */}
-                        <td className="px-6 py-4 hidden sm:table-cell">
-                          <div className="flex items-center gap-3">
+                        {/* 桌面版與手機版共用：Player info */}
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 sticky left-[48px] sm:left-[64px] z-20 bg-slate-900/95 shadow-[10px_0_15px_-3px_rgba(0,0,0,0.5)] group-hover:bg-slate-800/95 transition-colors max-w-[150px] sm:max-w-none">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             <img
                               src={getPlayerPhoto(player)}
                               alt={`${player.name} Avatar`}
@@ -2117,118 +2113,23 @@ export default function PlayersPage() {
                             </div>
                           </div>
                         </td>
-                        {/* 手機版：Player info (colSpan 跨所有欄位) */}
-                        <td className="px-3 py-2 sm:hidden" colSpan={2 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)}>
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={getPlayerPhoto(player)}
-                              alt={`${player.name} Avatar`}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${watchedPlayerIds.has(player.player_id)
-                                    ? 'bg-amber-500 text-white hover:bg-amber-400'
-                                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
-                                    }`}
-                                  title={watchedPlayerIds.has(player.player_id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
-                                >
-                                  {watchedPlayerIds.has(player.player_id) ? '★' : '☆'}
-                                </button>
-                                {playerRankings[player.player_id] && (
-                                  <span className="text-xs font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
-                                )}
-                                <span
-                                  className="text-white font-semibold text-sm group-hover:text-purple-300 transition-colors cursor-pointer whitespace-nowrap"
-                                  onClick={() => setSelectedPlayerModal(player)}
-                                >
-                                  {player.name || 'Unknown'}
-                                  <span className="text-purple-300/70 font-normal ml-2">
-                                    - {filterPositions(player)}
-                                  </span>
-                                  <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
-                                    {player.team ? `${getTeamAbbr(player.team)}` : ''}
-                                  </span>
-                                </span>
-                                {renderStatusTag(player)}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1 flex-nowrap whitespace-nowrap">
-                                {player.original_name && player.original_name !== player.name && (
-                                  <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2 mr-1">
-                                    {player.original_name}
-                                  </span>
-                                )}
-                                <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                                  {player.game_info ? (
-                                    player.game_info.is_postponed ? (
-                                      <span className="text-red-400">PPD</span>
-                                    ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
-                                      (() => {
-                                        const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
-                                        const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
-                                        const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
-                                        const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
-                                        return (
-                                          <>
-                                            <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
-                                            {' '}
-                                            {player.game_info.is_home ? 'vs' : '@'}
-                                            {' '}
-                                            {player.game_info.opponent}
-                                          </>
-                                        );
-                                      })()
-                                    ) : (
-                                      <>
-                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                        {' '}
-                                        {player.game_info.is_home ? 'vs' : '@'}
-                                        {' '}
-                                        {player.game_info.opponent}
-                                      </>
-                                    )
-                                  ) : (
-                                    'No game'
-                                  )}
-                                </span>
-                                {player.real_life_status && player.real_life_status !== 'MAJOR' && (
-                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${player.real_life_status === 'MINOR'
-                                    ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
-                                    : player.real_life_status === 'DEREGISTERED'
-                                      ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                                      : 'bg-slate-500/20 text-slate-300 border-slate-500/30'
-                                    }`} title={player.real_life_status}>
-                                    {player.real_life_status === 'MINOR' ? 'NA' : player.real_life_status === 'DEREGISTERED' ? 'DR' : 'NR'}
-                                  </span>
-                                )}
-                                {player.identity !== 'local' && (
-                                  <span className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold" title="Foreign Player">
-                                    F
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-center font-mono text-cyan-300 hidden sm:table-cell">
+                        <td className="px-2 sm:px-4 py-2 sm:py-4 text-center text-[13px] sm:text-base text-cyan-300 font-mono font-bold">
                           {playerRankings[player.player_id] || '-'}
                         </td>
-                        <td className="px-4 py-4 text-center font-mono text-cyan-300 hidden sm:table-cell">
+                        <td className="px-2 sm:px-4 py-2 sm:py-4 text-center text-[13px] sm:text-base text-cyan-300 font-mono font-bold">
                           {player.roster_percentage ?? 0}%
                         </td>
-                        {/* 桌面版：統計欄位 */}
+                        {/* 桌面版與手機版共用：統計欄位 */}
                         {filterType === 'batter' && displayBatterCats.map((stat) => {
                           const isForced = !batterStatCategories.includes(stat);
                           const statAbbr = getStatAbbr(stat).toLowerCase();
                           const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
                           return (
-                            <td key={stat} className={`px-4 py-4 text-center font-mono relative hidden sm:table-cell ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                              <div className="w-full text-center">{getPlayerStat(player.player_id, stat)}</div>
-                              {rank && rank <= 15 && (
-                                <div className="absolute left-0 right-0 bottom-1.5 text-[11px] font-black text-amber-500 font-sans tracking-wide leading-none">{getOrdinal(rank)}</div>
-                              )}
+                            <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono relative ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                              <div className="w-full text-center text-[12px] sm:text-base font-bold">{getPlayerStat(player.player_id, stat)}</div>
+                              {rank && rank <= 15 ? (
+                                <div className="static sm:absolute left-0 right-0 sm:bottom-1.5 text-[10px] sm:text-[11px] font-black text-amber-500 font-sans tracking-wide leading-tight sm:leading-none mt-0.5 sm:mt-0">({getOrdinal(rank)})</div>
+                              ) : null}
                             </td>
                           );
                         })}
@@ -2237,49 +2138,16 @@ export default function PlayersPage() {
                           const statAbbr = getStatAbbr(stat).toLowerCase();
                           const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
                           return (
-                            <td key={stat} className={`px-4 py-4 text-center font-mono relative hidden sm:table-cell ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                              <div className="w-full text-center">{getPlayerStat(player.player_id, stat)}</div>
-                              {rank && rank <= 15 && (
-                                <div className="absolute left-0 right-0 bottom-1.5 text-[11px] font-black text-amber-500 font-sans tracking-wide leading-none">{getOrdinal(rank)}</div>
-                              )}
+                            <td key={stat} className={`px-2 sm:px-4 py-2 sm:py-4 text-center font-mono relative ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>
+                              <div className="w-full text-center text-[12px] sm:text-base font-bold">{getPlayerStat(player.player_id, stat)}</div>
+                              {rank && rank <= 15 ? (
+                                <div className="static sm:absolute left-0 right-0 sm:bottom-1.5 text-[10px] sm:text-[11px] font-black text-amber-500 font-sans tracking-wide leading-tight sm:leading-none mt-0.5 sm:mt-0">({getOrdinal(rank)})</div>
+                              ) : null}
                             </td>
                           );
                         })}
                       </tr>
-                      {/* 手機版：stats 第二行 (Player info 已 rowSpan，不需留白) */}
-                      <tr className="sm:hidden border-b border-purple-500/10 bg-slate-800/20">
-
-                        <td className="px-2 py-2 text-center text-[11px] text-cyan-300 font-mono font-bold">
-                          {playerRankings[player.player_id] || '-'}
-                        </td>
-                        <td className="px-2 py-2 text-center text-[11px] text-cyan-300 font-mono font-bold">
-                          {player.roster_percentage ?? 0}%
-                        </td>
-
-                        {filterType === 'batter' && displayBatterCats.map((stat) => {
-                          const isForced = !batterStatCategories.includes(stat);
-                          const statAbbr = getStatAbbr(stat).toLowerCase();
-                          const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
-                          return (
-                            <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
-                              <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{getPlayerStat(player.player_id, stat)}</span>
-                              {rank && rank <= 15 && <span className="text-amber-500 font-black ml-0.5 text-[10px]">({getOrdinal(rank)})</span>}
-                            </td>
-                          );
-                        })}
-
-                        {filterType === 'pitcher' && displayPitcherCats.map((stat) => {
-                          const isForced = !pitcherStatCategories.includes(stat);
-                          const statAbbr = getStatAbbr(stat).toLowerCase();
-                          const rank = !isForced && cpblStatRankings[String(player.player_id)]?.[statAbbr];
-                          return (
-                            <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
-                              <span className={`font-bold ${isForced ? 'text-slate-500' : 'text-purple-100'}`}>{getPlayerStat(player.player_id, stat)}</span>
-                              {rank && rank <= 15 && <span className="text-amber-500 font-black ml-0.5 text-[10px]">({getOrdinal(rank)})</span>}
-                            </td>
-                          );
-                        })}
-                      </tr>
+                      {/* 移除原本手機版的第二行 tr */}
                     </React.Fragment>
                   ))
                 )}
