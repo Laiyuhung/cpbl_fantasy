@@ -1450,9 +1450,9 @@ export default function DraftPage() {
                                             </div>
                                         </th>
                                         <th className="p-2 border-b border-slate-700 min-w-[250px] hidden sm:table-cell">Player</th>
-                                        <th className="p-2 border-b border-slate-700 min-w-[60px] text-center cursor-pointer hover:text-white transition-colors hidden sm:table-cell" onClick={() => handleSort('roster_percentage')}>
+                                        <th className="p-2 border-b border-slate-700 min-w-[40px] sm:min-w-[60px] text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('roster_percentage')}>
                                             <div className="flex items-center justify-center gap-1">
-                                                Roster%
+                                                Ros%
                                                 {sortConfig.key === 'roster_percentage' && (<span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>)}
                                             </div>
                                         </th>
@@ -1642,6 +1642,9 @@ export default function DraftPage() {
                                                     {/* Rank cell on mobile row 2 */}
                                                     <td className="px-1 py-1 text-center text-[10px] font-bold text-slate-400">
                                                         {playerRankings[player.player_id] || '-'}
+                                                    </td>
+                                                    <td className="px-1 py-1 text-center text-[10px] font-bold text-slate-400">
+                                                        {player.roster_percentage ?? 0}%
                                                     </td>
                                                     {currentStatCats.map(cat => {
                                                         const val = getPlayerStat(player.player_id, cat);
