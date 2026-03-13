@@ -1356,49 +1356,51 @@ export default function DraftPage() {
                     {/* Center: Player Pool */}
                     <div className="flex-[3] bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex flex-col backdrop-blur-sm shadow-xl overflow-hidden">
                         {/* Filter Bar */}
-                        <div className="bg-slate-900 p-2 rounded-lg border border-slate-700 mb-3 flex flex-nowrap sm:flex-wrap gap-2 items-center justify-between overflow-x-auto custom-scrollbar shrink-0">
-                            <div className="flex items-center gap-2 shrink-0">
+                        <div className="bg-slate-900 p-2 rounded-lg border border-slate-700 mb-3 flex flex-col sm:flex-row flex-wrap gap-2 items-start sm:items-center justify-between shrink-0">
+                            {/* Row 1 on Mobile: B/P Switch and Legend */}
+                            <div className="flex items-center justify-between w-full sm:w-auto gap-2 shrink-0">
                                 <div className="flex items-center gap-2">
                                     <span className="text-white font-bold text-sm">Players</span>
                                     <span className="text-[9px] text-slate-500 font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 hidden sm:inline">2025 Stats</span>
                                 </div>
-                                <div className="flex bg-slate-800 rounded p-0.5 border border-slate-700 shrink-0 relative z-10">
+                                <div className="flex items-center gap-2 ml-auto sm:ml-0">
+                                    <div className="flex bg-slate-800 rounded p-0.5 border border-slate-700 shrink-0 relative z-10">
+                                        <button
+                                            className={`px-2 py-0.5 text-xs rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                            onClick={() => {
+                                                setFilterType('batter');
+                                                if (batterStatCategories.length > 0) {
+                                                    setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
+                                                }
+                                            }}
+                                        >Batter</button>
+                                        <button
+                                            className={`px-2 py-0.5 text-xs rounded transition-all ${filterType === 'pitcher' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                            onClick={() => {
+                                                setFilterType('pitcher');
+                                                if (pitcherStatCategories.length > 0) {
+                                                    setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
+                                                }
+                                            }}
+                                        >Pitcher</button>
+                                    </div>
                                     <button
-                                        className={`px-2 py-0.5 text-xs rounded transition-all ${filterType === 'batter' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                                        onClick={() => {
-                                            setFilterType('batter');
-                                            if (batterStatCategories.length > 0) {
-                                                setSortConfig({ key: batterStatCategories[0], direction: 'desc' });
-                                            }
-                                        }}
-                                    >Batter</button>
-                                    <button
-                                        className={`px-2 py-0.5 text-xs rounded transition-all ${filterType === 'pitcher' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                                        onClick={() => {
-                                            setFilterType('pitcher');
-                                            if (pitcherStatCategories.length > 0) {
-                                                setSortConfig({ key: pitcherStatCategories[0], direction: 'desc' });
-                                            }
-                                        }}
-                                    >Pitcher</button>
+                                        onClick={() => setShowLegend(true)}
+                                        className="bg-slate-800 border border-slate-600 text-purple-400 hover:text-white hover:bg-purple-600/50 hover:border-purple-500 px-2 py-1.5 sm:py-1 rounded text-[10px] transition-all font-bold shrink-0"
+                                    >
+                                        Legend
+                                    </button>
                                 </div>
-                                {/* Legend Button positioned right after batter/pitcher switch on mobile */}
-                                <button
-                                    onClick={() => setShowLegend(true)}
-                                    className="bg-slate-800 border border-slate-600 text-purple-400 hover:text-white hover:bg-purple-600/50 hover:border-purple-500 px-2 py-1.5 sm:py-1 rounded text-[10px] transition-all font-bold shrink-0 sm:hidden"
-                                >
-                                    Legend
-                                </button>
                             </div>
 
-                            <div className="flex flex-nowrap sm:flex-wrap gap-1.5 items-center shrink-0">
-                                {/* Legend Button for desktop (hidden on mobile) */}
-                                <button
-                                    onClick={() => setShowLegend(true)}
-                                    className="bg-slate-800 border border-slate-600 text-purple-400 hover:text-white hover:bg-purple-600/50 hover:border-purple-500 px-2 py-1 rounded text-[10px] transition-all font-bold hidden sm:block"
-                                >
-                                    Legend
-                                </button>
+                            {/* Row 2 on Mobile: Search + Select Dropdowns */}
+                            <div className="flex flex-nowrap sm:flex-wrap gap-1.5 items-center w-full sm:w-auto overflow-x-auto custom-scrollbar shrink-0 pb-1 sm:pb-0">
+                                <input
+                                    className="bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-slate-200 w-32 sm:focus:w-48 transition-all outline-none focus:border-purple-500 shrink-0"
+                                    placeholder="Search..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                />
 
                                 <select
                                     className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500 w-28 sm:w-auto shrink-0"
@@ -1432,13 +1434,6 @@ export default function DraftPage() {
                                     <option value="Local">Local</option>
                                     <option value="Foreign">Foreign</option>
                                 </select>
-
-                                <input
-                                    className="bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-slate-200 w-24 sm:w-32 sm:focus:w-48 transition-all outline-none focus:border-purple-500 shrink-0"
-                                    placeholder="Search..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                />
                             </div>
                         </div>
 
