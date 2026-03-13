@@ -2137,97 +2137,99 @@ export default function PlayersPage() {
                             </div>
                           </div>
                         </td>
-                        {/* 手機版：Player info (sticky left + colSpan) */}
-                        <td className="px-3 py-2 sm:hidden sticky left-0 z-10" colSpan={2 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)}>
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={getPlayerPhoto(player)}
-                              alt={`${player.name} Avatar`}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${watchedPlayerIds.has(player.player_id)
-                                    ? 'bg-amber-500 text-white hover:bg-amber-400'
-                                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
-                                    }`}
-                                  title={watchedPlayerIds.has(player.player_id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
-                                >
-                                  {watchedPlayerIds.has(player.player_id) ? '★' : '☆'}
-                                </button>
-                                {playerRankings[player.player_id] && (
-                                  <span className="text-xs font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
-                                )}
-                                <span
-                                  className="text-white font-semibold text-sm group-hover:text-purple-300 transition-colors cursor-pointer whitespace-nowrap"
-                                  onClick={() => setSelectedPlayerModal(player)}
-                                >
-                                  {player.name || 'Unknown'}
-                                  <span className="text-purple-300/70 font-normal ml-2">
-                                    - {filterPositions(player)}
-                                  </span>
-                                  <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
-                                    {player.team ? `${getTeamAbbr(player.team)}` : ''}
-                                  </span>
-                                </span>
-                                {renderStatusTag(player)}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1 flex-nowrap whitespace-nowrap">
-                                {player.original_name && player.original_name !== player.name && (
-                                  <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2 mr-1">
-                                    {player.original_name}
-                                  </span>
-                                )}
-                                <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                                  {player.game_info ? (
-                                    player.game_info.is_postponed ? (
-                                      <span className="text-red-400">PPD</span>
-                                    ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
-                                      (() => {
-                                        const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
-                                        const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
-                                        const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
-                                        const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
-                                        return (
-                                          <>
-                                            <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
-                                            {' '}
-                                            {player.game_info.is_home ? 'vs' : '@'}
-                                            {' '}
-                                            {player.game_info.opponent}
-                                          </>
-                                        );
-                                      })()
-                                    ) : (
-                                      <>
-                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                        {' '}
-                                        {player.game_info.is_home ? 'vs' : '@'}
-                                        {' '}
-                                        {player.game_info.opponent}
-                                      </>
-                                    )
-                                  ) : (
-                                    'No game'
+                        {/* 手機版：Player info (inner sticky div + colSpan for layout) */}
+                        <td className="py-2 sm:hidden" colSpan={2 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)}>
+                          <div className="sticky left-0 w-[calc(100vw-2rem)] px-3">
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={getPlayerPhoto(player)}
+                                alt={`${player.name} Avatar`}
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleToggleWatch(player, watchedPlayerIds.has(player.player_id)); }}
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all ${watchedPlayerIds.has(player.player_id)
+                                      ? 'bg-amber-500 text-white hover:bg-amber-400'
+                                      : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-amber-400'
+                                      }`}
+                                    title={watchedPlayerIds.has(player.player_id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                                  >
+                                    {watchedPlayerIds.has(player.player_id) ? '★' : '☆'}
+                                  </button>
+                                  {playerRankings[player.player_id] && (
+                                    <span className="text-xs font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
                                   )}
-                                </span>
-                                {player.real_life_status && player.real_life_status !== 'MAJOR' && (
-                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${player.real_life_status === 'MINOR'
-                                    ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
-                                    : player.real_life_status === 'DEREGISTERED'
-                                      ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                                      : 'bg-slate-500/20 text-slate-300 border-slate-500/30'
-                                    }`} title={player.real_life_status}>
-                                    {player.real_life_status === 'MINOR' ? 'NA' : player.real_life_status === 'DEREGISTERED' ? 'DR' : 'NR'}
+                                  <span
+                                    className="text-white font-semibold text-sm group-hover:text-purple-300 transition-colors cursor-pointer whitespace-nowrap"
+                                    onClick={() => setSelectedPlayerModal(player)}
+                                  >
+                                    {player.name || 'Unknown'}
+                                    <span className="text-purple-300/70 font-normal ml-2">
+                                      - {filterPositions(player)}
+                                    </span>
+                                    <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>
+                                      {player.team ? `${getTeamAbbr(player.team)}` : ''}
+                                    </span>
                                   </span>
-                                )}
-                                {player.identity !== 'local' && (
-                                  <span className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold" title="Foreign Player">
-                                    F
+                                  {renderStatusTag(player)}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1 flex-nowrap whitespace-nowrap">
+                                  {player.original_name && player.original_name !== player.name && (
+                                    <span className="text-purple-300/70 text-[11px] font-sans border-r border-slate-600 pr-2 mr-1">
+                                      {player.original_name}
+                                    </span>
+                                  )}
+                                  <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
+                                    {player.game_info ? (
+                                      player.game_info.is_postponed ? (
+                                        <span className="text-red-400">PPD</span>
+                                      ) : player.game_info.away_team_score != null && player.game_info.home_team_score != null ? (
+                                        (() => {
+                                          const myScore = player.game_info.is_home ? player.game_info.home_team_score : player.game_info.away_team_score;
+                                          const oppScore = player.game_info.is_home ? player.game_info.away_team_score : player.game_info.home_team_score;
+                                          const result = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
+                                          const resultColor = result === 'W' ? 'text-green-400' : result === 'L' ? 'text-red-400' : 'text-cyan-300';
+                                          return (
+                                            <>
+                                              <span className={`font-bold ${resultColor}`}>{myScore}:{oppScore} {result}</span>
+                                              {' '}
+                                              {player.game_info.is_home ? 'vs' : '@'}
+                                              {' '}
+                                              {player.game_info.opponent}
+                                            </>
+                                          );
+                                        })()
+                                      ) : (
+                                        <>
+                                          {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                          {' '}
+                                          {player.game_info.is_home ? 'vs' : '@'}
+                                          {' '}
+                                          {player.game_info.opponent}
+                                        </>
+                                      )
+                                    ) : (
+                                      'No game'
+                                    )}
                                   </span>
-                                )}
+                                  {player.real_life_status && player.real_life_status !== 'MAJOR' && (
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${player.real_life_status === 'MINOR'
+                                      ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                                      : player.real_life_status === 'DEREGISTERED'
+                                        ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                                        : 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+                                      }`} title={player.real_life_status}>
+                                      {player.real_life_status === 'MINOR' ? 'NA' : player.real_life_status === 'DEREGISTERED' ? 'DR' : 'NR'}
+                                    </span>
+                                  )}
+                                  {player.identity !== 'local' && (
+                                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold" title="Foreign Player">
+                                      F
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
