@@ -975,11 +975,11 @@ export default function DraftPage() {
                             </div>
                         </div>
                         <div className="min-w-0 pr-1">
-                            <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
+                            <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
                                 {playerRankings[player.player_id] && (
                                     <span className="text-[10px] font-bold text-cyan-400">#{playerRankings[player.player_id]}</span>
                                 )}
-                                <span className="text-slate-200 font-bold group-hover:text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{player.name}</span>
+                                <span className="text-slate-200 font-bold group-hover:text-white text-sm sm:text-base truncate sm:whitespace-normal max-w-[120px] sm:max-w-none">{player.name}</span>
                                 <span className="text-[10px] sm:text-xs text-slate-400 font-mono shrink-0">{filterPositions(player)}</span>
                                 {player.identity?.toLowerCase() === 'foreigner' && (
                                     <span className="text-[8px] sm:text-[9px] font-bold bg-purple-900/50 text-purple-300 px-1 rounded border border-purple-500/30 shrink-0">F</span>
