@@ -2137,8 +2137,8 @@ export default function PlayersPage() {
                             </div>
                           </div>
                         </td>
-                        {/* 手機版：Player info (sticky left) */}
-                        <td className="px-3 py-2 sm:hidden sticky left-[40px] z-10">
+                        {/* 手機版：Player info (sticky left + colSpan) */}
+                        <td className="px-3 py-2 sm:hidden sticky left-0 z-10" colSpan={2 + (filterType === 'batter' ? displayBatterCats.length : displayPitcherCats.length)}>
                           <div className="flex items-center gap-2">
                             <img
                               src={getPlayerPhoto(player)}
