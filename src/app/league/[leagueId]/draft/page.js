@@ -1201,30 +1201,30 @@ export default function DraftPage() {
             )}
 
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row gap-3 mb-3 items-stretch">
+            <div className="flex flex-col md:flex-row gap-2 mb-2 items-stretch">
                 {/* Timer & On The Clock */}
-                <div className="bg-gradient-to-r from-slate-800 to-slate-900 border border-purple-500/30 rounded-xl shadow-lg p-2 sm:p-3 flex items-center shrink-0 min-w-0 sm:min-w-[250px] gap-2 sm:gap-4">
-                    <div className="flex flex-col items-center justify-center min-w-[60px] sm:min-w-[80px]">
-                        <div className={`text-xl sm:text-3xl font-mono font-black tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(0,0,0,0.5)] ${timeLeft < 10 && draftState?.status !== 'pre-draft' && draftState?.status !== 'complete' && draftState?.status !== 'completed' ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
+                <div className="bg-gradient-to-r from-slate-800 to-slate-900 border border-purple-500/30 rounded-xl shadow-lg p-2 sm:p-2.5 flex items-center shrink-0 min-w-0 sm:min-w-[220px] gap-2 sm:gap-3">
+                    <div className="flex flex-col items-center justify-center min-w-[60px] sm:min-w-[72px]">
+                        <div className={`text-xl sm:text-2xl font-mono font-black tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(0,0,0,0.5)] ${timeLeft < 10 && draftState?.status !== 'pre-draft' && draftState?.status !== 'complete' && draftState?.status !== 'completed' ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
                             {draftState?.status === 'complete' || draftState?.status === 'completed' ? (
-                                <span className="text-base sm:text-xl text-green-400 whitespace-nowrap">Finished</span>
+                                <span className="text-base sm:text-lg text-green-400 whitespace-nowrap">Finished</span>
                             ) : timeLeft < 0 && draftState?.status !== 'pre-draft' ? (
-                                <span className="text-base sm:text-xl text-red-500 animate-pulse whitespace-nowrap">Auto...</span>
+                                <span className="text-base sm:text-lg text-red-500 animate-pulse whitespace-nowrap">Auto...</span>
                             ) : (
                                 formatTime(timeLeft < 0 ? 0 : timeLeft)
                             )}
                         </div>
-                        <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-500 font-semibold mt-0.5">
+                        <div className="text-[9px] sm:text-[9px] uppercase tracking-widest text-slate-500 font-semibold mt-0.5">
                             {draftState?.status === 'pre-draft' ? 'Starts In' : (draftState?.status === 'complete' || draftState?.status === 'completed') ? '' : 'Time Left'}
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col justify-center border-l border-slate-700/50 pl-2 sm:pl-4 h-full min-w-0">
+                    <div className="flex-1 flex flex-col justify-center border-l border-slate-700/50 pl-2 sm:pl-3 h-full min-w-0">
                         {!draftState?.currentPick ? (
                             <>
-                                <div className="text-xs sm:text-sm font-bold text-slate-300 truncate">Draft Room</div>
+                                <div className="text-xs sm:text-xs font-bold text-slate-300 truncate">Draft Room</div>
                                 {draftState?.status === 'pre-draft' && draftState.startTime && (
-                                    <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">
+                                    <div className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 sm:mt-1 truncate">
                                         {new Date(draftState.startTime).toLocaleString('en-US', {
                                             month: 'short', day: 'numeric',
                                             hour: 'numeric', minute: '2-digit', hour12: true
@@ -1235,12 +1235,12 @@ export default function DraftPage() {
                         ) : (
                             <div className="flex flex-col justify-center h-full gap-0.5">
                                 <div className="flex items-baseline gap-1.5 flex-wrap">
-                                    <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wide">On The Clock:</span>
-                                    <span className={`text-xs sm:text-sm font-bold truncate ${draftState.currentPick.manager_id === myManagerId ? 'text-yellow-300' : 'text-slate-200'}`}>
+                                    <span className="text-[9px] sm:text-[9px] text-slate-400 uppercase tracking-wide">On The Clock:</span>
+                                    <span className={`text-xs sm:text-xs font-bold truncate ${draftState.currentPick.manager_id === myManagerId ? 'text-yellow-300' : 'text-slate-200'}`}>
                                         {draftState.currentPick.manager_id === myManagerId ? '🟢 YOU' : getMemberNickname(draftState.currentPick.manager_id)}
                                     </span>
                                 </div>
-                                <div className="text-[10px] sm:text-xs text-slate-400">
+                                <div className="text-[10px] sm:text-[11px] text-slate-400">
                                     <span className="font-semibold text-purple-300">Rd {draftState.currentPick.round_number}</span> <span className="text-slate-500 mx-0.5">|</span> Pick {draftState.currentPick.pick_number}
                                 </div>
                             </div>
@@ -1249,16 +1249,16 @@ export default function DraftPage() {
                 </div>
 
                 {/* Draft Order Ticker */}
-                <div className="flex flex-1 gap-1.5 sm:gap-2 overflow-hidden bg-slate-900/80 border border-slate-700 rounded-xl p-1.5 sm:p-2 shadow-inner min-w-0">
+                <div className="flex flex-1 gap-1.5 sm:gap-1.5 overflow-hidden bg-slate-900/80 border border-slate-700 rounded-xl p-1.5 sm:p-1.5 shadow-inner min-w-0">
                     {/* Previous Pick */}
                     <div className="flex items-center gap-1.5 sm:gap-2 border-r border-slate-700 pr-1.5 sm:pr-2 min-w-0 shrink-0">
-                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase shrink-0">Prev:</span>
+                        <span className="text-[9px] sm:text-[9px] font-bold text-slate-500 uppercase shrink-0">Prev:</span>
                         {recentPicks.length > 0 ? (
                             (() => {
                                 const lastPick = recentPicks[0];
                                 return (
                                     <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 animate-fade-in pr-1 sm:pr-2">
-                                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
+                                        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-800 overflow-hidden border border-slate-600 shrink-0">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img
                                                 src={getPlayerPhoto({ ...lastPick.player, player_id: lastPick.player_id })}
@@ -1269,12 +1269,12 @@ export default function DraftPage() {
                                         </div>
                                         <div className="flex flex-col min-w-0">
                                             <div className="flex items-baseline gap-1 sm:gap-1.5">
-                                                <span className="text-xs sm:text-sm font-bold text-slate-200 truncate leading-none">{lastPick.player?.name}</span>
+                                                <span className="text-xs sm:text-xs font-bold text-slate-200 truncate leading-none">{lastPick.player?.name}</span>
                                                 <span className={`px-1 py-[1px] rounded-[3px] text-[7px] sm:text-[8px] font-bold border leading-none ${getTeamColor(lastPick.player?.team)}`}>
                                                     {getTeamAbbr(lastPick.player?.team)}
                                                 </span>
                                             </div>
-                                            <div className="text-[8px] sm:text-[9px] text-slate-500 truncate sm:mt-0.5 leading-tight">
+                                            <div className="text-[8px] sm:text-[8px] text-slate-500 truncate sm:mt-0.5 leading-tight">
                                                 {getMemberNickname(lastPick.manager_id)} <span className="hidden sm:inline">(#{lastPick.pick_number})</span>
                                             </div>
                                         </div>
@@ -1288,17 +1288,17 @@ export default function DraftPage() {
 
                     {/* Up Next */}
                     <div className="flex-1 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide min-w-0 pl-0.5 sm:pl-1">
-                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase shrink-0 mr-0.5 sm:mr-1">Next:</span>
+                        <span className="text-[9px] sm:text-[9px] font-bold text-slate-500 uppercase shrink-0 mr-0.5 sm:mr-1">Next:</span>
                         {draftState?.currentPick && (
                             <div className="flex items-center gap-1 sm:gap-1.5 animate-pulse bg-purple-900/40 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded border border-purple-500/50 shrink-0">
-                                <span className="text-[9px] sm:text-[10px] font-mono text-purple-300">#{draftState.currentPick.pick_number}</span>
-                                <span className="text-[10px] sm:text-[11px] font-bold text-white">{getMemberNickname(draftState.currentPick.manager_id)}</span>
+                                <span className="text-[9px] sm:text-[9px] font-mono text-purple-300">#{draftState.currentPick.pick_number}</span>
+                                <span className="text-[10px] sm:text-[10px] font-bold text-white">{getMemberNickname(draftState.currentPick.manager_id)}</span>
                             </div>
                         )}
                         {upcomingPicks.slice(0, 8).map((pick, i) => (
                             <div key={pick.pick_id} className={`flex items-center gap-1 sm:gap-1.5 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded border shrink-0 transition-colors ${pick.manager_id === myManagerId ? 'bg-green-900/30 border-green-500/50' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800'}`}>
-                                <span className="text-[9px] sm:text-[10px] font-mono text-slate-400">#{pick.pick_number}</span>
-                                <span className={`text-[10px] sm:text-[11px] font-bold ${pick.manager_id === myManagerId ? 'text-green-400' : 'text-slate-300'}`}>{getMemberNickname(pick.manager_id)}</span>
+                                <span className="text-[9px] sm:text-[9px] font-mono text-slate-400">#{pick.pick_number}</span>
+                                <span className={`text-[10px] sm:text-[10px] font-bold ${pick.manager_id === myManagerId ? 'text-green-400' : 'text-slate-300'}`}>{getMemberNickname(pick.manager_id)}</span>
                             </div>
                         ))}
                     </div>
@@ -1306,7 +1306,7 @@ export default function DraftPage() {
             </div>
 
             {/* Main Tab Selector - MOBILE: 6 tabs, scrollable */}
-            <div className="flex justify-between items-end mb-3 border-b-2 border-slate-700">
+            <div className="flex justify-between items-end mb-2 border-b-2 border-slate-700">
                 {/* Mobile tabs */}
                 <div className="flex gap-1 overflow-x-auto scrollbar-hide lg:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {[
@@ -1330,10 +1330,10 @@ export default function DraftPage() {
                     ))}
                 </div>
                 {/* Desktop tabs */}
-                <div className="hidden lg:flex gap-2">
+                <div className="hidden lg:flex gap-1.5">
                     <button
                         onClick={() => setMainTab('players')}
-                        className={`px-4 py-2 text-xs md:text-sm font-bold uppercase tracking-widest transition-all ${mainTab === 'players'
+                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all ${mainTab === 'players'
                             ? 'text-white border-b-2 border-purple-500 bg-slate-800/60'
                             : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
                             } rounded-t-md`}
@@ -1342,7 +1342,7 @@ export default function DraftPage() {
                     </button>
                     <button
                         onClick={() => setMainTab('roster')}
-                        className={`px-4 py-2 text-xs md:text-sm font-bold uppercase tracking-widest transition-all ${mainTab === 'roster'
+                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all ${mainTab === 'roster'
                             ? 'text-white border-b-2 border-purple-500 bg-slate-800/60'
                             : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
                             } rounded-t-md`}
@@ -1351,7 +1351,7 @@ export default function DraftPage() {
                     </button>
                     <button
                         onClick={() => setMainTab('league_rosters')}
-                        className={`px-4 py-2 text-xs md:text-sm font-bold uppercase tracking-widest transition-all ${mainTab === 'league_rosters'
+                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all ${mainTab === 'league_rosters'
                             ? 'text-white border-b-2 border-purple-500 bg-slate-800/60'
                             : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
                             } rounded-t-md`}
@@ -1362,13 +1362,13 @@ export default function DraftPage() {
 
                 {/* Foreigner Limit Hint */}
                 {foreignerLimit !== null && (
-                    <div className="bg-slate-800/80 px-3 py-1.5 rounded-t-lg border-t border-x border-slate-600 mb-0 text-xs font-bold text-slate-300 flex items-center gap-2">
+                    <div className="bg-slate-800/80 px-2.5 py-1 rounded-t-lg border-t border-x border-slate-600 mb-0 text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
                         <span>Foreigners:</span>
-                        <span className={`text-sm ${foreignerLimit !== null && foreignerCount >= foreignerLimit ? "text-red-400" : "text-white"}`}>{foreignerCount}</span>
+                        <span className={`text-xs ${foreignerLimit !== null && foreignerCount >= foreignerLimit ? "text-red-400" : "text-white"}`}>{foreignerCount}</span>
                         <span className="text-slate-500">/</span>
-                        <span className="text-white">{foreignerLimit}</span>
+                        <span className="text-xs text-white">{foreignerLimit}</span>
                         {foreignerLimit !== null && foreignerCount >= foreignerLimit && (
-                            <span className="ml-2 text-red-400 text-xs font-black uppercase tracking-wider animate-pulse border border-red-500/50 px-1 rounded bg-red-900/30">
+                            <span className="ml-1.5 text-red-400 text-[10px] font-black uppercase tracking-wide animate-pulse border border-red-500/50 px-1 rounded bg-red-900/30">
                                 Limit Reached
                             </span>
                         )}
