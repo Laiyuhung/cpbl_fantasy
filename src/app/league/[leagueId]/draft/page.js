@@ -139,6 +139,8 @@ export default function DraftPage() {
 
     // Fetch Viewing Roster Assignments
     useEffect(() => {
+        if (mainTab !== 'league_rosters') return;
+
         if (!viewingManagerId && members.length > 0 && myManagerId) {
             // Default to first member who is NOT me, or just first member
             const other = members.find(m => m.manager_id !== myManagerId);
@@ -164,7 +166,7 @@ export default function DraftPage() {
             }
         };
         fetchAssignments();
-    }, [leagueId, viewingManagerId, members, myManagerId]);
+    }, [leagueId, viewingManagerId, members, myManagerId, mainTab, draftState?.picks?.length]);
 
     const handleAddToQueue = async (player) => {
         setQueuingIds(prev => new Set(prev).add(player.player_id));
@@ -1320,7 +1322,7 @@ export default function DraftPage() {
                         <button
                             key={tab.key}
                             onClick={() => setMainTab(tab.key)}
-                            className={`px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${mainTab === tab.key
+                            className={`px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 -mb-[2px] ${mainTab === tab.key
                                 ? 'text-white border-b-2 border-purple-500 bg-slate-800/60'
                                 : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
                                 } rounded-t-md`}
@@ -1333,7 +1335,7 @@ export default function DraftPage() {
                 <div className="hidden lg:flex gap-1.5">
                     <button
                         onClick={() => setMainTab('players')}
-                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all ${mainTab === 'players'
+                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all -mb-[2px] ${mainTab === 'players'
                             ? 'text-white border-b-2 border-purple-500 bg-slate-800/60'
                             : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
                             } rounded-t-md`}
@@ -1342,7 +1344,7 @@ export default function DraftPage() {
                     </button>
                     <button
                         onClick={() => setMainTab('roster')}
-                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all ${mainTab === 'roster'
+                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all -mb-[2px] ${mainTab === 'roster'
                             ? 'text-white border-b-2 border-purple-500 bg-slate-800/60'
                             : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
                             } rounded-t-md`}
@@ -1351,7 +1353,7 @@ export default function DraftPage() {
                     </button>
                     <button
                         onClick={() => setMainTab('league_rosters')}
-                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all ${mainTab === 'league_rosters'
+                        className={`px-3 py-1.5 text-[11px] md:text-xs font-bold uppercase tracking-wide transition-all -mb-[2px] ${mainTab === 'league_rosters'
                             ? 'text-white border-b-2 border-purple-500 bg-slate-800/60'
                             : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
                             } rounded-t-md`}
