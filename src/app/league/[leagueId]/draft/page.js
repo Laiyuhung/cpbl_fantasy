@@ -801,8 +801,8 @@ export default function DraftPage() {
 
             if (filterPos !== 'All') {
                 const posList = filterPositions(p);
-                // Inclusive check for comma-separated positions (e.g. filter 'SS' matches '2B, SS')
-                if (!posList.includes(filterPos)) return false;
+                // Exact match against each token to avoid 'C' matching 'CF'
+                if (!posList.split(', ').includes(filterPos)) return false;
             }
 
             if (filterTeam !== 'All' && p.team !== filterTeam) return false;
