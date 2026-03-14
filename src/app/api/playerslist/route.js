@@ -77,12 +77,13 @@ export async function GET(req) {
     // 獲取今日賽程資料 (Taiwan Time)
     const now = new Date();
     const nowTaiwan = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
-    const todayStr = nowTaiwan.toISOString().split('T')[0];
+    const todayStr = `${nowTaiwan.getFullYear()}-${String(nowTaiwan.getMonth() + 1).padStart(2, '0')}-${String(nowTaiwan.getDate()).padStart(2, '0')}`;
 
     const { data: scheduleData, error: scheduleError } = await supabase
       .from('cpbl_schedule_2026')
       .select('*')
-      .eq('date', todayStr);
+      .eq('date', todayStr)
+      .eq('major_game', true);
 
     if (scheduleError) {
       console.error('Error fetching schedule:', scheduleError);
