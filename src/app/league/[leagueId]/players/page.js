@@ -109,6 +109,7 @@ export default function PlayersPage() {
   const [dropCandidateID, setDropCandidateID] = useState(null);
   const [limitViolationMsg, setLimitViolationMsg] = useState('');
   const [checkingAdd, setCheckingAdd] = useState(false); // Local loading for pre-check
+  const [checkingWaiver, setCheckingWaiver] = useState(false); // Local loading for waiver pre-check
   const [violationType, setViolationType] = useState(''); // 'foreigner_limit' etc.
   const [currentRosterState, setCurrentRosterState] = useState([]); // Store roster for dynamic slot calc
   const [naLimitState, setNaLimitState] = useState(0); // Store NA limit
@@ -993,6 +994,7 @@ export default function PlayersPage() {
 
     if (isWaiver) {
       // 🚨 MAJOR-on-NA Block: fetch roster and check before opening waiver modal
+      setCheckingWaiver(true);
       try {
         const rosterRes = await fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}`);
         const rosterData = await rosterRes.json();
@@ -1011,6 +1013,8 @@ export default function PlayersPage() {
         }
       } catch (e) {
         console.error('Waiver MAJOR-on-NA check failed:', e);
+      } finally {
+        setCheckingWaiver(false);
       }
       setPlayerToAdd(player);
       setWaiverMode(true);
@@ -2636,11 +2640,11 @@ export default function PlayersPage() {
 
       {/* Checking Roster Overlay */}
       {
-        checkingAdd && (
+        (checkingAdd || checkingWaiver) && (
           <div className="fixed inset-0 z-[100010] bg-black/60 backdrop-blur-sm flex items-center justify-center">
             <div className="flex flex-col items-center gap-4 animate-pulse">
               <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              <div className="text-blue-200 font-bold tracking-widest text-lg">CHECKING ROSTER ELIGIBILITY...</div>
+              <div className="text-blue-200 font-bold tracking-widest text-lg">{checkingWaiver ? 'CHECKING WAIVER ELIGIBILITY...' : 'CHECKING ROSTER ELIGIBILITY...'}</div>
             </div>
           </div>
         )
