@@ -809,28 +809,28 @@ export default function RosterPage() {
             {notification && (
                 <div className="fixed inset-0 z-[100020] flex items-center justify-center pointer-events-none">
                     <div className="pointer-events-auto animate-fade-in-down">
-                        <div className={`px-8 py-6 rounded-2xl shadow-2xl border-2 backdrop-blur-md flex flex-col gap-2 items-center min-w-[400px] max-w-[90vw] sm:max-w-none
+                        <div className={`px-4 sm:px-8 py-3 sm:py-6 rounded-2xl shadow-2xl border-2 backdrop-blur-md flex flex-col gap-1.5 sm:gap-2 items-center min-w-[260px] sm:min-w-[400px] max-w-[92vw] sm:max-w-none
                             ${notification.type === 'success'
                                 ? 'bg-green-900/90 border-green-500/70 text-white'
                                 : 'bg-red-900/90 border-red-500/70 text-white'}
                         `}>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 sm:gap-4">
                                 {notification.type === 'success' ? (
-                                    <div className="w-12 h-12 rounded-full bg-green-500/30 flex items-center justify-center text-green-300">
-                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-green-500/30 flex items-center justify-center text-green-300">
+                                        <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                     </div>
                                 ) : (
-                                    <div className="w-12 h-12 rounded-full bg-red-500/30 flex items-center justify-center text-red-300">
-                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-red-500/30 flex items-center justify-center text-red-300">
+                                        <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
                                     </div>
                                 )}
-                                <span className="font-bold text-2xl tracking-wide">{notification.message}</span>
+                                <span className="font-bold text-base sm:text-2xl tracking-wide">{notification.message}</span>
                             </div>
                             {notification.details && notification.details.length > 0 && (
-                                <div className="mt-3 space-y-2 w-full border-t border-white/20 pt-3">
+                                <div className="mt-2 sm:mt-3 space-y-1.5 sm:space-y-2 w-full border-t border-white/20 pt-2 sm:pt-3">
                                     {notification.details.map((line, idx) => (
-                                        <div key={idx} className="text-base font-mono opacity-90 flex items-center gap-3">
-                                            <span className="w-2 h-2 rounded-full bg-white/60"></span>
+                                        <div key={idx} className="text-xs sm:text-base font-mono opacity-90 flex items-center gap-2 sm:gap-3">
+                                            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white/60"></span>
                                             {line}
                                         </div>
                                     ))}

@@ -1728,7 +1728,7 @@ export default function PlayersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
+      <div className="min-h-[100dvh] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
@@ -1741,7 +1741,7 @@ export default function PlayersPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
+      <div className="min-h-[100dvh] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-8 shadow-2xl">
             <div className="text-xl text-red-300">{error}</div>
@@ -1752,7 +1752,7 @@ export default function PlayersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
         {/* Header */}
         <div className="flex flex-col gap-4">
