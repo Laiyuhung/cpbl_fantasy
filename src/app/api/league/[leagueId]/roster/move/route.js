@@ -227,12 +227,14 @@ export async function POST(request, { params }) {
             updates.push({ player_id: playerId, new_position: targetPosition }); // Main Player always moves
 
             if (swapWithPlayerId) {
-                // If explicit swap requested, be strict
-                if (!canSwap) {
-                    return NextResponse.json({ success: false, error: `Swap target ${targetOccupant.player.name} is not eligible for ${currentPosition}` }, { status: 400 });
+                // If explicit swap requested but incompatible, fallback to BN instead of failing.
+                if (canSwap) {
+                    updates.push({ player_id: targetOccupant.player_id, new_position: currentPosition });
+                    console.log(`[MoveRoster] Action: SWAP performed.`);
+                } else {
+                    updates.push({ player_id: targetOccupant.player_id, new_position: 'BN' });
+                    console.log(`[MoveRoster] Action: Explicit swap target incompatible with ${currentPosition}, moved to BN.`);
                 }
-                updates.push({ player_id: targetOccupant.player_id, new_position: currentPosition });
-                console.log(`[MoveRoster] Action: SWAP performed.`);
             } else {
                 // Implicit displacement (Legacy/Fallback)
                 if (canSwap) {
