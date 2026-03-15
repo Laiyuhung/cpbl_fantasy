@@ -87,7 +87,7 @@ export default function PlayersPage() {
 
   // Watch State
   const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
-  const [filterOwnership, setFilterOwnership] = useState('market'); // all, market, available, myteam, watched
+  const [filterOwnership, setFilterOwnership] = useState('market'); // all, market, waivers, available, myteam, watched
   const [filterTeam, setFilterTeam] = useState('all'); // Team filter
   const [filterPosition, setFilterPosition] = useState('all'); // Position filter
 
@@ -579,6 +579,8 @@ export default function PlayersPage() {
       if (filterOwnership === 'market') {
         // FA + Waiver (not on any team)
         matchesOwnership = !ownership || (ownership.status || '').toLowerCase() === 'waiver';
+      } else if (filterOwnership === 'waivers') {
+        matchesOwnership = !!ownership && (ownership.status || '').toLowerCase() === 'waiver';
       } else if (filterOwnership === 'available') {
         matchesOwnership = !ownership; // Free agents only
       } else if (filterOwnership === 'myteam') {
@@ -1930,6 +1932,7 @@ export default function PlayersPage() {
               >
                 <option value="all">All Players</option>
                 <option value="market">Market</option>
+                <option value="waivers">Waivers</option>
                 <option value="available">Free Agents</option>
                 <option value="myteam">My Team</option>
                 <option value="watched">★ Watched</option>
