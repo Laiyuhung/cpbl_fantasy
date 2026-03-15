@@ -1096,6 +1096,15 @@ export default function DraftPage() {
                 pitcherStats={pitcherStatCategories}
             />
 
+            <div className="mb-3 flex justify-start">
+                <button
+                    onClick={() => router.push('/home')}
+                    className="rounded-md border border-slate-600 bg-slate-800/80 px-3 py-1 text-[11px] font-bold tracking-wide text-slate-200 transition-colors hover:border-slate-400 hover:bg-slate-700"
+                >
+                    HOME
+                </button>
+            </div>
+
             {/* Assignment Modal */}
             {assignModalPlayer && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => !assigning && setAssignModalPlayer(null)}>

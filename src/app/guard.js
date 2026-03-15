@@ -91,7 +91,8 @@ export default function GuardLayout({ children }) {
 
   if (!isReady) return null
 
-  const showNavbar = isLoggedIn && pathname !== '/login'
+  const isDraftPage = /^\/league\/[^/]+\/draft(?:\/|$)/.test(pathname)
+  const showNavbar = isLoggedIn && pathname !== '/login' && !isDraftPage
 
   return (
     <>
