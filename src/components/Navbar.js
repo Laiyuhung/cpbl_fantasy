@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 
-export default function Navbar() {
+          <div className="whitespace-nowrap text-sm sm:text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
   const router = useRouter()
   const pathname = usePathname()
   const [userName, setUserName] = useState('')

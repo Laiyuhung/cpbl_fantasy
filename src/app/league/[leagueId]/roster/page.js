@@ -57,6 +57,7 @@ export default function RosterPage() {
     const [showConfirmDrop, setShowConfirmDrop] = useState(false);
     const [playerToDrop, setPlayerToDrop] = useState(null);
     const [isDropping, setIsDropping] = useState(false);
+    const [isAutoStarting, setIsAutoStarting] = useState(false);
     const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
     const [leagueStatus, setLeagueStatus] = useState('unknown');
 
@@ -676,6 +677,256 @@ export default function RosterPage() {
         return false;
     };
 
+    const hasPlayableGame = (player) => {
+        return !!player?.game_info && !player.game_info.is_postponed;
+    };
+
+    const getEligibleActivePositions = (player) => {
+        const positions = player.position_list
+            ? player.position_list.split(',').map(pos => pos.trim()).filter(Boolean)
+            : [];
+
+        if (player.position && ACTIVE_POSITIONS_ORDER.includes(player.position)) {
+            positions.push(player.position);
+        }
+
+        if (player.batter_or_pitcher === 'batter') {
+            positions.push('Util');
+        }
+
+        if (player.batter_or_pitcher === 'pitcher') {
+            positions.push('P');
+        }
+
+        return [...new Set(positions)].filter(pos => ACTIVE_POSITIONS_ORDER.includes(pos) && (parseInt(rosterPositionsConfig[pos], 10) || 0) > 0);
+    };
+
+    const buildAutoStartPlan = () => {
+        const rosterPlayers = roster.filter(player => !player.isEmpty && player.player_id !== 'empty');
+        const fixedPlayerIds = new Set(
+            rosterPlayers
+                .filter(player => ACTIVE_POSITIONS_ORDER.includes(player.position) && !isMoveAllowed(player))
+                .map(player => player.player_id)
+        );
+
+        const availableSlots = [];
+        ACTIVE_POSITIONS_ORDER.forEach(position => {
+            const total = parseInt(rosterPositionsConfig[position], 10) || 0;
+            const fixedCount = rosterPlayers.filter(player => fixedPlayerIds.has(player.player_id) && player.position === position).length;
+            const remaining = Math.max(0, total - fixedCount);
+            for (let index = 0; index < remaining; index += 1) {
+                availableSlots.push({ id: `${position}-${index}`, position });
+            }
+        });
+
+        const candidates = rosterPlayers
+            .filter(player => !fixedPlayerIds.has(player.player_id))
+            .filter(player => !['NA', 'IL', 'Minor'].includes(player.position))
+            .filter(player => hasPlayableGame(player))
+            .filter(player => !(player.position === 'BN' && !isMoveAllowed(player)))
+            .map(player => {
+                const eligibleSlots = getEligibleActivePositions(player)
+                    .flatMap(position => availableSlots.filter(slot => slot.position === position))
+                    .sort((left, right) => {
+                        if (left.position === player.position && right.position !== player.position) return -1;
+                        if (right.position === player.position && left.position !== player.position) return 1;
+                        return ACTIVE_POSITIONS_ORDER.indexOf(left.position) - ACTIVE_POSITIONS_ORDER.indexOf(right.position);
+                    });
+
+                return { player, eligibleSlots };
+            })
+            .filter(entry => entry.eligibleSlots.length > 0)
+            .sort((left, right) => {
+                if (left.eligibleSlots.length !== right.eligibleSlots.length) {
+                    return left.eligibleSlots.length - right.eligibleSlots.length;
+                }
+                const leftStarts = ACTIVE_POSITIONS_ORDER.includes(left.player.position) ? 0 : 1;
+                const rightStarts = ACTIVE_POSITIONS_ORDER.includes(right.player.position) ? 0 : 1;
+                if (leftStarts !== rightStarts) {
+                    return leftStarts - rightStarts;
+                }
+                return left.player.name.localeCompare(right.player.name);
+            });
+
+        const candidateById = new Map(candidates.map(entry => [entry.player.player_id, entry]));
+        const slotMatches = new Map();
+
+        const tryMatch = (candidate, visited) => {
+            for (const slot of candidate.eligibleSlots) {
+                if (visited.has(slot.id)) continue;
+                visited.add(slot.id);
+
+                const matchedPlayerId = slotMatches.get(slot.id);
+                if (!matchedPlayerId || tryMatch(candidateById.get(matchedPlayerId), visited)) {
+                    slotMatches.set(slot.id, candidate.player.player_id);
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        candidates.forEach(candidate => {
+            tryMatch(candidate, new Set());
+        });
+
+        const desiredPositions = new Map();
+
+        rosterPlayers.forEach(player => {
+            if (fixedPlayerIds.has(player.player_id)) {
+                desiredPositions.set(player.player_id, player.position);
+            }
+        });
+
+        for (const [slotId, playerId] of slotMatches.entries()) {
+            const slot = availableSlots.find(entry => entry.id === slotId);
+            if (slot) {
+                desiredPositions.set(playerId, slot.position);
+            }
+        }
+
+        const assignedCounts = ACTIVE_POSITIONS_ORDER.reduce((acc, position) => {
+            acc[position] = 0;
+            return acc;
+        }, {});
+
+        desiredPositions.forEach(position => {
+            if (assignedCounts[position] !== undefined) {
+                assignedCounts[position] += 1;
+            }
+        });
+
+        ACTIVE_POSITIONS_ORDER.forEach(position => {
+            const capacity = parseInt(rosterPositionsConfig[position], 10) || 0;
+            if (capacity <= 0) return;
+
+            const keepers = rosterPlayers
+                .filter(player => player.position === position)
+                .filter(player => !desiredPositions.has(player.player_id))
+                .sort((left, right) => {
+                    const rightHasGame = hasPlayableGame(right) ? 1 : 0;
+                    const leftHasGame = hasPlayableGame(left) ? 1 : 0;
+                    return rightHasGame - leftHasGame;
+                });
+
+            for (const keeper of keepers) {
+                if (assignedCounts[position] >= capacity) break;
+                desiredPositions.set(keeper.player_id, position);
+                assignedCounts[position] += 1;
+            }
+        });
+
+        rosterPlayers.forEach(player => {
+            if (!desiredPositions.has(player.player_id)) {
+                desiredPositions.set(player.player_id, ACTIVE_POSITIONS_ORDER.includes(player.position) ? 'BN' : player.position);
+            }
+        });
+
+        return { desiredPositions, fixedPlayerIds };
+    };
+
+    const applyRosterMove = async (playerId, currentPosition, targetPosition) => {
+        const response = await fetch(`/api/league/${leagueId}/roster/move`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                managerId: myManagerId,
+                playerId,
+                currentPosition,
+                targetPosition,
+                gameDate: selectedDate,
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Failed to update roster');
+        }
+
+        return data;
+    };
+
+    const handleStartActive = async () => {
+        if (!myManagerId || !selectedDate || isAutoStarting || loading || actionLoading) return;
+        if (Object.keys(rosterPositionsConfig).length === 0) return;
+
+        const { desiredPositions, fixedPlayerIds } = buildAutoStartPlan();
+        const rosterPlayers = roster.filter(player => !player.isEmpty && player.player_id !== 'empty');
+        const currentPositions = new Map(rosterPlayers.map(player => [player.player_id, player.position]));
+
+        const playersToBench = rosterPlayers
+            .filter(player => ACTIVE_POSITIONS_ORDER.includes(player.position))
+            .filter(player => !fixedPlayerIds.has(player.player_id))
+            .filter(player => isMoveAllowed(player))
+            .filter(player => desiredPositions.get(player.player_id) !== player.position)
+            .sort((left, right) => ACTIVE_POSITIONS_ORDER.indexOf(left.position) - ACTIVE_POSITIONS_ORDER.indexOf(right.position));
+
+        const playersToActivate = rosterPlayers
+            .filter(player => desiredPositions.get(player.player_id))
+            .filter(player => ACTIVE_POSITIONS_ORDER.includes(desiredPositions.get(player.player_id)))
+            .filter(player => desiredPositions.get(player.player_id) !== player.position)
+            .sort((left, right) => {
+                const leftTarget = ACTIVE_POSITIONS_ORDER.indexOf(desiredPositions.get(left.player_id));
+                const rightTarget = ACTIVE_POSITIONS_ORDER.indexOf(desiredPositions.get(right.player_id));
+                return leftTarget - rightTarget;
+            });
+
+        const moveDetails = [];
+
+        if (playersToBench.length === 0 && playersToActivate.length === 0) {
+            setNotification({ type: 'success', message: 'Already optimized', details: ['All playable non-NA players are already in the best active slots.'] });
+            setTimeout(() => setNotification(null), 2500);
+            return;
+        }
+
+        setIsAutoStarting(true);
+        setActionLoading(true);
+        setNotification(null);
+
+        try {
+            for (const player of playersToBench) {
+                const currentPosition = currentPositions.get(player.player_id);
+                if (currentPosition === 'BN') continue;
+
+                await applyRosterMove(player.player_id, currentPosition, 'BN');
+                currentPositions.set(player.player_id, 'BN');
+                moveDetails.push(`${player.name} -> BN`);
+            }
+
+            for (const player of playersToActivate) {
+                const targetPosition = desiredPositions.get(player.player_id);
+                const currentPosition = currentPositions.get(player.player_id);
+
+                if (!targetPosition || currentPosition === targetPosition) continue;
+
+                await applyRosterMove(player.player_id, currentPosition, targetPosition);
+                currentPositions.set(player.player_id, targetPosition);
+                moveDetails.push(`${player.name} -> ${targetPosition}`);
+            }
+
+            await refreshRoster();
+            setNotification({
+                type: 'success',
+                message: 'Start Active Complete',
+                details: moveDetails
+            });
+            setTimeout(() => setNotification(null), 3500);
+        } catch (err) {
+            console.error('Failed to auto-start roster:', err);
+            await refreshRoster();
+            setNotification({
+                type: 'error',
+                message: 'Start Active Failed',
+                details: [err.message || 'Unable to optimize active roster.']
+            });
+            setTimeout(() => setNotification(null), 4000);
+        } finally {
+            setActionLoading(false);
+            setIsAutoStarting(false);
+        }
+    };
+
     // Badge Helper
     const renderPlayerBadges = (player) => {
         if (player.player_id === 'empty') return null;
@@ -1052,6 +1303,16 @@ export default function RosterPage() {
                                 className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300 flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
                             >
                                 WAIVER
+                            </button>
+                            <button
+                                onClick={handleStartActive}
+                                disabled={isAutoStarting || loading || actionLoading || !selectedDate || Object.keys(rosterPositionsConfig).length === 0}
+                                className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider ${isAutoStarting || loading || actionLoading || !selectedDate || Object.keys(rosterPositionsConfig).length === 0
+                                    ? 'bg-slate-700/50 border-slate-600/50 text-slate-400 cursor-not-allowed'
+                                    : 'bg-emerald-500/30 hover:bg-emerald-500/50 border-emerald-400/50 text-emerald-300'
+                                    }`}
+                            >
+                                {isAutoStarting ? 'STARTING...' : 'START ACTIVE'}
                             </button>
                             <button
                                 onClick={() => setShowLegendModal(true)}
