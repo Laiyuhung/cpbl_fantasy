@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 
-          <div className="whitespace-nowrap text-sm sm:text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const [userName, setUserName] = useState('')
@@ -194,7 +194,7 @@ import { useEffect, useState, useCallback } from 'react'
               <span className="text-base sm:text-xl font-bold">⚾</span>
             </div>
           </div>
-          <div className="text-sm sm:text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+          <div className="whitespace-nowrap text-sm sm:text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
             CPBL FANTASY
           </div>
         </Link>
