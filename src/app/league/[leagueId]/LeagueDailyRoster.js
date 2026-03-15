@@ -767,11 +767,11 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                             >
                                 {name}
                             </span>
-                            {!isEmpty && startingBadge}
                             {!isEmpty && p.team && (
                                 <span className={`${getTeamColor(p.team)} font-bold text-[10px] flex-shrink-0`}>{teamAbbr}</span>
                             )}
                             {gameInfoEl}
+                            {!isEmpty && startingBadge}
                         </div>
 
                         {/* Row 2: Stats with horizontal scroll */}

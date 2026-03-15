@@ -23,7 +23,6 @@ export default function PlayerDetailModal({
     leagueStatus,       // 'in season', 'post-draft & pre-season', etc.
     tradeEndDate,
     seasonYear,
-    statusDate,
     isPlayerLocked,     // Boolean: is this player locked in a pending trade?
     isDropLockedByGameStart, // Boolean: is drop locked because game has started and player is in active lineup?
     onAdd,              // (player, isWaiver) => void
@@ -134,7 +133,7 @@ export default function PlayerDetailModal({
 
         const fetchStartingStatus = async () => {
             if (!isOpen || !player?.player_id) return;
-            const dateForStatus = statusDate || getTodayTW();
+            const dateForStatus = getTodayTW();
             try {
                 const res = await fetch(`/api/starting-status?date=${dateForStatus}`);
                 const data = await res.json();
@@ -150,7 +149,7 @@ export default function PlayerDetailModal({
         };
 
         fetchStartingStatus();
-    }, [isOpen, player, statusDate]);
+    }, [isOpen, player]);
 
     // Fetch recent game stats
     useEffect(() => {

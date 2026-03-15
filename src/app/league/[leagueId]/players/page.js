@@ -2154,7 +2154,6 @@ export default function PlayersPage() {
                                     {player.team ? `${getTeamAbbr(player.team)}` : ''}
                                   </span>
                                 </span>
-                                {renderStartingBadge(player)}
                                 {renderStatusTag(player)}
                               </div>
                               <div className="flex items-center gap-2 mt-1 flex-nowrap whitespace-nowrap">
@@ -2196,6 +2195,7 @@ export default function PlayersPage() {
                                     <span className="text-slate-400">No game</span>
                                   )}
                                 </span>
+                                {renderStartingBadge(player)}
                                 {player.real_life_status && player.real_life_status !== 'MAJOR' && (
                                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${player.real_life_status === 'MINOR'
                                     ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
@@ -2252,7 +2252,6 @@ export default function PlayersPage() {
                                       {player.team ? `${getTeamAbbr(player.team)}` : ''}
                                     </span>
                                   </span>
-                                  {renderStartingBadge(player)}
                                   {renderStatusTag(player)}
                                 </div>
                                 <div className="flex items-center gap-2 mt-1 flex-nowrap whitespace-nowrap">
@@ -2294,6 +2293,7 @@ export default function PlayersPage() {
                                       <span className="text-slate-400">No game</span>
                                     )}
                                   </span>
+                                  {renderStartingBadge(player)}
                                   {player.real_life_status && player.real_life_status !== 'MAJOR' && (
                                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${player.real_life_status === 'MINOR'
                                       ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'

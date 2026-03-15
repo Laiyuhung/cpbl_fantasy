@@ -965,22 +965,6 @@ export default function RosterPage() {
         if (player.player_id === 'empty') return null;
         const badges = [];
 
-        const playerType = (player.batter_or_pitcher || '').toLowerCase();
-        const pid = String(player.player_id || '');
-        if (pid) {
-            if (playerType === 'batter' && startingStatus.lineupTeams.has(player.team)) {
-                const battingNo = startingStatus.lineupByPlayerId[pid];
-                if (battingNo) {
-                    badges.push(<span key="start-bat" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-600 text-white" title="In starting lineup">{battingNo}</span>);
-                } else {
-                    badges.push(<span key="start-bat-x" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white" title="Not in starting lineup">X</span>);
-                }
-            }
-            if (playerType === 'pitcher' && startingStatus.pitcherPlayerIds.has(pid)) {
-                badges.push(<span key="start-sp" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-600 text-white" title="Today's starting pitcher">V</span>);
-            }
-        }
-
         if (player.identity && player.identity.toLowerCase() === 'foreigner') {
             badges.push(<span key="f" title="Foreign Player" className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold">F</span>);
         }
@@ -995,6 +979,28 @@ export default function RosterPage() {
             badges.push(<span key="nr" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">NR</span>);
         }
         return <div className="flex items-center gap-1">{badges}</div>;
+    };
+
+    const renderStartingBadge = (player) => {
+        if (!player || player.player_id === 'empty') return null;
+
+        const playerType = (player.batter_or_pitcher || '').toLowerCase();
+        const pid = String(player.player_id || '');
+        if (!pid) return null;
+
+        if (playerType === 'batter' && startingStatus.lineupTeams.has(player.team)) {
+            const battingNo = startingStatus.lineupByPlayerId[pid];
+            if (battingNo) {
+                return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-600 text-white" title="In starting lineup">{battingNo}</span>;
+            }
+            return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white" title="Not in starting lineup">X</span>;
+        }
+
+        if (playerType === 'pitcher' && startingStatus.pitcherPlayerIds.has(pid)) {
+            return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-600 text-white" title="Today's starting pitcher">V</span>;
+        }
+
+        return null;
     };
 
     // Roster Construction
@@ -1504,7 +1510,7 @@ export default function RosterPage() {
                                                                         'No game'
                                                                     )}
                                                                 </span>
-                                                                {renderPlayerBadges(player)}
+                                                                {renderStartingBadge(player)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1569,7 +1575,7 @@ export default function RosterPage() {
                                                                         'No game'
                                                                     )}
                                                                 </span>
-                                                                {renderPlayerBadges(player)}
+                                                                {renderStartingBadge(player)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1724,7 +1730,7 @@ export default function RosterPage() {
                                                                         'No game'
                                                                     )}
                                                                 </span>
-                                                                {renderPlayerBadges(player)}
+                                                                {renderStartingBadge(player)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1789,7 +1795,7 @@ export default function RosterPage() {
                                                                         'No game'
                                                                     )}
                                                                 </span>
-                                                                {renderPlayerBadges(player)}
+                                                                {renderStartingBadge(player)}
                                                             </div>
                                                         </div>
                                                     </div>
