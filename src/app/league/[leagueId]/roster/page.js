@@ -975,11 +975,15 @@ export default function RosterPage() {
 
     const isBatterPos = (pos) => ['C', '1B', '2B', '3B', 'SS', 'CI', 'MI', 'LF', 'CF', 'RF', 'OF', 'Util'].includes(pos);
     const isPitcherPos = (pos) => ['SP', 'RP', 'P'].includes(pos);
+    const isEnabledLeaguePosition = (pos) => {
+        if (!ACTIVE_POSITIONS_ORDER.includes(pos)) return true;
+        return (parseInt(rosterPositionsConfig[pos], 10) || 0) > 0;
+    };
 
     const fullRoster = generateRosterWithEmptySlots(roster, rosterPositionsConfig);
 
     const batterRoster = fullRoster.filter(p => {
-        if (isBatterPos(p.position)) return true;
+        if (isBatterPos(p.position)) return isEnabledLeaguePosition(p.position);
         if (isPitcherPos(p.position)) return false;
         return p.batter_or_pitcher === 'batter';
     }).sort((a, b) => {
@@ -988,7 +992,7 @@ export default function RosterPage() {
     });
 
     const pitcherRoster = fullRoster.filter(p => {
-        if (isPitcherPos(p.position)) return true;
+        if (isPitcherPos(p.position)) return isEnabledLeaguePosition(p.position);
         if (isBatterPos(p.position)) return false;
         return p.batter_or_pitcher === 'pitcher';
     }).sort((a, b) => {
