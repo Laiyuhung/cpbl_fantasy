@@ -1511,6 +1511,7 @@ export default function RosterPage() {
                                                                     )}
                                                                 </span>
                                                                 {renderStartingBadge(player)}
+                                                                {renderPlayerBadges(player)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1576,6 +1577,7 @@ export default function RosterPage() {
                                                                     )}
                                                                 </span>
                                                                 {renderStartingBadge(player)}
+                                                                {renderPlayerBadges(player)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1731,6 +1733,7 @@ export default function RosterPage() {
                                                                     )}
                                                                 </span>
                                                                 {renderStartingBadge(player)}
+                                                                {renderPlayerBadges(player)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1796,6 +1799,7 @@ export default function RosterPage() {
                                                                     )}
                                                                 </span>
                                                                 {renderStartingBadge(player)}
+                                                                {renderPlayerBadges(player)}
                                                             </div>
                                                         </div>
                                                     </div>
