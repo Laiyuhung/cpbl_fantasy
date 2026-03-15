@@ -151,10 +151,10 @@ export default function WaiverModal({ isOpen, onClose, leagueId, managerId }) {
                                             const isLast = index === dateClaims.length - 1;
 
                                             return (
-                                                <div key={claim.id} className="p-4 flex items-center gap-4 hover:bg-slate-800 transition-colors group">
+                                                <div key={claim.id} className="p-4 flex items-center gap-4 hover:bg-slate-800 transition-colors">
                                                     <div className="flex flex-col items-center gap-1">
                                                         <div className="font-black text-2xl text-purple-500/50 w-8 text-center">{claim.personal_priority}</div>
-                                                        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="flex flex-col gap-1">
                                                             <button
                                                                 onClick={() => handleMovePriority(claim, -1)}
                                                                 disabled={isFirst || processing}
