@@ -126,12 +126,21 @@ export default function MoveModal({
         // 1. Parse standard positions
         let distinctPositions = player.position_list ? player.position_list.split(',').map(p => p.trim()) : [];
 
+        const enabledLeaguePositions = new Set(
+            Object.entries(rosterPositionsConfig || {})
+                .filter(([, count]) => (parseInt(count, 10) || 0) > 0)
+                .map(([pos]) => pos)
+        );
+
+        // Keep only league-enabled active positions.
+        distinctPositions = distinctPositions.filter(pos => enabledLeaguePositions.has(pos));
+
         // 2. Add 'BN' (Always available)
         if (!distinctPositions.includes('BN')) distinctPositions.push('BN');
 
         // 3. Add 'Util'/ 'P'
-        if (player.batter_or_pitcher === 'batter' && !distinctPositions.includes('Util')) distinctPositions.push('Util');
-        if (player.batter_or_pitcher === 'pitcher' && !distinctPositions.includes('P')) distinctPositions.push('P');
+        if (player.batter_or_pitcher === 'batter' && enabledLeaguePositions.has('Util') && !distinctPositions.includes('Util')) distinctPositions.push('Util');
+        if (player.batter_or_pitcher === 'pitcher' && enabledLeaguePositions.has('P') && !distinctPositions.includes('P')) distinctPositions.push('P');
 
         // 4. Add 'NA'
         const status = (player.real_life_status || '').toUpperCase();
@@ -161,7 +170,11 @@ export default function MoveModal({
 
         return [...new Set(distinctPositions)].sort((a, b) => {
             // Priority Sort: Standard -> Util -> NA -> BN
-            const order = { 'C': 1, '1B': 2, '2B': 3, '3B': 4, 'SS': 5, 'OF': 6, 'Util': 10, 'SP': 11, 'RP': 12, 'P': 13, 'NA': 20, 'BN': 21 };
+            const order = {
+                'C': 1, '1B': 2, '2B': 3, '3B': 4, 'SS': 5,
+                'CI': 6, 'MI': 7, 'LF': 8, 'CF': 9, 'RF': 10, 'OF': 11,
+                'Util': 12, 'SP': 13, 'RP': 14, 'P': 15, 'NA': 20, 'BN': 21
+            };
             return (order[a] || 99) - (order[b] || 99);
         });
     };

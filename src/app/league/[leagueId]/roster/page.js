@@ -1091,6 +1091,21 @@ export default function RosterPage() {
         return (parseInt(rosterPositionsConfig[pos], 10) || 0) > 0;
     };
 
+    const getDisplayPositionList = (player) => {
+        const rawPositions = player?.position_list
+            ? player.position_list.split(',').map(pos => pos.trim()).filter(Boolean)
+            : [];
+
+        const enabledPositions = new Set(
+            Object.entries(rosterPositionsConfig || {})
+                .filter(([, count]) => (parseInt(count, 10) || 0) > 0)
+                .map(([pos]) => pos)
+        );
+
+        const filtered = rawPositions.filter(pos => enabledPositions.has(pos));
+        return filtered.length > 0 ? filtered.join(',') : '-';
+    };
+
     const fullRoster = generateRosterWithEmptySlots(roster, rosterPositionsConfig);
 
     const batterRoster = fullRoster.filter(p => {
@@ -1523,7 +1538,7 @@ export default function RosterPage() {
                                                                 >
                                                                     {player.name}
                                                                 </button>
-                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
+                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {getDisplayPositionList(player)}</span>
                                                                 <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                             </div>
                                                             <div className="mt-1 flex items-center gap-2">
@@ -1589,7 +1604,7 @@ export default function RosterPage() {
                                                                 >
                                                                     {player.name}
                                                                 </button>
-                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
+                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {getDisplayPositionList(player)}</span>
                                                                 <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                             </div>
                                                             <div className="mt-1 flex items-center gap-2">
@@ -1745,7 +1760,7 @@ export default function RosterPage() {
                                                                 >
                                                                     {player.name}
                                                                 </button>
-                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
+                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {getDisplayPositionList(player)}</span>
                                                                 <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                             </div>
                                                             <div className="mt-1 flex items-center gap-2">
@@ -1811,7 +1826,7 @@ export default function RosterPage() {
                                                                 >
                                                                     {player.name}
                                                                 </button>
-                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {player.position_list}</span>
+                                                                <span className="text-purple-300/70 text-sm font-normal ml-2">- {getDisplayPositionList(player)}</span>
                                                                 <span className={`text-sm font-bold ml-2 ${getTeamColor(player.team)}`}>{player.team ? getTeamAbbr(player.team) : ''}</span>
                                                             </div>
                                                             <div className="mt-1 flex items-center gap-2">
