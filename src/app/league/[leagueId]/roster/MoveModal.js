@@ -25,6 +25,23 @@ export default function MoveModal({
             s.includes('UNREGISTERED') || s === 'NR';
     };
 
+    const canSwapPlayerMoveToSourcePos = (swapPlayer) => {
+        if (!swapPlayer) return false;
+
+        if (player.position === 'BN') return true;
+        if (player.position === 'NA') return isValidForNA(swapPlayer);
+
+        const positions = swapPlayer.position_list
+            ? swapPlayer.position_list.split(',').map(p => p.trim()).filter(Boolean)
+            : [];
+
+        if (swapPlayer.batter_or_pitcher === 'batter') positions.push('Util');
+        if (swapPlayer.batter_or_pitcher === 'pitcher') positions.push('P');
+        positions.push('BN');
+
+        return [...new Set(positions)].includes(player.position);
+    };
+
     // Helper: Check Foreigner Active Limit
     const validateMove = (targetPos, swapPlayerId) => {
         // Only check if we have a limit
@@ -63,12 +80,12 @@ export default function MoveModal({
         }
 
         // 4. Consider Swap
-        if (swapPlayerId) {
-            const swapPlayer = roster.find(p => p.player_id === swapPlayerId);
-            if (swapPlayer && swapPlayer.identity?.toLowerCase() === 'foreigner') {
+        const swapPlayer = swapPlayerId ? roster.find(p => p.player_id === swapPlayerId) : null;
+        const swapMovesToInactiveSource = swapPlayer && !isActivePos(player.position) && canSwapPlayerMoveToSourcePos(swapPlayer);
+
+        if (swapPlayer && swapPlayer.identity?.toLowerCase() === 'foreigner' && swapMovesToInactiveSource) {
                 // Swap player is being moved OUT of Active (to NA)
                 netChange -= 1;
-            }
         }
 
         if (currentCount + netChange > limit) {
@@ -87,8 +104,8 @@ export default function MoveModal({
             const currentActiveCount = roster.filter(p => isActivePos(p.position) && !p.isEmpty).length;
 
             let activeNetChange = 1; // Adding 1 to active
-            if (swapPlayerId && isActivePos(roster.find(p => p.player_id === swapPlayerId)?.position)) {
-                // Swapping with an active player (who presumably goes to NA/Minor)
+            if (swapPlayer && isActivePos(swapPlayer.position) && swapMovesToInactiveSource) {
+                // Only free an active slot when the swap player can actually move to the inactive source slot.
                 activeNetChange = 0;
             }
 
@@ -109,10 +126,9 @@ export default function MoveModal({
         }
 
         // 3. Swap Eligibility Logic
-        if (swapPlayerId && !isActivePos(player.position)) { // Source is NA
+        if (swapPlayerId && !isActivePos(player.position)) { // Source is NA / inactive
             // If we are swapping, the swapPlayer goes to player.position (NA)
             // We need to check if swapPlayer is eligible for NA
-            const swapPlayer = roster.find(p => p.player_id === swapPlayerId);
             if (swapPlayer && !isValidForNA(swapPlayer)) {
                 return { isValid: false, message: 'Player not eligible for NA slot' };
             }
