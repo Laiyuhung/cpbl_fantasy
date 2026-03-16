@@ -15,7 +15,12 @@ export default function MoveModal({
     if (!isOpen || !player) return null;
 
     // Helper: Is Position Active (Non-NA/Minor)
-    const isActivePos = (pos) => !['NA', 'Minor', 'IL'].includes(pos);
+    const isActivePos = (pos) => !['NA', 'MINOR', 'MN', 'IL', 'DL'].includes(String(pos || '').toUpperCase());
+
+    const isForeigner = (identity) => {
+        const normalized = String(identity || '').toLowerCase();
+        return normalized === 'foreigner' || normalized === 'foreign';
+    };
 
     // Helper: Is Valid for NA (for Swaps)
     const isValidForNA = (p) => {
@@ -42,6 +47,11 @@ export default function MoveModal({
         return [...new Set(positions)].includes(player.position);
     };
 
+    const getProjectedSwapPosition = (swapPlayer) => {
+        if (!swapPlayer) return null;
+        return canSwapPlayerMoveToSourcePos(swapPlayer) ? player.position : 'BN';
+    };
+
     // Helper: Check Foreigner Active Limit
     const validateMove = (targetPos, swapPlayerId) => {
         // Only check if we have a limit
@@ -50,10 +60,7 @@ export default function MoveModal({
         const limit = parseInt(foreignerActiveLimit, 10);
         if (isNaN(limit)) return { isValid: true };
 
-        // 1. Is Moving Player a Foreigner?
-        const isPlayerForeigner = player.identity?.toLowerCase() === 'foreigner';
-
-        // 2. Is Moving FROM NA/Minor TO Active?
+        // 1. Is Moving FROM NA/Minor TO Active?
         const currentPos = player.position;
         const isFromNa = !isActivePos(currentPos); // NA -> Active
         const isToActive = isActivePos(targetPos);
@@ -62,75 +69,53 @@ export default function MoveModal({
         // Spec: "NA欄位要主動移出時...Active Limit"
         if (!isFromNa || !isToActive) return { isValid: true };
 
-        // 3. Calculate Current Active Foreigners
-        // Filter roster for foreigners in active positions
-        // Exclude the moving player (if they were already active, but we established they are NOT)
-        const activeForeigners = roster.filter(p =>
-            p.player_id !== player.player_id && // exclude self (though redundant if currently NA)
-            !p.isEmpty &&
-            p.identity?.toLowerCase() === 'foreigner' &&
-            isActivePos(p.position)
+        const swapPlayer = swapPlayerId ? roster.find(p => p.player_id === swapPlayerId) : null;
+        const projectedPositions = new Map(
+            roster
+                .filter(p => !p.isEmpty)
+                .map(p => [p.player_id, p.position])
         );
 
-        let currentCount = activeForeigners.length;
-        let netChange = 0;
+        projectedPositions.set(player.player_id, targetPos);
 
-        if (isPlayerForeigner) {
-            netChange += 1;
+        if (swapPlayer) {
+            projectedPositions.set(swapPlayer.player_id, getProjectedSwapPosition(swapPlayer));
         }
 
-        // 4. Consider Swap
-        const swapPlayer = swapPlayerId ? roster.find(p => p.player_id === swapPlayerId) : null;
-        const swapMovesToInactiveSource = swapPlayer && !isActivePos(player.position) && canSwapPlayerMoveToSourcePos(swapPlayer);
+        const projectedActiveForeignerCount = roster.filter(p => {
+            if (p.isEmpty) return false;
+            const projectedPos = projectedPositions.get(p.player_id) || p.position;
+            return isActivePos(projectedPos) && isForeigner(p.identity);
+        }).length;
 
-        if (swapPlayer && swapPlayer.identity?.toLowerCase() === 'foreigner' && swapMovesToInactiveSource) {
-                // Swap player is being moved OUT of Active (to NA)
-                netChange -= 1;
-        }
-
-        if (currentCount + netChange > limit) {
+        if (projectedActiveForeignerCount > limit) {
             return { isValid: false, message: `Exceeds Active Foreigner Limit (${limit})` };
         }
 
-        // 4. Validate Total Active Limit (New Logic)
+        // 2. Validate Total Active Limit
         if (isFromNa && isToActive) {
-            // Calculate Total Active Limit/Capacity
             const activeLimit = Object.entries(rosterPositionsConfig || {}).reduce((sum, [k, v]) => {
                 return isActivePos(k) ? sum + (parseInt(v) || 0) : sum;
             }, 0);
 
-            // Calculate Current Active Count
-            // Note: Excluding the moving player is only necessary if they were active, but isFromNa is true, so they weren't.
-            const currentActiveCount = roster.filter(p => isActivePos(p.position) && !p.isEmpty).length;
-
-            let activeNetChange = 1; // Adding 1 to active
-            if (swapPlayer && isActivePos(swapPlayer.position) && swapMovesToInactiveSource) {
-                // Only free an active slot when the swap player can actually move to the inactive source slot.
-                activeNetChange = 0;
-            }
+            const projectedActiveCount = roster.filter(p => {
+                if (p.isEmpty) return false;
+                const projectedPos = projectedPositions.get(p.player_id) || p.position;
+                return isActivePos(projectedPos);
+            }).length;
 
             console.log('[MoveModal] Validating Active Limit:', {
                 isFromNa,
                 isToActive,
                 activeLimit,
-                currentActiveCount,
-                activeNetChange,
-                totalAfterMove: currentActiveCount + activeNetChange,
-                limitCheck: (currentActiveCount + activeNetChange > activeLimit) ? 'FAIL' : 'PASS',
+                projectedActiveCount,
+                projectedActiveForeignerCount,
+                limitCheck: projectedActiveCount > activeLimit ? 'FAIL' : 'PASS',
                 rosterConfig: rosterPositionsConfig
             });
 
-            if (currentActiveCount + activeNetChange > activeLimit) {
+            if (projectedActiveCount > activeLimit) {
                 return { isValid: false, message: `Exceeds Total Active Roster Size (${activeLimit})` };
-            }
-        }
-
-        // 3. Swap Eligibility Logic
-        if (swapPlayerId && !isActivePos(player.position)) { // Source is NA / inactive
-            // If we are swapping, the swapPlayer goes to player.position (NA)
-            // We need to check if swapPlayer is eligible for NA
-            if (swapPlayer && !isValidForNA(swapPlayer)) {
-                return { isValid: false, message: 'Player not eligible for NA slot' };
             }
         }
 
