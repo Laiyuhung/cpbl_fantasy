@@ -60,14 +60,7 @@ export default function MoveModal({
         const limit = parseInt(foreignerActiveLimit, 10);
         if (isNaN(limit)) return { isValid: true };
 
-        // 1. Is Moving FROM NA/Minor TO Active?
         const currentPos = player.position;
-        const isFromNa = !isActivePos(currentPos); // NA -> Active
-        const isToActive = isActivePos(targetPos);
-
-        // If not moving NA -> Active, we generally don't trigger NEW active count (unless we acquired from FA directly to active, handled elsewhere).
-        // Spec: "NA欄位要主動移出時...Active Limit"
-        if (!isFromNa || !isToActive) return { isValid: true };
 
         const swapPlayer = swapPlayerId ? roster.find(p => p.player_id === swapPlayerId) : null;
         const projectedPositions = new Map(
@@ -93,30 +86,29 @@ export default function MoveModal({
         }
 
         // 2. Validate Total Active Limit
-        if (isFromNa && isToActive) {
-            const activeLimit = Object.entries(rosterPositionsConfig || {}).reduce((sum, [k, v]) => {
-                return isActivePos(k) ? sum + (parseInt(v) || 0) : sum;
-            }, 0);
+        const activeLimit = Object.entries(rosterPositionsConfig || {}).reduce((sum, [k, v]) => {
+            return isActivePos(k) ? sum + (parseInt(v) || 0) : sum;
+        }, 0);
 
-            const projectedActiveCount = roster.filter(p => {
-                if (p.isEmpty) return false;
-                const projectedPos = projectedPositions.get(p.player_id) || p.position;
-                return isActivePos(projectedPos);
-            }).length;
+        const projectedActiveCount = roster.filter(p => {
+            if (p.isEmpty) return false;
+            const projectedPos = projectedPositions.get(p.player_id) || p.position;
+            return isActivePos(projectedPos);
+        }).length;
 
-            console.log('[MoveModal] Validating Active Limit:', {
-                isFromNa,
-                isToActive,
-                activeLimit,
-                projectedActiveCount,
-                projectedActiveForeignerCount,
-                limitCheck: projectedActiveCount > activeLimit ? 'FAIL' : 'PASS',
-                rosterConfig: rosterPositionsConfig
-            });
+        console.log('[MoveModal] Validating Active Limit:', {
+            currentPos,
+            targetPos,
+            swapPlayerId,
+            activeLimit,
+            projectedActiveCount,
+            projectedActiveForeignerCount,
+            limitCheck: projectedActiveCount > activeLimit ? 'FAIL' : 'PASS',
+            rosterConfig: rosterPositionsConfig
+        });
 
-            if (projectedActiveCount > activeLimit) {
-                return { isValid: false, message: `Exceeds Total Active Roster Size (${activeLimit})` };
-            }
+        if (projectedActiveCount > activeLimit) {
+            return { isValid: false, message: `Exceeds Total Active Roster Size (${activeLimit})` };
         }
 
         return { isValid: true };
