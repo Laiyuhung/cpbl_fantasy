@@ -717,6 +717,32 @@ export default function RosterPage() {
         return !!player?.game_info && !player.game_info.is_postponed;
     };
 
+    // Start Active priority:
+    // 1) Has game + confirmed starter
+    // 2) Has game
+    // 3) Has game + confirmed non-starter (batters only)
+    // 4) No game
+    const getStartActivePriority = (player) => {
+        if (!hasPlayableGame(player)) return 4;
+
+        const playerType = String(player?.batter_or_pitcher || '').toLowerCase();
+        const pid = String(player?.player_id || '');
+
+        if (playerType === 'pitcher') {
+            return startingStatus.pitcherPlayerIds.has(pid) ? 1 : 2;
+        }
+
+        if (playerType === 'batter') {
+            const teamLineupPublished = startingStatus.lineupTeams.has(player.team);
+            if (!teamLineupPublished) return 2;
+
+            const battingNo = startingStatus.lineupByPlayerId[pid];
+            return battingNo ? 1 : 3;
+        }
+
+        return 2;
+    };
+
     const getEligibleActivePositions = (player) => {
         const positions = player.position_list
             ? player.position_list.split(',').map(pos => pos.trim()).filter(Boolean)
@@ -757,8 +783,7 @@ export default function RosterPage() {
 
         const candidates = rosterPlayers
             .filter(player => !fixedPlayerIds.has(player.player_id))
-            .filter(player => !['NA', 'IL', 'Minor'].includes(player.position))
-            .filter(player => hasPlayableGame(player))
+            .filter(player => !['NA', 'IL', 'MINOR', 'MN'].includes(String(player.position || '').toUpperCase()))
             .filter(player => !(player.position === 'BN' && !isMoveAllowedForDate(player, gameDate)))
             .map(player => {
                 const eligibleSlots = getEligibleActivePositions(player)
@@ -773,6 +798,11 @@ export default function RosterPage() {
             })
             .filter(entry => entry.eligibleSlots.length > 0)
             .sort((left, right) => {
+                const leftPriority = getStartActivePriority(left.player);
+                const rightPriority = getStartActivePriority(right.player);
+                if (leftPriority !== rightPriority) {
+                    return leftPriority - rightPriority;
+                }
                 if (left.eligibleSlots.length !== right.eligibleSlots.length) {
                     return left.eligibleSlots.length - right.eligibleSlots.length;
                 }
@@ -840,9 +870,12 @@ export default function RosterPage() {
                 .filter(player => player.position === position)
                 .filter(player => !desiredPositions.has(player.player_id))
                 .sort((left, right) => {
-                    const rightHasGame = hasPlayableGame(right) ? 1 : 0;
-                    const leftHasGame = hasPlayableGame(left) ? 1 : 0;
-                    return rightHasGame - leftHasGame;
+                    const leftPriority = getStartActivePriority(left);
+                    const rightPriority = getStartActivePriority(right);
+                    if (leftPriority !== rightPriority) {
+                        return leftPriority - rightPriority;
+                    }
+                    return left.name.localeCompare(right.name);
                 });
 
             for (const keeper of keepers) {
