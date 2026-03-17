@@ -111,24 +111,33 @@ export async function GET(req) {
 
     console.log(`[playerslist] Game map teams=${gameMapDisplayKeys.size}: ${[...gameMapDisplayKeys].join(', ') || '(none)'}`);
 
-    // 計算球員持有率（排除 test_league）
-    const [rosterRes, leagueRes, testLeagueRes] = await Promise.all([
+    // 計算球員持有率（排除 test_league，且排除 pre-draft / drafting now）
+    const [rosterRes, leagueRes, testLeagueRes, leagueStatusRes] = await Promise.all([
       supabase
         .from('league_player_ownership')
         .select('player_id, league_id')
         .ilike('status', 'on team'),
       supabase.from('league_settings').select('league_id'),
       supabase.from('test_league').select('league_id'),
+      supabase.from('league_statuses').select('league_id, status'),
     ]);
 
     const testLeagueIds = new Set((testLeagueRes.data || []).map(t => t.league_id));
-    const totalLeagues = (leagueRes.data || []).filter(l => !testLeagueIds.has(l.league_id)).length;
+    const activeLeagueIds = new Set(
+      (leagueStatusRes.data || [])
+        .filter(s => s.status !== 'pre-draft' && s.status !== 'drafting now')
+        .map(s => s.league_id)
+    );
+    const totalLeagues = (leagueRes.data || []).filter(
+      l => !testLeagueIds.has(l.league_id) && activeLeagueIds.has(l.league_id)
+    ).length;
 
     const rosterPercentageMap = {};
     if (rosterRes.data && totalLeagues > 0) {
       const playerLeagueMap = {};
       rosterRes.data.forEach(r => {
         if (testLeagueIds.has(r.league_id)) return; // 排除測試聯盟
+        if (!activeLeagueIds.has(r.league_id)) return; // 排除 pre-draft / drafting now
         if (!playerLeagueMap[r.player_id]) playerLeagueMap[r.player_id] = new Set();
         playerLeagueMap[r.player_id].add(r.league_id);
       });
