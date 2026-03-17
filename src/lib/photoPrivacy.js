@@ -1,20 +1,26 @@
-import { promises as fs } from 'fs'
-import path from 'path'
-
-const RUNTIME_DIR = path.join(process.cwd(), '.runtime')
-const CONFIG_PATH = path.join(RUNTIME_DIR, 'photo-privacy.json')
+import supabaseAdmin from '@/lib/supabaseAdmin'
 
 const DEFAULT_CONFIG = {
   forceDefaultPlayerPhoto: false,
 }
 
+const SETTING_KEY = 'force_default_player_photo'
+
 export async function readPhotoPrivacyConfig() {
   try {
-    const raw = await fs.readFile(CONFIG_PATH, 'utf8')
-    const parsed = JSON.parse(raw)
+    const { data, error } = await supabaseAdmin
+      .from('system_settings')
+      .select('value_bool')
+      .eq('key', SETTING_KEY)
+      .maybeSingle()
+
+    if (error || !data) {
+      return DEFAULT_CONFIG
+    }
+
     return {
       ...DEFAULT_CONFIG,
-      ...parsed,
+      forceDefaultPlayerPhoto: Boolean(data.value_bool),
     }
   } catch {
     return DEFAULT_CONFIG
@@ -22,11 +28,24 @@ export async function readPhotoPrivacyConfig() {
 }
 
 export async function writePhotoPrivacyConfig(nextConfig) {
-  await fs.mkdir(RUNTIME_DIR, { recursive: true })
   const merged = {
     ...DEFAULT_CONFIG,
     ...nextConfig,
   }
-  await fs.writeFile(CONFIG_PATH, JSON.stringify(merged, null, 2), 'utf8')
+
+  const { error } = await supabaseAdmin
+    .from('system_settings')
+    .upsert(
+      {
+        key: SETTING_KEY,
+        value_bool: Boolean(merged.forceDefaultPlayerPhoto),
+      },
+      { onConflict: 'key' }
+    )
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
   return merged
 }
