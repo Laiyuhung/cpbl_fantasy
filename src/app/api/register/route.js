@@ -34,6 +34,27 @@ export async function POST(request) {
       );
     }
 
+    // Daily registration limit: 350 accounts per Taiwan day (UTC+8)
+    const now = new Date();
+    const taiwanOffset = 8 * 60 * 60 * 1000;
+    const taiwanNow = new Date(now.getTime() + taiwanOffset);
+    // Taiwan midnight expressed as UTC timestamp
+    const todayStartUTC = new Date(
+      Date.UTC(taiwanNow.getUTCFullYear(), taiwanNow.getUTCMonth(), taiwanNow.getUTCDate())
+      - taiwanOffset
+    );
+    const { count: todayCount, error: countError } = await supabase
+      .from('managers')
+      .select('manager_id', { count: 'exact', head: true })
+      .gte('created_at', todayStartUTC.toISOString());
+
+    if (!countError && todayCount >= 350) {
+      return NextResponse.json(
+        { error: 'Daily registration limit reached. Please try again tomorrow.', dailyLimitReached: true },
+        { status: 429 }
+      );
+    }
+
     // Check if email already exists
     const { data: existingUsers, error: checkError } = await supabase
       .from('managers')

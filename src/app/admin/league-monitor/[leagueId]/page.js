@@ -14,6 +14,7 @@ export default function AdminLeagueOverviewPage() {
     const [members, setMembers] = useState([]);
     const [schedule, setSchedule] = useState([]);
     const [status, setStatus] = useState('');
+    const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
 
     useEffect(() => {
         if (!leagueId) return;
@@ -33,6 +34,25 @@ export default function AdminLeagueOverviewPage() {
                     setMembers(data.members || []);
                     setSchedule(data.schedule || []);
                     setStatus(data.status || 'unknown');
+
+                    // Fetch weights if H2H Fantasy Points
+                    if (data.league?.scoring_type === 'Head-to-Head Fantasy Points') {
+                        try {
+                            const wRes = await fetch(`/api/league-settings/weights?league_id=${leagueId}`);
+                            const wData = await wRes.json();
+                            if (wData.success && wData.data) {
+                                const batter = {};
+                                const pitcher = {};
+                                wData.data.forEach(w => {
+                                    if (w.category_type === 'batter') batter[w.category_name] = w.weight;
+                                    else pitcher[w.category_name] = w.weight;
+                                });
+                                setCategoryWeights({ batter, pitcher });
+                            }
+                        } catch (e) {
+                            console.error('Failed to fetch weights:', e);
+                        }
+                    }
                 } else {
                     setError(data.error || 'Failed to load league data');
                 }
@@ -188,12 +208,86 @@ export default function AdminLeagueOverviewPage() {
                 </div>
             </div>
 
+            {/* Stat Categories + Roster Positions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Stat Categories */}
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
+                        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Stat Categories</h3>
+                    </div>
+                    <div className="p-5 space-y-5">
+                        {/* Batter */}
+                        <div>
+                            <div className="text-xs font-bold text-green-600 uppercase tracking-wider mb-2">
+                                Batter ({(league.batter_stat_categories || []).length})
+                            </div>
+                            {(league.batter_stat_categories || []).length === 0 ? (
+                                <p className="text-xs text-gray-400">None selected.</p>
+                            ) : (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {(league.batter_stat_categories || []).map((cat) => (
+                                        <span key={cat} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-50 border border-green-200 text-xs text-green-800 font-medium">
+                                            {cat}
+                                            {league.scoring_type === 'Head-to-Head Fantasy Points' && categoryWeights.batter[cat] !== undefined && (
+                                                <span className="text-green-500 font-bold">×{categoryWeights.batter[cat]}</span>
+                                            )}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        {/* Pitcher */}
+                        <div>
+                            <div className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+                                Pitcher ({(league.pitcher_stat_categories || []).length})
+                            </div>
+                            {(league.pitcher_stat_categories || []).length === 0 ? (
+                                <p className="text-xs text-gray-400">None selected.</p>
+                            ) : (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {(league.pitcher_stat_categories || []).map((cat) => (
+                                        <span key={cat} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-orange-50 border border-orange-200 text-xs text-orange-800 font-medium">
+                                            {cat}
+                                            {league.scoring_type === 'Head-to-Head Fantasy Points' && categoryWeights.pitcher[cat] !== undefined && (
+                                                <span className="text-orange-500 font-bold">×{categoryWeights.pitcher[cat]}</span>
+                                            )}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Roster Positions */}
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
+                        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Roster Positions</h3>
+                    </div>
+                    {!league.roster_positions || Object.keys(league.roster_positions).length === 0 ? (
+                        <div className="px-5 py-12 text-center text-gray-400 text-sm">No roster positions configured.</div>
+                    ) : (
+                        <div className="p-5">
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                {Object.entries(league.roster_positions)
+                                    .filter(([, count]) => Number(count) > 0)
+                                    .map(([pos, count]) => (
+                                        <div key={pos} className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 bg-gray-50">
+                                            <span className="text-sm font-bold text-gray-700">{pos}</span>
+                                            <span className="text-sm font-black text-blue-600">{count}</span>
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* Schedule */}
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                 <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
                     <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Schedule ({schedule.length} weeks)</h3>
-                </div>
-                {schedule.length === 0 ? (
+                </div>                {schedule.length === 0 ? (
                     <div className="px-5 py-12 text-center text-gray-400 text-sm">No schedule generated yet.</div>
                 ) : (
                     <div className="overflow-x-auto">

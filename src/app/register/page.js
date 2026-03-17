@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [dailyLimitReached, setDailyLimitReached] = useState(false)
   const router = useRouter()
 
   const handleRegister = async () => {
@@ -44,7 +45,11 @@ export default function RegisterPage() {
       const result = await res.json()
       
       if (!res.ok || result.error) {
-        setError(result.error || 'Registration failed')
+        if (result.dailyLimitReached) {
+          setDailyLimitReached(true)
+        } else {
+          setError(result.error || 'Registration failed')
+        }
       } else {
         // Registration successful, show success message
         setSuccess(true)
@@ -60,6 +65,33 @@ export default function RegisterPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (dailyLimitReached) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl p-8 w-96">
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-orange-500/20 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-4">Registration Unavailable</h1>
+            <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-4 mb-4">
+              <p className="text-orange-200 font-semibold mb-1">Daily limit reached (350 accounts)</p>
+              <p className="text-orange-300 text-sm">New registrations are paused for today. Please come back tomorrow to create your account.</p>
+            </div>
+            <button
+              onClick={() => router.push('/login')}
+              className="w-full mt-2 bg-slate-800/40 border border-purple-500/30 text-purple-300 hover:bg-slate-700/40 font-semibold py-3 rounded-lg transition-all"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (success) {
