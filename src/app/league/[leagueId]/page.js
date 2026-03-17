@@ -1608,8 +1608,8 @@ export default function LeaguePage() {
                 </svg>
                 <span>Even number of managers required</span>
                 {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && !leagueSettings?.is_finalized && (
-                  <span className="ml-2 text-xs text-indigo-300/70 italic">
-                    (Go to League Settings to finalize)
+                  <span className="ml-2 px-2.5 py-1 rounded-full border border-amber-300/70 bg-amber-500/20 text-[10px] sm:text-[11px] text-amber-100 font-bold tracking-wide shadow-md shadow-amber-500/25">
+                    Make sure to go to League Settings and finalize before the draft.
                   </span>
                 )}
               </div>
