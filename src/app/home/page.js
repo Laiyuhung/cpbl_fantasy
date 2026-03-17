@@ -214,6 +214,17 @@ export default function HomePage() {
                 CPBL Schedule
               </h2>
               <CpblScheduleWidget />
+              <p className="mt-4 text-sm text-purple-200/90 leading-relaxed">
+                This is the Discord group link:{' '}
+                <a
+                  href="https://discord.gg/WD7WH6aF"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+                >
+                  https://discord.gg/WD7WH6aF
+                </a>
+              </p>
               <div className="mt-3">
                 <button
                   onClick={() => setShowWeekRule(prev => !prev)}
