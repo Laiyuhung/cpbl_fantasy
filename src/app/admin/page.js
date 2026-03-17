@@ -7,6 +7,8 @@ export default function AdminPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [forceDefaultPlayerPhoto, setForceDefaultPlayerPhoto] = useState(false)
+  const [privacyLoading, setPrivacyLoading] = useState(false)
 
   useEffect(() => {
     checkAdminStatus()
@@ -24,6 +26,12 @@ export default function AdminPage() {
       }
 
       setIsAdmin(true)
+
+      const privacyRes = await fetch('/api/admin/photo-privacy')
+      const privacyData = await privacyRes.json()
+      if (privacyData?.success) {
+        setForceDefaultPlayerPhoto(Boolean(privacyData.forceDefaultPlayerPhoto))
+      }
     } catch (err) {
       console.error('Failed to check admin status:', err)
       alert('Failed to check permissions')
@@ -45,12 +53,55 @@ export default function AdminPage() {
     return null
   }
 
+  const handleTogglePhotoPrivacy = async () => {
+    const nextValue = !forceDefaultPlayerPhoto
+    setPrivacyLoading(true)
+    try {
+      const res = await fetch('/api/admin/photo-privacy', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ forceDefaultPlayerPhoto: nextValue }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'Failed to update setting')
+      }
+      setForceDefaultPlayerPhoto(Boolean(data.forceDefaultPlayerPhoto))
+    } catch (err) {
+      console.error('Failed to update photo privacy:', err)
+      alert('Failed to update photo privacy mode')
+    } finally {
+      setPrivacyLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="mt-2 text-gray-600">Manage system settings and data</p>
+        </div>
+
+        <div className="mb-6 bg-white rounded-lg shadow-md p-5 border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Photo Privacy Mode</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                When enabled, all player photos on every page will be replaced with defaultPlayer to avoid portrait rights issues.
+              </p>
+            </div>
+            <button
+              onClick={handleTogglePhotoPrivacy}
+              disabled={privacyLoading}
+              className={`px-4 py-2 rounded-lg font-bold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${forceDefaultPlayerPhoto
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+            >
+              {privacyLoading ? 'Updating...' : forceDefaultPlayerPhoto ? 'Enabled (Click to Disable)' : 'Disabled (Click to Enable)'}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
