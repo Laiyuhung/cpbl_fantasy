@@ -1,41 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LeagueMonitorPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [leagues, setLeagues] = useState([]);
     const [error, setError] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res = await fetch('/api/admin/leagues');
-                if (res.status === 401 || res.status === 403) {
-                    alert('You do not have admin privileges');
-                    router.push('/home');
-                    return;
-                }
-                const data = await res.json();
-                if (data.success) {
-                    setLeagues(data.leagues || []);
-                } else {
-                    setError(data.error || 'Failed to load leagues');
-                }
-            } catch (err) {
-                console.error('Error:', err);
-                setError('An unexpected error occurred');
-            } finally {
+    const fetchData = useCallback(async (manual = false) => {
+        if (manual) {
+            setRefreshing(true);
+        } else {
+            setLoading(true);
+        }
+        setError('');
+        try {
+            const res = await fetch('/api/admin/leagues');
+            if (res.status === 401 || res.status === 403) {
+                alert('You do not have admin privileges');
+                router.push('/home');
+                return;
+            }
+            const data = await res.json();
+            if (data.success) {
+                setLeagues(data.leagues || []);
+            } else {
+                setError(data.error || 'Failed to load leagues');
+            }
+        } catch (err) {
+            console.error('Error:', err);
+            setError('An unexpected error occurred');
+        } finally {
+            if (manual) {
+                setRefreshing(false);
+            } else {
                 setLoading(false);
             }
-        };
-        fetchData();
+        }
     }, [router]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const getScoringLabel = (type) => {
         switch (type) {
@@ -174,8 +186,17 @@ export default function LeagueMonitorPage() {
                             <p className="text-sm text-gray-500">Overview of all leagues in the system</p>
                         </div>
                     </div>
-                    <div className="text-sm text-gray-400">
-                        {leagues.length} league{leagues.length !== 1 ? 's' : ''} total
+                    <div className="flex items-center gap-3">
+                        <div className="text-sm text-gray-400">
+                            {leagues.length} league{leagues.length !== 1 ? 's' : ''} total
+                        </div>
+                        <button
+                            onClick={() => fetchData(true)}
+                            disabled={refreshing}
+                            className="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {refreshing ? 'Refreshing...' : 'Refresh'}
+                        </button>
                     </div>
                 </div>
 

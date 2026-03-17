@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const defaultSummary = {
@@ -17,6 +17,7 @@ const defaultSummary = {
 export default function ManagersMonitorPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(defaultSummary);
@@ -25,34 +26,44 @@ export default function ManagersMonitorPage() {
   const [tokenFilter, setTokenFilter] = useState('all');
   const [passwordFilter, setPasswordFilter] = useState('all');
 
-  useEffect(() => {
-    const fetchManagers = async () => {
-      try {
-        const res = await fetch('/api/admin/managers');
-        if (res.status === 401 || res.status === 403) {
-          alert('You do not have admin privileges');
-          router.push('/home');
-          return;
-        }
+  const fetchManagers = useCallback(async (manual = false) => {
+    if (manual) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError('');
+    try {
+      const res = await fetch('/api/admin/managers');
+      if (res.status === 401 || res.status === 403) {
+        alert('You do not have admin privileges');
+        router.push('/home');
+        return;
+      }
 
-        const data = await res.json();
-        if (!data.success) {
-          setError(data.error || 'Failed to load managers table status');
-          return;
-        }
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || 'Failed to load managers table status');
+        return;
+      }
 
-        setRows(data.managers || []);
-        setSummary(data.summary || defaultSummary);
-      } catch (err) {
-        console.error('Managers monitor fetch failed:', err);
-        setError('An unexpected error occurred');
-      } finally {
+      setRows(data.managers || []);
+      setSummary(data.summary || defaultSummary);
+    } catch (err) {
+      console.error('Managers monitor fetch failed:', err);
+      setError('An unexpected error occurred');
+    } finally {
+      if (manual) {
+        setRefreshing(false);
+      } else {
         setLoading(false);
       }
-    };
-
-    fetchManagers();
+    }
   }, [router]);
+
+  useEffect(() => {
+    fetchManagers();
+  }, [fetchManagers]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -121,7 +132,16 @@ export default function ManagersMonitorPage() {
               <p className="text-sm text-gray-500">Track account verification and token health in public.managers</p>
             </div>
           </div>
-          <div className="text-sm text-gray-400">{rows.length} rows</div>
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-400">{rows.length} rows</div>
+            <button
+              onClick={() => fetchManagers(true)}
+              disabled={refreshing}
+              className="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
