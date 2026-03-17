@@ -1987,7 +1987,7 @@ export default function DraftPage() {
             )}
 
             {mainTab === 'roster' && (
-                <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 350px)' }}>
+                <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl overflow-auto" style={{ height: 'calc(100vh - 230px)' }}>
                     <div className="flex items-center gap-3 mb-2">
                         <h2 className="text-xl font-bold text-purple-300">Roster Assignment ({draftRosterAssignments.length})</h2>
                         <button
