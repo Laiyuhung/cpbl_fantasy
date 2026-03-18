@@ -186,7 +186,7 @@ export default function AdminTransactionsPage() {
                     </button>
                     <button
                         onClick={() => { setActiveTab('waivers'); setViewAll(false); }}
-                        className={`text-sm sm:text-xl font-black uppercase tracking-wider flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'waivers' ? 'text-emerald-300 opacity-100' : 'text-slate-500 hover:text-slate-400'}`}
+                        className={`text-sm sm:text-xl font-black uppercase tracking-wider flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'waivers' ? 'text-white opacity-100' : 'text-slate-500 hover:text-slate-400'}`}
                     >
                         <span className={`w-1.5 sm:w-2 h-5 sm:h-6 rounded-full transition-all ${activeTab === 'waivers' ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                         Waivers
