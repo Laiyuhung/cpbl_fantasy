@@ -332,7 +332,7 @@ export default function AdminLeagueRostersPage() {
         ) : null;
 
         return (
-            <div key={p.id || `empty-${p.position}-${Math.random()}`} className="py-2.5 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 transition-colors">
+            <div key={p.id || `empty-${p.position}-${Math.random()}`} className="py-2.5 border-b border-white/5 last:border-0 hover:bg-white/15 px-2 transition-colors">
                 <div className="flex items-start gap-3">
                     {/* Position badge */}
                     <span className={`w-8 flex-shrink-0 text-center text-xs font-bold mt-0.5 ${['BN', 'NA', 'IL'].includes(p.position) ? 'text-slate-500' : 'text-purple-400'}`}>
@@ -363,7 +363,7 @@ export default function AdminLeagueRostersPage() {
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 space-y-8 animate-fadeIn">
-            <div className="bg-gradient-to-br from-slate-900/50 to-purple-900/20 backdrop-blur-md rounded-3xl border border-white/5 p-4 sm:p-6 shadow-xl w-full relative">
+            <div className="bg-gradient-to-br from-slate-800/80 to-purple-800/40 backdrop-blur-md rounded-3xl border border-white/5 p-4 sm:p-6 shadow-xl w-full relative">
                 <h3 className="text-xl font-black text-white mb-4 uppercase tracking-wider flex items-center gap-2">
                     <span className="w-2 h-6 bg-cyan-500 rounded-full"></span>
                     Admin Roster Overview
@@ -483,7 +483,7 @@ export default function AdminLeagueRostersPage() {
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                         {/* Batters */}
-                        <div className="bg-slate-900/50 rounded-2xl border border-white/10 overflow-hidden shadow-lg p-4">
+                        <div className="bg-slate-800/60 rounded-2xl border border-white/10 overflow-hidden shadow-lg p-4">
                             <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-white/10 pb-2 flex justify-between">
                                 <span>Batters</span>
                                 <span className="text-xs opacity-70">{rosterData.batters.length}</span>
@@ -496,7 +496,7 @@ export default function AdminLeagueRostersPage() {
                         </div>
 
                         {/* Pitchers */}
-                        <div className="bg-slate-900/50 rounded-2xl border border-white/10 overflow-hidden shadow-lg p-4">
+                        <div className="bg-slate-800/60 rounded-2xl border border-white/10 overflow-hidden shadow-lg p-4">
                             <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-white/10 pb-2 flex justify-between">
                                 <span>Pitchers</span>
                                 <span className="text-xs opacity-70">{rosterData.pitchers.length}</span>
