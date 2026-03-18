@@ -111,10 +111,24 @@ export async function GET(request, { params }) {
             waiver_priority: priorityMap[w.manager_id] || '-'
         }));
 
+        // 6. Build waiver priority ranking table
+        const priorityRankings = [];
+        if (priorityRes && priorityRes.data) {
+            priorityRes.data.forEach(p => {
+                priorityRankings.push({
+                    rank: p.rank,
+                    nickname: memberMap[p.manager_id] || 'Unknown'
+                });
+            });
+            priorityRankings.sort((a, b) => a.rank - b.rank);
+        }
+
         return NextResponse.json({
             success: true,
             transactions: enrichedTransactions,
-            waivers: enrichedWaivers
+            waivers: enrichedWaivers,
+            priorityRankings: priorityRankings,
+            totalManagers: Object.keys(memberMap).length
         });
 
     } catch (error) {

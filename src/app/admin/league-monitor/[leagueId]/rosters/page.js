@@ -362,7 +362,7 @@ export default function AdminLeagueRostersPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 space-y-8 animate-fadeIn">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-6 lg:p-8 space-y-8 animate-fadeIn max-w-[1600px] mx-auto">
             <div className="bg-gradient-to-br from-slate-800/80 to-purple-800/40 backdrop-blur-md rounded-3xl border border-white/5 p-4 sm:p-6 shadow-xl w-full relative">
                 <h3 className="text-xl font-black text-white mb-4 uppercase tracking-wider flex items-center gap-2">
                     <span className="w-2 h-6 bg-cyan-500 rounded-full"></span>

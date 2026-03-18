@@ -11,6 +11,8 @@ export default function AdminTransactionsPage() {
     const [loading, setLoading] = useState(true);
     const [transactions, setTransactions] = useState([]);
     const [waivers, setWaivers] = useState([]);
+    const [priorityRankings, setPriorityRankings] = useState([]);
+    const [totalManagers, setTotalManagers] = useState(0);
     const [activeTab, setActiveTab] = useState('transactions'); // 'transactions' | 'waivers'
     const [waiverSubTab, setWaiverSubTab] = useState('pending'); // 'pending' | 'completed'
     const [viewAll, setViewAll] = useState(false);
@@ -28,6 +30,8 @@ export default function AdminTransactionsPage() {
                 if (data.success) {
                     setTransactions(data.transactions || []);
                     setWaivers(data.waivers || []);
+                    setPriorityRankings(data.priorityRankings || []);
+                    setTotalManagers(data.totalManagers || 0);
                 } else {
                     console.error("API error:", data.error);
                 }
@@ -164,29 +168,30 @@ export default function AdminTransactionsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Transactions & Waivers Monitor</h2>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
+            <div className="space-y-6 max-w-[1600px] mx-auto">
+                <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-wider">Transactions & Waivers Monitor</h2>
 
-            {/* Transactions & Waivers Tabbed Section */}
-            <div>
-                <div className="flex items-center gap-4 sm:gap-8 mb-4 sm:mb-6 border-b border-gray-200 pb-2 overflow-x-auto">
+                {/* Transactions & Waivers Tabbed Section */}
+                <div>
+                    <div className="flex items-center gap-4 sm:gap-8 mb-4 sm:mb-6 border-b border-slate-700 pb-2 overflow-x-auto">
                     <button
                         onClick={() => { setActiveTab('transactions'); setViewAll(false); }}
-                        className={`text-sm sm:text-xl font-black uppercase tracking-wider flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'transactions' ? 'text-gray-900 opacity-100' : 'text-gray-400 hover:text-gray-600'}`}
+                        className={`text-sm sm:text-xl font-black uppercase tracking-wider flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'transactions' ? 'text-blue-400 opacity-100' : 'text-slate-500 hover:text-slate-400'}`}
                     >
                         <span className={`w-1.5 sm:w-2 h-5 sm:h-6 rounded-full transition-all ${activeTab === 'transactions' ? 'bg-blue-500' : 'bg-transparent'}`}></span>
                         Transactions
                     </button>
                     <button
                         onClick={() => { setActiveTab('waivers'); setViewAll(false); }}
-                        className={`text-sm sm:text-xl font-black uppercase tracking-wider flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'waivers' ? 'text-gray-900 opacity-100' : 'text-gray-400 hover:text-gray-600'}`}
+                        className={`text-sm sm:text-xl font-black uppercase tracking-wider flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'waivers' ? 'text-orange-400 opacity-100' : 'text-slate-500 hover:text-slate-400'}`}
                     >
                         <span className={`w-1.5 sm:w-2 h-5 sm:h-6 rounded-full transition-all ${activeTab === 'waivers' ? 'bg-orange-500' : 'bg-transparent'}`}></span>
                         Waivers
                     </button>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-slate-900/50 border border-slate-700/50 rounded-2xl overflow-hidden shadow-lg">
                     {activeTab === 'transactions' && (
                         groupedTransactions.length === 0 ? (
                             <div className="text-center py-12 text-gray-400 text-sm">No recent transactions.</div>
@@ -491,6 +496,7 @@ export default function AdminTransactionsPage() {
                             )}
                         </div>
                     )}
+                </div>
                 </div>
             </div>
 
