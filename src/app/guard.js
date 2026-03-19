@@ -10,9 +10,68 @@ export default function GuardLayout({ children }) {
   const [isReady, setIsReady] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const redirectingRef = useRef(false)
+  const [isUnderMaintenance, setIsUnderMaintenance] = useState(false)
 
   const [emailVerified, setEmailVerified] = useState(true)
   const [isRestricted, setIsRestricted] = useState(false)
+
+  // Check maintenance status
+  useEffect(() => {
+    let isMounted = true;
+    let checkInterval;
+
+    const checkMaintenance = async () => {
+      try {
+        const res = await fetch('/api/system-settings/maintenance');
+        const data = await res.json();
+
+        if (!isMounted) return;
+
+        if (data.success && data.underMaintenance) {
+          setIsUnderMaintenance(true);
+
+          // Check if user is admin
+          const userIdCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('user_id='));
+          const userId = userIdCookie?.split('=')[1];
+
+          if (userId) {
+            try {
+              const adminRes = await fetch(`/api/admin/check?userId=${userId}`);
+              const adminData = await adminRes.json();
+              // If not admin and not already on maintenance page, redirect
+              if (!adminData.isAdmin && pathname !== '/maintenance') {
+                redirectingRef.current = true;
+                router.push('/maintenance');
+              }
+            } catch (e) {
+              console.error('Error checking admin status:', e);
+              // Default to redirect if we can't verify
+              if (pathname !== '/maintenance') {
+                redirectingRef.current = true;
+                router.push('/maintenance');
+              }
+            }
+          }
+        } else {
+          setIsUnderMaintenance(false);
+        }
+      } catch (e) {
+        console.error('Failed to check maintenance status:', e);
+      }
+    };
+
+    checkMaintenance();
+
+    // Poll every 30 seconds
+    checkInterval = setInterval(checkMaintenance, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(checkInterval);
+    };
+  }, [pathname, router])
 
   useEffect(() => {
     // 避免重複重定向
@@ -28,6 +87,7 @@ export default function GuardLayout({ children }) {
       '/register',
       '/forgot-password',
       '/verify-email',
+      '/maintenance',
     ]
 
     const pathIsProfile = pathname === '/profile'

@@ -3,10 +3,14 @@ import { cookies } from 'next/headers'
 import supabase from '@/lib/supabase'
 
 // 检查管理员权限
-export async function GET() {
+export async function GET(req) {
   try {
+    const { searchParams } = new URL(req.url);
+    const queryUserId = searchParams.get('userId');
+    
     const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
+    const cookieUserId = cookieStore.get('user_id')?.value
+    const userId = queryUserId || cookieUserId
 
     if (!userId) {
       return NextResponse.json({ isAdmin: false, error: '未登录' }, { status: 401 })

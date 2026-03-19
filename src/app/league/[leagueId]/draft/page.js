@@ -4,11 +4,15 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
 import LeagueChat from '../../../../components/LeagueChat';
+import { useMaintenanceStatus } from '../../../../lib/useMaintenanceStatus';
 
 export default function DraftPage() {
     const params = useParams();
     const leagueId = params.leagueId;
     const router = useRouter();
+
+    // Check maintenance status - automatically redirects non-admins
+    const { isUnderMaintenance, loading: maintenanceLoading } = useMaintenanceStatus(true);
 
     const [loading, setLoading] = useState(true);
     const [draftState, setDraftState] = useState(null);
@@ -80,6 +84,11 @@ export default function DraftPage() {
 
     // Poll League Status
     useEffect(() => {
+        // Stop polling if under maintenance
+        if (isUnderMaintenance) {
+            return;
+        }
+
         let active = true;
         const checkStatus = async () => {
             try {
@@ -93,7 +102,7 @@ export default function DraftPage() {
         };
         checkStatus();
         return () => { active = false; };
-    }, [leagueId]);
+    }, [leagueId, isUnderMaintenance]);
 
     // Filter Reset Logic
     useEffect(() => {
@@ -374,6 +383,11 @@ export default function DraftPage() {
 
     // Poll Draft State (Smart Polling) — only when league status is 'drafting now'
     useEffect(() => {
+        // Stop polling if under maintenance
+        if (isUnderMaintenance) {
+            return;
+        }
+
         if (leagueStatus !== 'drafting now') return;
 
         let active = true;
@@ -466,7 +480,7 @@ export default function DraftPage() {
             active = false;
             clearTimeout(timeoutId);
         };
-    }, [leagueId, router, leagueStatus]);
+    }, [leagueId, router, leagueStatus, isUnderMaintenance]);
 
     // Timer Tick
     useEffect(() => {
