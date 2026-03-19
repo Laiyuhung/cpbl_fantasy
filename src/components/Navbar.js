@@ -17,6 +17,7 @@ export default function Navbar() {
   const [currentLeague, setCurrentLeague] = useState(null)
   const [taiwanTime, setTaiwanTime] = useState('')
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
+  const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
 
   // Update Taiwan time every second
   useEffect(() => {
@@ -52,6 +53,22 @@ export default function Navbar() {
         }
       })
       .catch(err => console.error('Failed to fetch leagues:', err))
+  }, [])
+
+  useEffect(() => {
+    const fetchCreateLeagueLock = async () => {
+      try {
+        const res = await fetch('/api/system-settings/create-league')
+        const data = await res.json()
+        if (data?.success) {
+          setCreateLeagueDisabled(Boolean(data.disabled))
+        }
+      } catch (err) {
+        console.error('Failed to fetch create league lock:', err)
+      }
+    }
+
+    fetchCreateLeagueLock()
   }, [])
 
   // Close dropdown when clicking outside
@@ -297,13 +314,19 @@ export default function Navbar() {
                       <span className="font-bold text-sm">JOIN PUBLIC LEAGUE</span>
                     </Link>
                     <Link
-                      href="/create_league"
-                      className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 border-b border-blue-400/30"
+                      href={createLeagueDisabled ? '#' : '/create_league'}
+                      className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 border-b ${createLeagueDisabled
+                        ? 'bg-gray-600/40 border-gray-500/40 opacity-70 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 border-blue-400/30'
+                        }`}
                       onClick={(e) => {
                         e.preventDefault()
                         setLeagueDropdownOpen(false)
-                        window.location.href = '/create_league'
+                        if (!createLeagueDisabled) {
+                          window.location.href = '/create_league'
+                        }
                       }}
+                      title={createLeagueDisabled ? 'Create league is currently disabled by admin' : ''}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -541,7 +564,7 @@ export default function Navbar() {
                       </svg>
                       <span className="text-sm font-bold">JOIN PUBLIC LEAGUE</span>
                     </Link>
-                    <Link href="/create_league" className="flex items-center gap-2 px-3 py-2.5 mb-1 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 font-medium text-sm" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/create_league'; }}>
+                    <Link href={createLeagueDisabled ? '#' : '/create_league'} className={`flex items-center gap-2 px-3 py-2.5 mb-1 rounded-lg transition-all duration-200 font-medium text-sm ${createLeagueDisabled ? 'bg-gray-600/40 opacity-70 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500'}`} onClick={(e) => { e.preventDefault(); setMenuOpen(false); if (!createLeagueDisabled) window.location.href = '/create_league'; }} title={createLeagueDisabled ? 'Create league is currently disabled by admin' : ''}>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>

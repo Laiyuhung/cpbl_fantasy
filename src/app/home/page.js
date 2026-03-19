@@ -9,6 +9,7 @@ export default function HomePage() {
   const [leagues, setLeagues] = useState([])
   const [loading, setLoading] = useState(true)
   const [showWeekRule, setShowWeekRule] = useState(false)
+  const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
 
   useEffect(() => {
     const fetchLeagues = async () => {
@@ -45,6 +46,22 @@ export default function HomePage() {
     fetchLeagues();
   }, []);
 
+  useEffect(() => {
+    const fetchCreateLeagueLock = async () => {
+      try {
+        const res = await fetch('/api/system-settings/create-league');
+        const data = await res.json();
+        if (data?.success) {
+          setCreateLeagueDisabled(Boolean(data.disabled));
+        }
+      } catch (error) {
+        console.error('Failed to fetch create league lock:', error);
+      }
+    };
+
+    fetchCreateLeagueLock();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
       <div className="max-w-[1600px] mx-auto">
@@ -71,8 +88,17 @@ export default function HomePage() {
                       <span className="sm:hidden">Join</span>
                     </Link>
                     <Link
-                      href="/create_league"
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 flex items-center gap-2 text-xs sm:text-sm"
+                      href={createLeagueDisabled ? '#' : '/create_league'}
+                      onClick={(e) => {
+                        if (createLeagueDisabled) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className={`text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg flex items-center gap-2 text-xs sm:text-sm ${createLeagueDisabled
+                        ? 'bg-gray-500 cursor-not-allowed opacity-70'
+                        : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-green-500/50'
+                        }`}
+                      title={createLeagueDisabled ? 'Create league is currently disabled by admin' : ''}
                     >
                       <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                       <span className="hidden sm:inline">Create New League</span>

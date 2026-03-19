@@ -27,5 +27,8 @@ EXECUTE FUNCTION set_updated_at();
 INSERT INTO system_settings (key, value_bool) VALUES ('under_maintenance', false)
 ON CONFLICT (key) DO NOTHING;
 
+INSERT INTO system_settings (key, value_bool) VALUES ('disable_create_league', false)
+ON CONFLICT (key) DO NOTHING;
+
 -- Create index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(key);

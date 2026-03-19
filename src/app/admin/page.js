@@ -9,6 +9,8 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [forceDefaultPlayerPhoto, setForceDefaultPlayerPhoto] = useState(false)
   const [privacyLoading, setPrivacyLoading] = useState(false)
+  const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
+  const [createLeagueLoading, setCreateLeagueLoading] = useState(false)
 
   useEffect(() => {
     checkAdminStatus()
@@ -31,6 +33,12 @@ export default function AdminPage() {
       const privacyData = await privacyRes.json()
       if (privacyData?.success) {
         setForceDefaultPlayerPhoto(Boolean(privacyData.forceDefaultPlayerPhoto))
+      }
+
+      const createLeagueRes = await fetch('/api/system-settings/create-league')
+      const createLeagueData = await createLeagueRes.json()
+      if (createLeagueData?.success) {
+        setCreateLeagueDisabled(Boolean(createLeagueData.disabled))
       }
     } catch (err) {
       console.error('Failed to check admin status:', err)
@@ -75,6 +83,28 @@ export default function AdminPage() {
     }
   }
 
+  const handleToggleCreateLeague = async () => {
+    const nextValue = !createLeagueDisabled
+    setCreateLeagueLoading(true)
+    try {
+      const res = await fetch('/api/system-settings/create-league', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ disabled: nextValue }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'Failed to update setting')
+      }
+      setCreateLeagueDisabled(Boolean(data.disabled))
+    } catch (err) {
+      console.error('Failed to update create league lock:', err)
+      alert('Failed to update create league lock')
+    } finally {
+      setCreateLeagueLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -100,6 +130,27 @@ export default function AdminPage() {
                 }`}
             >
               {privacyLoading ? 'Updating...' : forceDefaultPlayerPhoto ? 'Enabled (Click to Disable)' : 'Disabled (Click to Enable)'}
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-6 bg-white rounded-lg shadow-md p-5 border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Create League Lock</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                When enabled, users cannot enter the create league page and all create league buttons are disabled.
+              </p>
+            </div>
+            <button
+              onClick={handleToggleCreateLeague}
+              disabled={createLeagueLoading}
+              className={`px-4 py-2 rounded-lg font-bold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${createLeagueDisabled
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+            >
+              {createLeagueLoading ? 'Updating...' : createLeagueDisabled ? 'Disabled (Click to Enable)' : 'Enabled (Click to Disable)'}
             </button>
           </div>
         </div>

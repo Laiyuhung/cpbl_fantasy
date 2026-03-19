@@ -558,6 +558,23 @@ const CreateLeaguePage = () => {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [activeHelpKey, setActiveHelpKey] = useState(null); // State for help modal
   const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
+  const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false);
+
+  useEffect(() => {
+    const fetchCreateLeagueLock = async () => {
+      try {
+        const res = await fetch('/api/system-settings/create-league');
+        const data = await res.json();
+        if (data?.success) {
+          setCreateLeagueDisabled(Boolean(data.disabled));
+        }
+      } catch (error) {
+        console.error('Failed to fetch create league lock:', error);
+      }
+    };
+
+    fetchCreateLeagueLock();
+  }, []);
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
@@ -904,6 +921,11 @@ const CreateLeaguePage = () => {
   };
 
   const handleSave = async () => {
+    if (createLeagueDisabled) {
+      setSaveMessage('❌ Create League is currently disabled by admin');
+      return;
+    }
+
     const validationErrors = validateSettings();
     if (validationErrors.length > 0) {
       setSaveMessage(validationErrors.join('\n'));
@@ -968,6 +990,30 @@ const CreateLeaguePage = () => {
           <h2 className="text-2xl font-bold text-white mb-2">League Creation Period Ended</h2>
           <p className="text-slate-400 mb-6">
             The deadline for creating new leagues was April 15, 2026. New leagues can no longer be created for this season.
+          </p>
+          <button
+            onClick={() => router.push('/home')}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all"
+          >
+            Return to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (createLeagueDisabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-8">
+        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-12 shadow-2xl max-w-md text-center">
+          <div className="w-20 h-20 mx-auto mb-6 bg-red-900/40 rounded-full flex items-center justify-center">
+            <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Create League Disabled</h2>
+          <p className="text-slate-400 mb-6">
+            League creation is temporarily disabled by admin. Please try again later.
           </p>
           <button
             onClick={() => router.push('/home')}

@@ -79,6 +79,7 @@ export default function PublicLeaguePage() {
 
             if (filterDraftTime === '3days' && daysDiff > 3) return false;
             if (filterDraftTime === '1week' && daysDiff > 7) return false;
+    const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false);
             if (filterDraftTime === '2weeks' && daysDiff > 14) return false;
         }
 
@@ -101,6 +102,22 @@ export default function PublicLeaguePage() {
                     </p>
                     <button
                         onClick={() => router.push('/home')}
+
+    useEffect(() => {
+        const fetchCreateLeagueLock = async () => {
+            try {
+                const res = await fetch('/api/system-settings/create-league');
+                const data = await res.json();
+                if (data?.success) {
+                    setCreateLeagueDisabled(Boolean(data.disabled));
+                }
+            } catch (error) {
+                console.error('Failed to fetch create league lock:', error);
+            }
+        };
+
+        fetchCreateLeagueLock();
+    }, []);
                         className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all"
                     >
                         Return to Home
@@ -147,9 +164,16 @@ export default function PublicLeaguePage() {
                 </p>
 
                 {/* Filters */}
-                <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
-                    <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Scoring:</label>
+                        href={createLeagueDisabled ? '#' : '/create_league'}
+                        onClick={(e) => {
+                            if (createLeagueDisabled) e.preventDefault();
+                        }}
+                        className={`text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0 ${createLeagueDisabled
+                            ? 'bg-gray-500 cursor-not-allowed opacity-70'
+                            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-green-500/50'
+                            }`}
+                        title={createLeagueDisabled ? 'Create league is currently disabled by admin' : ''}
+                    >
                         <select
                             value={filterScoring}
                             onChange={(e) => setFilterScoring(e.target.value)}
