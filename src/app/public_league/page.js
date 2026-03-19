@@ -11,6 +11,7 @@ export default function PublicLeaguePage() {
     const [error, setError] = useState('');
     const [filterScoring, setFilterScoring] = useState('all');
     const [filterDraftTime, setFilterDraftTime] = useState('all');
+    const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false);
 
     useEffect(() => {
         const fetchPublicLeagues = async () => {
@@ -34,6 +35,22 @@ export default function PublicLeaguePage() {
         fetchPublicLeagues();
     }, []);
 
+    useEffect(() => {
+        const fetchCreateLeagueLock = async () => {
+            try {
+                const res = await fetch('/api/system-settings/create-league');
+                const data = await res.json();
+                if (data?.success) {
+                    setCreateLeagueDisabled(Boolean(data.disabled));
+                }
+            } catch (err) {
+                console.error('Failed to fetch create league lock:', err);
+            }
+        };
+
+        fetchCreateLeagueLock();
+    }, []);
+
     const getScoringTypeLabel = (type) => {
         switch (type) {
             case 'Head-to-Head':
@@ -47,23 +64,7 @@ export default function PublicLeaguePage() {
         }
     };
 
-    const getDraftTypeLabel = (type) => {
-        switch (type) {
-            case 'live':
-            case 'Live':
-                return 'Live Draft';
-            case 'autopick':
-            case 'auto':
-            case 'Auto':
-                return 'Auto Draft';
-            default:
-                return type || 'TBD';
-        }
-    };
-
-    // Filter leagues based on selected filters
-    const filteredLeagues = leagues.filter(league => {
-        // Scoring type filter
+    const filteredLeagues = leagues.filter((league) => {
         if (filterScoring !== 'all') {
             const scoringLabel = getScoringTypeLabel(league.scoring_type);
             if (filterScoring === 'h2h' && scoringLabel !== 'H2H') return false;
@@ -71,7 +72,6 @@ export default function PublicLeaguePage() {
             if (filterScoring === 'h2h-pts' && scoringLabel !== 'H2H PTS') return false;
         }
 
-        // Draft time filter
         if (filterDraftTime !== 'all' && league.live_draft_time) {
             const draftDate = new Date(league.live_draft_time);
             const now = new Date();
@@ -79,14 +79,12 @@ export default function PublicLeaguePage() {
 
             if (filterDraftTime === '3days' && daysDiff > 3) return false;
             if (filterDraftTime === '1week' && daysDiff > 7) return false;
-    const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false);
             if (filterDraftTime === '2weeks' && daysDiff > 14) return false;
         }
 
         return true;
     });
 
-    // Check deadline - disable page after 2026-04-16
     if (new Date() >= new Date('2026-04-16')) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 sm:p-8">
@@ -102,22 +100,6 @@ export default function PublicLeaguePage() {
                     </p>
                     <button
                         onClick={() => router.push('/home')}
-
-    useEffect(() => {
-        const fetchCreateLeagueLock = async () => {
-            try {
-                const res = await fetch('/api/system-settings/create-league');
-                const data = await res.json();
-                if (data?.success) {
-                    setCreateLeagueDisabled(Boolean(data.disabled));
-                }
-            } catch (error) {
-                console.error('Failed to fetch create league lock:', error);
-            }
-        };
-
-        fetchCreateLeagueLock();
-    }, []);
                         className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all"
                     >
                         Return to Home
@@ -130,7 +112,6 @@ export default function PublicLeaguePage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
             <div className="max-w-4xl mx-auto">
-                {/* Header */}
                 <div className="flex items-center justify-between mb-6 sm:mb-8">
                     <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                         <button
@@ -146,24 +127,8 @@ export default function PublicLeaguePage() {
                             Public Leagues
                         </h1>
                     </div>
+
                     <Link
-                        href="/create_league"
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg hover:shadow-green-500/50 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0"
-                    >
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span className="hidden sm:inline">Create League</span>
-                        <span className="sm:hidden">Create</span>
-                    </Link>
-                </div>
-
-                {/* Description */}
-                <p className="text-slate-400 mb-4 text-sm">
-                    Browse and join public leagues that are looking for members. These leagues are in pre-draft status and have open spots available.
-                </p>
-
-                {/* Filters */}
                         href={createLeagueDisabled ? '#' : '/create_league'}
                         onClick={(e) => {
                             if (createLeagueDisabled) e.preventDefault();
@@ -174,6 +139,21 @@ export default function PublicLeaguePage() {
                             }`}
                         title={createLeagueDisabled ? 'Create league is currently disabled by admin' : ''}
                     >
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span className="hidden sm:inline">Create League</span>
+                        <span className="sm:hidden">Create</span>
+                    </Link>
+                </div>
+
+                <p className="text-slate-400 mb-4 text-sm">
+                    Browse and join public leagues that are looking for members. These leagues are in pre-draft status and have open spots available.
+                </p>
+
+                <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase">Scoring:</label>
                         <select
                             value={filterScoring}
                             onChange={(e) => setFilterScoring(e.target.value)}
@@ -185,6 +165,7 @@ export default function PublicLeaguePage() {
                             <option value="h2h-pts">H2H Fantasy Points</option>
                         </select>
                     </div>
+
                     <div className="flex items-center gap-2">
                         <label className="text-xs font-bold text-slate-400 uppercase">Draft Within:</label>
                         <select
@@ -198,9 +179,13 @@ export default function PublicLeaguePage() {
                             <option value="2weeks">2 Weeks</option>
                         </select>
                     </div>
+
                     {(filterScoring !== 'all' || filterDraftTime !== 'all') && (
                         <button
-                            onClick={() => { setFilterScoring('all'); setFilterDraftTime('all'); }}
+                            onClick={() => {
+                                setFilterScoring('all');
+                                setFilterDraftTime('all');
+                            }}
                             className="text-xs text-purple-400 hover:text-purple-300 underline"
                         >
                             Clear Filters
@@ -208,7 +193,6 @@ export default function PublicLeaguePage() {
                     )}
                 </div>
 
-                {/* Content */}
                 {loading ? (
                     <div className="text-center py-16">
                         <div className="w-12 h-12 mx-auto mb-4 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
@@ -249,7 +233,6 @@ export default function PublicLeaguePage() {
                                 className="block group relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-white/10 hover:border-green-500/40 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(34,197,94,0.15)]"
                             >
                                 <div className="p-4 sm:p-5">
-                                    {/* Header */}
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-base sm:text-xl font-black text-white group-hover:text-green-300 transition-colors truncate pr-4">
                                             {league.league_name}
@@ -259,9 +242,7 @@ export default function PublicLeaguePage() {
                                         </span>
                                     </div>
 
-                                    {/* Stats Grid */}
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-                                        {/* Teams */}
                                         <div className="bg-slate-800/50 rounded-xl p-2.5 sm:p-3 border border-white/5">
                                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Teams</div>
                                             <div className="text-base sm:text-lg font-black text-white">
@@ -275,7 +256,6 @@ export default function PublicLeaguePage() {
                                             </div>
                                         </div>
 
-                                        {/* Scoring */}
                                         <div className="bg-slate-800/50 rounded-xl p-2.5 sm:p-3 border border-white/5">
                                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Scoring</div>
                                             <div className="text-sm font-bold text-purple-300">
@@ -283,15 +263,15 @@ export default function PublicLeaguePage() {
                                             </div>
                                         </div>
 
-                                        {/* Live Draft Time */}
                                         <div className="bg-slate-800/50 rounded-xl p-2.5 sm:p-3 border border-white/5">
                                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Live Draft Time</div>
                                             <div className="text-sm font-bold text-blue-300">
-                                                {league.live_draft_time ? new Date(league.live_draft_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'TBD'}
+                                                {league.live_draft_time
+                                                    ? new Date(league.live_draft_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+                                                    : 'TBD'}
                                             </div>
                                         </div>
 
-                                        {/* Playoffs */}
                                         <div className="bg-slate-800/50 rounded-xl p-2.5 sm:p-3 border border-white/5">
                                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Playoffs</div>
                                             <div className="text-sm font-bold text-amber-300">
@@ -300,7 +280,6 @@ export default function PublicLeaguePage() {
                                         </div>
                                     </div>
 
-                                    {/* Footer */}
                                     <div className="mt-4 flex items-center justify-end">
                                         <span className="text-xs font-bold text-green-400 group-hover:text-green-300 flex items-center gap-1 transition-colors">
                                             View & Join
