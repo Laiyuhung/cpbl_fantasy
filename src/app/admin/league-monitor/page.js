@@ -12,6 +12,16 @@ export default function LeagueMonitorPage() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
+    const [updatingStatusLeagueId, setUpdatingStatusLeagueId] = useState(null);
+
+    const statusOptions = [
+        'pre-draft',
+        'post-draft & pre-season',
+        'drafting now',
+        'in season',
+        'playoffs',
+        'finished',
+    ];
 
     const fetchData = useCallback(async (manual = false) => {
         if (manual) {
@@ -79,6 +89,42 @@ export default function LeagueMonitorPage() {
             case 'playoffs': return 'Playoffs';
             case 'finished': return 'Finished';
             default: return status || 'Unknown';
+        }
+    };
+
+    const handleStatusUpdate = async (leagueId, nextStatus) => {
+        if (!leagueId || !nextStatus) return;
+
+        setUpdatingStatusLeagueId(leagueId);
+        setError('');
+
+        try {
+            const res = await fetch('/api/admin/leagues', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leagueId, status: nextStatus }),
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                alert('You do not have admin privileges');
+                router.push('/home');
+                return;
+            }
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                setError(data.error || 'Failed to update status');
+                return;
+            }
+
+            setLeagues(prev => prev.map(l => (
+                l.league_id === leagueId ? { ...l, status: nextStatus } : l
+            )));
+        } catch (err) {
+            console.error('Status update error:', err);
+            setError('Failed to update league status');
+        } finally {
+            setUpdatingStatusLeagueId(null);
         }
     };
 
@@ -314,9 +360,23 @@ export default function LeagueMonitorPage() {
 
                                                 {/* Status */}
                                                 <td className="px-3 py-3 text-center">
-                                                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${getStatusColor(league.status)}`}>
-                                                        {getStatusLabel(league.status)}
-                                                    </span>
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <select
+                                                            value={league.status || 'pre-draft'}
+                                                            onChange={(e) => handleStatusUpdate(league.league_id, e.target.value)}
+                                                            disabled={updatingStatusLeagueId === league.league_id}
+                                                            className={`px-2 py-1 rounded-md text-[11px] font-semibold border bg-white ${getStatusColor(league.status)} disabled:opacity-60 disabled:cursor-not-allowed`}
+                                                        >
+                                                            {statusOptions.map(status => (
+                                                                <option key={status} value={status}>
+                                                                    {getStatusLabel(status)}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        {updatingStatusLeagueId === league.league_id && (
+                                                            <span className="text-[10px] text-gray-500">Updating...</span>
+                                                        )}
+                                                    </div>
                                                 </td>
 
                                                 {/* Members */}

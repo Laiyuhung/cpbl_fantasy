@@ -7,25 +7,41 @@ const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+const ALLOWED_STATUSES = [
+    'pre-draft',
+    'post-draft & pre-season',
+    'drafting now',
+    'in season',
+    'playoffs',
+    'finished',
+];
+
+async function requireAdmin() {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('user_id')?.value;
+
+    if (!userId) {
+        return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+    }
+
+    const { data: adminRecord, error: adminError } = await supabase
+        .from('admin')
+        .select('manager_id')
+        .eq('manager_id', userId)
+        .single();
+
+    if (adminError || !adminRecord) {
+        return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+    }
+
+    return { ok: true, userId };
+}
+
 export async function GET(request) {
     try {
         // 1. Admin check
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('user_id')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { data: adminRecord, error: adminError } = await supabase
-            .from('admin')
-            .select('manager_id')
-            .eq('manager_id', userId)
-            .single();
-
-        if (adminError || !adminRecord) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-        }
+        const auth = await requireAdmin();
+        if (!auth.ok) return auth.response;
 
         // 2. Fetch all league settings
         const { data: leagues, error: leaguesError } = await supabase
@@ -140,6 +156,48 @@ export async function GET(request) {
         return NextResponse.json({ success: true, leagues: enrichedLeagues });
     } catch (error) {
         console.error('Admin leagues error:', error);
+        return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
+    }
+}
+
+export async function PATCH(request) {
+    try {
+        const auth = await requireAdmin();
+        if (!auth.ok) return auth.response;
+
+        const body = await request.json();
+        const leagueId = String(body?.leagueId || '').trim();
+        const status = String(body?.status || '').trim();
+
+        if (!leagueId || !status) {
+            return NextResponse.json({ error: 'leagueId and status are required' }, { status: 400 });
+        }
+
+        if (!ALLOWED_STATUSES.includes(status)) {
+            return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
+        }
+
+        const { data: existingLeague, error: leagueErr } = await supabase
+            .from('league_settings')
+            .select('league_id')
+            .eq('league_id', leagueId)
+            .single();
+
+        if (leagueErr || !existingLeague) {
+            return NextResponse.json({ error: 'League not found' }, { status: 404 });
+        }
+
+        const { error: upsertErr } = await supabase
+            .from('league_statuses')
+            .upsert({ league_id: leagueId, status }, { onConflict: 'league_id' });
+
+        if (upsertErr) {
+            return NextResponse.json({ error: 'Failed to update status', details: upsertErr.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, league_id: leagueId, status });
+    } catch (error) {
+        console.error('Admin league status patch error:', error);
         return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
     }
 }
