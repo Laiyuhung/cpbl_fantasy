@@ -130,14 +130,9 @@ export default function DraftRescheduleAdminPage() {
       return;
     }
 
-    if (!edit.draftTime) {
-      setError(`聯盟 ${league.league_name} 的重排時間不能為空`);
-      setSuccess('');
-      return;
-    }
-
-    const draftDate = new Date(edit.draftTime);
-    if (Number.isNaN(draftDate.getTime())) {
+    const hasDraftTime = Boolean(edit.draftTime);
+    const draftDate = hasDraftTime ? new Date(edit.draftTime) : null;
+    if (hasDraftTime && (!draftDate || Number.isNaN(draftDate.getTime()))) {
       setError(`聯盟 ${league.league_name} 的重排時間格式不正確`);
       setSuccess('');
       return;
@@ -154,7 +149,7 @@ export default function DraftRescheduleAdminPage() {
         body: JSON.stringify({
           leagueId: league.league_id,
           queueNumber,
-          draftTime: draftDate.toISOString(),
+          draftTime: draftDate ? draftDate.toISOString() : null,
         }),
       });
 

@@ -169,17 +169,19 @@ export async function PATCH(request) {
     const body = await request.json();
     const leagueId = String(body?.leagueId || '').trim();
     const queueNumber = Number.parseInt(body?.queueNumber, 10);
-    const draftTimeInput = String(body?.draftTime || '').trim();
+    const rawDraftTime = body?.draftTime;
+    const draftTimeInput = rawDraftTime == null ? '' : String(rawDraftTime).trim();
 
-    if (!leagueId || Number.isNaN(queueNumber) || queueNumber <= 0 || !draftTimeInput) {
+    if (!leagueId || Number.isNaN(queueNumber) || queueNumber <= 0) {
       return NextResponse.json(
-        { error: 'leagueId, queueNumber (positive integer), and draftTime are required' },
+        { error: 'leagueId and queueNumber (positive integer) are required' },
         { status: 400 }
       );
     }
 
-    const draftTime = new Date(draftTimeInput);
-    if (Number.isNaN(draftTime.getTime())) {
+    const hasDraftTime = draftTimeInput.length > 0;
+    const draftTime = hasDraftTime ? new Date(draftTimeInput) : null;
+    if (hasDraftTime && (!draftTime || Number.isNaN(draftTime.getTime()))) {
       return NextResponse.json({ error: 'Invalid draftTime format' }, { status: 400 });
     }
 
@@ -218,32 +220,34 @@ export async function PATCH(request) {
       );
     }
 
-    const effectiveTimeMap = buildEffectiveTimeMap(leagues || [], slots || []);
-    const nextDraftMs = draftTime.getTime();
-    effectiveTimeMap.set(leagueId, draftTime.toISOString());
+    if (hasDraftTime) {
+      const effectiveTimeMap = buildEffectiveTimeMap(leagues || [], slots || []);
+      const nextDraftMs = draftTime.getTime();
+      effectiveTimeMap.set(leagueId, draftTime.toISOString());
 
-    const conflicts = getGapConflicts({
-      nextLeagueId: leagueId,
-      nextDraftMs,
-      leagues: leagues || [],
-      effectiveTimeMap,
-    });
+      const conflicts = getGapConflicts({
+        nextLeagueId: leagueId,
+        nextDraftMs,
+        leagues: leagues || [],
+        effectiveTimeMap,
+      });
 
-    if (conflicts.length > 0) {
-      return NextResponse.json(
-        {
-          error: `Draft time must be at least ${MIN_DRAFT_GAP_MINUTES} minutes apart from other leagues`,
-          conflicts,
-        },
-        { status: 400 }
-      );
+      if (conflicts.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Draft time must be at least ${MIN_DRAFT_GAP_MINUTES} minutes apart from other leagues`,
+            conflicts,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const { error: upsertError } = await supabase.from('draft_reschedule_slots').upsert(
       {
         league_id: leagueId,
         queue_number: queueNumber,
-        rescheduled_draft_time: draftTime.toISOString(),
+        rescheduled_draft_time: draftTime ? draftTime.toISOString() : null,
         created_by: auth.userId,
       },
       { onConflict: 'league_id' }
@@ -258,7 +262,7 @@ export async function PATCH(request) {
 
     const { error: updateLeagueError } = await supabase
       .from('league_settings')
-      .update({ live_draft_time: draftTime.toISOString() })
+      .update({ live_draft_time: draftTime ? draftTime.toISOString() : null })
       .eq('league_id', leagueId);
 
     if (updateLeagueError) {
@@ -273,7 +277,7 @@ export async function PATCH(request) {
       league_id: leagueId,
       league_name: targetLeague.league_name,
       queue_number: queueNumber,
-      draft_time: draftTime.toISOString(),
+      draft_time: draftTime ? draftTime.toISOString() : null,
       minGapMinutes: MIN_DRAFT_GAP_MINUTES,
     });
   } catch (error) {
