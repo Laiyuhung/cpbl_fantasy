@@ -181,6 +181,35 @@ export default function DraftRescheduleAdminPage() {
     }
   };
 
+  const handleClear = async (league) => {
+    const confirmed = window.confirm(`確定要清除 ${league.league_name} 的號碼牌與重新安排時間嗎？`);
+    if (!confirmed) return;
+
+    setSavingLeagueId(league.league_id);
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await fetch(`/api/admin/draft-reschedule?leagueId=${encodeURIComponent(league.league_id)}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Failed to clear reschedule data');
+        return;
+      }
+
+      setSuccess(`已清除 ${league.league_name} 的號碼牌與重排時間`);
+      await fetchData(true);
+    } catch (err) {
+      console.error(err);
+      setError('清除失敗，請稍後再試');
+    } finally {
+      setSavingLeagueId(null);
+    }
+  };
+
   const getStatusClassName = (status) => {
     switch (status) {
       case 'pre-draft':
@@ -277,7 +306,7 @@ export default function DraftRescheduleAdminPage() {
                   <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">Current Time</th>
                   <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">號碼牌</th>
                   <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">重新安排時間</th>
-                  <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">寫入</th>
+                  <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -336,13 +365,22 @@ export default function DraftRescheduleAdminPage() {
                           />
                         </td>
                         <td className="px-3 py-3 text-center">
-                          <button
-                            onClick={() => handleSave(league)}
-                            disabled={isSaving}
-                            className="px-3 py-1.5 rounded bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 disabled:opacity-60"
-                          >
-                            {isSaving ? 'Saving...' : 'Save'}
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleSave(league)}
+                              disabled={isSaving}
+                              className="px-3 py-1.5 rounded bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 disabled:opacity-60"
+                            >
+                              {isSaving ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => handleClear(league)}
+                              disabled={isSaving}
+                              className="px-3 py-1.5 rounded bg-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-300 disabled:opacity-60"
+                            >
+                              Clear
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

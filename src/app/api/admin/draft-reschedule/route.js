@@ -281,3 +281,56 @@ export async function PATCH(request) {
     return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
+    const url = new URL(request.url);
+    const leagueId = String(url.searchParams.get('leagueId') || '').trim();
+
+    if (!leagueId) {
+      return NextResponse.json({ error: 'leagueId is required' }, { status: 400 });
+    }
+
+    const { data: existingLeague, error: leagueErr } = await supabase
+      .from('league_settings')
+      .select('league_id')
+      .eq('league_id', leagueId)
+      .single();
+
+    if (leagueErr || !existingLeague) {
+      return NextResponse.json({ error: 'League not found' }, { status: 404 });
+    }
+
+    const { error: deleteErr } = await supabase
+      .from('draft_reschedule_slots')
+      .delete()
+      .eq('league_id', leagueId);
+
+    if (deleteErr) {
+      return NextResponse.json(
+        { error: 'Failed to clear reschedule slot', details: deleteErr.message },
+        { status: 500 }
+      );
+    }
+
+    const { error: clearDraftTimeErr } = await supabase
+      .from('league_settings')
+      .update({ live_draft_time: null })
+      .eq('league_id', leagueId);
+
+    if (clearDraftTimeErr) {
+      return NextResponse.json(
+        { error: 'Failed to clear league draft time', details: clearDraftTimeErr.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, league_id: leagueId });
+  } catch (error) {
+    console.error('Admin draft reschedule DELETE error:', error);
+    return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
+  }
+}
