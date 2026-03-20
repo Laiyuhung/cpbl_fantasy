@@ -19,6 +19,13 @@ export default function DraftTimeline({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const toApiDateTime = (timeValue) => {
+    if (!timeValue) return null;
+    const parsed = new Date(timeValue);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed.toISOString();
+  };
+
   // 獲取時間線資料
   const fetchTimeline = async () => {
     setLoading(true);
@@ -26,7 +33,8 @@ export default function DraftTimeline({
 
     try {
       const params = new URLSearchParams();
-      if (proposedTime) params.append('proposedTime', proposedTime);
+      const normalizedProposedTime = toApiDateTime(proposedTime);
+      if (normalizedProposedTime) params.append('proposedTime', normalizedProposedTime);
       if (excludeLeagueId) params.append('excludeLeagueId', excludeLeagueId);
 
       const res = await fetch(`/api/draft-timeline?${params}`, {
