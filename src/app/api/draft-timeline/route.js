@@ -78,14 +78,13 @@ export async function GET(request) {
       })
       .sort((a, b) => a.draft_start_ms - b.draft_start_ms);
 
-    // --- 修改點 1：檢查衝突 (改為 2 個以上才算衝突) ---
+    // 檢查衝突 (改為 2 個以上才算衝突)
     let conflicts = [];
     if (proposedDraftTime) {
       const proposedMs = toMillis(proposedDraftTime);
       if (proposedMs) {
         const foundConflicts = [];
         for (const league of fixedLeaguesWithTime) {
-          // 排除自己，避免「自己撞自己」
           if (excludeLeagueId && league.league_id === excludeLeagueId) continue;
           
           const gapMs = Math.abs(proposedMs - league.draft_start_ms);
@@ -98,17 +97,17 @@ export async function GET(request) {
           }
         }
         
-        // 規則核心：如果重疊的盟數 >= 2，才視為真正衝突 (即加上你自己會變第 3 盟)
+        // 只有當重疊數 >= 2 才回傳衝突，讓前端顯示紅叉
         if (foundConflicts.length >= 2) {
           conflicts = foundConflicts;
         }
       }
     }
 
-    // --- 修改點 2：計算可用槽位 (同步 2 盟規則) ---
+    // 計算可用槽位 (同步 2 盟規則)
     const now = Date.now();
     const availableSlots = [];
-    const timelineHours = 48; // 增加範圍至 48 小時方便測試
+    const timelineHours = 48;
 
     for (let hourOffset = 0; hourOffset <= timelineHours; hourOffset++) {
       const slotTime = new Date(now);
@@ -117,13 +116,11 @@ export async function GET(request) {
 
       if (slotMs < now) continue;
 
-      // 計算該時間點有多少盟在 90 分鐘內
       const overlappingCount = fixedLeaguesWithTime.filter(league => {
         const gapMs = Math.abs(slotMs - league.draft_start_ms);
         return gapMs < MIN_DRAFT_GAP_MINUTES * 60 * 1000;
       }).length;
 
-      // 只有當重疊數 < 2 時，才把這個槽位推薦給使用者
       if (overlappingCount < 2) {
         availableSlots.push({
           time: slotTime.toISOString(),
@@ -133,7 +130,7 @@ export async function GET(request) {
       }
     }
 
-    // 計算 Line A / Line B (純 UI 顯示用)
+    // 計算 Line A / Line B (UI 顯示用)
     const timelineA = [];
     const timelineB = [];
     for (const league of fixedLeaguesWithTime) {
@@ -156,13 +153,16 @@ export async function GET(request) {
         lineA: timelineA,
         lineB: timelineB,
       },
-      conflicts, // 當此陣列長度為 0 時，前端會自動打勾
+      conflicts,
       availableSlots: availableSlots.slice(0, 15),
       allLeaguesCount: leagues.length,
       scheduledLeaguesCount: fixedLeaguesWithTime.length,
     });
   } catch (error) {
     console.error('Draft timeline GET error:', error);
+    return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
+  }
+}
     return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
   }
 }
