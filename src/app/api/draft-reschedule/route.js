@@ -69,22 +69,8 @@ async function getQueueWindowsForDisplay() {
   }
 
   const rows = data || [];
-  if (rows.length === 0) {
-    return { windows: [], error: null };
-  }
-
-  const currentIndex = Math.max(
-    rows.findIndex((row) => row.open_at > nowIso) - 1,
-    rows.findIndex((row) => row.open_at <= nowIso)
-  );
-
-  const safeIndex = currentIndex >= 0 ? currentIndex : 0;
-  const from = Math.max(0, safeIndex - 2);
-  const to = Math.min(rows.length, from + 8);
-  const picked = rows.slice(from, to);
-
   return {
-    windows: picked.map((row) => ({
+    windows: rows.map((row) => ({
       ...row,
       is_open: row.open_at <= nowIso,
     })),
