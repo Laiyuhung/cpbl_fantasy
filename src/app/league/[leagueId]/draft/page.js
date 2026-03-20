@@ -469,7 +469,7 @@ export default function DraftPage() {
                 console.error(e);
             } finally {
                 if (active && shouldContinue) {
-                    timeoutId = setTimeout(fetchState, 2000);
+                    timeoutId = setTimeout(fetchState, 5000);
                 }
             }
         };
