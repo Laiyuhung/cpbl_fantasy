@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+    const registrationDisabled = true
   const router = useRouter()
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [showToast, setShowToast] = useState(false)
@@ -153,10 +154,19 @@ export default function LoginPage() {
         </button>
 
         <button
-          onClick={() => router.push('/register')}
-          className="w-full mt-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-green-500/50"
+          disabled={registrationDisabled}
+          onClick={() => {
+            if (!registrationDisabled) {
+              router.push('/register')
+            }
+          }}
+          className={`w-full mt-3 text-white font-bold py-3 rounded-lg transition-all shadow-lg ${registrationDisabled
+            ? 'bg-gray-600 cursor-not-allowed opacity-70'
+            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-green-500/50'
+            }`}
+          title={registrationDisabled ? 'Registration is temporarily disabled' : ''}
         >
-          Create New Account
+          {registrationDisabled ? 'Registration Temporarily Closed' : 'Create New Account'}
         </button>
 
         {error && (

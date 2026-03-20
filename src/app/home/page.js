@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 import CpblScheduleWidget from '@/components/CpblScheduleWidget';
+import { AnnouncementBanner } from '@/components/AnnouncementBanner';
 
 export default function HomePage() {
   const [leagues, setLeagues] = useState([])
@@ -65,6 +66,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
       <div className="max-w-[1600px] mx-auto">
+        <AnnouncementBanner />
 
 
         <div className="flex flex-col lg:flex-row lg:items-start gap-8">

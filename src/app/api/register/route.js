@@ -4,8 +4,17 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { sendVerificationEmail } from '@/lib/email';
 
+const REGISTRATION_DISABLED = true;
+
 export async function POST(request) {
   try {
+    if (REGISTRATION_DISABLED) {
+      return NextResponse.json(
+        { error: 'Registration is temporarily disabled' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     console.log('📥 Received registration data:', body);
     const { name, email, password } = body;
