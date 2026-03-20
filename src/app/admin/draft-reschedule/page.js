@@ -182,7 +182,7 @@ export default function DraftRescheduleAdminPage() {
   };
 
   const handleClear = async (league) => {
-    const confirmed = window.confirm(`確定要清除 ${league.league_name} 的號碼牌與重新安排時間嗎？`);
+    const confirmed = window.confirm(`確定要清除 ${league.league_name} 的 draft time 嗎？號碼牌會保留。`);
     if (!confirmed) return;
 
     setSavingLeagueId(league.league_id);
@@ -200,7 +200,7 @@ export default function DraftRescheduleAdminPage() {
         return;
       }
 
-      setSuccess(`已清除 ${league.league_name} 的號碼牌與重排時間`);
+      setSuccess(`已清除 ${league.league_name} 的 draft time（號碼牌已保留）`);
       await fetchData(true);
     } catch (err) {
       console.error(err);

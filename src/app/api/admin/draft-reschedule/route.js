@@ -304,14 +304,14 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'League not found' }, { status: 404 });
     }
 
-    const { error: deleteErr } = await supabase
+    const { error: clearSlotTimeErr } = await supabase
       .from('draft_reschedule_slots')
-      .delete()
+      .update({ rescheduled_draft_time: null })
       .eq('league_id', leagueId);
 
-    if (deleteErr) {
+    if (clearSlotTimeErr) {
       return NextResponse.json(
-        { error: 'Failed to clear reschedule slot', details: deleteErr.message },
+        { error: 'Failed to clear reschedule draft time', details: clearSlotTimeErr.message },
         { status: 500 }
       );
     }
