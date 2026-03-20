@@ -280,6 +280,19 @@ export default function AdminPage() {
           </div>
 
           <div
+            onClick={() => router.push('/admin/draft-reschedule')}
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
+          >
+            <div className="flex items-center justify-center w-12 h-12 bg-sky-100 rounded-lg mb-4">
+              <svg className="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zm5-5h4" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Draft Reschedule</h2>
+            <p className="text-gray-600">Assign queue numbers and reset draft times with a minimum 90-minute gap</p>
+          </div>
+
+          <div
             onClick={() => router.push('/admin/announcements')}
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
           >
