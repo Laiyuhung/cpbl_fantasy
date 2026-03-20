@@ -8,6 +8,7 @@ import CpblScheduleWidget from '@/components/CpblScheduleWidget';
 import LeagueDailyRoster from './LeagueDailyRoster';
 import PlayerDetailModal from '@/components/PlayerDetailModal';
 import AmericanDatePicker from '@/components/AmericanDatePicker';
+import DraftTimeline from '@/components/DraftTimeline';
 
 // Playoff Tree Diagram Component
 const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members }) => {
@@ -1810,6 +1811,24 @@ export default function LeaguePage() {
                   {draftResetError && (
                     <div className="px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-xl">
                       <span className="text-sm text-red-300 font-bold">{draftResetError}</span>
+                    </div>
+                  )}
+
+                  {/* Draft Timeline Preview for Reset */}
+                  {newDraftTime && (
+                    <div className="mt-4">
+                      <DraftTimeline
+                        proposedTime={newDraftTime}
+                        excludeLeagueId={leagueId}
+                        showAvailableSlots={true}
+                        onConflictDetected={(conflicts) => {
+                          if (conflicts.length > 0) {
+                            setDraftResetError(
+                              `⚠️ Time conflict: ${conflicts.map(c => `${c.league_name} (${c.minutes_apart} min apart)`).join(', ')}. Need at least 1.5 hours gap.`
+                            );
+                          }
+                        }}
+                      />
                     </div>
                   )}
 

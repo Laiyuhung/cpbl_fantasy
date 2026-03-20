@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import AmericanDatePicker from '@/components/AmericanDatePicker';
+import DraftTimeline from '@/components/DraftTimeline';
 
 const cloneSettings = (settings) => JSON.parse(JSON.stringify(settings));
 
@@ -559,6 +560,7 @@ const CreateLeaguePage = () => {
   const [activeHelpKey, setActiveHelpKey] = useState(null); // State for help modal
   const [categoryWeights, setCategoryWeights] = useState({ batter: {}, pitcher: {} });
   const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false);
+  const [draftTimeConflicts, setDraftTimeConflicts] = useState([]); // Track draft time conflicts
 
   useEffect(() => {
     const fetchCreateLeagueLock = async () => {
@@ -1271,6 +1273,27 @@ const CreateLeaguePage = () => {
               </div>
             </div>
           ))}
+
+          {/* Draft Timeline Preview */}
+          {settings.general['Draft Type'] === 'Live Draft' && settings.general['Live Draft Time'] && (
+            <div className="bg-gradient-to-br from-cyan-600/20 to-blue-600/20 backdrop-blur-lg border border-cyan-500/30 rounded-2xl shadow-2xl p-6">
+              <h2 className="flex items-center gap-3 text-xl sm:text-2xl font-black text-cyan-300 mb-4">
+                <span className="text-2xl">⏲️</span>
+                Draft Timeline Preview
+              </h2>
+              <DraftTimeline
+                proposedTime={settings.general['Live Draft Time']}
+                excludeLeagueId={null}
+                showAvailableSlots={true}
+                onConflictDetected={(conflicts) => {
+                  setDraftTimeConflicts(conflicts);
+                  if (conflicts.length > 0) {
+                    setSaveMessage(`⚠️ 時間衝突：需要調整選秀時間以符合 1.5 小時間隔規則`);
+                  }
+                }}
+              />
+            </div>
+          )}
 
           <div>
             <SchedulePreview settings={settings} onValidationChange={handleScheduleValidation} onScheduleChange={handleScheduleChange} />
