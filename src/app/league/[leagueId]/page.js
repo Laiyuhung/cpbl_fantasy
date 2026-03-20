@@ -257,6 +257,7 @@ export default function LeaguePage() {
   const [draftResetReason, setDraftResetReason] = useState('');
   const [newDraftTime, setNewDraftTime] = useState('');
   const [draftResetError, setDraftResetError] = useState('');
+  const [draftResetConflicts, setDraftResetConflicts] = useState([]);
   const [draftResetSaving, setDraftResetSaving] = useState(false);
   const [draftResetSuccess, setDraftResetSuccess] = useState(false);
   const [showFinalizeReminder, setShowFinalizeReminder] = useState(false);
@@ -1783,6 +1784,7 @@ export default function LeaguePage() {
                       onChange={(val) => {
                         setNewDraftTime(val);
                         setDraftResetError('');
+                        setDraftResetConflicts([]);
                       }}
                       minDate={(() => {
                         const tomorrow = new Date();
@@ -1815,26 +1817,37 @@ export default function LeaguePage() {
                   )}
 
                   {/* Draft Timeline Preview for Reset */}
+                  <div className="mt-4">
+                    <DraftTimeline
+                      proposedTime={newDraftTime || null}
+                      excludeLeagueId={leagueId}
+                      showAvailableSlots={true}
+                      onConflictDetected={(conflicts) => {
+                        setDraftResetConflicts(conflicts || []);
+                        if (conflicts.length > 0) {
+                          setDraftResetError(
+                            `⚠️ Time conflict: ${conflicts.map(c => `${c.league_name} (${c.minutes_apart} min apart)`).join(', ')}. Need at least 1.5 hours gap.`
+                          );
+                        } else {
+                          setDraftResetError('');
+                        }
+                      }}
+                    />
+                  </div>
+
                   {newDraftTime && (
-                    <div className="mt-4">
-                      <DraftTimeline
-                        proposedTime={newDraftTime}
-                        excludeLeagueId={leagueId}
-                        showAvailableSlots={true}
-                        onConflictDetected={(conflicts) => {
-                          if (conflicts.length > 0) {
-                            setDraftResetError(
-                              `⚠️ Time conflict: ${conflicts.map(c => `${c.league_name} (${c.minutes_apart} min apart)`).join(', ')}. Need at least 1.5 hours gap.`
-                            );
-                          }
-                        }}
-                      />
+                    <div className={`px-4 py-2 rounded-xl border ${draftResetConflicts.length > 0 ? 'bg-red-500/20 border-red-500/30' : 'bg-emerald-500/20 border-emerald-500/30'}`}>
+                      {draftResetConflicts.length > 0 ? (
+                        <span className="text-sm text-red-200 font-bold">目前狀況：有衝突，無法重排（第三盟或 90 分鐘內會被阻擋）</span>
+                      ) : (
+                        <span className="text-sm text-emerald-200 font-bold">目前狀況：可重排（符合同時最多 2 盟與 90 分鐘間隔規則）</span>
+                      )}
                     </div>
                   )}
 
                   <button
                     onClick={handleDraftResetSubmit}
-                    disabled={draftResetSaving || !newDraftTime}
+                    disabled={draftResetSaving || !newDraftTime || draftResetConflicts.length > 0}
                     className="w-full py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-base sm:text-lg rounded-xl border border-purple-400/30 shadow-lg shadow-purple-500/30 transition-all duration-300"
                   >
                     {draftResetSaving ? (

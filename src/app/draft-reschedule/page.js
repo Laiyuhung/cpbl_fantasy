@@ -51,7 +51,14 @@ export default function DraftReschedulePage() {
 
   const [rows, setRows] = useState([]);
   const [editMap, setEditMap] = useState({});
+  const [validationMap, setValidationMap] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [conflictModal, setConflictModal] = useState({
+    open: false,
+    title: '',
+    message: '',
+    conflicts: [],
+  });
 
   const [openWindow, setOpenWindow] = useState(null);
   const [openWindowAt, setOpenWindowAt] = useState(null);
@@ -91,12 +98,19 @@ export default function DraftReschedulePage() {
       setMinGapMinutes(data.minGapMinutes || 90);
 
       const nextEditMap = {};
+      const nextValidationMap = {};
       (data.leagues || []).forEach((league) => {
         nextEditMap[league.league_id] = {
           draftTime: toLocalInputValue(league.rescheduled_draft_time || league.live_draft_time),
         };
+        nextValidationMap[league.league_id] = {
+          checking: false,
+          isValid: null,
+          conflicts: [],
+        };
       });
       setEditMap(nextEditMap);
+      setValidationMap(nextValidationMap);
     } catch (err) {
       console.error(err);
       setError('Unexpected error while loading draft reschedule data');
@@ -125,6 +139,62 @@ export default function DraftReschedulePage() {
     });
   }, [rows, searchTerm]);
 
+  const validateDraftTime = async (leagueId, value) => {
+    if (!value) {
+      setValidationMap((prev) => ({
+        ...prev,
+        [leagueId]: { checking: false, isValid: null, conflicts: [] },
+      }));
+      return;
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      setValidationMap((prev) => ({
+        ...prev,
+        [leagueId]: { checking: false, isValid: false, conflicts: [] },
+      }));
+      return;
+    }
+
+    setValidationMap((prev) => ({
+      ...prev,
+      [leagueId]: { ...(prev[leagueId] || {}), checking: true },
+    }));
+
+    try {
+      const params = new URLSearchParams();
+      params.append('proposedTime', parsed.toISOString());
+      params.append('excludeLeagueId', leagueId);
+
+      const res = await fetch(`/api/draft-timeline?${params.toString()}`);
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setValidationMap((prev) => ({
+          ...prev,
+          [leagueId]: { checking: false, isValid: false, conflicts: [] },
+        }));
+        return;
+      }
+
+      const conflicts = Array.isArray(data.conflicts) ? data.conflicts : [];
+      setValidationMap((prev) => ({
+        ...prev,
+        [leagueId]: {
+          checking: false,
+          isValid: conflicts.length === 0,
+          conflicts,
+        },
+      }));
+    } catch {
+      setValidationMap((prev) => ({
+        ...prev,
+        [leagueId]: { checking: false, isValid: false, conflicts: [] },
+      }));
+    }
+  };
+
   const updateDraftTime = (leagueId, value) => {
     setEditMap((prev) => ({
       ...prev,
@@ -133,6 +203,8 @@ export default function DraftReschedulePage() {
         draftTime: value,
       },
     }));
+
+    validateDraftTime(leagueId, value);
   };
 
   const handleSave = async (league) => {
@@ -147,6 +219,22 @@ export default function DraftReschedulePage() {
     if (Number.isNaN(d.getTime())) {
       setError('重排時間格式不正確');
       setSuccess('');
+      return;
+    }
+
+    const validation = validationMap[league.league_id];
+    if (validation?.checking) {
+      setError('正在檢查時間衝突，請稍候...');
+      setSuccess('');
+      return;
+    }
+    if (validation?.isValid === false) {
+      setConflictModal({
+        open: true,
+        title: '時間衝突',
+        message: '此時間不符合規則，請改選其他時段。',
+        conflicts: validation.conflicts || [],
+      });
       return;
     }
 
@@ -167,8 +255,12 @@ export default function DraftReschedulePage() {
       const data = await res.json();
       if (!res.ok || !data.success) {
         if (Array.isArray(data.conflicts) && data.conflicts.length > 0) {
-          const c = data.conflicts[0];
-          setError(`時間衝突：與 ${c.league_name || c.league_id} 僅差 ${c.minutes_apart} 分鐘`);
+          setConflictModal({
+            open: true,
+            title: '時間衝突',
+            message: '與既有選秀時間太接近，系統已阻擋此次重排。',
+            conflicts: data.conflicts,
+          });
         } else {
           setError(data.error || 'Save failed');
         }
@@ -297,6 +389,7 @@ export default function DraftReschedulePage() {
                   filteredRows.map((row) => {
                     const edit = editMap[row.league_id] || {};
                     const isSaving = savingLeagueId === row.league_id;
+                    const validation = validationMap[row.league_id] || { checking: false, isValid: null };
                     return (
                       <tr key={row.league_id} className={row.can_edit ? 'bg-emerald-500/5' : ''}>
                         <td className="px-3 py-3">
@@ -311,19 +404,28 @@ export default function DraftReschedulePage() {
                         </td>
                         <td className="px-3 py-3 text-center text-slate-300">{formatDateTime(row.effective_draft_time)}</td>
                         <td className="px-3 py-3 text-center">
-                          <AmericanDatePicker
-                            value={edit.draftTime || ''}
-                            onChange={(newValue) => updateDraftTime(row.league_id, newValue)}
-                            minDate={minDraftDateTime()}
-                            disabled={!row.can_edit || isSaving}
-                            className="w-[210px]"
-                          />
+                          <div className="flex items-center justify-center gap-2">
+                            <AmericanDatePicker
+                              value={edit.draftTime || ''}
+                              onChange={(newValue) => updateDraftTime(row.league_id, newValue)}
+                              minDate={minDraftDateTime()}
+                              disabled={!row.can_edit || isSaving}
+                              className="w-[210px]"
+                            />
+                            {validation.checking ? (
+                              <span className="text-xs text-slate-400 font-bold">...</span>
+                            ) : validation.isValid === true ? (
+                              <span className="text-emerald-400 font-black" title="時間可用">✓</span>
+                            ) : validation.isValid === false ? (
+                              <span className="text-red-400 font-black" title="時間衝突">✕</span>
+                            ) : null}
+                          </div>
                         </td>
                         <td className="px-3 py-3 text-center">
                           {row.can_edit ? (
                             <button
                               onClick={() => handleSave(row)}
-                              disabled={isSaving}
+                              disabled={isSaving || validation.checking || validation.isValid === false}
                               className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold disabled:opacity-60"
                             >
                               {isSaving ? 'Saving...' : '儲存'}
@@ -343,6 +445,32 @@ export default function DraftReschedulePage() {
           </div>
         </div>
       </div>
+
+      {conflictModal.open && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-red-500/40 bg-slate-900 p-5 shadow-2xl">
+            <h3 className="text-lg font-black text-red-300 mb-2">{conflictModal.title}</h3>
+            <p className="text-sm text-slate-200 mb-3">{conflictModal.message}</p>
+            {conflictModal.conflicts.length > 0 && (
+              <div className="space-y-1 max-h-52 overflow-y-auto pr-1 mb-4">
+                {conflictModal.conflicts.map((c, idx) => (
+                  <div key={`${c.league_id || idx}-${idx}`} className="text-sm text-red-200 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+                    與 {c.league_name || c.league_id} 僅差 {c.minutes_apart} 分鐘
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setConflictModal({ open: false, title: '', message: '', conflicts: [] })}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-bold"
+              >
+                我知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

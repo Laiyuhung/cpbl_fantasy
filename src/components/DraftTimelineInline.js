@@ -66,9 +66,11 @@ export default function DraftTimelineInline({
   const now = new Date();
   const endDate = new Date('2026-04-20T23:59:59');
 
-  const formatTimeOnly = (isoString) => {
+  const formatTimeWithDate = (isoString) => {
     const date = new Date(isoString);
-    return date.toLocaleTimeString('zh-TW', {
+    return date.toLocaleString('zh-TW', {
+      month: '2-digit',
+      day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
@@ -108,7 +110,7 @@ export default function DraftTimelineInline({
                 key={`${d.toISOString()}-${idx}`}
                 className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-800/80 border border-slate-600/40 text-slate-200"
               >
-                {formatTimeOnly(d.toISOString())}
+                {formatTimeWithDate(d.toISOString())}
               </span>
             ))}
           </div>
