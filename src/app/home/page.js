@@ -9,6 +9,7 @@ import { AnnouncementBanner } from '@/components/AnnouncementBanner';
 export default function HomePage() {
   const [leagues, setLeagues] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isGuest, setIsGuest] = useState(false)
   const [showWeekRule, setShowWeekRule] = useState(false)
   const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
 
@@ -23,9 +24,12 @@ export default function HomePage() {
         const userId = getCookie('user_id');
 
         if (!userId) {
+          setIsGuest(true);
           setLoading(false); //
           return;
         }
+
+        setIsGuest(false);
 
         const res = await fetch('/api/managers/leagues', {
           method: 'POST',
@@ -82,25 +86,34 @@ export default function HomePage() {
                 {new Date() < new Date('2026-04-16') ? (
                   <>
                     <Link
-                      href="/public_league"
-                      className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg hover:shadow-blue-500/50 flex items-center gap-2 text-xs sm:text-sm"
+                      href={isGuest ? '#' : '/public_league'}
+                      onClick={(e) => {
+                        if (isGuest) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className={`text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg flex items-center gap-2 text-xs sm:text-sm ${isGuest
+                        ? 'bg-gray-500 cursor-not-allowed opacity-70'
+                        : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 hover:shadow-blue-500/50'
+                        }`}
+                      title={isGuest ? 'Please login to use this feature' : ''}
                     >
                       <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                       <span className="hidden sm:inline">Join Public League</span>
                       <span className="sm:hidden">Join</span>
                     </Link>
                     <Link
-                      href={createLeagueDisabled ? '#' : '/create_league'}
+                      href={createLeagueDisabled || isGuest ? '#' : '/create_league'}
                       onClick={(e) => {
-                        if (createLeagueDisabled) {
+                        if (createLeagueDisabled || isGuest) {
                           e.preventDefault();
                         }
                       }}
-                      className={`text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg flex items-center gap-2 text-xs sm:text-sm ${createLeagueDisabled
+                      className={`text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition-all shadow-lg flex items-center gap-2 text-xs sm:text-sm ${createLeagueDisabled || isGuest
                         ? 'bg-gray-500 cursor-not-allowed opacity-70'
                         : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-green-500/50'
                         }`}
-                      title={createLeagueDisabled ? 'Create league is currently disabled by admin' : ''}
+                      title={createLeagueDisabled ? 'Create league is currently disabled by admin' : isGuest ? 'Please login to use this feature' : ''}
                     >
                       <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                       <span className="hidden sm:inline">Create New League</span>
@@ -121,7 +134,7 @@ export default function HomePage() {
                 </div>
               ) : leagues.length === 0 ? (
                 <div className="text-center py-12 text-purple-300/70 text-lg">
-                  You are not a member of any leagues yet
+                  {isGuest ? 'login to view' : 'You are not a member of any leagues yet'}
                 </div>
               ) : (
                 <div className="space-y-4">

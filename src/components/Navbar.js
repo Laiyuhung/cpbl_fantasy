@@ -91,8 +91,12 @@ export default function Navbar() {
     const uid = cookie?.split('=')[1]
 
     if (!uid) {
+      setUserId('')
+      setUserName('')
+      setIsAdmin(false)
+      setLeagues([])
       setIsLoading(false)
-      return router.push('/login')
+      return
     }
 
     fetch('/api/username', {
@@ -108,10 +112,18 @@ export default function Navbar() {
           setIsAdmin(data.is_admin || false)
           fetchLeagues(uid)
         } else {
-          router.push('/login')
+          setUserId('')
+          setUserName('')
+          setIsAdmin(false)
+          setLeagues([])
         }
       })
-      .catch(() => router.push('/login'))
+      .catch(() => {
+        setUserId('')
+        setUserName('')
+        setIsAdmin(false)
+        setLeagues([])
+      })
       .finally(() => setIsLoading(false))
   }, [router, fetchLeagues])
 
@@ -123,6 +135,8 @@ export default function Navbar() {
       if (!uid) {
         setUserId('')
         setUserName('')
+        setIsAdmin(false)
+        setLeagues([])
         return
       }
       fetch('/api/username', {
@@ -216,8 +230,9 @@ export default function Navbar() {
           </div>
         </Link>
 
-        <div className="hidden lg:flex items-center space-x-1">
-          {(() => {
+        {userName && (
+          <div className="hidden lg:flex items-center space-x-1">
+            {(() => {
             const leagueIdMatch = pathname?.match(/^\/league\/([^\/]+)/);
             const activeLeagueId = leagueIdMatch ? leagueIdMatch[1] : currentLeague?.league_id;
 
@@ -272,10 +287,10 @@ export default function Navbar() {
                 </>
               );
             }
-            return null;
-          })()}
+              return null;
+            })()}
 
-          <div className="relative league-dropdown">
+            <div className="relative league-dropdown">
             <button
               onClick={() => setLeagueDropdownOpen(!leagueDropdownOpen)}
               className="px-4 py-2 rounded-lg font-medium text-sm hover:bg-white/10 hover:text-cyan-300 transition-all duration-200 flex items-center gap-1.5"
@@ -365,8 +380,9 @@ export default function Navbar() {
                 )}
               </div>
             )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="hidden lg:flex items-center space-x-3">
           {taiwanTime && (
@@ -435,22 +451,38 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-          ) : null}
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 rounded-lg font-medium text-sm bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200"
+            >
+              Login
+            </Link>
+          )}
         </div>
 
         <div className="lg:hidden flex items-center">
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {userName ? (
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="px-3 py-1.5 rounded-lg font-medium text-sm bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200"
+            >
+              Login
+            </Link>
+          )}
         </div>
       </div>
 
-      {menuOpen && (
+      {menuOpen && userName && (
         <div className="fixed inset-0 z-[999] lg:hidden" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
           <div className="absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>

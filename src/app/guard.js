@@ -83,6 +83,7 @@ export default function GuardLayout({ children }) {
 
     // Pages that don't require login (whitelist)
     const publicPages = [
+      '/home',
       '/login',
       '/register',
       '/forgot-password',
@@ -152,7 +153,7 @@ export default function GuardLayout({ children }) {
   if (!isReady) return null
 
   const isDraftPage = /^\/league\/[^/]+\/draft(?:\/|$)/.test(pathname)
-  const showNavbar = isLoggedIn && pathname !== '/login' && !isDraftPage
+  const showNavbar = pathname !== '/login' && !isDraftPage && (isLoggedIn || pathname === '/home')
 
   return (
     <>
