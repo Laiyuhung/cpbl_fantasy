@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function MaintenanceSettingsPage() {
   const router = useRouter();
+  const maintenanceApiDisabled = true;
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isUnderMaintenance, setIsUnderMaintenance] = useState(false);
@@ -36,14 +37,6 @@ export default function MaintenanceSettingsPage() {
         }
 
         setIsAdmin(true);
-
-        // Load maintenance status
-        const mainRes = await fetch('/api/system-settings/maintenance');
-        const mainData = await mainRes.json();
-
-        if (mainData.success) {
-          setIsUnderMaintenance(mainData.underMaintenance);
-        }
       } catch (e) {
         console.error('Error checking access:', e);
         setError('Failed to verify admin access');
@@ -61,29 +54,7 @@ export default function MaintenanceSettingsPage() {
     setError('');
 
     try {
-      const userIdCookie = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('user_id='));
-      const userId = userIdCookie?.split('=')[1];
-
-      const res = await fetch('/api/system-settings/maintenance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId,
-          'x-user-role': 'admin'
-        },
-        body: JSON.stringify({ underMaintenance: !isUnderMaintenance })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setIsUnderMaintenance(data.underMaintenance);
-        setMessage(data.message);
-      } else {
-        setError(data.error || 'Failed to update maintenance status');
-      }
+      setError('Maintenance API calls are disabled.');
     } catch (e) {
       console.error('Error updating maintenance status:', e);
       setError('Error updating maintenance status');
@@ -161,7 +132,7 @@ export default function MaintenanceSettingsPage() {
           {/* Toggle Button */}
           <button
             onClick={handleToggleMaintenance}
-            disabled={saving}
+            disabled={saving || maintenanceApiDisabled}
             className={`w-full py-4 px-6 rounded-xl font-black text-lg transition-all duration-300 border shadow-lg ${
               isUnderMaintenance
                 ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white border-green-500/30 shadow-green-500/30'
@@ -173,6 +144,8 @@ export default function MaintenanceSettingsPage() {
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 Updating...
               </span>
+            ) : maintenanceApiDisabled ? (
+              'Maintenance API Disabled'
             ) : isUnderMaintenance ? (
               'Disable Maintenance Mode'
             ) : (

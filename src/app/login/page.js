@@ -7,7 +7,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-    const registrationDisabled = true
+    const registrationDisabled = false
   const router = useRouter()
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [showToast, setShowToast] = useState(false)

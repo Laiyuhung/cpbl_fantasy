@@ -14,19 +14,9 @@ export default function MaintenancePage() {
 
     const fetchAllData = async () => {
       try {
-        // 1. 檢查維護狀態
-        const mainRes = await fetch('/api/system-settings/maintenance');
-        const mainData = await mainRes.json();
-
         if (!isMounted) return;
 
-        // 如果進來時維護已經結束，直接去首頁
-        if (!mainData.underMaintenance) {
-          router.push('/home');
-          return;
-        }
-
-        // 2. 檢查管理員身分
+        // 1. 檢查管理員身分
         const userIdCookie = document.cookie
           .split('; ')
           .find(row => row.startsWith('user_id='));
@@ -40,7 +30,7 @@ export default function MaintenancePage() {
           } catch (e) { console.error('Admin check error:', e); }
         }
 
-        // 3. 抓取最新公告
+        // 2. 抓取最新公告
         try {
           const annRes = await fetch('/api/announcements');
           const annData = await annRes.json();

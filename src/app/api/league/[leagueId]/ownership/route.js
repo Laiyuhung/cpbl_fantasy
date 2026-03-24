@@ -99,6 +99,94 @@ export async function POST(req, { params }) {
     }
     // ------------------------------
 
+    // 【新版人數上限檢查】 (與 add-drop 保持一致邏輯)
+    // 取得當天的陣容快照
+    const tzNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+    const checkDateStr = tzNow.toISOString().split('T')[0];
+
+    let targetRosterSnapshot = [];
+    const { data: currentRosterData } = await supabase
+      .from('league_roster_positions')
+      .select('position, player_id, player:player_list(identity)')
+      .eq('league_id', leagueId)
+      .eq('manager_id', manager_id)
+      .eq('game_date', checkDateStr);
+    
+    targetRosterSnapshot = currentRosterData || [];
+
+    if (targetRosterSnapshot.length === 0) {
+      const { data: futureDates } = await supabase
+        .from('league_roster_positions')
+        .select('game_date')
+        .eq('league_id', leagueId)
+        .eq('manager_id', manager_id)
+        .gte('game_date', checkDateStr)
+        .order('game_date', { ascending: true })
+        .limit(1);
+
+      if (futureDates && futureDates.length > 0) {
+        const { data: nextRosterData } = await supabase
+          .from('league_roster_positions')
+          .select('position, player_id, player:player_list(identity)')
+          .eq('league_id', leagueId)
+          .eq('manager_id', manager_id)
+          .eq('game_date', futureDates[0].game_date);
+        targetRosterSnapshot = nextRosterData || [];
+      }
+    }
+
+    // 取得要新增的球員身分
+    const { data: targetPlayerInfo } = await supabase
+      .from('player_list')
+      .select('identity')
+      .eq('player_id', player_id)
+      .single();
+
+    // 假設加入這名球員，預設放在 BN (最嚴格 Active 計算)
+    const projectedRoster = [
+      ...targetRosterSnapshot,
+      { player_id: player_id, position: 'BN', player: { identity: targetPlayerInfo?.identity } }
+    ];
+
+    const isInactiveOrNA = (pos) => ['NA', 'MINOR', 'IL', 'DL'].includes((pos || '').toUpperCase());
+
+    // A. Total Limit
+    const rosterConfig = settings?.roster_positions || {};
+    let totalLimit = Object.values(rosterConfig).reduce((sum, count) => sum + parseInt(count || 0), 0);
+    if (projectedRoster.length > totalLimit) {
+      return NextResponse.json({ success: false, error: `Total Roster Size Exceeded (${projectedRoster.length}/${totalLimit}). Please drop a player first.` }, { status: 400 });
+    }
+
+    // B. Active Roster Limit
+    const activeLimit = Object.entries(rosterConfig)
+      .filter(([key]) => !isInactiveOrNA(key))
+      .reduce((sum, [_, count]) => sum + parseInt(count || 0), 0);
+    
+    const activeCount = projectedRoster.filter(p => !isInactiveOrNA(p.position)).length;
+    if (activeCount > activeLimit) {
+      return NextResponse.json({ success: false, error: `Active Roster Limit Exceeded (${activeCount}/${activeLimit}). Please drop an active player first.` }, { status: 400 });
+    }
+
+    // C. Foreigner Limits check
+    const foreignerOnTeamLimit = parseInt(settings?.foreigner_on_team_limit) || 999;
+    const foreignerActiveLimit = parseInt(settings?.foreigner_active_limit) || 999;
+    const foreigners = projectedRoster.filter(p => (p.player?.identity || '').toLowerCase() === 'foreigner');
+    const foreignerCount = foreigners.length;
+
+    if (settings?.foreigner_on_team_limit && settings.foreigner_on_team_limit !== 'No limit') {
+      if (foreignerCount > foreignerOnTeamLimit) {
+        return NextResponse.json({ success: false, error: `Foreigner On-Team limit exceeded (${foreignerCount}/${foreignerOnTeamLimit}).` }, { status: 400 });
+      }
+    }
+
+    if (settings?.foreigner_active_limit && settings.foreigner_active_limit !== 'No limit') {
+      const activeForeignerCount = foreigners.filter(p => !isInactiveOrNA(p.position)).length;
+      if (activeForeignerCount > foreignerActiveLimit) {
+        return NextResponse.json({ success: false, error: `Foreigner Active limit exceeded (${activeForeignerCount}/${foreignerActiveLimit}).` }, { status: 400 });
+      }
+    }
+    // -----------------------------------------------------------------
+
     // 【執行前再次檢查】檢查該球員是否已在此聯盟中，避免多人同時操作衝突
     const { data: existing, error: checkError } = await supabase
       .from('league_player_ownership')
