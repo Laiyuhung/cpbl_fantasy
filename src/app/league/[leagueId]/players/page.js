@@ -1080,6 +1080,8 @@ export default function PlayersPage() {
 
     if (checkTradeInvolvement(dropCandidateID)) return;
 
+    setIsAdding(true);
+
     // 🚨 MAJOR-on-NA Block for Add-Drop
     try {
       const rosterRes = await fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}`);
@@ -1095,13 +1097,13 @@ export default function PlayersPage() {
         );
         setShowError(true);
         setTimeout(() => setShowError(false), 6000);
+        setIsAdding(false);
         return;
       }
     } catch (e) {
       console.error('Add-drop MAJOR-on-NA check failed:', e);
     }
 
-    setIsAdding(true);
     try {
       const res = await fetch(`/api/league/${leagueId}/transaction/add-drop`, {
         method: 'POST',
