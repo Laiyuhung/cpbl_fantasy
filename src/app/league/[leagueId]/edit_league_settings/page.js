@@ -18,7 +18,7 @@ const baseSettings = {
     'Scoring Type': 'Head-to-Head',
   },
   acquisitions: {
-    'Trade Deadline': 'August 7, 2025',
+    'Trade Deadline': 'August 7, 2026',
     'Max Acquisitions per Week': '6',
   },
   waivers: {
