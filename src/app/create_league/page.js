@@ -579,6 +579,31 @@ const CreateLeaguePage = () => {
     fetchCreateLeagueLock();
   }, []);
 
+  useEffect(() => {
+    const fetchUserQuota = async () => {
+      try {
+        const response = await fetch('/api/create_league_quota');
+        const data = await response.json();
+
+        if (data.success) {
+          if (data.quota <= 0) {
+            setCreateLeagueDisabled(true);
+            setSaveMessage('❌ 您的額度不足，無法創建聯盟');
+          } else {
+            setCreateLeagueDisabled(false);
+            setSaveMessage('');
+          }
+        } else {
+          console.error('Failed to fetch user quota:', data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching user quota:', error);
+      }
+    };
+
+    fetchUserQuota();
+  }, []);
+
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
   };
@@ -1310,7 +1335,14 @@ const CreateLeaguePage = () => {
             {hasWeightErrors() && <div className="px-4 py-2 rounded-md bg-red-100 text-red-800 border border-red-300 text-sm">Button disabled: Invalid weight values detected</div>}
             <div className="flex gap-3 sm:gap-4">
               <button onClick={() => { setSettings(cloneSettings(initialSettings)); setSaveMessage(''); setLeagueId(null); setScheduleData([]); }} className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-400 transition-colors text-sm sm:text-base">Reset</button>
-              <button onClick={handleSave} disabled={isSaving || scheduleError || hasWeightErrors()} title={scheduleError ? 'Schedule validation failed' : hasWeightErrors() ? 'Invalid weight values' : ''} className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 font-semibold rounded-md transition-colors text-sm sm:text-base ${isSaving || scheduleError || hasWeightErrors() ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>{isSaving ? 'Creating...' : 'Create League'}</button>
+              <button onClick={handleSave} disabled={isSaving || createLeagueDisabled}
+                title={createLeagueDisabled ? 'Create League is currently disabled by admin' : hasWeightErrors() ? 'Invalid weight values' : ''}
+                className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 font-semibold rounded-md transition-colors text-sm sm:text-base ${isSaving || createLeagueDisabled
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}>
+                {isSaving ? 'Saving...' : 'Create League'}
+              </button>
             </div>
           </div>
         </div>
