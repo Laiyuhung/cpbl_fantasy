@@ -9,24 +9,39 @@ const supabase = createClient(
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const userEmail = searchParams.get('email');
+    const manager_id = searchParams.get('manager_id');
 
-    if (!userEmail) {
+    if (!manager_id) {
       return NextResponse.json(
-        { error: 'User email is required' },
+        { error: 'Manager ID is required' },
         { status: 400 }
       );
     }
+
+    // Fetch email_address from managers table
+    const { data: managerData, error: managerError } = await supabase
+      .from('managers')
+      .select('email_address')
+      .eq('manager_id', manager_id)
+      .single();
+
+    if (managerError || !managerData) {
+      return NextResponse.json(
+        { error: 'Manager not found' },
+        { status: 404 }
+      );
+    }
+
+    const email_address = managerData.email_address;
 
     // Fetch product IDs from payments
     const { data: payments, error: paymentError } = await supabase
       .from('portaly_payments')
       .select('product_id')
-      .eq('buyer_email', userEmail)
+      .eq('buyer_email', email_address)
       .is('verified_at', null);
 
     if (paymentError) {
-      console.error('Error fetching payments:', paymentError);
       return NextResponse.json(
         { error: 'Failed to fetch payments' },
         { status: 500 }
@@ -42,14 +57,12 @@ export async function GET(request) {
       .in('protaly_product_id', productIds);
 
     if (productError) {
-      console.error('Error fetching product matches:', productError);
       return NextResponse.json(
         { error: 'Failed to fetch product matches' },
         { status: 500 }
       );
     }
 
-    // Filter products to only include those with product_name = '新增聯盟額度'
     const filteredProducts = products.filter(product => product.product_name === '新增聯盟額度');
 
     if (filteredProducts.length === 0) {
@@ -61,7 +74,6 @@ export async function GET(request) {
 
     return NextResponse.json({ products: filteredProducts });
   } catch (error) {
-    console.error('Unexpected error:', error);
     return NextResponse.json(
       { error: 'Unexpected error occurred', details: error.message },
       { status: 500 }

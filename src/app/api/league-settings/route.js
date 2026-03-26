@@ -159,45 +159,6 @@ export async function POST(request) {
       );
     }
 
-    // Check user quota before proceeding
-    const { data: payments, error: paymentError } = await supabase
-      .from('portaly_payments')
-      .select('product_id')
-      .eq('buyer_email', manager_id) // Assuming manager_id is the email
-      .is('verified_at', null);
-
-    if (paymentError) {
-      console.error('Error fetching payments:', paymentError);
-      return NextResponse.json(
-        { error: 'Failed to fetch payments' },
-        { status: 500 }
-      );
-    }
-
-    const productIds = payments.map(payment => payment.product_id);
-
-    const { data: products, error: productError } = await supabase
-      .from('protaly_product_id_match')
-      .select('product_name')
-      .in('protaly_product_id', productIds);
-
-    if (productError || !products || products.length === 0) {
-      return NextResponse.json(
-        { error: 'Insufficient quota to create a league' },
-        { status: 403 }
-      );
-    }
-
-    // Filter products to only include those with product_name = '新增聯盟額度'
-    const filteredProducts = products.filter(product => product.product_name === '新增聯盟額度');
-
-    if (filteredProducts.length === 0) {
-      return NextResponse.json(
-        { error: 'No valid quota products found' },
-        { status: 403 }
-      );
-    }
-
     // 準備數據
     const draftType = settings.general['Draft Type'];
     const leagueData = {
