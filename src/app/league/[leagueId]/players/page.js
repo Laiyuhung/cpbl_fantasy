@@ -2172,7 +2172,7 @@ export default function PlayersPage() {
                           {getPlayerActionButton(player)}
                         </td>
                         {/* 桌面版：Player info (單欄) */}
-                        <td className="px-6 py-4 hidden sm:table-cell sticky left-[48px] z-20 bg-slate-800 group-hover:bg-slate-800">
+                        <td className="px-6 py-4 hidden sm:table-cell sticky left-[48px] z-20 bg-[#512888] group-hover:bg-[#512888]">
                           <div className="flex items-center gap-3">
                             <img
                               src={getPlayerPhoto(player)}
