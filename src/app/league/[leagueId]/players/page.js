@@ -2074,8 +2074,8 @@ export default function PlayersPage() {
             <table className="w-full relative">
               <thead className="bg-slate-900/95 sticky top-0 z-30 shadow-md backdrop-blur-md outline outline-1 outline-purple-500/20">
                 <tr>
-                  <th className="px-2 py-4 w-12 sticky left-0 z-20"></th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-purple-300 hidden sm:table-cell sticky left-[48px] z-20 bg-slate-900/95">Name</th>
+                  <th className="px-2 py-4 w-12 sticky left-0 z-20 bg-slate-800"></th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-purple-300 hidden sm:table-cell sticky left-[48px] z-20 bg-slate-800">Name</th>
                   <th
                     className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-purple-300 cursor-pointer hover:text-white transition-colors group select-none"
                     onClick={() => handleSort('rank')}
@@ -2164,9 +2164,9 @@ export default function PlayersPage() {
                 ) : (
                   filteredPlayers.map((player, index) => (
                     <React.Fragment key={player.player_id}>
-                      <tr className="bg-slate-800 hover:bg-purple-500/5 transition-colors group">
+                      <tr className="hover:bg-purple-500/5 transition-colors group">
                         {/* 桌面版：Action button (無 rowSpan) */}
-                        <td className="px-4 py-4 align-middle text-center hidden sm:table-cell sticky left-0 z-10 bg-slate-800 group-hover:bg-purple-500/5">
+                        <td className="px-4 py-4 align-middle text-center hidden sm:table-cell sticky left-0 z-20 bg-slate-800 group-hover:bg-slate-800">
                           {getPlayerActionButton(player)}
                         </td>
                         {/* 手機版：Action button (rowSpan=2, 置中) */}
@@ -2174,7 +2174,7 @@ export default function PlayersPage() {
                           {getPlayerActionButton(player)}
                         </td>
                         {/* 桌面版：Player info (單欄) */}
-                        <td className="px-6 py-4 hidden sm:table-cell sticky left-[48px] z-10 bg-slate-800 group-hover:bg-purple-500/5">
+                        <td className="px-6 py-4 hidden sm:table-cell sticky left-[48px] z-20 bg-slate-800 group-hover:bg-slate-800">
                           <div className="flex items-center gap-3">
                             <img
                               src={getPlayerPhoto(player)}
