@@ -11,6 +11,7 @@ export async function GET(request) {
         let query = supabaseAdmin
             .from('cpbl_schedule_2026')
             .select('*')
+            .eq('major_game', true)
             .order('game_no', { ascending: true }); // Default sort by game number
 
         if (date) {

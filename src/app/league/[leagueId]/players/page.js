@@ -387,8 +387,8 @@ export default function PlayersPage() {
       try {
         // 根據球員類型選擇不同的 API
         const endpoint = filterType === 'batter'
-          ? `/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`
-          : `/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`;
+          ? `/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}&league_id=${encodeURIComponent(leagueId)}`
+          : `/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}&league_id=${encodeURIComponent(leagueId)}`;
 
         const res = await fetch(endpoint);
         const data = await res.json();
@@ -630,17 +630,21 @@ export default function PlayersPage() {
     return result;
   }, [players, searchTerm, filterType, filterIdentity, filterOwnership, filterTeam, filterPosition, sortConfig, playerStats, playerRankings, ownerships, myManagerId, watchedPlayerIds]);
 
+  const isFantasyPoints = leagueSettings?.scoring_type === 'Head-to-Head Fantasy Points';
+
   const displayBatterCats = useMemo(() => {
     const forced = 'At Bats (AB)';
     const hasForced = batterStatCategories.some(c => getStatAbbr(c) === 'AB');
-    return hasForced ? batterStatCategories : [forced, ...batterStatCategories];
-  }, [batterStatCategories]);
+    const base = hasForced ? batterStatCategories : [forced, ...batterStatCategories];
+    return isFantasyPoints ? [...base, 'Fantasy Points (FP)'] : base;
+  }, [batterStatCategories, isFantasyPoints]);
 
   const displayPitcherCats = useMemo(() => {
     const forced = 'Innings Pitched (IP)';
     const hasForced = pitcherStatCategories.some(c => getStatAbbr(c) === 'IP');
-    return hasForced ? pitcherStatCategories : [forced, ...pitcherStatCategories];
-  }, [pitcherStatCategories]);
+    const base = hasForced ? pitcherStatCategories : [forced, ...pitcherStatCategories];
+    return isFantasyPoints ? [...base, 'Fantasy Points (FP)'] : base;
+  }, [pitcherStatCategories, isFantasyPoints]);
 
   // Ordinal suffix helper: 1 -> "1st", 2 -> "2nd", 3 -> "3rd", etc.
   const getOrdinal = (n) => {

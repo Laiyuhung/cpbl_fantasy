@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { FANTASY_POINTS_SCORING_TYPE, buildCategoryWeights, calculateFantasyPoints } from '@/lib/fantasyPoints';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -28,6 +29,7 @@ export async function GET(request, { params }) {
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'batter' or 'pitcher'
+    const leagueId = searchParams.get('league_id');
 
     // Determine player type
     let isPitcher = type === 'pitcher';
@@ -56,10 +58,48 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
+    let scoringType = '';
+    let scopedCategories = [];
+    let scopedWeights = {};
+
+    if (leagueId) {
+      const { data: leagueSettings } = await supabase
+        .from('league_settings')
+        .select('scoring_type, batter_stat_categories, pitcher_stat_categories')
+        .eq('league_id', leagueId)
+        .single();
+
+      scoringType = leagueSettings?.scoring_type || '';
+
+      if (scoringType === FANTASY_POINTS_SCORING_TYPE) {
+        const { data: weightRows } = await supabase
+          .from('league_stat_category_weights')
+          .select('category_type, category_name, weight')
+          .eq('league_id', leagueId);
+
+        const categoryWeights = buildCategoryWeights(weightRows);
+        if (isPitcher) {
+          scopedCategories = Array.isArray(leagueSettings?.pitcher_stat_categories) ? leagueSettings.pitcher_stat_categories : [];
+          scopedWeights = categoryWeights.pitcher;
+        } else {
+          scopedCategories = Array.isArray(leagueSettings?.batter_stat_categories) ? leagueSettings.batter_stat_categories : [];
+          scopedWeights = categoryWeights.batter;
+        }
+      }
+    }
+
     // Organize by time window
     const statsByWindow = {};
     TIME_WINDOWS.forEach(tw => {
-      statsByWindow[tw] = (data || []).find(d => d.time_window === tw) || null;
+      const row = (data || []).find(d => d.time_window === tw) || null;
+      if (row && scoringType === FANTASY_POINTS_SCORING_TYPE) {
+        statsByWindow[tw] = {
+          ...row,
+          fp: calculateFantasyPoints(row, scopedCategories, scopedWeights),
+        };
+      } else {
+        statsByWindow[tw] = row;
+      }
     });
 
     return NextResponse.json({

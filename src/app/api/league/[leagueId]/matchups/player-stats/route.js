@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { FANTASY_POINTS_SCORING_TYPE, buildCategoryWeights, calculateFantasyPoints } from '@/lib/fantasyPoints';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -15,6 +16,21 @@ export async function GET(request, { params }) {
 
     if (!leagueId || !week) {
       return NextResponse.json({ success: false, error: 'Missing required parameters' }, { status: 400 });
+    }
+
+    const { data: leagueSettings } = await supabase
+      .from('league_settings')
+      .select('scoring_type, batter_stat_categories, pitcher_stat_categories')
+      .eq('league_id', leagueId)
+      .single();
+
+    let categoryWeights = { batter: {}, pitcher: {} };
+    if (leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE) {
+      const { data: weightRows } = await supabase
+        .from('league_stat_category_weights')
+        .select('category_type, category_name, weight')
+        .eq('league_id', leagueId);
+      categoryWeights = buildCategoryWeights(weightRows);
     }
 
     // Build query for batting stats
@@ -78,13 +94,19 @@ export async function GET(request, { params }) {
     const battingStats = battingResult.data.map(stat => ({
       ...stat,
       player_name: playerMap[stat.player_id]?.name || 'Unknown',
-      player_team: playerMap[stat.player_id]?.team || ''
+      player_team: playerMap[stat.player_id]?.team || '',
+      fp: leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE
+        ? calculateFantasyPoints(stat, leagueSettings.batter_stat_categories || [], categoryWeights.batter)
+        : null
     }));
 
     const pitchingStats = pitchingResult.data.map(stat => ({
       ...stat,
       player_name: playerMap[stat.player_id]?.name || 'Unknown',
-      player_team: playerMap[stat.player_id]?.team || ''
+      player_team: playerMap[stat.player_id]?.team || '',
+      fp: leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE
+        ? calculateFantasyPoints(stat, leagueSettings.pitcher_stat_categories || [], categoryWeights.pitcher)
+        : null
     }));
 
     return NextResponse.json({

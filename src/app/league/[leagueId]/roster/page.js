@@ -46,6 +46,7 @@ export default function RosterPage() {
     const [playerStats, setPlayerStats] = useState({});
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
+    const [scoringType, setScoringType] = useState('');
 
     // Settings State
     const [rosterPositionsConfig, setRosterPositionsConfig] = useState({});
@@ -407,6 +408,7 @@ export default function RosterPage() {
             if (settingsData.success && settingsData.data) {
                 setBatterStatCategories(settingsData.data.batter_stat_categories || []);
                 setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
+                setScoringType(settingsData.data.scoring_type || '');
 
                 setRosterPositionsConfig(settingsData.data.roster_positions || {});
                 setForeignerActiveLimit(settingsData.data.foreigner_active_limit);
@@ -499,12 +501,12 @@ export default function RosterPage() {
                         fetch('/api/playerStats/daily-batting', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ date: selectedDate })
+                            body: JSON.stringify({ date: selectedDate, league_id: leagueId })
                         }),
                         fetch('/api/playerStats/daily-pitching', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ date: selectedDate })
+                            body: JSON.stringify({ date: selectedDate, league_id: leagueId })
                         })
                     ]);
                     const batterData = await batterRes.json();
@@ -514,9 +516,11 @@ export default function RosterPage() {
                     if (Array.isArray(pitcherData)) pitcherData.forEach(s => { if (s.player_id) newStats[s.player_id] = s; });
                 } else {
                     // Use summary APIs (GET, {success, stats} wrapper)
+                    const batterUrl = `/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}&league_id=${encodeURIComponent(leagueId)}`;
+                    const pitcherUrl = `/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}&league_id=${encodeURIComponent(leagueId)}`;
                     const [batterRes, pitcherRes] = await Promise.all([
-                        fetch(`/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}`),
-                        fetch(`/api/playerStats/pitching-summary?time_window=${encodeURIComponent(timeWindow)}`)
+                        fetch(batterUrl),
+                        fetch(pitcherUrl)
                     ]);
                     const batterData = await batterRes.json();
                     const pitcherData = await pitcherRes.json();
@@ -528,7 +532,7 @@ export default function RosterPage() {
             } catch (err) { console.error('Failed to fetch stats:', err); }
         };
         fetchStats();
-    }, [timeWindow, selectedDate]);
+    }, [timeWindow, selectedDate, leagueId]);
 
     // Fetch Pending Trades Count
     useEffect(() => {
@@ -1159,13 +1163,21 @@ export default function RosterPage() {
         return (orderConfig[a.position] || 99) - (orderConfig[b.position] || 99);
     });
 
-    const displayBatterCats = batterStatCategories.length > 0 && !batterStatCategories.some(c => parseStatName(c) === 'AB')
-        ? ['At Bats (AB)', ...batterStatCategories]
-        : batterStatCategories;
+    const isFantasyPoints = scoringType === 'Head-to-Head Fantasy Points';
 
-    const displayPitcherCats = pitcherStatCategories.length > 0 && !pitcherStatCategories.some(c => parseStatName(c) === 'IP')
-        ? ['Innings Pitched (IP)', ...pitcherStatCategories]
-        : pitcherStatCategories;
+    const displayBatterCats = (() => {
+        const base = batterStatCategories.length > 0 && !batterStatCategories.some(c => parseStatName(c) === 'AB')
+            ? ['At Bats (AB)', ...batterStatCategories]
+            : batterStatCategories;
+        return isFantasyPoints ? [...base, 'Fantasy Points (FP)'] : base;
+    })();
+
+    const displayPitcherCats = (() => {
+        const base = pitcherStatCategories.length > 0 && !pitcherStatCategories.some(c => parseStatName(c) === 'IP')
+            ? ['Innings Pitched (IP)', ...pitcherStatCategories]
+            : pitcherStatCategories;
+        return isFantasyPoints ? [...base, 'Fantasy Points (FP)'] : base;
+    })();
 
 
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import supabaseAdmin from '@/lib/supabaseAdmin';
+import { FANTASY_POINTS_SCORING_TYPE, buildCategoryWeights, calculateFantasyPoints } from '@/lib/fantasyPoints';
 
 // Helper: parse W/L/SV/HLD from record string
 function parseRecord(record) {
@@ -102,12 +103,50 @@ export async function GET(request) {
     const playerId = searchParams.get('player_id');
     const team = searchParams.get('team');
     const type = searchParams.get('type'); // 'pitcher' or 'batter'
+    const leagueId = searchParams.get('league_id');
 
     if (!playerId) {
         return NextResponse.json({ success: false, error: 'player_id is required' }, { status: 400 });
     }
 
     try {
+        let scoringType = '';
+        let batterCategories = [];
+        let pitcherCategories = [];
+        let categoryWeights = { batter: {}, pitcher: {} };
+
+        if (leagueId) {
+            const { data: leagueSettings } = await supabaseAdmin
+                .from('league_settings')
+                .select('scoring_type, batter_stat_categories, pitcher_stat_categories')
+                .eq('league_id', leagueId)
+                .single();
+
+            scoringType = leagueSettings?.scoring_type || '';
+            batterCategories = Array.isArray(leagueSettings?.batter_stat_categories) ? leagueSettings.batter_stat_categories : [];
+            pitcherCategories = Array.isArray(leagueSettings?.pitcher_stat_categories) ? leagueSettings.pitcher_stat_categories : [];
+
+            if (scoringType === FANTASY_POINTS_SCORING_TYPE) {
+                const { data: weightRows } = await supabaseAdmin
+                    .from('league_stat_category_weights')
+                    .select('category_type, category_name, weight')
+                    .eq('league_id', leagueId);
+                categoryWeights = buildCategoryWeights(weightRows);
+            }
+        }
+
+        const withFantasyPoints = (games, categoryType) => {
+            if (scoringType !== FANTASY_POINTS_SCORING_TYPE || !Array.isArray(games)) {
+                return games;
+            }
+            const categories = categoryType === 'pitcher' ? pitcherCategories : batterCategories;
+            const weights = categoryType === 'pitcher' ? categoryWeights.pitcher : categoryWeights.batter;
+            return games.map((g) => ({
+                ...g,
+                FP: g.has_stats === false ? '-' : calculateFantasyPoints(g, categories, weights),
+            }));
+        };
+
         const today = new Date().toISOString().split('T')[0];
         console.log('[Recent Games] today (UTC):', today, '| Now ISO:', new Date().toISOString());
 
@@ -206,7 +245,7 @@ export async function GET(request) {
             return NextResponse.json({
                 success: true,
                 type: 'pitcher',
-                games: enrichedPitchingGames
+                games: withFantasyPoints(enrichedPitchingGames, 'pitcher')
             });
         }
 
@@ -390,7 +429,7 @@ export async function GET(request) {
         return NextResponse.json({
             success: true,
             type: 'batter',
-            games: enrichedGames
+            games: withFantasyPoints(enrichedGames, 'batter')
         });
 
     } catch (error) {

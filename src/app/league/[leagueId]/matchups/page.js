@@ -194,6 +194,11 @@ export default function MatchupsPage() {
     // Get stat value from player data
     const getStatValue = (stat, abbr) => {
         const key = abbr.toLowerCase();
+        if (key === 'fp') {
+            if (stat.fp === null || stat.fp === undefined) return '-';
+            const rounded = Math.round(Number(stat.fp) * 10) / 10;
+            return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+        }
         const val = stat[key];
         // Format rate stats
         if (['avg', 'obp', 'slg', 'ops'].includes(key)) {
@@ -212,10 +217,19 @@ export default function MatchupsPage() {
     };
 
     // Build batter columns: AB + league categories
-    const batterColumns = ['AB', ...(scroingSettings?.batter_categories?.map(cat => getAbbr(cat)) || [])];
+    const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
+    const batterColumns = [
+        'AB',
+        ...(scroingSettings?.batter_categories?.map(cat => getAbbr(cat)) || []),
+        ...(isFantasyPoints ? ['FP'] : []),
+    ];
 
     // Build pitcher columns: IP + league categories  
-    const pitcherColumns = ['IP', ...(scroingSettings?.pitcher_categories?.map(cat => getAbbr(cat)) || [])];
+    const pitcherColumns = [
+        'IP',
+        ...(scroingSettings?.pitcher_categories?.map(cat => getAbbr(cat)) || []),
+        ...(isFantasyPoints ? ['FP'] : []),
+    ];
 
     const activeMatchup = matchups[selectedMatchupIndex];
 

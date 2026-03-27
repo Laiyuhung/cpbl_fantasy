@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
+import { FANTASY_POINTS_SCORING_TYPE, buildCategoryWeights, calculateFantasyPoints } from '@/lib/fantasyPoints'
 
 const getTaiwanToday = () => {
   const now = new Date()
@@ -19,7 +20,7 @@ function formatIP(outs) {
 
 export async function POST(req) {
   try {
-    const { date } = await req.json()
+    const { date, league_id: leagueId } = await req.json()
     const targetDate = date || getTaiwanToday()
     const { data: rawData, error } = await supabase
       .from('pitching_stats_2026')
@@ -139,6 +140,32 @@ export async function POST(req) {
         obpa: p.obpa
       })
     }
+
+    if (leagueId) {
+      const { data: leagueSettings } = await supabase
+        .from('league_settings')
+        .select('scoring_type, pitcher_stat_categories')
+        .eq('league_id', leagueId)
+        .single()
+
+      if (leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE) {
+        const { data: weightRows } = await supabase
+          .from('league_stat_category_weights')
+          .select('category_type, category_name, weight')
+          .eq('league_id', leagueId)
+          .eq('category_type', 'pitcher')
+
+        const categoryWeights = buildCategoryWeights(weightRows)
+        const pitcherCategories = Array.isArray(leagueSettings.pitcher_stat_categories)
+          ? leagueSettings.pitcher_stat_categories
+          : []
+
+        results.forEach((row) => {
+          row.fp = calculateFantasyPoints(row, pitcherCategories, categoryWeights.pitcher)
+        })
+      }
+    }
+
     return NextResponse.json(results)
   } catch (err) {
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })

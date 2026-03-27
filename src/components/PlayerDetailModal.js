@@ -37,6 +37,8 @@ export default function PlayerDetailModal({
     const [settingsLoading, setSettingsLoading] = useState(true);
     const [error, setError] = useState('');
     const [watchLoading, setWatchLoading] = useState(false);
+    const [playerPhotoSrc, setPlayerPhotoSrc] = useState('/photo/defaultPlayer.png');
+    const [scoringType, setScoringType] = useState('');
 
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
@@ -67,8 +69,62 @@ export default function PlayerDetailModal({
             setStats({ batting: {}, pitching: {} });
             setRecentGames([]);
             setActiveTab('split');
+            setPlayerPhotoSrc('/photo/defaultPlayer.png');
         }
     }, [isOpen, player?.player_id]);
+
+    const getPlayerPhotoPaths = (targetPlayer) => {
+        const paths = [];
+        if (targetPlayer?.name) {
+            paths.push(`/photo/${targetPlayer.name}.png`);
+        }
+        if (targetPlayer?.original_name) {
+            const aliases = targetPlayer.original_name.split(',').map(alias => alias.trim());
+            aliases.forEach(alias => {
+                if (alias) {
+                    paths.push(`/photo/${alias}.png`);
+                }
+            });
+        }
+        if (targetPlayer?.player_id) {
+            paths.push(`/photo/${targetPlayer.player_id}.png`);
+        }
+        paths.push('/photo/defaultPlayer.png');
+        return paths;
+    };
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const resolvePlayerPhoto = async () => {
+            if (!isOpen || !player) {
+                setPlayerPhotoSrc('/photo/defaultPlayer.png');
+                return;
+            }
+
+            try {
+                const candidates = getPlayerPhotoPaths(player).filter(path => !path.endsWith('/defaultPlayer.png'));
+                const res = await fetch('/api/photo/resolve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ candidates })
+                });
+                const data = await res.json();
+                if (!cancelled) {
+                    setPlayerPhotoSrc(data?.path || '/photo/defaultPlayer.png');
+                }
+            } catch {
+                if (!cancelled) {
+                    setPlayerPhotoSrc('/photo/defaultPlayer.png');
+                }
+            }
+        };
+
+        resolvePlayerPhoto();
+        return () => {
+            cancelled = true;
+        };
+    }, [isOpen, player]);
 
     useEffect(() => {
         const fetchLeagueSettings = async () => {
@@ -82,6 +138,7 @@ export default function PlayerDetailModal({
                 if (data.success && data.data) {
                     setBatterStatCategories(data.data.batter_stat_categories || []);
                     setPitcherStatCategories(data.data.pitcher_stat_categories || []);
+                    setScoringType(data.data.scoring_type || '');
                 }
             } catch (err) {
                 console.error('Failed to fetch league settings', err);
@@ -103,7 +160,11 @@ export default function PlayerDetailModal({
             try {
                 // Pass type (batter or pitcher) to API to help it query the right view
                 const type = player.batter_or_pitcher;
-                const res = await fetch(`/api/playerStats/player/${player.player_id}${type ? `?type=${type}` : ''}`);
+                const params = new URLSearchParams();
+                if (type) params.set('type', type);
+                if (leagueId) params.set('league_id', leagueId);
+                const query = params.toString();
+                const res = await fetch(`/api/playerStats/player/${player.player_id}${query ? `?${query}` : ''}`);
                 const data = await res.json();
                 if (data.success) {
                     setStats({ batting: data.batting, pitching: data.pitching });
@@ -167,7 +228,8 @@ export default function PlayerDetailModal({
             try {
                 const type = isPitcher ? 'pitcher' : 'batter';
                 const teamParam = player.team ? `&team=${encodeURIComponent(player.team)}` : '';
-                const res = await fetch(`/api/playerStats/recent-games?player_id=${player.player_id}&type=${type}${teamParam}`);
+                const leagueParam = leagueId ? `&league_id=${encodeURIComponent(leagueId)}` : '';
+                const res = await fetch(`/api/playerStats/recent-games?player_id=${player.player_id}&type=${type}${teamParam}${leagueParam}`);
                 const data = await res.json();
                 if (data.success) {
                     setRecentGames(data.games || []);
@@ -208,7 +270,11 @@ export default function PlayerDetailModal({
     })();
 
     const displayCats = isPitcher ? displayPitcherCats : displayBatterCats;
-    const abbreviations = displayCats.map(parseStatKey);
+    const isFantasyPoints = scoringType === 'Head-to-Head Fantasy Points';
+    const abbreviations = [
+        ...displayCats.map(parseStatKey),
+        ...(isFantasyPoints ? ['FP'] : []),
+    ];
     const dataByWindow = isPitcher ? stats.pitching : stats.batting;
 
     // Render row for a specific time window
@@ -411,14 +477,6 @@ export default function PlayerDetailModal({
         );
     };
 
-    // Fallback to determine best player photo
-    let bestPhotoStr = '/photo/defaultPlayer.png';
-    if (player.player_id) {
-        // Basic fallback to local photo if generic approach works
-        // E.g., via their original_name or id, but here we can just do name or id
-        bestPhotoStr = `/photo/${player.name || player.player_id}.png`;
-    }
-
     const handleImageError = (e) => {
         if (!e.target.src.endsWith('/photo/defaultPlayer.png')) {
             e.target.src = '/photo/defaultPlayer.png';
@@ -483,7 +541,7 @@ export default function PlayerDetailModal({
                 <div className="flex items-center gap-4 p-5 sm:p-6 border-b border-white/10 bg-black/20 shrink-0">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-slate-800 border-2 border-purple-500/50 shrink-0 shadow-lg">
                         <img
-                            src={bestPhotoStr}
+                            src={playerPhotoSrc}
                             alt={player.name}
                             className="w-full h-full object-cover"
                             onError={handleImageError}

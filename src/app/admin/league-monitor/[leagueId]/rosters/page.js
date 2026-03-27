@@ -57,6 +57,7 @@ export default function AdminLeagueRostersPage() {
     const [statsLoading, setStatsLoading] = useState(false);
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
+    const [scoringType, setScoringType] = useState('');
 
     // Date Picker State
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -101,6 +102,7 @@ export default function AdminLeagueRostersPage() {
                 if (settData.success && settData.data) {
                     setBatterStatCategories(settData.data.batter_stat_categories || []);
                     setPitcherStatCategories(settData.data.pitcher_stat_categories || []);
+                    setScoringType(settData.data.scoring_type || '');
                 }
             } catch (e) { console.error('Failed to fetch league settings:', e); }
         };
@@ -183,12 +185,12 @@ export default function AdminLeagueRostersPage() {
                     fetch('/api/playerStats/daily-batting', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ date: selectedDate })
+                        body: JSON.stringify({ date: selectedDate, league_id: leagueId })
                     }),
                     fetch('/api/playerStats/daily-pitching', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ date: selectedDate })
+                        body: JSON.stringify({ date: selectedDate, league_id: leagueId })
                     })
                 ]);
                 const batterData = await batterRes.json();
@@ -251,6 +253,7 @@ export default function AdminLeagueRostersPage() {
         const teamAbbr = toAbbr(p.team);
         const isPitcher = p.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(p.position);
         const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
+        const isFantasyPoints = scoringType === 'Head-to-Head Fantasy Points';
 
         // Game info
         let gameInfoEl = null;
@@ -310,6 +313,9 @@ export default function AdminLeagueRostersPage() {
         }
         if (isPitcher && statCats.length > 0 && !statCats.some(c => parseStatKey(c) === 'IP')) {
             displayCats = ['Innings Pitched (IP)', ...statCats];
+        }
+        if (isFantasyPoints) {
+            displayCats = [...displayCats, 'Fantasy Points (FP)'];
         }
 
         const statsRow = !isEmpty && displayCats.length > 0 ? (
