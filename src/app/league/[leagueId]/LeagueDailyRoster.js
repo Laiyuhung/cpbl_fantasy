@@ -685,6 +685,33 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         // Game info — vivid inline display
         let gameInfoEl = null;
         let startingBadge = null;
+        const statBadges = [];
+
+        // Status badges (Foreigner, NA, NR, DR)
+        if (!isEmpty && p.player_id) {
+            if (p.identity && p.identity.toLowerCase() === 'foreigner') {
+                statBadges.push(
+                    <span key="f" title="Foreign Player" className="w-5 h-5 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold">F</span>
+                );
+            }
+
+            const status = (p.real_life_status || '').toUpperCase();
+            if (status.includes('MN') || status.includes('MINOR') || status === 'NA') {
+                statBadges.push(
+                    <span key="na" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">NA</span>
+                );
+            }
+            if (status.includes('DEREGISTERED') || status === 'DR' || status === 'D') {
+                statBadges.push(
+                    <span key="dr" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30">DR</span>
+                );
+            }
+            if (status.includes('UNREGISTERED') || status === 'NR') {
+                statBadges.push(
+                    <span key="nr" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">NR</span>
+                );
+            }
+        }
 
         if (!isEmpty && p.player_id) {
             const playerType = (p.batter_or_pitcher || '').toLowerCase();
@@ -796,7 +823,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                     </span>
 
                     <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
-                        {/* Row 1: Name + Team + Game Info */}
+                        {/* Row 1: Name + Team + Badges + Game Info */}
                         <div className="flex items-center gap-1 flex-wrap">
                             <span
                                 className={`text-sm font-bold ${isEmpty ? 'text-slate-600 italic' : 'text-slate-100 cursor-pointer hover:text-purple-300 transition-colors'}`}
@@ -807,6 +834,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                             {!isEmpty && p.team && (
                                 <span className={`${getTeamColor(p.team)} font-bold text-[10px] flex-shrink-0`}>{teamAbbr}</span>
                             )}
+                            {statBadges}
                             {gameInfoEl}
                             {!isEmpty && startingBadge}
                         </div>
