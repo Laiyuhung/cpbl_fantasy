@@ -277,6 +277,12 @@ export default function PlayerDetailModal({
     ];
     const dataByWindow = isPitcher ? stats.pitching : stats.batting;
 
+    const formatFpValue = (value) => {
+        if (value === null || value === undefined || value === '-') return '-';
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
+    };
+
     // Render row for a specific time window
     const renderRow = (tw) => {
         const windowStats = dataByWindow[tw];
@@ -298,7 +304,9 @@ export default function PlayerDetailModal({
                 <td className="py-2.5 px-3 text-sm font-semibold text-slate-300 whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.2)] w-24">{tw}</td>
                 {abbreviations.map((abbr, i) => {
                     const val = windowStats[abbr.toLowerCase()];
-                    const displayVal = val === null || val === undefined ? '-' : val;
+                    const displayVal = abbr === 'FP'
+                        ? formatFpValue(val)
+                        : (val === null || val === undefined ? '-' : val);
                     const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
                     const isRefStat = abbr === 'AB' || abbr === 'IP';
                     const isFp = abbr === 'FP';
@@ -709,7 +717,9 @@ export default function PlayerDetailModal({
                                                             <div className="grid grid-flow-col auto-cols-[56px]">
                                                                 {abbreviations.map((abbr, i) => {
                                                                     const val = windowStats ? windowStats[abbr.toLowerCase()] : null;
-                                                                    const displayVal = val === null || val === undefined ? '-' : val;
+                                                                    const displayVal = abbr === 'FP'
+                                                                        ? formatFpValue(val)
+                                                                        : (val === null || val === undefined ? '-' : val);
                                                                     const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
                                                                     const isRefStat = abbr === 'AB' || abbr === 'IP';
                                                                     const isFp = abbr === 'FP';
@@ -771,11 +781,13 @@ export default function PlayerDetailModal({
                                                             {abbreviations.map((abbr, i) => {
                                                                 const val = game[abbr];
                                                                 const isRateCol = ['AVG', 'OBP', 'SLG', 'ERA', 'WHIP'].includes(abbr);
-                                                                const displayVal = val == null || val === '-'
-                                                                    ? '-'
-                                                                    : isRateCol
-                                                                        ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3)
-                                                                        : val;
+                                                                const displayVal = abbr === 'FP'
+                                                                    ? formatFpValue(val)
+                                                                    : (val == null || val === '-'
+                                                                        ? '-'
+                                                                        : isRateCol
+                                                                            ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3)
+                                                                            : val);
                                                                 const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
                                                                 const isRefStat = abbr === 'AB' || abbr === 'IP';
                                                                 const isFp = abbr === 'FP';
@@ -818,11 +830,13 @@ export default function PlayerDetailModal({
                                                                 {abbreviations.map((abbr, i) => {
                                                                     const val = game[abbr];
                                                                     const isRateCol = ['AVG', 'OBP', 'SLG', 'ERA', 'WHIP'].includes(abbr);
-                                                                    const displayVal = val == null || val === '-'
-                                                                        ? '-'
-                                                                        : isRateCol
-                                                                            ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3)
-                                                                            : val;
+                                                                    const displayVal = abbr === 'FP'
+                                                                        ? formatFpValue(val)
+                                                                        : (val == null || val === '-'
+                                                                            ? '-'
+                                                                            : isRateCol
+                                                                                ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3)
+                                                                                : val);
                                                                     const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
                                                                     const isRefStat = abbr === 'AB' || abbr === 'IP';
                                                                     const isFp = abbr === 'FP';

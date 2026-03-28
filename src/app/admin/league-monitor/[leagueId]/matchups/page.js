@@ -171,6 +171,10 @@ export default function AdminMatchupsPage() {
     const getStatValue = (stat, abbr) => {
         const key = abbr.toLowerCase();
         const val = stat[key];
+        if (key === 'fp') {
+            const parsed = Number(val);
+            return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
+        }
         // Format rate stats
         if (['avg', 'obp', 'slg', 'ops'].includes(key)) {
             return typeof val === 'number' ? val.toFixed(3) : (val ?? '.000');

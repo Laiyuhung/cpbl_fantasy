@@ -411,6 +411,10 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         const key = parseStatKey(statKey).toLowerCase();
         const val = playerStats[playerName][key];
         if (val === undefined || val === null) return '-';
+        if (key === 'fp') {
+            const parsed = Number(val);
+            return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
+        }
         if (Number(val) === 0) return <span className="text-slate-600">0</span>;
         return val;
     };

@@ -622,7 +622,12 @@ export default function RosterPage() {
         let fieldName = statKey;
         const matches = statKey.match(/\(([^)]+)\)/g);
         if (matches) fieldName = matches[matches.length - 1].replace(/[()]/g, '');
-        const value = stats[fieldName.toLowerCase()];
+        const fieldKey = fieldName.toLowerCase();
+        const value = stats[fieldKey];
+        if (fieldKey === 'fp' && value !== undefined && value !== null) {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
+        }
         return value !== undefined && value !== null ? value : '-';
     };
 

@@ -196,8 +196,8 @@ export default function MatchupsPage() {
         const key = abbr.toLowerCase();
         if (key === 'fp') {
             if (stat.fp === null || stat.fp === undefined) return '-';
-            const rounded = Math.round(Number(stat.fp) * 10) / 10;
-            return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+            const parsed = Number(stat.fp);
+            return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
         }
         const val = stat[key];
         // Format rate stats

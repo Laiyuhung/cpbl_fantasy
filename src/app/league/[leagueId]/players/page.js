@@ -489,6 +489,17 @@ export default function PlayersPage() {
   // 格式化統計數據顯示
   const formatStatValue = (value, statKey) => {
     if (value === null || value === undefined) return '-';
+
+    const statAbbrMatches = String(statKey || '').match(/\(([^)]+)\)/g);
+    const statAbbr = statAbbrMatches
+      ? statAbbrMatches[statAbbrMatches.length - 1].replace(/[()]/g, '').toLowerCase()
+      : String(statKey || '').toLowerCase();
+
+    if (statAbbr === 'fp') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
+    }
+
     // Format 0 as gray
     if (Number(value) === 0) return <span className="text-slate-500 font-bold">0</span>;
 

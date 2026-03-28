@@ -20,6 +20,31 @@ export function buildCategoryWeights(rows) {
   return weights;
 }
 
+function roundToTwoDecimals(value) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function parseBaseballInningsValue(value) {
+  if (value === null || value === undefined || value === '') return null;
+
+  const str = String(value).trim();
+  if (!str) return null;
+
+  const [inningPartRaw, outPartRaw = '0'] = str.split('.');
+  const fullInnings = Number(inningPartRaw);
+  const outsInDecimal = Number(outPartRaw.charAt(0));
+
+  if (!Number.isFinite(fullInnings)) return null;
+
+  // Baseball IP decimal means outs: .0/.1/.2 => +0/+1 out/+2 outs.
+  if (str.includes('.') && [0, 1, 2].includes(outsInDecimal)) {
+    return fullInnings + outsInDecimal / 3;
+  }
+
+  const parsed = Number(str);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function getNumericStatValue(stats, abbr) {
   if (!stats || !abbr) return null;
 
@@ -34,6 +59,11 @@ function getNumericStatValue(stats, abbr) {
   }
 
   const raw = stats[lowerKey] ?? stats[upperKey] ?? stats[abbr];
+
+  if (lowerKey === 'ip') {
+    return parseBaseballInningsValue(raw);
+  }
+
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -56,12 +86,11 @@ export function calculateFantasyPoints(stats, categories, weightsByCategory) {
     total += value * weight;
   });
 
-  return total;
+  return roundToTwoDecimals(total);
 }
 
 export function formatFantasyPoints(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return '-';
-  const rounded = Math.round(parsed * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return roundToTwoDecimals(parsed).toFixed(2);
 }
