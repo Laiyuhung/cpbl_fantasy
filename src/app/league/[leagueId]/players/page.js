@@ -250,7 +250,7 @@ export default function PlayersPage() {
 
     // If before first week, use "2025 Season", otherwise "2026 Season"
     if (taiwanTime < firstWeekStart) {
-      setTimeWindow('2025 Season');
+      setTimeWindow('2026 Season');
     } else {
       setTimeWindow('2026 Season');
     }
