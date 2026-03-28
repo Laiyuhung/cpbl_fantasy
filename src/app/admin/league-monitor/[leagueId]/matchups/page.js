@@ -112,10 +112,17 @@ export default function AdminMatchupsPage() {
     }, [activeTab, leagueId, selectedWeek, selectedMatchupIndex, matchups]);
 
     // Display Helper - 直接顯示後端的值
-    const formatStat = (val, cat) => {
-        // K/BB 為 null 代表無限大（BB=0 但 K>0）
-        if (cat === 'p_k/bb' && (val === null || val === undefined)) {
-            return 'INF';
+    const formatStat = (val, cat, stats = null) => {
+        // K/BB: BB=0 且 K>0 時顯示 INF
+        if (cat === 'p_k/bb') {
+            const k = Number(stats?.p_k);
+            const bb = Number(stats?.p_bb);
+            if (Number.isFinite(k) && Number.isFinite(bb) && bb === 0 && k > 0) {
+                return 'INF';
+            }
+            if (val === null || val === undefined) {
+                return 'INF';
+            }
         }
 
         // 如果值為 undefined 或 null，顯示 0
@@ -186,6 +193,11 @@ export default function AdminMatchupsPage() {
             return stat.ip_display ?? '0.0';
         }
         if (key === 'k/bb') {
+            const k = Number(stat.k);
+            const bb = Number(stat.bb);
+            if (Number.isFinite(k) && Number.isFinite(bb) && bb === 0 && k > 0) {
+                return 'INF';
+            }
             return val === null || val === undefined ? 'INF' : val;
         }
         return val ?? 0;
@@ -440,14 +452,14 @@ export default function AdminMatchupsPage() {
                                                 const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
                                                 return (
                                                     <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
-                                                        <TableCell className="w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
+                                                        <TableCell className="w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12">{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
                                                         <TableCell className="w-[20%] text-center py-2 sm:py-3">
                                                             <span className="font-bold text-xs sm:text-sm text-purple-300 uppercase tracking-wider">{abbr}</span>
                                                             {isFantasyPoints && weight !== undefined && (
                                                                 <span className="ml-1 text-xs text-yellow-300 font-bold">x{weight}</span>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
+                                                        <TableCell className="w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12">{formatStat(val2, dbCol, activeMatchup.manager2_stats)}</TableCell>
                                                     </TableRow>
                                                 );
                                             })}
@@ -474,14 +486,14 @@ export default function AdminMatchupsPage() {
                                                 const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
                                                 return (
                                                     <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
-                                                        <TableCell className="w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12">{formatStat(val1, dbCol)}</TableCell>
+                                                        <TableCell className="w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12">{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
                                                         <TableCell className="w-[20%] text-center py-2 sm:py-3">
                                                             <span className="font-bold text-xs sm:text-sm text-purple-300 uppercase tracking-wider">{abbr}</span>
                                                             {isFantasyPoints && weight !== undefined && (
                                                                 <span className="ml-1 text-xs text-yellow-300 font-bold">x{weight}</span>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12">{formatStat(val2, dbCol)}</TableCell>
+                                                        <TableCell className="w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12">{formatStat(val2, dbCol, activeMatchup.manager2_stats)}</TableCell>
                                                     </TableRow>
                                                 );
                                             })}

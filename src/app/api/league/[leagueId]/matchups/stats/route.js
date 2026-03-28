@@ -177,6 +177,13 @@ function formatStats(stats) {
     const formatted = { ...stats };
     metadataFields.forEach(field => delete formatted[field]);
 
+    // K/BB: BB=0 且 K>0 時以 null 表示無限大，交由前端顯示 INF
+    const pitchingK = Number(formatted.p_k);
+    const pitchingBB = Number(formatted.p_bb);
+    if (Number.isFinite(pitchingK) && Number.isFinite(pitchingBB) && pitchingBB === 0 && pitchingK > 0) {
+        formatted['p_k/bb'] = null;
+    }
+
     // 3位小數: AVG, OBP, SLG, OPS, WIN%, OBPA
     const threeDecimals = ['b_avg', 'b_obp', 'b_slg', 'b_ops', 'p_win%', 'p_obpa'];
     threeDecimals.forEach(key => {

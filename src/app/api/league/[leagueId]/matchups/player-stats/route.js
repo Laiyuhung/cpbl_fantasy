@@ -100,14 +100,23 @@ export async function GET(request, { params }) {
         : null
     }));
 
-    const pitchingStats = pitchingResult.data.map(stat => ({
-      ...stat,
-      player_name: playerMap[stat.player_id]?.name || 'Unknown',
-      player_team: playerMap[stat.player_id]?.team || '',
-      fp: leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE
-        ? calculateFantasyPoints(stat, leagueSettings.pitcher_stat_categories || [], categoryWeights.pitcher)
-        : null
-    }));
+    const pitchingStats = pitchingResult.data.map(stat => {
+      const k = Number(stat.k);
+      const bb = Number(stat.bb);
+      const normalizedKbb = (Number.isFinite(k) && Number.isFinite(bb) && bb === 0 && k > 0)
+        ? null
+        : stat['k/bb'];
+
+      return {
+        ...stat,
+        'k/bb': normalizedKbb,
+        player_name: playerMap[stat.player_id]?.name || 'Unknown',
+        player_team: playerMap[stat.player_id]?.team || '',
+        fp: leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE
+          ? calculateFantasyPoints(stat, leagueSettings.pitcher_stat_categories || [], categoryWeights.pitcher)
+          : null
+      };
+    });
 
     return NextResponse.json({
       success: true,
