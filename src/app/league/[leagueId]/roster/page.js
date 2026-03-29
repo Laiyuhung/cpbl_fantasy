@@ -1254,10 +1254,11 @@ export default function RosterPage() {
         const validPlayers = (players || []).filter((p) => !p.isEmpty && p.player_id && p.player_id !== 'empty');
 
         const sums = {
-            ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, tb: 0,
+            gp: 0, pa: 0, ab: 0, h: 0, bb: 0, hbp: 0, sh: 0, sf: 0, tb: 0,
+            ['1b']: 0, ['2b']: 0, ['3b']: 0, xbh: 0, cyc: 0,
             er: 0, k: 0, tbf: 0, w: 0, l: 0,
             fp: 0, r: 0, hr: 0, rbi: 0, sb: 0, cs: 0, gidp: 0,
-            app: 0, gs: 0, rapp: 0, sv: 0, hld: 0, rl: 0, ra: 0,
+            app: 0, gs: 0, rapp: 0, pc: 0, sv: 0, hld: 0, rw: 0, rl: 0, ra: 0,
             hr_p: 0, bb_p: 0, ibb: 0, hbp_p: 0, qs: 0, cg: 0, sho: 0, pg: 0, nh: 0,
             outs: 0,
         };
@@ -1271,12 +1272,20 @@ export default function RosterPage() {
             const row = dailyStatsForTotals[p.player_id];
             if (!row) return;
 
+            addNum('gp', row.gp);
+            addNum('pa', row.pa);
             addNum('ab', row.ab);
             addNum('h', row.h);
             addNum('bb', row.bb);
             addNum('hbp', row.hbp);
+            addNum('sh', row.sh);
             addNum('sf', row.sf);
             addNum('tb', row.tb);
+            addNum('1b', row['1b']);
+            addNum('2b', row['2b']);
+            addNum('3b', row['3b']);
+            addNum('xbh', row.xbh);
+            addNum('cyc', row.cyc);
 
             addNum('er', row.er);
             addNum('k', row.k);
@@ -1294,8 +1303,10 @@ export default function RosterPage() {
             addNum('app', row.app);
             addNum('gs', row.gs);
             addNum('rapp', row.rapp);
+            addNum('pc', row.pc);
             addNum('sv', row.sv);
             addNum('hld', row.hld);
+            addNum('rw', row.rw);
             addNum('rl', row.rl);
             addNum('ra', row.ra);
             addNum('hr_p', row.hr);
@@ -1350,6 +1361,8 @@ export default function RosterPage() {
                 // Special stats
                 case 'sv+hld': return sums.sv + sums.hld;
                 case 'ip': return sums.outs;
+                case 'out': return sums.outs;
+                case 'outs': return sums.outs;
 
                 // Common counting stats
                 default: {
@@ -1362,14 +1375,24 @@ export default function RosterPage() {
                                             key === 'sb' ? sums.sb :
                                                 key === 'cs' ? sums.cs :
                                                     key === 'gidp' ? sums.gidp :
+                                                            key === 'gp' ? sums.gp :
+                                                                key === 'pa' ? sums.pa :
+                                                                    key === '1b' ? sums['1b'] :
+                                                                        key === '2b' ? sums['2b'] :
+                                                                            key === '3b' ? sums['3b'] :
+                                                                                key === 'xbh' ? sums.xbh :
+                                                                                    key === 'sh' ? sums.sh :
+                                                                                        key === 'cyc' ? sums.cyc :
                                                         key === 'ab' ? sums.ab :
                                                             key === 'app' ? sums.app :
                                                                 key === 'gs' ? sums.gs :
                                                                     key === 'rapp' ? sums.rapp :
+                                                                            key === 'pc' ? sums.pc :
                                                                         key === 'w' ? sums.w :
                                                                             key === 'l' ? sums.l :
                                                                                 key === 'sv' ? sums.sv :
                                                                                     key === 'hld' ? sums.hld :
+                                                                                            key === 'rw' ? sums.rw :
                                                                                         key === 'rl' ? sums.rl :
                                                                                             key === 'ra' ? sums.ra :
                                                                                                 key === 'er' ? sums.er :
