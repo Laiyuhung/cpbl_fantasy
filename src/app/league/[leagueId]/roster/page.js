@@ -44,6 +44,7 @@ export default function RosterPage() {
     // Stats State
     const [timeWindow, setTimeWindow] = useState('Today');
     const [playerStats, setPlayerStats] = useState({});
+    const [dailyStatsForTotals, setDailyStatsForTotals] = useState({});
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
     const [scoringType, setScoringType] = useState('');
@@ -533,6 +534,44 @@ export default function RosterPage() {
         };
         fetchStats();
     }, [timeWindow, selectedDate, leagueId]);
+
+    // Daily stats for category totals (always based on selectedDate, independent of timeWindow)
+    useEffect(() => {
+        const fetchDailyStatsForTotals = async () => {
+            if (!selectedDate || !leagueId) {
+                setDailyStatsForTotals({});
+                return;
+            }
+
+            try {
+                const totalsMap = {};
+                const [batterRes, pitcherRes] = await Promise.all([
+                    fetch('/api/playerStats/daily-batting', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date: selectedDate, league_id: leagueId })
+                    }),
+                    fetch('/api/playerStats/daily-pitching', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date: selectedDate, league_id: leagueId })
+                    })
+                ]);
+
+                const batterData = await batterRes.json();
+                const pitcherData = await pitcherRes.json();
+                if (Array.isArray(batterData)) batterData.forEach((s) => { if (s.player_id) totalsMap[s.player_id] = s; });
+                if (Array.isArray(pitcherData)) pitcherData.forEach((s) => { if (s.player_id) totalsMap[s.player_id] = s; });
+
+                setDailyStatsForTotals(totalsMap);
+            } catch (err) {
+                console.error('Failed to fetch daily totals stats:', err);
+                setDailyStatsForTotals({});
+            }
+        };
+
+        fetchDailyStatsForTotals();
+    }, [selectedDate, leagueId]);
 
     // Fetch Pending Trades Count
     useEffect(() => {
@@ -1184,6 +1223,67 @@ export default function RosterPage() {
         return isFantasyPoints ? ['Fantasy Points (FP)', ...base] : base;
     })();
 
+    const parseBaseballIpToOuts = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return null;
+        return Math.floor(parsed) * 3 + Math.round((parsed % 1) * 10);
+    };
+
+    const formatOutsToIp = (outs) => {
+        const safeOuts = Number.isFinite(outs) ? outs : 0;
+        return `${Math.floor(safeOuts / 3)}.${safeOuts % 3}`;
+    };
+
+    const formatCategoryTotal = (abbr, value) => {
+        if (abbr === 'IP') return formatOutsToIp(value);
+        if (abbr === 'FP') return Number(value || 0).toFixed(2);
+
+        const threeDecimals = new Set(['AVG', 'OBP', 'SLG', 'OPS', 'OBPA', 'WIN%']);
+        const twoDecimals = new Set(['ERA', 'WHIP', 'K/9', 'BB/9', 'K/BB', 'H/9']);
+
+        if (threeDecimals.has(abbr)) return Number(value || 0).toFixed(3);
+        if (twoDecimals.has(abbr)) return Number(value || 0).toFixed(2);
+
+        const rounded = Math.round(Number(value || 0));
+        return Math.abs(Number(value || 0) - rounded) < 0.000001 ? String(rounded) : Number(value || 0).toFixed(2);
+    };
+
+    const computeCategoryTotals = (players, categories) => {
+        const validPlayers = (players || []).filter((p) => !p.isEmpty && p.player_id && p.player_id !== 'empty');
+
+        return (categories || []).map((cat) => {
+            const abbr = parseStatName(cat);
+            const key = abbr.toLowerCase();
+            let sum = 0;
+            let outs = 0;
+
+            validPlayers.forEach((p) => {
+                const row = dailyStatsForTotals[p.player_id];
+                if (!row) return;
+                const raw = row[key];
+                if (raw === null || raw === undefined || raw === '') return;
+
+                if (key === 'ip') {
+                    const parsedOuts = parseBaseballIpToOuts(raw);
+                    if (Number.isFinite(parsedOuts)) outs += parsedOuts;
+                    return;
+                }
+
+                const num = Number(raw);
+                if (Number.isFinite(num)) sum += num;
+            });
+
+            return {
+                abbr,
+                value: formatCategoryTotal(abbr, key === 'ip' ? outs : sum)
+            };
+        });
+    };
+
+    const batterCategoryTotals = computeCategoryTotals(batterRoster, displayBatterCats);
+    const pitcherCategoryTotals = computeCategoryTotals(pitcherRoster, displayPitcherCats);
+
 
 
 
@@ -1502,6 +1602,56 @@ export default function RosterPage() {
                             >
                                 POS RULES
                             </button>
+                        </div>
+
+                        {/* Daily Category Totals (based on selectedDate, independent of timeWindow) */}
+                        <div className="w-full mt-1 space-y-2">
+                            <div className="overflow-x-auto pb-1">
+                                <div className="text-xs sm:text-sm font-black text-pink-300 mb-1">Batters Total</div>
+                                <table className="min-w-max text-xs sm:text-sm text-slate-100">
+                                    <thead>
+                                        <tr>
+                                            {batterCategoryTotals.map((item) => (
+                                                <th key={`b-total-head-${item.abbr}`} className="px-2 sm:px-3 py-1 text-center font-bold text-pink-200 whitespace-nowrap">
+                                                    {item.abbr}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="border-t border-slate-500/60">
+                                            {batterCategoryTotals.map((item) => (
+                                                <td key={`b-total-val-${item.abbr}`} className="px-2 sm:px-3 py-1.5 text-center font-mono font-bold whitespace-nowrap text-purple-100">
+                                                    {item.value}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="overflow-x-auto pb-1">
+                                <div className="text-xs sm:text-sm font-black text-orange-300 mb-1">Pitchers Total</div>
+                                <table className="min-w-max text-xs sm:text-sm text-slate-100">
+                                    <thead>
+                                        <tr>
+                                            {pitcherCategoryTotals.map((item) => (
+                                                <th key={`p-total-head-${item.abbr}`} className="px-2 sm:px-3 py-1 text-center font-bold text-orange-200 whitespace-nowrap">
+                                                    {item.abbr}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="border-t border-slate-500/60">
+                                            {pitcherCategoryTotals.map((item) => (
+                                                <td key={`p-total-val-${item.abbr}`} className="px-2 sm:px-3 py-1.5 text-center font-mono font-bold whitespace-nowrap text-purple-100">
+                                                    {item.value}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

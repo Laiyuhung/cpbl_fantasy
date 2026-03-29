@@ -3048,15 +3048,41 @@ export default function PlayersPage() {
                   {getMyPlayers().map(p => {
                     const playerDetail = players.find(x => x.player_id === p.player_id);
                     if (!playerDetail) return null;
+                    const playerSlot = currentRosterState.find(rp => rp.player_id === p.player_id)?.position;
 
                     // Filter logic: If violation is foreigner specific, only show foreigners
                     if (violationType === 'foreigner_limit' || violationType === 'foreigner_active_limit') {
                       if (playerDetail.identity?.toLowerCase() !== 'foreigner') return null;
                     }
 
+                    // If active limit is the blocker and the added player is active, only allow dropping active-slot players.
+                    const isViolationActiveLimit = violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
+                    const isAddActive = !['NA', 'Minor'].includes(projectedAddSlot);
+                    const isBlockedByActiveLimit = isViolationActiveLimit && isAddActive && ['NA', 'Minor'].includes(playerSlot);
+
                     const isLocked = activeTradePlayerIds.has(p.player_id);
                     const isGameLocked = isDropLockedByGameStart({ player_id: p.player_id });
                     const isSelected = dropCandidateID === p.player_id;
+
+                    if (isBlockedByActiveLimit) {
+                      return (
+                        <div key={p.player_id} className="flex items-center justify-between p-3 rounded-xl border border-slate-700 bg-slate-900/50 opacity-60 cursor-not-allowed">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-900 overflow-hidden grayscale">
+                              <img src={getPlayerPhoto(playerDetail)} className="w-full h-full object-cover" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-400">{playerDetail.name}</div>
+                              {playerSlot && <div className="text-xs text-purple-300">Now Slot: <span className="font-bold uppercase border border-purple-500/50 px-1 rounded">{playerSlot}</span></div>}
+                              <div className="text-[11px] text-amber-300">Cannot drop NA/Minor: does not free an active slot.</div>
+                            </div>
+                          </div>
+                          <div className="text-slate-500 font-bold text-xs flex items-center gap-1">
+                            🚫 <span className="hidden sm:inline">Not Eligible</span>
+                          </div>
+                        </div>
+                      );
+                    }
 
                     if (isLocked) {
                       return (
@@ -3065,7 +3091,10 @@ export default function PlayersPage() {
                             <div className="w-8 h-8 rounded-full bg-slate-900 overflow-hidden grayscale">
                               <img src={getPlayerPhoto(playerDetail)} className="w-full h-full object-cover" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
                             </div>
-                            <div className="font-bold text-slate-400">{playerDetail.name}</div>
+                            <div>
+                              <div className="font-bold text-slate-400">{playerDetail.name}</div>
+                              {playerSlot && <div className="text-xs text-purple-300">Now Slot: <span className="font-bold uppercase border border-purple-500/50 px-1 rounded">{playerSlot}</span></div>}
+                            </div>
                           </div>
                           <div className="text-slate-500 font-bold text-xs flex items-center gap-1">
                             🔒 <span className="hidden sm:inline">In Trade</span>
@@ -3081,7 +3110,10 @@ export default function PlayersPage() {
                             <div className="w-8 h-8 rounded-full bg-slate-900 overflow-hidden grayscale">
                               <img src={getPlayerPhoto(playerDetail)} className="w-full h-full object-cover" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
                             </div>
-                            <div className="font-bold text-slate-400">{playerDetail.name}</div>
+                            <div>
+                              <div className="font-bold text-slate-400">{playerDetail.name}</div>
+                              {playerSlot && <div className="text-xs text-purple-300">Now Slot: <span className="font-bold uppercase border border-purple-500/50 px-1 rounded">{playerSlot}</span></div>}
+                            </div>
                           </div>
                           <div className="text-slate-500 font-bold text-xs flex items-center gap-1">
                             🔒 <span className="hidden sm:inline">In Game</span>
@@ -3100,7 +3132,10 @@ export default function PlayersPage() {
                           <div className="w-8 h-8 rounded-full bg-slate-900 overflow-hidden">
                             <img src={getPlayerPhoto(playerDetail)} className="w-full h-full object-cover" onError={(e) => e.target.src = '/photo/defaultPlayer.png'} />
                           </div>
-                          <div className="font-bold text-white">{playerDetail.name}</div>
+                          <div>
+                            <div className="font-bold text-white">{playerDetail.name}</div>
+                            {playerSlot && <div className="text-xs text-purple-300">Now Slot: <span className="font-bold uppercase border border-purple-500/50 px-1 rounded">{playerSlot}</span></div>}
+                          </div>
                         </div>
                         {isSelected && <div className="text-red-400 font-bold text-sm">DROP</div>}
                       </div>

@@ -213,6 +213,63 @@ export default function AdminMatchupsPage() {
     // Build pitcher columns: IP + league categories  
     const pitcherColumns = ['IP', ...(scroingSettings?.pitcher_categories?.map(cat => getAbbr(cat)) || [])];
 
+    // Helper to determine if higher is better for a stat
+    const isHigherBetter = (dbCol) => {
+        const col = dbCol.toLowerCase();
+        
+        // Pitcher stats where LOWER is better
+        const pitcherLowerIsBetter = {
+            'p_l': true,        // Losses
+            'p_rl': true,       // Relief Losses
+            'p_h': true,        // Hits
+            'p_hr': true,       // Home Runs
+            'p_bb': true,       // Walks
+            'p_ibb': true,      // Intentional Walks
+            'p_hbp': true,      // Hit Batters
+            'p_ra': true,       // Runs Allowed
+            'p_er': true,       // Earned Runs
+            'p_era': true,      // ERA
+            'p_whip': true,     // WHIP
+            'p_bb/9': true,     // Walks Per 9 Innings
+            'p_h/9': true,      // Hits Per 9 Innings
+            'p_obpa': true      // On-base Percentage Against
+        };
+        
+        // Batter stats where LOWER is better
+        const batterLowerIsBetter = {
+            'b_k': true,        // Strikeouts
+            'b_so': true,       // Strikeouts (alternate)
+            'b_cs': true,       // Caught Stealing
+            'b_gidp': true      // Ground Into Double Play
+        };
+        
+        return !(pitcherLowerIsBetter[col] || batterLowerIsBetter[col]);
+    };
+
+    // Helper to determine category winner (handles INF values)
+    const getWinningValue = (val1, val2, dbCol) => {
+        const col = dbCol.toLowerCase();
+        
+        // Handle INF values - INF is always the best (only for K/BB)
+        const isINF1 = val1 === 'INF';
+        const isINF2 = val2 === 'INF';
+        
+        if (isINF1 && !isINF2) return 1;
+        if (isINF2 && !isINF1) return 2;
+        if (isINF1 && isINF2) return null; // Tie
+        
+        const num1 = Number(val1) || 0;
+        const num2 = Number(val2) || 0;
+        
+        if (num1 === num2) return null; // Tie
+        
+        if (isHigherBetter(col)) {
+            return num1 > num2 ? 1 : (num2 > num1 ? 2 : null);
+        } else {
+            return num1 < num2 ? 1 : (num2 < num1 ? 2 : null);
+        }
+    };
+
     const activeMatchup = matchups[selectedMatchupIndex];
 
     return (

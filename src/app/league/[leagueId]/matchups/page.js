@@ -249,6 +249,63 @@ export default function MatchupsPage() {
 
     const activeMatchup = matchups[selectedMatchupIndex];
 
+    // Helper to determine if higher is better for a stat
+    const isHigherBetter = (dbCol) => {
+        const col = dbCol.toLowerCase();
+        
+        // Pitcher stats where LOWER is better
+        const pitcherLowerIsBetter = {
+            'p_l': true,        // Losses
+            'p_rl': true,       // Relief Losses
+            'p_h': true,        // Hits
+            'p_hr': true,       // Home Runs
+            'p_bb': true,       // Walks
+            'p_ibb': true,      // Intentional Walks
+            'p_hbp': true,      // Hit Batters
+            'p_ra': true,       // Runs Allowed
+            'p_er': true,       // Earned Runs
+            'p_era': true,      // ERA
+            'p_whip': true,     // WHIP
+            'p_bb/9': true,     // Walks Per 9 Innings
+            'p_h/9': true,      // Hits Per 9 Innings
+            'p_obpa': true      // On-base Percentage Against
+        };
+        
+        // Batter stats where LOWER is better
+        const batterLowerIsBetter = {
+            'b_k': true,        // Strikeouts
+            'b_so': true,       // Strikeouts (alternate)
+            'b_cs': true,       // Caught Stealing
+            'b_gidp': true      // Ground Into Double Play
+        };
+        
+        return !(pitcherLowerIsBetter[col] || batterLowerIsBetter[col]);
+    };
+
+    // Helper to determine category winner (handles INF values)
+    const getWinningValue = (val1, val2, dbCol) => {
+        const col = dbCol.toLowerCase();
+        
+        // Handle INF values - INF is always the best (only for K/BB)
+        const isINF1 = val1 === 'INF';
+        const isINF2 = val2 === 'INF';
+        
+        if (isINF1 && !isINF2) return 1;
+        if (isINF2 && !isINF1) return 2;
+        if (isINF1 && isINF2) return null; // Tie
+        
+        const num1 = Number(val1) || 0;
+        const num2 = Number(val2) || 0;
+        
+        if (num1 === num2) return null; // Tie
+        
+        if (isHigherBetter(col)) {
+            return num1 > num2 ? 1 : (num2 > num1 ? 2 : null);
+        } else {
+            return num1 < num2 ? 1 : (num2 < num1 ? 2 : null);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
@@ -344,6 +401,12 @@ export default function MatchupsPage() {
                             </>
                         )}
                     </div>
+                </div>
+
+                {/* Score Update Hint */}
+                <div className="flex items-center justify-center gap-2 text-sm text-slate-300/60">
+                    <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    <span>Score updates every 5 minutes</span>
                 </div>
 
                 {/* Matchup Carousel */}
@@ -488,16 +551,17 @@ export default function MatchupsPage() {
                                                 const abbr = getAbbr(cat);
                                                 const weight = scroingSettings?.category_weights?.batter?.[cat];
                                                 const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
+                                                const winner = getWinningValue(val1, val2, dbCol);
                                                 return (
                                                     <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
-                                                        <TableCell className="w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12">{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
+                                                        <TableCell className={`w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12 ${winner === 1 ? 'text-yellow-300 font-bold' : 'text-purple-100'}`}>{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
                                                         <TableCell className="w-[20%] text-center py-2 sm:py-3">
                                                             <span className="font-bold text-xs sm:text-sm text-purple-300 uppercase tracking-wider">{abbr}</span>
                                                             {isFantasyPoints && weight !== undefined && (
                                                                 <span className="ml-1 text-xs text-yellow-300 font-bold">x{weight}</span>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12">{formatStat(val2, dbCol, activeMatchup.manager2_stats)}</TableCell>
+                                                        <TableCell className={`w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12 ${winner === 2 ? 'text-yellow-300 font-bold' : 'text-purple-100'}`}>{formatStat(val2, dbCol, activeMatchup.manager2_stats)}</TableCell>
                                                     </TableRow>
                                                 );
                                             })}
@@ -522,16 +586,17 @@ export default function MatchupsPage() {
                                                 const abbr = getAbbr(cat);
                                                 const weight = scroingSettings?.category_weights?.pitcher?.[cat];
                                                 const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
+                                                const winner = getWinningValue(val1, val2, dbCol);
                                                 return (
                                                     <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
-                                                        <TableCell className="w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12">{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
+                                                        <TableCell className={`w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12 ${winner === 1 ? 'text-yellow-300 font-bold' : 'text-purple-100'}`}>{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
                                                         <TableCell className="w-[20%] text-center py-2 sm:py-3">
                                                             <span className="font-bold text-xs sm:text-sm text-purple-300 uppercase tracking-wider">{abbr}</span>
                                                             {isFantasyPoints && weight !== undefined && (
                                                                 <span className="ml-1 text-xs text-yellow-300 font-bold">x{weight}</span>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium text-purple-100 py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12">{formatStat(val2, dbCol, activeMatchup.manager2_stats)}</TableCell>
+                                                        <TableCell className={`w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12 ${winner === 2 ? 'text-yellow-300 font-bold' : 'text-purple-100'}`}>{formatStat(val2, dbCol, activeMatchup.manager2_stats)}</TableCell>
                                                     </TableRow>
                                                 );
                                             })}
