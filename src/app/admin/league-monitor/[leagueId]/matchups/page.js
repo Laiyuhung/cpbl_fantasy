@@ -146,6 +146,7 @@ export default function AdminMatchupsPage() {
 
         const mappedAbbr = {
             'sv+hld': 'svhld',
+            'out': 'outs',
         }[abbr] || abbr;
 
         // 直接加上前綴
@@ -181,7 +182,7 @@ export default function AdminMatchupsPage() {
     // Get stat value from player data
     const getStatValue = (stat, abbr) => {
         const key = abbr.toLowerCase();
-        const val = stat[key];
+        const val = key === 'out' ? (stat.outs ?? stat.out) : stat[key];
         if (key === 'fp') {
             const parsed = Number(val);
             return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';

@@ -18,6 +18,9 @@ function getTodayTW() {
   return `${year}-${month}-${day}`;
 }
 
+const NA_ELIGIBLE_STATUSES = new Set(['NA', 'NR', 'DR', 'MINOR', 'UNREGISTERED', 'DEREGISTERED']);
+const isNaEligibleStatus = (status) => NA_ELIGIBLE_STATUSES.has(String(status || '').trim().toUpperCase());
+
 export default function PlayersPage() {
   const params = useParams();
   const leagueId = params.leagueId;
@@ -983,7 +986,7 @@ export default function PlayersPage() {
       // 2. Identify Player & Slot
       const isForeigner = player.identity?.toLowerCase() === 'foreigner';
       const status = (player.real_life_status || 'Active').toUpperCase();
-      const isNaEligible = status !== 'MAJOR';
+      const isNaEligible = isNaEligibleStatus(status);
 
       // Minor Capacity
       const minorKey = Object.keys(rosterConfig).find(k => k.toLowerCase() === 'minor') || 'Minor';
@@ -1093,7 +1096,7 @@ export default function PlayersPage() {
 
     // Logic similar to Initial Check but considering Drop
     const status = (pendingAddPlayer.real_life_status || 'Active').toUpperCase();
-    const isNaEligible = status !== 'MAJOR';
+    const isNaEligible = isNaEligibleStatus(status);
 
     // Count NA usage
     let currentMinorCount = currentRosterState.filter(p => ['NA', 'Minor'].includes(p.position)).length;
@@ -3055,9 +3058,10 @@ export default function PlayersPage() {
                       if (playerDetail.identity?.toLowerCase() !== 'foreigner') return null;
                     }
 
-                    // If active limit is the blocker and the added player is active, only allow dropping active-slot players.
+                    // If active limit is the blocker and the pending add player is active,
+                    // NA/Minor drop candidates must be disabled.
                     const isViolationActiveLimit = violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
-                    const isAddActive = !['NA', 'Minor'].includes(projectedAddSlot);
+                    const isAddActive = !isNaEligibleStatus(pendingAddPlayer?.real_life_status || 'Active');
                     const isBlockedByActiveLimit = isViolationActiveLimit && isAddActive && ['NA', 'Minor'].includes(playerSlot);
 
                     const isLocked = activeTradePlayerIds.has(p.player_id);
@@ -3163,8 +3167,8 @@ export default function PlayersPage() {
                     // Simplified Logic:
                     // We only have a problem if we represent a Net Increase in Active count that violates the limit.
                     // Violation exists if: Add is Active AND Drop is NOT Active.
-                    // If Add becomes NA (projectedAddSlot 'NA'), then Add is NOT Active (0 increase), so we are safe regardless of drop.
-                    const isAddActive = !['NA', 'Minor'].includes(projectedAddSlot);
+                    // Determine by pending add player's real-life status instead of projected slot.
+                    const isAddActive = !isNaEligibleStatus(pendingAddPlayer?.real_life_status || 'Active');
                     const isInvalidDropForActiveLimit = isViolationActiveLimit && isAddActive && !isDropActive;
 
                     return (
