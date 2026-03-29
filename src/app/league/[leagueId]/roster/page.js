@@ -1251,7 +1251,11 @@ export default function RosterPage() {
     };
 
     const computeCategoryTotals = (players, categories) => {
-        const validPlayers = (players || []).filter((p) => !p.isEmpty && p.player_id && p.player_id !== 'empty');
+        const validPlayers = (players || []).filter((p) => {
+            if (!p || p.isEmpty || !p.player_id || p.player_id === 'empty') return false;
+            const slot = String(p.position || '').toUpperCase();
+            return slot !== 'BN' && slot !== 'NA';
+        });
 
         const sums = {
             gp: 0, pa: 0, ab: 0, h: 0, bb: 0, hbp: 0, sh: 0, sf: 0, tb: 0,
