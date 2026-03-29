@@ -3058,11 +3058,11 @@ export default function PlayersPage() {
                       if (playerDetail.identity?.toLowerCase() !== 'foreigner') return null;
                     }
 
-                    // If active limit is the blocker and the pending add player is active,
+                    // If adding an active player and the blocker requires freeing active capacity,
                     // NA/Minor drop candidates must be disabled.
-                    const isViolationActiveLimit = violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
+                    const requiresActiveDrop = violationType === 'roster_limit' || violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
                     const isAddActive = !isNaEligibleStatus(pendingAddPlayer?.real_life_status || 'Active');
-                    const isBlockedByActiveLimit = isViolationActiveLimit && isAddActive && ['NA', 'Minor'].includes(playerSlot);
+                    const isBlockedByActiveLimit = requiresActiveDrop && isAddActive && ['NA', 'Minor'].includes(playerSlot);
 
                     const isLocked = activeTradePlayerIds.has(p.player_id);
                     const isGameLocked = isDropLockedByGameStart({ player_id: p.player_id });
@@ -3078,7 +3078,7 @@ export default function PlayersPage() {
                             <div>
                               <div className="font-bold text-slate-400">{playerDetail.name}</div>
                               {playerSlot && <div className="text-xs text-purple-300">Now Slot: <span className="font-bold uppercase border border-purple-500/50 px-1 rounded">{playerSlot}</span></div>}
-                              <div className="text-[11px] text-amber-300">Cannot drop NA/Minor: does not free an active slot.</div>
+                              <div className="text-[11px] text-amber-300">Cannot drop NA/Minor: does not free an active slot for this add.</div>
                             </div>
                           </div>
                           <div className="text-slate-500 font-bold text-xs flex items-center gap-1">
@@ -3154,10 +3154,10 @@ export default function PlayersPage() {
                     const isDropActive = dropPlayerInRoster && !['NA', 'Minor'].includes(dropPlayerInRoster.position);
 
                     // Validation: 
-                    // If Active Limit exceeded (active_roster_limit OR foreigner_active_limit), we usually need to drop Active.
+                    // If the violation requires active capacity, drop candidate must be active.
                     // BUT if the new player goes to NA (because we dropped an NA player??? No, if we add active, we must drop active OR drop NA to move someone to NA... wait)
                     // Simplified: If violation is Active Limit, drop candidate MUST be Active.
-                    const isViolationActiveLimit = violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
+                    const requiresActiveDrop = violationType === 'roster_limit' || violationType === 'active_roster_limit' || violationType === 'foreigner_active_limit';
 
                     // If violation is ActiveLimit, we generally must drop an Active player to free up a slot.
                     // Exception: If we drop an NA player, but that allows us to move an active player to NA... the system doesn't auto-move players yet usually.
@@ -3169,7 +3169,7 @@ export default function PlayersPage() {
                     // Violation exists if: Add is Active AND Drop is NOT Active.
                     // Determine by pending add player's real-life status instead of projected slot.
                     const isAddActive = !isNaEligibleStatus(pendingAddPlayer?.real_life_status || 'Active');
-                    const isInvalidDropForActiveLimit = isViolationActiveLimit && isAddActive && !isDropActive;
+                    const isInvalidDropForActiveLimit = requiresActiveDrop && isAddActive && !isDropActive;
 
                     return (
                       <button
