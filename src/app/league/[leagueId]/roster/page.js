@@ -1856,7 +1856,7 @@ export default function RosterPage() {
                                             </th>
                                         );
                                     })}
-                                </tr>
+                                </tr> 
                             </thead>
                             <tbody className="divide-y divide-purple-500/10">
                                 {batterRoster.length === 0 ? (
