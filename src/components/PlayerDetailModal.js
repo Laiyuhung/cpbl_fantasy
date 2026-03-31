@@ -33,8 +33,10 @@ export default function PlayerDetailModal({
     onToggleWatch,      // (player, isCurrentlyWatched) => void
 }) {
     const [stats, setStats] = useState({ batting: {}, pitching: {} });
+    const [splitRanks, setSplitRanks] = useState({});
     const [loading, setLoading] = useState(true);
     const [settingsLoading, setSettingsLoading] = useState(true);
+    const [rankLoading, setRankLoading] = useState(true);
     const [error, setError] = useState('');
     const [watchLoading, setWatchLoading] = useState(false);
     const [playerPhotoSrc, setPlayerPhotoSrc] = useState('/photo/defaultPlayer.png');
@@ -65,8 +67,10 @@ export default function PlayerDetailModal({
             setLoading(true);
             setSettingsLoading(true);
             setRecentGamesLoading(true);
+            setRankLoading(true);
             setError('');
             setStats({ batting: {}, pitching: {} });
+            setSplitRanks({});
             setRecentGames([]);
             setActiveTab('split');
             setPlayerPhotoSrc('/photo/defaultPlayer.png');
@@ -246,10 +250,45 @@ export default function PlayerDetailModal({
         }
     }, [isOpen, player, isPitcher]);
 
+    useEffect(() => {
+        const fetchSplitRanks = async () => {
+            if (!isOpen || !leagueId || !player?.player_id) {
+                setRankLoading(false);
+                return;
+            }
+
+            setRankLoading(true);
+            try {
+                const responses = await Promise.all(
+                    TIME_WINDOWS.map(async (tw) => {
+                        const res = await fetch(`/api/league/${leagueId}/rankings?time_window=${encodeURIComponent(tw)}`);
+                        const data = await res.json();
+
+                        if (!data?.success || !Array.isArray(data.rankings)) {
+                            return [tw, null];
+                        }
+
+                        const found = data.rankings.find((r) => String(r.player_id) === String(player.player_id));
+                        return [tw, found?.rank ?? null];
+                    })
+                );
+
+                setSplitRanks(Object.fromEntries(responses));
+            } catch (err) {
+                console.error('Error fetching split ranks:', err);
+                setSplitRanks({});
+            } finally {
+                setRankLoading(false);
+            }
+        };
+
+        fetchSplitRanks();
+    }, [isOpen, leagueId, player?.player_id]);
+
     if (!isOpen || !player) return null;
 
-    // Show loading until both settings and stats are loaded
-    const isFullyLoaded = !loading && !settingsLoading;
+    // Show loading until settings, stats, and ranks are loaded
+    const isFullyLoaded = !loading && !settingsLoading && !rankLoading;
 
     // We need to parse categorical arrays to abbreviations
     const parseStatKey = (cat) => {
@@ -283,6 +322,12 @@ export default function PlayerDetailModal({
         return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
     };
 
+    const formatRankValue = (rank) => {
+        return Number.isFinite(rank) ? `#${rank}` : '-';
+    };
+
+    const seasonRank = splitRanks['2026 Season'];
+
     // Render row for a specific time window
     const renderRow = (tw) => {
         const windowStats = dataByWindow[tw];
@@ -292,6 +337,7 @@ export default function PlayerDetailModal({
             return (
                 <tr key={tw} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-2.5 px-3 text-sm font-semibold text-slate-300 whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.2)] w-24">{tw}</td>
+                    <td className="py-2.5 px-3 text-center text-sm font-black text-cyan-300 whitespace-nowrap">{formatRankValue(splitRanks[tw])}</td>
                     {abbreviations.map((abbr, i) => (
                         <td key={i} className="py-2.5 px-3 text-center text-sm font-mono text-slate-600 whitespace-nowrap">-</td>
                     ))}
@@ -302,6 +348,7 @@ export default function PlayerDetailModal({
         return (
             <tr key={tw} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                 <td className="py-2.5 px-3 text-sm font-semibold text-slate-300 whitespace-nowrap sticky left-0 bg-slate-800/90 z-10 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.2)] w-24">{tw}</td>
+                <td className="py-2.5 px-3 text-center text-sm font-black text-cyan-300 whitespace-nowrap">{formatRankValue(splitRanks[tw])}</td>
                 {abbreviations.map((abbr, i) => {
                     const val = windowStats[abbr.toLowerCase()];
                     const displayVal = abbr === 'FP'
@@ -566,6 +613,9 @@ export default function PlayerDetailModal({
                                 <h2 className="text-lg sm:text-3xl font-black text-white truncate drop-shadow-md">
                                     {player.name}
                                 </h2>
+                                <span className="ml-2 text-sm sm:text-base font-black text-cyan-400 whitespace-nowrap">
+                                    {formatRankValue(seasonRank)}
+                                </span>
                                 {renderBadges()}
                             </div>
                             <button
@@ -681,6 +731,9 @@ export default function PlayerDetailModal({
                                                     <th className="py-3 px-3 text-xs font-black text-purple-300 uppercase tracking-widest sticky left-0 top-0 bg-slate-800 z-20 border-r border-white/10 shadow-[2px_0_4px_rgba(0,0,0,0.3)] whitespace-nowrap w-24">
                                                         Split
                                                     </th>
+                                                    <th className="py-3 px-3 text-center text-xs font-black text-cyan-300 uppercase tracking-widest sticky top-0 bg-slate-800/80 z-10 backdrop-blur-sm whitespace-nowrap">
+                                                        Rank
+                                                    </th>
                                                     {abbreviations.map((abbr, i) => (
                                                         <th key={i} className={`py-3 px-3 text-center text-xs font-black uppercase tracking-widest sticky top-0 bg-slate-800/80 z-10 backdrop-blur-sm whitespace-nowrap ${abbr === 'FP' ? 'text-amber-300' : 'text-slate-400'}`}>
                                                             {abbr}
@@ -701,12 +754,18 @@ export default function PlayerDetailModal({
                                             return (
                                                 <div key={tw} className="rounded-xl border border-white/5 bg-slate-900/50 shadow-inner overflow-hidden">
                                                     <div className="bg-slate-800/80 px-3 py-2 border-b border-white/10">
-                                                        <span className="text-xs font-black text-purple-300 uppercase tracking-widest">{tw}</span>
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <span className="text-xs font-black text-purple-300 uppercase tracking-widest">{tw}</span>
+                                                            <span className="text-xs font-black text-cyan-300 uppercase tracking-widest">{formatRankValue(splitRanks[tw])}</span>
+                                                        </div>
                                                     </div>
 
                                                     <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
                                                         <div className="min-w-max">
                                                             <div className="grid grid-flow-col auto-cols-[56px] border-b border-white/5">
+                                                                <div className="py-1.5 px-2 text-center text-[10px] font-black uppercase tracking-wider whitespace-nowrap text-cyan-300">
+                                                                    Rank
+                                                                </div>
                                                                 {abbreviations.map((abbr, i) => (
                                                                     <div key={i} className={`py-1.5 px-2 text-center text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${abbr === 'FP' ? 'text-amber-300' : 'text-slate-500'}`}>
                                                                         {abbr}
@@ -715,6 +774,9 @@ export default function PlayerDetailModal({
                                                             </div>
 
                                                             <div className="grid grid-flow-col auto-cols-[56px]">
+                                                                <div className="py-2 px-2 text-center text-sm font-mono font-black whitespace-nowrap text-cyan-300">
+                                                                    {formatRankValue(splitRanks[tw])}
+                                                                </div>
                                                                 {abbreviations.map((abbr, i) => {
                                                                     const val = windowStats ? windowStats[abbr.toLowerCase()] : null;
                                                                     const displayVal = abbr === 'FP'

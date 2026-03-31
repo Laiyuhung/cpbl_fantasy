@@ -93,6 +93,7 @@ export default function RosterPage() {
         lineupTeams: new Set(),
         pitcherPlayerIds: new Set(),
     });
+    const [stickyTopOffset, setStickyTopOffset] = useState(0);
 
     // Helpers
     const parseStatName = (stat) => {
@@ -1429,6 +1430,29 @@ export default function RosterPage() {
     const batterCategoryTotals = computeCategoryTotals(batterRoster, displayBatterCats);
     const pitcherCategoryTotals = computeCategoryTotals(pitcherRoster, displayPitcherCats);
 
+    useEffect(() => {
+        const updateStickyOffset = () => {
+            const navEl = document.querySelector('nav');
+            const navHeight = navEl ? Math.ceil(navEl.getBoundingClientRect().height) : 0;
+            setStickyTopOffset(navHeight);
+        };
+
+        updateStickyOffset();
+        window.addEventListener('resize', updateStickyOffset);
+
+        let observer = null;
+        const navEl = document.querySelector('nav');
+        if (navEl && typeof ResizeObserver !== 'undefined') {
+            observer = new ResizeObserver(updateStickyOffset);
+            observer.observe(navEl);
+        }
+
+        return () => {
+            window.removeEventListener('resize', updateStickyOffset);
+            if (observer) observer.disconnect();
+        };
+    }, []);
+
 
 
 
@@ -1803,10 +1827,15 @@ export default function RosterPage() {
 
                 {/* Batter Table */}
                 <div className="mb-6 sm:mb-8">
-                    <h2 className="text-lg sm:text-xl font-bold text-purple-300 mb-2 flex items-center gap-2">
-                        <span className="w-2 h-6 bg-pink-500 rounded-full"></span>
-                        Batter Roster
-                    </h2>
+                    <div
+                        className="sticky z-40 mb-2 py-2 bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
+                        style={{ top: `${stickyTopOffset}px` }}
+                    >
+                        <h2 className="text-lg sm:text-xl font-bold text-purple-300 flex items-center gap-2">
+                            <span className="w-2 h-6 bg-pink-500 rounded-full"></span>
+                            Batter Roster
+                        </h2>
+                    </div>
                     <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl overflow-x-auto">
                         {loading && (
                             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20">
@@ -2028,10 +2057,15 @@ export default function RosterPage() {
 
                 {/* Pitcher Table */}
                 <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-purple-300 mb-2 flex items-center gap-2">
-                        <span className="w-2 h-6 bg-orange-500 rounded-full"></span>
-                        Pitcher Roster
-                    </h2>
+                    <div
+                        className="sticky z-40 mb-2 py-2 bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
+                        style={{ top: `${stickyTopOffset}px` }}
+                    >
+                        <h2 className="text-lg sm:text-xl font-bold text-purple-300 flex items-center gap-2">
+                            <span className="w-2 h-6 bg-orange-500 rounded-full"></span>
+                            Pitcher Roster
+                        </h2>
+                    </div>
                     <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl overflow-x-auto">
                         {loading && (
                             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20">

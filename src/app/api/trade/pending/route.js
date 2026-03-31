@@ -170,10 +170,22 @@ export async function GET(request) {
 
 
     // Filter trades logic
-    const filteredTrades = (trades || []).filter(t => { // Safety check or handle after error check
-      // Always show pending and accepted trades
-      if (t.status === 'pending' || t.status === 'accepted') return true;
-      // Show processed and other resolved trades only within 48 hours
+    const filteredTrades = (trades || []).filter(t => {
+      const isParticipant = t.initiator_manager_id === manager_id || t.recipient_manager_id === manager_id;
+
+      // Pending trades are private to the two involved managers.
+      if (t.status === 'pending') return isParticipant;
+
+      // Rejected/cancelled trades are also private to involved managers, and only recent.
+      if (t.status === 'rejected' || t.status === 'cancelled' || t.status === 'canceled') {
+        const updatedAt = t.updated_at ? new Date(t.updated_at) : new Date(t.created_at);
+        return isParticipant && updatedAt > fortyEightHoursAgo;
+      }
+
+      // Accepted trades stay visible for league review/veto.
+      if (t.status === 'accepted') return true;
+
+      // Other resolved trades are visible only within 48 hours.
       const updatedAt = t.updated_at ? new Date(t.updated_at) : new Date(t.created_at);
       return updatedAt > fortyEightHoursAgo;
     });

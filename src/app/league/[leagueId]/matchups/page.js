@@ -284,19 +284,39 @@ export default function MatchupsPage() {
     };
 
     // Helper to determine category winner (handles INF values)
-    const getWinningValue = (val1, val2, dbCol) => {
+    const isInfValue = (val, dbCol, stats = null) => {
+        if (val === 'INF') return true;
+
+        // K/BB can be represented as INF even when backend value is null.
+        if (dbCol?.toLowerCase() === 'p_k/bb') {
+            const k = Number(stats?.p_k);
+            const bb = Number(stats?.p_bb);
+            if (Number.isFinite(k) && Number.isFinite(bb) && bb === 0 && k > 0) {
+                return true;
+            }
+            if (val === null || val === undefined) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    const getWinningValue = (val1, val2, dbCol, stats1 = null, stats2 = null) => {
         const col = dbCol.toLowerCase();
         
         // Handle INF values - INF is always the best (only for K/BB)
-        const isINF1 = val1 === 'INF';
-        const isINF2 = val2 === 'INF';
+        const isINF1 = isInfValue(val1, dbCol, stats1);
+        const isINF2 = isInfValue(val2, dbCol, stats2);
         
         if (isINF1 && !isINF2) return 1;
         if (isINF2 && !isINF1) return 2;
         if (isINF1 && isINF2) return null; // Tie
         
-        const num1 = Number(val1) || 0;
-        const num2 = Number(val2) || 0;
+        const parsed1 = Number(val1);
+        const parsed2 = Number(val2);
+        const num1 = Number.isFinite(parsed1) ? parsed1 : 0;
+        const num2 = Number.isFinite(parsed2) ? parsed2 : 0;
         
         if (num1 === num2) return null; // Tie
         
@@ -552,7 +572,7 @@ export default function MatchupsPage() {
                                                 const abbr = getAbbr(cat);
                                                 const weight = scroingSettings?.category_weights?.batter?.[cat];
                                                 const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
-                                                const winner = getWinningValue(val1, val2, dbCol);
+                                                const winner = getWinningValue(val1, val2, dbCol, activeMatchup.manager1_stats, activeMatchup.manager2_stats);
                                                 return (
                                                     <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
                                                         <TableCell className={`w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12 ${winner === 1 ? 'text-yellow-300 font-bold' : 'text-purple-100'}`}>{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
@@ -587,7 +607,7 @@ export default function MatchupsPage() {
                                                 const abbr = getAbbr(cat);
                                                 const weight = scroingSettings?.category_weights?.pitcher?.[cat];
                                                 const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
-                                                const winner = getWinningValue(val1, val2, dbCol);
+                                                const winner = getWinningValue(val1, val2, dbCol, activeMatchup.manager1_stats, activeMatchup.manager2_stats);
                                                 return (
                                                     <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
                                                         <TableCell className={`w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12 ${winner === 1 ? 'text-yellow-300 font-bold' : 'text-purple-100'}`}>{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
