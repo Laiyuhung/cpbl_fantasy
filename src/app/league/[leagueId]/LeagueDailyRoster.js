@@ -86,6 +86,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     const [isFetchingTradeData, setIsFetchingTradeData] = useState(false);
     const [tradeMyRoster, setTradeMyRoster] = useState([]);
     const [tradeTheirRoster, setTradeTheirRoster] = useState([]);
+    const [playerMetaMap, setPlayerMetaMap] = useState({});
     const [leagueSettings, setLeagueSettings] = useState({});
     const [ownerships, setOwnerships] = useState([]);
     const [tradeEndDate, setTradeEndDate] = useState(null);
@@ -261,6 +262,19 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                 }
             } catch (e) { console.error('Failed to fetch league settings:', e); }
 
+            // Fetch player metadata for eligibility display in trade modal.
+            try {
+                const playersRes = await fetch('/api/playerslist');
+                const playersData = await playersRes.json();
+                if (playersData.success && Array.isArray(playersData.players)) {
+                    const metaMap = {};
+                    playersData.players.forEach((p) => {
+                        metaMap[p.player_id] = p;
+                    });
+                    setPlayerMetaMap(metaMap);
+                }
+            } catch (e) { console.error('Failed to fetch player metadata:', e); }
+
             // Fetch ownerships for trade
             try {
                 const ownRes = await fetch(`/api/league/${leagueId}/ownership`);
@@ -424,8 +438,16 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     const getTheirPlayers = () => ownerships.filter(o => o.manager_id === tradeTargetManagerId && o.status?.toLowerCase() === 'on team');
 
     const filterPositions = (player) => {
-        const positionList = player.position || player.position_list;
-        if (!positionList) return 'NA';
+        const meta = playerMetaMap[player.player_id] || {};
+        let positionList = player.position_list || meta.position_list;
+
+        if (!positionList) {
+            const playerType = (player.batter_or_pitcher || meta.batter_or_pitcher || '').toLowerCase();
+            if (playerType === 'batter') positionList = 'Util';
+            else if (playerType === 'pitcher') positionList = 'P';
+            else positionList = player.position || 'NA';
+        }
+
         const positions = positionList.split(',').map(p => p.trim());
         const validPositions = positions.filter(pos => leagueSettings.roster_positions && leagueSettings.roster_positions[pos] > 0);
         return validPositions.length > 0 ? validPositions.join(', ') : 'NA';
@@ -565,10 +587,10 @@ export default function LeagueDailyRoster({ leagueId, members }) {
 
         return createPortal(
             <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-                <div className="bg-gradient-to-br from-purple-700/90 to-blue-800/90 border border-purple-400/40 rounded-2xl shadow-2xl w-full max-w-2xl relative max-h-[85vh] flex flex-col">
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-purple-400/20 bg-gradient-to-r from-purple-600/80 to-blue-700/80 rounded-t-2xl shrink-0">
-                        <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                            <span className="text-3xl">⇌</span> Trade Proposal
+                <div className="bg-gradient-to-br from-purple-700/90 to-blue-800/90 border border-purple-400/40 rounded-2xl shadow-2xl w-full max-w-2xl relative max-h-[90vh] flex flex-col">
+                    <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-purple-400/20 bg-gradient-to-r from-purple-600/80 to-blue-700/80 rounded-t-2xl shrink-0">
+                        <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                            <span className="text-2xl sm:text-3xl">⇌</span> Trade Proposal
                         </h2>
                         <button className="text-purple-200 hover:text-white text-2xl font-bold" onClick={() => setShowTradeModal(false)}>×</button>
                     </div>
@@ -580,14 +602,14 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                         </div>
                     ) : (
                         <>
-                            <div className="flex justify-between px-6 pt-4 pb-2 shrink-0">
-                                <div className="font-bold text-purple-200">{myNick}</div>
-                                <div className="font-bold text-pink-200">{theirNick}</div>
+                            <div className="flex justify-between px-4 sm:px-6 pt-3 sm:pt-4 pb-2 shrink-0">
+                                <div className="font-bold text-sm sm:text-base text-purple-200">{myNick}</div>
+                                <div className="font-bold text-sm sm:text-base text-pink-200">{theirNick}</div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6 px-6 pb-2 flex-1 min-h-0 overflow-hidden">
-                                <div className="flex flex-col h-full overflow-hidden">
-                                    <h3 className="text-purple-300 font-bold mb-2 sticky top-0 bg-slate-900/90 z-10 px-1 backdrop-blur-sm">My Players</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 px-4 sm:px-6 pb-2 flex-1 min-h-0 overflow-hidden">
+                                <div className="flex flex-col max-h-[40vh] sm:h-full overflow-hidden">
+                                    <h3 className="text-purple-300 font-bold mb-2 shrink-0">My Players</h3>
                                     <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
                                         {myPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
                                         {myPlayers.map(player => {
@@ -616,8 +638,8 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                                         })}
                                     </div>
                                 </div>
-                                <div className="flex flex-col h-full overflow-hidden">
-                                    <h3 className="text-pink-300 font-bold mb-2 sticky top-0 bg-slate-900/90 z-10 px-1 backdrop-blur-sm">Their Players</h3>
+                                <div className="flex flex-col max-h-[40vh] sm:h-full overflow-hidden">
+                                    <h3 className="text-pink-300 font-bold mb-2 shrink-0">Their Players</h3>
                                     <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
                                         {theirPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
                                         {theirPlayers.map(player => {
@@ -649,7 +671,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                             </div>
 
                             {(myViolations.length > 0 || theirViolations.length > 0) && (
-                                <div className="px-6 pb-2">
+                                <div className="px-4 sm:px-6 pb-2">
                                     <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                                         <h4 className="text-red-300 font-bold text-sm mb-1">⚠ Roster Violations</h4>
                                         <ul className="text-xs text-red-200 list-disc list-inside space-y-0.5">
@@ -660,11 +682,11 @@ export default function LeagueDailyRoster({ leagueId, members }) {
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-center px-6 py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl shrink-0">
-                                <div className="text-xs text-purple-200/60 italic">* Received players are assumed to occupy Active (BN) slots.</div>
-                                <div className="flex gap-3">
-                                    <button className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold" onClick={() => setShowTradeModal(false)} disabled={tradeLoading}>Cancel</button>
-                                    <button className={`px-6 py-2 rounded-lg font-bold shadow flex items-center gap-2 ${isValid && !tradeLoading ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`} onClick={handleSubmitTrade} disabled={tradeLoading || !isValid}>
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 sm:px-6 py-3 sm:py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl shrink-0 gap-2 sm:gap-0">
+                                <div className="text-[10px] sm:text-xs text-purple-200/60 italic">* Received players are assumed to occupy Active (BN) slots.</div>
+                                <div className="flex gap-2 sm:gap-3 w-full sm:w-auto justify-end">
+                                    <button className="px-4 sm:px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm font-semibold" onClick={() => setShowTradeModal(false)} disabled={tradeLoading}>Cancel</button>
+                                    <button className={`px-4 sm:px-6 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 ${isValid && !tradeLoading ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`} onClick={handleSubmitTrade} disabled={tradeLoading || !isValid}>
                                         {tradeLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                                         {tradeLoading ? 'Submitting...' : 'Submit Trade'}
                                     </button>
@@ -712,7 +734,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
             }
             if (status.includes('UNREGISTERED') || status === 'NR') {
                 statBadges.push(
-                    <span key="nr" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">NR</span>
+                    <span key="nr" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30">NR</span>
                 );
             }
         }

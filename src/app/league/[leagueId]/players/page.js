@@ -2335,7 +2335,7 @@ export default function PlayersPage() {
                                     ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
                                     : player.real_life_status === 'DEREGISTERED'
                                       ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                                      : 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+                                      : 'bg-red-500/20 text-red-300 border-red-500/30'
                                     }`} title={player.real_life_status}>
                                     {player.real_life_status === 'MINOR' ? 'NA' : player.real_life_status === 'DEREGISTERED' ? 'DR' : 'NR'}
                                   </span>
@@ -2433,7 +2433,7 @@ export default function PlayersPage() {
                                       ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
                                       : player.real_life_status === 'DEREGISTERED'
                                         ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                                        : 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+                                        : 'bg-red-500/20 text-red-300 border-red-500/30'
                                       }`} title={player.real_life_status}>
                                       {player.real_life_status === 'MINOR' ? 'NA' : player.real_life_status === 'DEREGISTERED' ? 'DR' : 'NR'}
                                     </span>

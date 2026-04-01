@@ -78,7 +78,7 @@ export default function LegendModal({ isOpen, onClose, batterStats = [], pitcher
                                         <span className="text-gray-300 text-sm">Deregistered</span>
                                     </div>
                                     <div className="flex items-center justify-between group">
-                                        <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">NR</span>
+                                        <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30">NR</span>
                                         <span className="text-gray-300 text-sm">Unregistered</span>
                                     </div>
                                 </div>

@@ -966,7 +966,7 @@ export default function DraftPage() {
             ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
             : isDeregistered
                 ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                : 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+                : 'bg-red-500/20 text-red-300 border-red-500/30';
 
         return (
             <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${classes}`} title={status}>

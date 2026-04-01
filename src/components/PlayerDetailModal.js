@@ -556,7 +556,7 @@ export default function PlayerDetailModal({
             badges.push(<span key="dr" className="px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30">DR</span>);
         }
         if (status.includes('UNREGISTERED') || status === 'NR') {
-            badges.push(<span key="nr" className="px-2 py-0.5 rounded text-xs font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">NR</span>);
+            badges.push(<span key="nr" className="px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30">NR</span>);
         }
         return badges.length > 0 ? <div className="flex items-center gap-1.5 ml-2">{badges}</div> : null;
     };

@@ -1113,7 +1113,7 @@ export default function RosterPage() {
             badges.push(<span key="dr" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30">DR</span>);
         }
         if (status.includes('UNREGISTERED') || status === 'NR') {
-            badges.push(<span key="nr" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">NR</span>);
+            badges.push(<span key="nr" className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30">NR</span>);
         }
         return <div className="flex items-center gap-1">{badges}</div>;
     };
@@ -1826,7 +1826,7 @@ export default function RosterPage() {
                 {/* Batter Table */}
                 <div className="mb-6 sm:mb-8">
                     <div
-                        className="sticky z-40 mb-2 py-2 bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
+                        className="sticky left-0 right-0 z-40 mb-2 h-10 sm:h-11 px-1 flex items-center bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
                         style={{ top: `${stickyTopOffset}px` }}
                     >
                         <h2 className="text-lg sm:text-xl font-bold text-purple-300 flex items-center gap-2">
@@ -1841,7 +1841,7 @@ export default function RosterPage() {
                             </div>
                         )}
                         <table className="w-full">
-                            <thead className="bg-purple-900/40 border-b border-purple-500/30">
+                            <thead className="bg-purple-900/40 border-b border-purple-500/30 sticky z-30" style={{ top: `${stickyTopOffset + 40}px` }}>
                                 <tr>
                                     <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
                                     <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell">Player</th>
@@ -2056,7 +2056,7 @@ export default function RosterPage() {
                 {/* Pitcher Table */}
                 <div>
                     <div
-                        className="sticky z-40 mb-2 py-2 bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
+                        className="sticky left-0 right-0 z-40 mb-2 h-10 sm:h-11 px-1 flex items-center bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
                         style={{ top: `${stickyTopOffset}px` }}
                     >
                         <h2 className="text-lg sm:text-xl font-bold text-purple-300 flex items-center gap-2">
@@ -2071,7 +2071,7 @@ export default function RosterPage() {
                             </div>
                         )}
                         <table className="w-full">
-                            <thead className="bg-purple-900/40 border-b border-purple-500/30">
+                            <thead className="bg-purple-900/40 border-b border-purple-500/30 sticky z-30" style={{ top: `${stickyTopOffset + 40}px` }}>
                                 <tr>
                                     <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
                                     <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell">Player</th>

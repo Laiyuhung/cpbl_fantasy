@@ -41,21 +41,44 @@ function calcPitchingStats(g) {
     const nh = g.complete_game === 1 && (g.hits_allowed || 0) === 0 ? 1 : 0;
 
     const { w, l, sv, hld } = parseRecord(g.record);
+    const app = 1;
+    const gs = isStarter ? 1 : 0;
+    const rapp = isStarter ? 0 : 1;
+    const rw = w && !isStarter ? 1 : 0;
+    const rl = l && !isStarter ? 1 : 0;
+    const winPct = (w + l) > 0 ? (w / (w + l)).toFixed(3) : '-';
+    const obpa = (g.batters_faced || 0) > 0
+        ? (((g.hits_allowed || 0) + (g.walks || 0) + (g.hbp || 0)) / (g.batters_faced || 1)).toFixed(3)
+        : '-';
+    const pg = g.complete_game === 1
+        && (g.hits_allowed || 0) === 0
+        && (g.walks || 0) === 0
+        && (g.hbp || 0) === 0
+        ? 1
+        : 0;
 
     return {
+        APP: app,
+        GS: gs,
+        RAPP: rapp,
         OUT: outs,
         ERA: era,
         WHIP: whip,
+        'WIN%': winPct,
         'K/9': k9,
         'BB/9': bb9,
         'H/9': h9,
         'K/BB': kbb,
+        OBPA: obpa,
         W: w,
         L: l,
+        RW: rw,
+        RL: rl,
         SV: sv,
         HLD: hld,
         'SV+HLD': sv + hld,
         QS: qs,
+        PG: pg,
         SHO: sho,
         NH: nh,
         CG: g.complete_game || 0
@@ -83,11 +106,14 @@ function calcBattingStats(b) {
     const obp = (ab + bb + hbp + sf) > 0 ? ((h + bb + hbp) / (ab + bb + hbp + sf)).toFixed(3) : '-';
     const slg = ab > 0 ? (tb / ab).toFixed(3) : '-';
     const ops = obp !== '-' && slg !== '-' ? (parseFloat(obp) + parseFloat(slg)).toFixed(3) : '-';
+    const cyc = singles >= 1 && doubles >= 1 && triples >= 1 && hr >= 1 ? 1 : 0;
 
     return {
+        GP: 1,
         '1B': singles,
         '2B': doubles,
         '3B': triples,
+        CYC: cyc,
         XBH: xbh,
         TB: tb,
         PA: pa,
@@ -235,10 +261,10 @@ export async function GET(request) {
                         is_home: fg.home === team,
                         has_stats: false,
                         is_future: true,
-                        IP: '-', H: '-', R: '-', ER: '-', BB: '-', K: '-', HR: '-',
+                        IP: '-', APP: '-', GS: '-', RAPP: '-', H: '-', R: '-', ER: '-', BB: '-', K: '-', HR: '-',
                         HBP: '-', IBB: '-', WP: '-', BK: '-', TBF: '-', PC: '-',
-                        OUT: '-', ERA: '-', WHIP: '-', 'K/9': '-', 'BB/9': '-', 'H/9': '-', 'K/BB': '-',
-                        W: '-', L: '-', SV: '-', HLD: '-', 'SV+HLD': '-', QS: '-', SHO: '-', NH: '-', CG: '-'
+                        OUT: '-', ERA: '-', WHIP: '-', 'WIN%': '-', 'K/9': '-', 'BB/9': '-', 'H/9': '-', 'K/BB': '-', 'OBPA': '-',
+                        W: '-', L: '-', RW: '-', RL: '-', SV: '-', HLD: '-', 'SV+HLD': '-', QS: '-', PG: '-', SHO: '-', NH: '-', CG: '-'
                     }));
                     enrichedPitchingGames = [...enrichedPitchingGames, ...futureEnriched];
                 }
@@ -380,8 +406,8 @@ export async function GET(request) {
                     is_home,
                     has_stats: false,
                     is_future: true,
-                    AB: '-', H: '-', R: '-', RBI: '-', HR: '-', SB: '-', BB: '-', K: '-',
-                    CS: '-', '2B': '-', '3B': '-', '1B': '-', XBH: '-', TB: '-', PA: '-',
+                    GP: '-', AB: '-', H: '-', R: '-', RBI: '-', HR: '-', SB: '-', BB: '-', K: '-',
+                    CS: '-', '2B': '-', '3B': '-', '1B': '-', CYC: '-', XBH: '-', TB: '-', PA: '-',
                     AVG: '-', OBP: '-', SLG: '-', OPS: '-', E: '-', SF: '-', SH: '-',
                     HBP: '-', GIDP: '-', IBB: '-'
                 };
@@ -396,8 +422,8 @@ export async function GET(request) {
                     opponent,
                     is_home,
                     has_stats: false,
-                    AB: '-', H: '-', R: '-', RBI: '-', HR: '-', SB: '-', BB: '-', K: '-',
-                    CS: '-', '2B': '-', '3B': '-', '1B': '-', XBH: '-', TB: '-', PA: '-',
+                    GP: '-', AB: '-', H: '-', R: '-', RBI: '-', HR: '-', SB: '-', BB: '-', K: '-',
+                    CS: '-', '2B': '-', '3B': '-', '1B': '-', CYC: '-', XBH: '-', TB: '-', PA: '-',
                     AVG: '-', OBP: '-', SLG: '-', OPS: '-', E: '-', SF: '-', SH: '-',
                     HBP: '-', GIDP: '-', IBB: '-'
                 };
