@@ -1826,30 +1826,29 @@ export default function RosterPage() {
                 {/* Batter Table */}
                 <div className="mb-6 sm:mb-8">
                     <div
-                        className="sticky left-0 right-0 z-40 mb-2 h-10 sm:h-11 px-1 flex items-center bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
-                        style={{ top: `${stickyTopOffset}px` }}
+                        className="mb-2 h-10 sm:h-11 px-1 flex items-center bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
                     >
                         <h2 className="text-lg sm:text-xl font-bold text-purple-300 flex items-center gap-2">
                             <span className="w-2 h-6 bg-pink-500 rounded-full"></span>
                             Batter Roster
                         </h2>
                     </div>
-                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl overflow-x-auto">
+                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-xl overflow-x-auto overflow-y-visible">
                         {loading && (
                             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20">
                                 <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                             </div>
                         )}
                         <table className="w-full">
-                            <thead className="bg-purple-900/40 border-b border-purple-500/30 sticky z-30" style={{ top: `${stickyTopOffset + 40}px` }}>
+                            <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
-                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
-                                    <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell">Player</th>
+                                    <th className="sticky z-30 bg-purple-900/95 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24" style={{ top: `${stickyTopOffset}px` }}>Slot</th>
+                                    <th className="sticky z-30 bg-purple-900/95 px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell" style={{ top: `${stickyTopOffset}px` }}>Player</th>
                                     {displayBatterCats.map(stat => {
                                         const isFp = parseStatName(stat) === 'FP';
                                         const isForced = !batterStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
+                                            <th key={stat} className={`sticky z-30 bg-purple-900/95 px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`} style={{ top: `${stickyTopOffset}px` }}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
@@ -2056,30 +2055,29 @@ export default function RosterPage() {
                 {/* Pitcher Table */}
                 <div>
                     <div
-                        className="sticky left-0 right-0 z-40 mb-2 h-10 sm:h-11 px-1 flex items-center bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
-                        style={{ top: `${stickyTopOffset}px` }}
+                        className="mb-2 h-10 sm:h-11 px-1 flex items-center bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
                     >
                         <h2 className="text-lg sm:text-xl font-bold text-purple-300 flex items-center gap-2">
                             <span className="w-2 h-6 bg-orange-500 rounded-full"></span>
                             Pitcher Roster
                         </h2>
                     </div>
-                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl overflow-x-auto">
+                    <div className="relative bg-gradient-to-br from-slate-900/80 to-purple-900/20 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-xl overflow-x-auto overflow-y-visible">
                         {loading && (
                             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20">
                                 <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                             </div>
                         )}
                         <table className="w-full">
-                            <thead className="bg-purple-900/40 border-b border-purple-500/30 sticky z-30" style={{ top: `${stickyTopOffset + 40}px` }}>
+                            <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
-                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
-                                    <th className="px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell">Player</th>
+                                    <th className="sticky z-30 bg-purple-900/95 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24" style={{ top: `${stickyTopOffset}px` }}>Slot</th>
+                                    <th className="sticky z-30 bg-purple-900/95 px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell" style={{ top: `${stickyTopOffset}px` }}>Player</th>
                                     {displayPitcherCats.map(stat => {
                                         const isFp = parseStatName(stat) === 'FP';
                                         const isForced = !pitcherStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
+                                            <th key={stat} className={`sticky z-30 bg-purple-900/95 px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`} style={{ top: `${stickyTopOffset}px` }}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
