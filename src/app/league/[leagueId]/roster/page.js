@@ -93,8 +93,6 @@ export default function RosterPage() {
         lineupTeams: new Set(),
         pitcherPlayerIds: new Set(),
     });
-    const [stickyTopOffset, setStickyTopOffset] = useState(0);
-
     // Helpers
     const parseStatName = (stat) => {
         const matches = stat.match(/\(([^)]+)\)/g);
@@ -1430,31 +1428,6 @@ export default function RosterPage() {
     const batterCategoryTotals = computeCategoryTotals(batterRoster, displayBatterCats);
     const pitcherCategoryTotals = computeCategoryTotals(pitcherRoster, displayPitcherCats);
 
-    useEffect(() => {
-        const updateStickyOffset = () => {
-            const navEl = document.querySelector('nav');
-            const navHeight = navEl ? Math.ceil(navEl.getBoundingClientRect().height) : 0;
-            setStickyTopOffset(navHeight);
-        };
-
-        updateStickyOffset();
-        window.addEventListener('resize', updateStickyOffset);
-
-        let observer = null;
-        const navEl = document.querySelector('nav');
-        if (navEl && typeof ResizeObserver !== 'undefined') {
-            observer = new ResizeObserver(updateStickyOffset);
-            observer.observe(navEl);
-        }
-
-        return () => {
-            window.removeEventListener('resize', updateStickyOffset);
-            if (observer) observer.disconnect();
-        };
-    }, []);
-
-
-
 
 
     const isTradeDeadlinePassed = () => {
@@ -1826,7 +1799,7 @@ export default function RosterPage() {
                 {/* Batter Table */}
                 <div className="mb-6 sm:mb-8">
                     <div
-                        className="mb-2 h-10 sm:h-11 px-1 flex items-center bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
+                        className="mb-2 h-10 sm:h-11 px-1 flex items-center border-b border-purple-500/30"
                     >
                         <h2 className="text-lg sm:text-xl font-bold text-purple-300 flex items-center gap-2">
                             <span className="w-2 h-6 bg-pink-500 rounded-full"></span>
@@ -1843,13 +1816,13 @@ export default function RosterPage() {
                         <table className="w-full border-separate border-spacing-0">
                             <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
-                                    <th className="sticky top-0 z-50 bg-purple-900/95 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24" style={{ top: `${stickyTopOffset + 2}px` }}>Slot</th>
-                                    <th className="sticky top-0 z-50 bg-purple-900/95 px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell" style={{ top: `${stickyTopOffset + 2}px` }}>Player</th>
+                                    <th className="bg-purple-900/95 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
+                                    <th className="bg-purple-900/95 px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell">Player</th>
                                     {displayBatterCats.map(stat => {
                                         const isFp = parseStatName(stat) === 'FP';
                                         const isForced = !batterStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`sticky top-0 z-50 bg-purple-900/95 px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`} style={{ top: `${stickyTopOffset + 2}px` }}>
+                                            <th key={stat} className={`bg-purple-900/95 px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
@@ -2057,7 +2030,7 @@ export default function RosterPage() {
                 {/* Pitcher Table */}
                 <div>
                     <div
-                        className="mb-2 h-10 sm:h-11 px-1 flex items-center bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30"
+                        className="mb-2 h-10 sm:h-11 px-1 flex items-center border-b border-purple-500/30"
                     >
                         <h2 className="text-lg sm:text-xl font-bold text-purple-300 flex items-center gap-2">
                             <span className="w-2 h-6 bg-orange-500 rounded-full"></span>
@@ -2074,13 +2047,13 @@ export default function RosterPage() {
                         <table className="w-full border-separate border-spacing-0">
                             <thead className="bg-purple-900/40 border-b border-purple-500/30">
                                 <tr>
-                                    <th className="sticky top-0 z-50 bg-purple-900/95 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24" style={{ top: `${stickyTopOffset + 2}px` }}>Slot</th>
-                                    <th className="sticky top-0 z-50 bg-purple-900/95 px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell" style={{ top: `${stickyTopOffset + 2}px` }}>Player</th>
+                                    <th className="bg-purple-900/95 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-purple-200 w-16 sm:w-24">Slot</th>
+                                    <th className="bg-purple-900/95 px-6 py-4 text-left text-sm font-bold text-purple-200 hidden sm:table-cell">Player</th>
                                     {displayPitcherCats.map(stat => {
                                         const isFp = parseStatName(stat) === 'FP';
                                         const isForced = !pitcherStatCategories.includes(stat);
                                         return (
-                                            <th key={stat} className={`sticky top-0 z-50 bg-purple-900/95 px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`} style={{ top: `${stickyTopOffset + 2}px` }}>
+                                            <th key={stat} className={`bg-purple-900/95 px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-purple-300/60' : 'text-purple-300'} w-12 sm:w-16`}>
                                                 {parseStatName(stat)}
                                             </th>
                                         );
