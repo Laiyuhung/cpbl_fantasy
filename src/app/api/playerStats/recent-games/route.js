@@ -180,6 +180,7 @@ export async function GET(request) {
                     .from('cpbl_schedule_2026')
                     .select('date, home, away')
                     .or(`home.eq.${team},away.eq.${team}`)
+                    .eq('major_game', true)
                     .in('date', gameDates);
 
                 const scheduleMap = {};
@@ -222,6 +223,7 @@ export async function GET(request) {
                     .from('cpbl_schedule_2026')
                     .select('date, home, away')
                     .or(`home.eq.${team},away.eq.${team}`)
+                    .eq('major_game', true)
                     .gt('date', today)
                     .order('date', { ascending: true })
                     .limit(neededGames);
@@ -261,6 +263,7 @@ export async function GET(request) {
             .from('cpbl_schedule_2026')
             .select('date, home, away, is_postponed')
             .or(`home.eq.${team},away.eq.${team}`)
+            .eq('major_game', true)
             .lte('date', today)
             .or('is_postponed.is.null,is_postponed.eq.false') // not postponed
             .order('date', { ascending: false })
@@ -281,6 +284,7 @@ export async function GET(request) {
                 .from('cpbl_schedule_2026')
                 .select('date, home, away')
                 .or(`home.eq.${team},away.eq.${team}`)
+                .eq('major_game', true)
                 .gt('date', today)
                 .order('date', { ascending: true })
                 .limit(neededGames);

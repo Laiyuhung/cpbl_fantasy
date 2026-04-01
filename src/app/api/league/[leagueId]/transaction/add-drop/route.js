@@ -279,13 +279,15 @@ export async function POST(request, { params }) {
                 if (updateError) throw updateError;
             }
 
-            // Always Delete Roster Position (Future dates? Or just all relevant?)
+            // Delete roster rows from Taiwan today onward (keep historical days intact)
+            const dropTodayTw = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
             const { error: posError } = await supabase
                 .from('league_roster_positions')
                 .delete()
                 .eq('league_id', leagueId)
                 .eq('manager_id', managerId)
-                .eq('player_id', dropPlayerId);
+                .eq('player_id', dropPlayerId)
+                .gte('game_date', dropTodayTw);
 
             if (posError) throw posError;
 

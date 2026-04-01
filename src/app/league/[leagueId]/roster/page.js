@@ -1459,7 +1459,6 @@ export default function RosterPage() {
 
     const isTradeDeadlinePassed = () => {
         if (!tradeEndDate || tradeEndDate.trim().toLowerCase() === 'no trade deadline') {
-            console.log('Trade Deadline Check: No deadline set');
             return false;
         }
 
@@ -1477,7 +1476,6 @@ export default function RosterPage() {
             const now = new Date();
             const passed = now > deadline;
 
-            console.log(`Trade Deadline Check: ${passed ? 'Passed' : 'Active'} (Deadline: ${deadline.toISOString()}, Now: ${now.toISOString()})`);
             return passed;
         } catch (e) {
             console.error('Error checking trade deadline:', e);
