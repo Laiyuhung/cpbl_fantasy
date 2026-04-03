@@ -254,6 +254,17 @@ export default function HomePage() {
                 <span className="w-1.5 h-6 bg-purple-400 rounded-full"></span>
                 CPBL Schedule
               </h2>
+              <p className="-mt-2 mb-4 text-sm text-purple-200/90 leading-relaxed">
+                贊助連結：
+                <a
+                  href="https://portaly.cc/cpblfantasy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+                >
+                  https://portaly.cc/cpblfantasy
+                </a>
+              </p>
               <CpblScheduleWidget />
               <p className="mt-4 text-sm text-purple-200/90 leading-relaxed">
                 This is the Discord group link:{' '}

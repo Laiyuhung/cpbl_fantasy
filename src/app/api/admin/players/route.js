@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import supabase from '@/lib/supabase'
+import { addTaiwanDays, getTaiwanDateString } from '@/lib/taiwanDate'
 
 // 验证管理员权限
 async function checkAdmin(userId) {
@@ -147,7 +148,7 @@ export async function POST(req) {
 
         // Calculate off_waiver for each league and build insert records
         // Taiwan time = UTC+8
-        const nowTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+        const nowTaiwan = getTaiwanDateString(new Date())
 
         const ownershipRecords = activeLeagues.map(league => {
           const unfreezeTime = settingsMap[league.league_id] || '2 days'
@@ -156,9 +157,7 @@ export async function POST(req) {
           const freezeDays = daysMatch ? parseInt(daysMatch[1]) : 2
 
           // off_waiver = today (Taiwan) + freezeDays + 1 (full days must pass)
-          const offWaiverDate = new Date(nowTaiwan)
-          offWaiverDate.setDate(offWaiverDate.getDate() + freezeDays + 1)
-          const offWaiverStr = offWaiverDate.toISOString().split('T')[0]
+          const offWaiverStr = addTaiwanDays(nowTaiwan, freezeDays + 1)
 
           return {
             league_id: league.league_id,

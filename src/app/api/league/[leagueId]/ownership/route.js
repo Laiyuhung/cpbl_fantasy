@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
+import { addTaiwanDays, getTaiwanDateString } from '@/lib/taiwanDate';
 
 // POST - 新增球員到隊伍（寫入 league_player_ownership）
 export async function POST(req, { params }) {
@@ -585,13 +586,10 @@ export async function DELETE(req, { params }) {
 
     // 取得台灣當前時間
     const now = new Date();
-    const nowTaiwan = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-    const todayMD = `${nowTaiwan.getMonth() + 1}/${nowTaiwan.getDate()}`;
+    const todayStr = getTaiwanDateString(now);
 
     // --- 清除未來及今日的 league_roster_positions ---
     // 無論是 Same day drop 還是 Waiver drop，今天起該球員都不應再出現在 roster 中
-    const todayStr = nowTaiwan.toISOString().split('T')[0];
-
     const { error: rosterDeleteError } = await supabase
       .from('league_roster_positions')
       .delete()
@@ -605,22 +603,19 @@ export async function DELETE(req, { params }) {
       // 不阻擋 Drop 流程，僅記錄錯誤
     }
 
-    // 將 acquired_at (UTC) 轉換為台灣時間後取得 m/d
+    // 將 acquired_at (UTC) 轉換為台灣日期字串
     const acquiredUTC = new Date(ownership.acquired_at);
-    const acquiredTaiwan = new Date(acquiredUTC.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-    const acquiredMD = `${acquiredTaiwan.getMonth() + 1}/${acquiredTaiwan.getDate()}`;
+    const acquiredStr = getTaiwanDateString(acquiredUTC);
 
     // 判斷是否為同日 add & drop
     console.log('=== Checking same day add & drop ===');
     console.log('acquired_at (raw):', ownership.acquired_at);
     console.log('acquired_at (UTC Date):', acquiredUTC);
-    console.log('acquired_at (Taiwan Time):', acquiredTaiwan);
-    console.log('acquiredMD:', acquiredMD);
-    console.log('nowTaiwan:', nowTaiwan);
-    console.log('todayMD:', todayMD);
-    console.log('Is same day?:', acquiredMD === todayMD);
+    console.log('acquired_at (Taiwan Date):', acquiredStr);
+    console.log('todayStr:', todayStr);
+    console.log('Is same day?:', acquiredStr === todayStr);
 
-    if (acquiredMD === todayMD) {
+    if (acquiredStr === todayStr) {
       console.log('→ Same day detected, deleting record...');
       // 同日 add & drop -> 直接刪除記錄（回到 FA）
       const { error: deleteError } = await supabase
@@ -694,13 +689,10 @@ export async function DELETE(req, { params }) {
       });
     } else {
       console.log('→ Different day detected, setting to Waiver...');
-      // 非同日 -> 設為 Waiver，off_waiver = 台灣今天 + waiver_players_unfreeze_time 天
+      // 非同日 -> 設為 Waiver，off_waiver = 台灣今天 + waiver_players_unfreeze_time + 1 天
       // 使用台灣時間計算 waiver 解凍日期
-      const offWaiverTaiwan = new Date(nowTaiwan);
-      offWaiverTaiwan.setDate(offWaiverTaiwan.getDate() + waiverDays);
-
-      // 將台灣時間轉回 UTC 存入資料庫
-      const offWaiverUTC = new Date(offWaiverTaiwan.toLocaleString('en-US', { timeZone: 'UTC' }));
+      const addDays = waiverDays > 0 ? waiverDays + 1 : 0;
+      const offWaiverDate = addTaiwanDays(now, addDays);
 
       const { error: updateError } = await supabase
         .from('league_player_ownership')
@@ -708,7 +700,7 @@ export async function DELETE(req, { params }) {
           status: 'Waiver',
           acquired_at: now.toISOString(),
           manager_id: null, // DETACH
-          off_waiver: offWaiverUTC.toISOString().split('T')[0]  // 只取日期部分 YYYY-MM-DD
+          off_waiver: offWaiverDate
         })
         .eq('id', ownership.id);
 
@@ -739,7 +731,7 @@ export async function DELETE(req, { params }) {
         success: true,
         message: 'Player moved to waiver',
         action: 'waiver',
-        off_waiver: offWaiverUTC.toISOString().split('T')[0]
+        off_waiver: offWaiverDate
       });
     }
   } catch (err) {

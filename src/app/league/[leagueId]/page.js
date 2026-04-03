@@ -1573,6 +1573,17 @@ export default function LeaguePage() {
 
           {/* Daily Roster Widget */}
           <LeagueDailyRoster leagueId={leagueId} members={members} />
+          <p className="text-sm text-purple-200/90 leading-relaxed px-1">
+            贊助連結：
+            <a
+              href="https://portaly.cc/cpblfantasy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+            >
+              https://portaly.cc/cpblfantasy
+            </a>
+          </p>
         </div>
 
         <PlayerDetailModal

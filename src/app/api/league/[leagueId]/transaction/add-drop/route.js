@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
+import { addTaiwanDays, getTaiwanDateString } from '@/lib/taiwanDate';
 
 export async function POST(request, { params }) {
     const { leagueId } = params;
@@ -48,7 +49,7 @@ export async function POST(request, { params }) {
         if (maxAcquisitions !== Infinity) {
             // Determine Current Week via league_schedule
             const now = new Date();
-            const todayTw = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+            const todayTw = getTaiwanDateString(now);
 
             // Check Pre-season first (Before Week 1)
             const { data: week1 } = await supabase
@@ -118,8 +119,7 @@ export async function POST(request, { params }) {
             // --- DROP RESTRICTION CHECK ---
             // 1. Get Taiwan Time for proper comparison
             const dropTime = new Date();
-            const taiwanTime = new Date(dropTime.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
-            const taiwanDateStr = taiwanTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+            const taiwanDateStr = getTaiwanDateString(dropTime); // YYYY-MM-DD format
 
             // 2. Fetch Dropped Player Team
             const { data: dropPlayerInfo, error: dpError } = await supabase
@@ -184,14 +184,11 @@ export async function POST(request, { params }) {
             }
 
             // Date Check (Taiwan Time)
-            const taiwanTimeOptions = { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' };
             const now = new Date();
-            const todayStr = now.toLocaleDateString('zh-TW', taiwanTimeOptions).replace(/\//g, '-'); // YYYY-MM-DD format depends on locale, let's be careful.
-            // Actually 'en-CA' is better for ISO format YYYY-MM-DD
-            const todayIso = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+            const todayIso = getTaiwanDateString(now);
 
             const acquiredDate = new Date(dropOwnership.acquired_at);
-            const acquiredIso = acquiredDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+            const acquiredIso = getTaiwanDateString(acquiredDate);
 
             const isSameDay = todayIso === acquiredIso;
 
@@ -215,14 +212,13 @@ export async function POST(request, { params }) {
                 // Formula: Today + Days + 1. (If 0 days, immediate).
                 const addDays = waiverDays > 0 ? waiverDays + 1 : 0;
 
-                const offWaiverDate = new Date(now);
-                offWaiverDate.setDate(offWaiverDate.getDate() + addDays);
+                const offWaiverDate = addTaiwanDays(now, addDays);
 
                 const { error: waiverError } = await supabase
                     .from('league_player_ownership')
                     .update({
                         status: 'Waiver',
-                        off_waiver_date: offWaiverDate.toISOString(),
+                        off_waiver_date: offWaiverDate,
                         manager_id: null // Ownership cleared from manager? 
                         // Wait, usually Waiver means "Dropped by X, available on Waiver".
                         // ownership table usually tracks "who owns them". If on Waiver, manager_id should be null?
@@ -268,7 +264,7 @@ export async function POST(request, { params }) {
                     .from('league_player_ownership')
                     .update({
                         status: 'Waiver',
-                        off_waiver: offWaiverDate.toISOString(),
+                        off_waiver: offWaiverDate,
                         manager_id: null // DETACH
                     })
                     .eq('league_id', leagueId)
