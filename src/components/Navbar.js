@@ -3,6 +3,9 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
+import { fetchManagerLeagues } from '@/lib/leaguesClient'
+import { clearHomeBootstrapCache, getHomeBootstrap } from '@/lib/homeBootstrapClient'
+import { getCreateLeagueDisabled } from '@/lib/systemSettingsClient'
 
 export default function Navbar() {
   const router = useRouter()
@@ -18,6 +21,7 @@ export default function Navbar() {
   const [taiwanTime, setTaiwanTime] = useState('')
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
+  const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false)
 
   // Update Taiwan time every second
   useEffect(() => {
@@ -41,35 +45,80 @@ export default function Navbar() {
 
   // Fetch user's leagues
   const fetchLeagues = useCallback((uid) => {
-    fetch('/api/managers/leagues', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: uid }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data?.leagues) {
-          setLeagues(data.leagues)
-        }
+    fetchManagerLeagues(uid)
+      .then((leaguesData) => {
+        setLeagues(leaguesData)
       })
       .catch(err => console.error('Failed to fetch leagues:', err))
   }, [])
 
-  useEffect(() => {
-    const fetchCreateLeagueLock = async () => {
-      try {
-        const res = await fetch('/api/system-settings/create-league')
-        const data = await res.json()
-        if (data?.success) {
-          setCreateLeagueDisabled(Boolean(data.disabled))
-        }
-      } catch (err) {
-        console.error('Failed to fetch create league lock:', err)
-      }
-    }
+  const hydrateFromLegacy = useCallback(async () => {
+    try {
+      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='))
+      const uid = cookie?.split('=')[1]
 
-    fetchCreateLeagueLock()
-  }, [])
+      const disabled = await getCreateLeagueDisabled()
+      setCreateLeagueDisabled(disabled)
+      setApiIntegrationBeta(false)
+
+      if (!uid) {
+        setUserId('')
+        setUserName('')
+        setIsAdmin(false)
+        setLeagues([])
+        return
+      }
+
+      const res = await fetch('/api/username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: uid }),
+      })
+      const data = await res.json()
+
+      if (data?.name) {
+        setUserId(uid)
+        setUserName(data.name)
+        setIsAdmin(data.is_admin || false)
+        fetchLeagues(uid)
+      } else {
+        setUserId('')
+        setUserName('')
+        setIsAdmin(false)
+        setLeagues([])
+      }
+    } catch (err) {
+      console.error('Failed to fetch navbar legacy data:', err)
+      setUserId('')
+      setUserName('')
+      setIsAdmin(false)
+      setLeagues([])
+    }
+  }, [fetchLeagues])
+
+  const hydrateFromBootstrap = useCallback(async (forceRefresh = false) => {
+    try {
+      const data = await getHomeBootstrap({ forceRefresh })
+
+      setCreateLeagueDisabled(Boolean(data.createLeagueDisabled))
+      setApiIntegrationBeta(Boolean(data.apiIntegrationBeta))
+
+      if (data.isGuest || !data.user) {
+        setUserId('')
+        setUserName('')
+        setIsAdmin(false)
+        setLeagues([])
+        return
+      }
+
+      setUserId(data.user.userId || '')
+      setUserName(data.user.name || '')
+      setIsAdmin(Boolean(data.user.is_admin))
+      setLeagues(data.leagues || [])
+    } catch (err) {
+      await hydrateFromLegacy()
+    }
+  }, [hydrateFromLegacy])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -87,88 +136,19 @@ export default function Navbar() {
 
   // 當使用者登入或登出時，更新 navbar 顯示
   useEffect(() => {
-    const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='))
-    const uid = cookie?.split('=')[1]
-
-    if (!uid) {
-      setUserId('')
-      setUserName('')
-      setIsAdmin(false)
-      setLeagues([])
-      setIsLoading(false)
-      return
-    }
-
-    fetch('/api/username', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: uid }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data?.name) {
-          setUserId(uid)
-          setUserName(data.name)
-          setIsAdmin(data.is_admin || false)
-          fetchLeagues(uid)
-        } else {
-          setUserId('')
-          setUserName('')
-          setIsAdmin(false)
-          setLeagues([])
-        }
-      })
-      .catch(() => {
-        setUserId('')
-        setUserName('')
-        setIsAdmin(false)
-        setLeagues([])
-      })
+    hydrateFromBootstrap()
       .finally(() => setIsLoading(false))
-  }, [router, fetchLeagues])
+  }, [hydrateFromBootstrap])
 
   // 監聽全局 auth 改變事件，讓 Navbar 可以在登入/登出時立即更新
   useEffect(() => {
     const handler = () => {
-      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='))
-      const uid = cookie?.split('=')[1]
-      if (!uid) {
-        setUserId('')
-        setUserName('')
-        setIsAdmin(false)
-        setLeagues([])
-        return
-      }
-      fetch('/api/username', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: uid }),
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data?.name) {
-            setUserId(uid)
-            setUserName(data.name)
-            setIsAdmin(data.is_admin || false)
-            fetchLeagues(uid)
-          } else {
-            setUserId('')
-            setUserName('')
-            setIsAdmin(false)
-            setLeagues([])
-          }
-        })
-        .catch(() => {
-          setUserId('')
-          setUserName('')
-          setIsAdmin(false)
-          setLeagues([])
-        })
+      hydrateFromBootstrap(true)
     }
 
     window.addEventListener('auth-changed', handler)
     return () => window.removeEventListener('auth-changed', handler)
-  }, [])
+  }, [hydrateFromBootstrap])
 
   // 監聽 leagues 改變事件，當 league 被刪除或離開時更新列表
   useEffect(() => {
@@ -197,10 +177,12 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' })
+    clearHomeBootstrapCache()
     // 在登出時清除 userId 並跳轉到登錄頁面
     setUserId('')  // 更新 userId
     setUserName('')  // 清空用戶名稱
     setIsAdmin(false)
+    setApiIntegrationBeta(false)
     setLeagues([])  // 清空 leagues
     localStorage.removeItem('user_id')  // 清除 localStorage 中的 user_id
     router.push('/login')
@@ -228,6 +210,11 @@ export default function Navbar() {
           <div className="whitespace-nowrap text-sm sm:text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
             CPBL FANTASY
           </div>
+          {apiIntegrationBeta && (
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-black tracking-wider uppercase">
+              API整合 BETA
+            </span>
+          )}
         </Link>
 
         {userName && (

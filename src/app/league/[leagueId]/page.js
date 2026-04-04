@@ -323,7 +323,11 @@ export default function LeaguePage() {
 
   // Fetch draft reset status
   useEffect(() => {
-    if (!leagueId) return;
+    if (!leagueId || leagueStatus !== 'pre-season') {
+      setDraftResetNeeded(false);
+      return;
+    }
+
     const checkDraftReset = async () => {
       try {
         const res = await fetch(`/api/league/${leagueId}/draft-reset`);
@@ -337,7 +341,7 @@ export default function LeaguePage() {
       }
     };
     checkDraftReset();
-  }, [leagueId]);
+  }, [leagueId, leagueStatus]);
 
   useEffect(() => {
     if (!loading && leagueStatus === 'pre-draft' && !leagueSettings?.is_finalized) {
@@ -468,23 +472,10 @@ export default function LeaguePage() {
             // Convert to Taiwan time by adding 8 hours to UTC
             const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
 
-            console.log('🔍 Current Week Calculation:', {
-              utcTime: now.toISOString(),
-              taiwanTime: taiwanTime.toISOString(),
-              taiwanLocal: taiwanTime.toLocaleString('en-US', { timeZone: 'UTC' }),
-              scheduleLength: result.schedule?.length
-            });
-
             // Find grid week based on Taiwan time
             let week = 1;
             if (result.schedule && result.schedule.length > 0) {
               const schedule = result.schedule;
-
-              console.log('📅 First Week:', {
-                week_number: schedule[0].week_number,
-                week_start: schedule[0].week_start,
-                week_end: schedule[0].week_end
-              });
 
               // Parse dates and convert to Taiwan timezone for comparison
               const getDateInTaiwan = (dateStr) => {
@@ -499,12 +490,10 @@ export default function LeaguePage() {
               // If before first week, use week 1
               if (taiwanTime < firstWeekStart) {
                 week = 1;
-                console.log('⏰ Before first week, using week 1');
               }
               // If after last week, use last week
               else if (taiwanTime > lastWeekEnd) {
                 week = schedule[schedule.length - 1].week_number;
-                console.log('⏰ After last week, using week:', week);
               }
               // Find current week
               else {
@@ -513,29 +502,14 @@ export default function LeaguePage() {
                   const weekEnd = getDateInTaiwan(w.week_end);
                   // Set end of day for week_end comparison
                   weekEnd.setUTCHours(23, 59, 59, 999);
-                  const isInRange = taiwanTime >= weekStart && taiwanTime <= weekEnd;
-
-                  console.log(`Week ${w.week_number}:`, {
-                    week_start: w.week_start,
-                    week_end: w.week_end,
-                    weekStartTaiwan: weekStart.toISOString(),
-                    weekEndTaiwan: weekEnd.toISOString(),
-                    taiwanNow: taiwanTime.toISOString(),
-                    isInRange
-                  });
-
-                  return isInRange;
+                  return taiwanTime >= weekStart && taiwanTime <= weekEnd;
                 });
 
                 if (current) {
                   week = current.week_number;
-                  console.log('✅ Found current week:', week);
-                } else {
-                  console.log('⚠️ No matching week found, defaulting to week 1');
                 }
               }
             }
-            console.log('🎯 Final selected week:', week);
             setCurrentWeek(week);
             // Fetch matchups for this default week will be triggered by another effect or called here
             fetchMatchups(week);

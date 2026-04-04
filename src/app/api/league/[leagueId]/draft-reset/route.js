@@ -8,10 +8,37 @@ const supabase = createClient(
 
 const MIN_DRAFT_GAP_MINUTES = 90;
 
+async function getLeagueStatus(leagueId) {
+    const { data, error } = await supabase
+        .from('league_statuses')
+        .select('status')
+        .eq('league_id', leagueId)
+        .single();
+
+    if (error) {
+        return { status: null, error };
+    }
+
+    return { status: data?.status || null, error: null };
+}
+
 // GET: Check if league has a draft reset record
 export async function GET(request, { params }) {
     try {
         const { leagueId } = await params;
+
+        const { status, error: statusError } = await getLeagueStatus(leagueId);
+        if (statusError) {
+            return NextResponse.json({ success: false, error: statusError.message }, { status: 500 });
+        }
+
+        if (status !== 'pre-season') {
+            return NextResponse.json({
+                success: true,
+                needsReset: false,
+                resetRecord: null,
+            });
+        }
 
         const { data, error } = await supabase
             .from('league_draft_reset')
@@ -39,6 +66,18 @@ export async function POST(request, { params }) {
     try {
         const { leagueId } = await params;
         const { newDraftTime } = await request.json();
+
+        const { status, error: statusError } = await getLeagueStatus(leagueId);
+        if (statusError) {
+            return NextResponse.json({ success: false, error: statusError.message }, { status: 500 });
+        }
+
+        if (status !== 'pre-season') {
+            return NextResponse.json(
+                { success: false, error: 'Draft reset is only available when league status is pre-season' },
+                { status: 400 }
+            );
+        }
 
         if (!newDraftTime) {
             return NextResponse.json({ success: false, error: 'newDraftTime is required' }, { status: 400 });

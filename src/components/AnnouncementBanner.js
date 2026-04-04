@@ -5,12 +5,18 @@ import Link from 'next/link';
  * Hook to display latest announcements
  * @returns {JSX.Element} Announcement banner component
  */
-export function useAnnouncementBanner() {
-  const [announcements, setAnnouncements] = useState([]);
-  const [loading, setLoading] = useState(true);
+export function useAnnouncementBanner(initialAnnouncements = null) {
+  const [announcements, setAnnouncements] = useState(initialAnnouncements || []);
+  const [loading, setLoading] = useState(initialAnnouncements === null);
   const [showBanner, setShowBanner] = useState(true);
 
   useEffect(() => {
+    if (initialAnnouncements !== null) {
+      setAnnouncements(initialAnnouncements);
+      setLoading(false);
+      return;
+    }
+
     const fetchAnnouncements = async () => {
       try {
         const res = await fetch('/api/announcements');
@@ -27,7 +33,7 @@ export function useAnnouncementBanner() {
     };
 
     fetchAnnouncements();
-  }, []);
+  }, [initialAnnouncements]);
 
   // If no announcements, don't render anything
   if (loading || announcements.length === 0 || !showBanner) {
@@ -73,6 +79,6 @@ export function useAnnouncementBanner() {
 /**
  * Component to display announcement banner
  */
-export function AnnouncementBanner() {
-  return useAnnouncementBanner();
+export function AnnouncementBanner({ initialAnnouncements = null }) {
+  return useAnnouncementBanner(initialAnnouncements);
 }

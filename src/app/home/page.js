@@ -5,6 +5,9 @@ import Link from 'next/link';
 
 import CpblScheduleWidget from '@/components/CpblScheduleWidget';
 import { AnnouncementBanner } from '@/components/AnnouncementBanner';
+import { getHomeBootstrap } from '@/lib/homeBootstrapClient';
+import { getCreateLeagueDisabled } from '@/lib/systemSettingsClient';
+import { fetchManagerLeagues } from '@/lib/leaguesClient';
 
 export default function HomePage() {
   const [leagues, setLeagues] = useState([])
@@ -12,65 +15,57 @@ export default function HomePage() {
   const [isGuest, setIsGuest] = useState(false)
   const [showWeekRule, setShowWeekRule] = useState(false)
   const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
+  const [announcements, setAnnouncements] = useState(null)
+  const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false)
 
   useEffect(() => {
-    const fetchLeagues = async () => {
-      try {
-        const getCookie = (name) => {
-          const value = `; ${document.cookie}`;
-          const parts = value.split(`; ${name}=`);
-          if (parts.length === 2) return parts.pop().split(';').shift();
-        };
-        const userId = getCookie('user_id');
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
 
-        if (!userId) {
-          setIsGuest(true);
-          setLoading(false); //
-          return;
-        }
+    const loadLegacyHomeData = async () => {
+      const userId = getCookie('user_id');
 
+      if (!userId) {
+        setIsGuest(true);
+      } else {
         setIsGuest(false);
+        const leaguesData = await fetchManagerLeagues(userId);
+        setLeagues(leaguesData);
+      }
 
-        const res = await fetch('/api/managers/leagues', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId }),
-        });
+      const disabled = await getCreateLeagueDisabled();
+      setCreateLeagueDisabled(disabled);
+      // Let AnnouncementBanner perform its own fetch in legacy mode.
+      setAnnouncements(null);
+    };
 
-        const data = await res.json();
-        if (data.leagues) {
-          setLeagues(data.leagues);
-        }
+    const fetchHomeBootstrap = async () => {
+      try {
+        const data = await getHomeBootstrap();
+        setIsGuest(Boolean(data.isGuest));
+        setLeagues(data.leagues || []);
+        setCreateLeagueDisabled(Boolean(data.createLeagueDisabled));
+        setAnnouncements(data.announcements || []);
+        setApiIntegrationBeta(Boolean(data.apiIntegrationBeta));
       } catch (error) {
-        console.error('Failed to fetch leagues:', error);
+        await loadLegacyHomeData();
+        setApiIntegrationBeta(false);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLeagues();
-  }, []);
-
-  useEffect(() => {
-    const fetchCreateLeagueLock = async () => {
-      try {
-        const res = await fetch('/api/system-settings/create-league');
-        const data = await res.json();
-        if (data?.success) {
-          setCreateLeagueDisabled(Boolean(data.disabled));
-        }
-      } catch (error) {
-        console.error('Failed to fetch create league lock:', error);
-      }
-    };
-
-    fetchCreateLeagueLock();
+    fetchHomeBootstrap();
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
       <div className="max-w-[1600px] mx-auto">
-        <AnnouncementBanner />
+        <AnnouncementBanner initialAnnouncements={announcements} />
 
 
         <div className="flex flex-col lg:flex-row lg:items-start gap-8">
@@ -82,6 +77,11 @@ export default function HomePage() {
                 <span className="w-1.5 h-6 bg-purple-400 rounded-full"></span>
                 My Leagues
               </h2>
+              {apiIntegrationBeta && (
+                <span className="inline-flex items-center px-2 py-1 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] sm:text-xs font-extrabold tracking-wider uppercase">
+                  API整合 BETA
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 {new Date() < new Date('2026-04-16') ? (
                   <>
