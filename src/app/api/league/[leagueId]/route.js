@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { getLeagueOverviewData } from '@/lib/getLeagueOverviewData';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -9,107 +10,10 @@ const supabase = createClient(
 export async function GET(request, { params }) {
   try {
     const { leagueId } = params;
-
-    if (!leagueId) {
-      return NextResponse.json(
-        { error: 'League ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Fetch league settings
-    const { data: leagueSettings, error: settingsError } = await supabase
-      .from('league_settings')
-      .select('*')
-      .eq('league_id', leagueId)
-      .single();
-
-    if (settingsError) {
-      console.error('Supabase settings error:', settingsError);
-      return NextResponse.json(
-        { error: 'League not found', details: settingsError.message },
-        { status: 404 }
-      );
-    }
-
-    // These queries are independent, so run them in parallel to reduce latency.
-    const [scheduleRes, statusRes, membersRes, finalizedRes] = await Promise.all([
-      supabase
-        .from('league_schedule')
-        .select(`
-          id,
-          league_id,
-          week_number,
-          week_type,
-          week_start,
-          week_end,
-          week_label
-        `)
-        .eq('league_id', leagueId)
-        .order('week_number', { ascending: true }),
-      supabase
-        .from('league_statuses')
-        .select('status')
-        .eq('league_id', leagueId)
-        .maybeSingle(),
-      supabase
-        .from('league_members')
-        .select(`
-          nickname,
-          joined_at,
-          manager_id,
-          role,
-          managers (
-            name
-          )
-        `)
-        .eq('league_id', leagueId)
-        .order('joined_at', { ascending: true }),
-      supabase
-        .from('league_finalized_status')
-        .select('league_id')
-        .eq('league_id', leagueId)
-        .maybeSingle(),
-    ]);
-
-    const { data: schedule, error: scheduleError } = scheduleRes;
-    if (scheduleError) {
-      console.error('Supabase schedule error:', scheduleError);
-      // We don't block page load if schedule fails.
-    }
-
-    const { data: statusData, error: statusError } = statusRes;
-    if (statusError) {
-      console.error('Supabase status error:', statusError);
-    }
-
-    const { data: members, error: membersError } = membersRes;
-    if (membersError) {
-      console.error('Supabase members error:', membersError);
-      return NextResponse.json(
-        { error: 'Failed to fetch members', details: membersError.message },
-        { status: 500 }
-      );
-    }
-
-    const { data: finalizedStatus, error: finalizedError } = finalizedRes;
-
-    // Record exists = finalized, no record or error = not finalized
-    const isFinalized = !finalizedError && finalizedStatus != null;
+    const payload = await getLeagueOverviewData(supabase, leagueId);
 
     return NextResponse.json(
-      {
-        success: true,
-        league: {
-          ...leagueSettings,
-          is_finalized: isFinalized
-        },
-        schedule: schedule || [],
-        members: members || [],
-        status: statusData?.status || 'unknown',
-        maxTeams: leagueSettings?.max_teams || 0,
-        invitePermissions: leagueSettings?.invite_permissions || 'commissioner only',
-      },
+      payload,
       {
         headers: {
           'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=45'
@@ -118,9 +22,18 @@ export async function GET(request, { params }) {
     );
   } catch (error) {
     console.error('Server error:', error);
+    const statusCode = error.statusCode || 500;
+
+    if (statusCode === 404) {
+      return NextResponse.json(
+        { error: 'League not found', details: error.message },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Server error', details: error.message },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }

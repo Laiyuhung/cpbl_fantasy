@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import PlayerDetailModal from '../../../components/PlayerDetailModal';
+import { getLeagueOverview } from '@/lib/leagueOverviewClient';
 
 function toAbbr(team) {
     switch (team) {
@@ -222,8 +223,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         const fetchInit = async () => {
             try {
                 // Schedule → availableDates
-                const schedRes = await fetch(`/api/league/${leagueId}`);
-                const schedData = await schedRes.json();
+                const schedData = await getLeagueOverview(leagueId);
                 if (schedData.success && schedData.schedule) {
                     const dates = [];
                     schedData.schedule.forEach(week => {

@@ -3,10 +3,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-export default function CpblScheduleWidget() {
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [games, setGames] = useState([]);
+export default function CpblScheduleWidget({ initialDate = null, initialGames = null }) {
+    const [currentDate, setCurrentDate] = useState(() => {
+        if (initialDate) {
+            return new Date(`${initialDate}T00:00:00`);
+        }
+        return new Date();
+    });
+    const [games, setGames] = useState(initialGames || []);
     const [loading, setLoading] = useState(false);
+    const didSkipInitialFetchRef = useRef(false);
 
     // Calendar Picker State
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -48,8 +54,14 @@ export default function CpblScheduleWidget() {
     };
 
     useEffect(() => {
+        const dateStr = formatDate(currentDate);
+        if (!didSkipInitialFetchRef.current && initialGames !== null && initialDate && dateStr === initialDate) {
+            didSkipInitialFetchRef.current = true;
+            return;
+        }
+
         fetchGames(currentDate);
-    }, [currentDate]);
+    }, [currentDate, initialDate, initialGames]);
 
     // Close date picker when clicking outside (supports both mouse and touch)
     useEffect(() => {

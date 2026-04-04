@@ -7,6 +7,7 @@ import MoveModal from './MoveModal';
 import MyTradesModal from '../../../../components/MyTradesModal';
 import WaiverModal from '../../../../components/WaiverModal';
 import PlayerDetailModal from '../../../../components/PlayerDetailModal';
+import { getRosterBootstrap } from '@/lib/rosterBootstrapClient';
 
 function getTodayTW() {
     const parts = new Intl.DateTimeFormat('en-US', {
@@ -76,6 +77,7 @@ export default function RosterPage() {
     const [isAutoStarting, setIsAutoStarting] = useState(false);
     const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
     const [leagueStatus, setLeagueStatus] = useState('unknown');
+    const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false);
 
     // Watch State
     const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
@@ -283,43 +285,29 @@ export default function RosterPage() {
         }
     };
 
-    // Fetch Schedule and Initialize Date
+    // Fetch bootstrap data (overview + settings) and initialize date/state
     useEffect(() => {
-        // Get Manager ID
         const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
         const id = cookie?.split('=')[1];
         if (id) setMyManagerId(id);
 
-        const fetchSchedule = async () => {
+        const fetchBootstrap = async () => {
             try {
-                const response = await fetch(`/api/league/${leagueId}`);
-                const result = await response.json();
+                const payload = await getRosterBootstrap(leagueId);
+                const overview = payload.overview || {};
+                const settings = payload.settings || {};
 
-                if (result.success && result.schedule) {
-                    setScheduleData(result.schedule);
-                    if (result.league) {
-                        setTradeEndDate(result.league.trade_end_date);
-                        // Try to parse season year from start_scoring_on if needed, default to current logic
-                        if (result.league.start_scoring_on) {
-                            const parts = result.league.start_scoring_on.split('.');
-                            if (parts.length > 0) {
-                                const parsedYear = parseInt(parts[0]);
-                                if (!isNaN(parsedYear)) setSeasonYear(parsedYear);
-                            }
-                        }
-                    }
-                    // Set league status
-                    if (result.status) {
-                        setLeagueStatus(result.status);
-                    }
+                setApiIntegrationBeta(Boolean(payload.apiIntegrationBeta));
+
+                if (overview.schedule) {
+                    setScheduleData(overview.schedule);
 
                     // Calculate all available dates from schedule
                     const dates = [];
-                    result.schedule.forEach(week => {
+                    overview.schedule.forEach((week) => {
                         const start = new Date(week.week_start);
                         const end = new Date(week.week_end);
 
-                        // Generate all dates in this week
                         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                             dates.push(new Date(d).toISOString().split('T')[0]);
                         }
@@ -327,40 +315,58 @@ export default function RosterPage() {
 
                     setAvailableDates(dates);
 
-                    // Initialize selected date to today in Taiwan timezone
                     if (dates.length > 0) {
-                        const now = new Date();
                         const todayStr = getTodayTW();
-
-                        console.log('='.repeat(80));
-                        console.log('📅 [Roster] Date Initialization');
-                        console.log('UTC Time:', now.toISOString());
-                        console.log('Today (Taiwan):', todayStr);
-                        console.log('Available Dates Range:', dates[0], 'to', dates[dates.length - 1]);
-                        console.log('Total Available Dates:', dates.length);
-
-                        // Check if today is within available dates
                         if (dates.includes(todayStr)) {
-                            console.log('✅ Today is within season, using:', todayStr);
                             setSelectedDate(todayStr);
                         } else if (todayStr < dates[0]) {
-                            // Before season, use first date
-                            console.log('⚠️  Today is before season, using first date:', dates[0]);
                             setSelectedDate(dates[0]);
                         } else {
-                            // After season, use last date
-                            console.log('⚠️  Today is after season, using last date:', dates[dates.length - 1]);
                             setSelectedDate(dates[dates.length - 1]);
                         }
-                        console.log('='.repeat(80));
                     }
                 }
+
+                if (overview.status) {
+                    setLeagueStatus(overview.status);
+                }
+
+                if (overview.league?.trade_end_date) {
+                    setTradeEndDate(overview.league.trade_end_date);
+                }
+
+                if (overview.league?.start_scoring_on) {
+                    const parts = overview.league.start_scoring_on.split('.');
+                    if (parts.length > 0) {
+                        const parsedYear = parseInt(parts[0]);
+                        if (!isNaN(parsedYear)) setSeasonYear(parsedYear);
+                    }
+                }
+
+                setBatterStatCategories(settings.batter_stat_categories || []);
+                setPitcherStatCategories(settings.pitcher_stat_categories || []);
+                setScoringType(settings.scoring_type || '');
+                setRosterPositionsConfig(settings.roster_positions || {});
+                setForeignerActiveLimit(settings.foreigner_active_limit);
+
+                const minIP = settings.min_innings_pitched_per_week;
+                if (minIP && minIP !== 'No minimum') {
+                    const parsed = parseFloat(minIP);
+                    if (!isNaN(parsed)) setMinIPRequired(parsed);
+                }
+
+                const maxAcq = settings.max_acquisitions_per_week;
+                if (maxAcq && maxAcq !== 'No limit') {
+                    const parsed = parseInt(maxAcq);
+                    if (!isNaN(parsed)) setMaxAcquisitions(parsed);
+                }
             } catch (err) {
-                console.error('Failed to fetch schedule:', err);
+                setApiIntegrationBeta(false);
+                console.error('Failed to fetch roster bootstrap:', err);
             }
         };
 
-        fetchSchedule();
+        fetchBootstrap();
     }, [leagueId]);
 
     useEffect(() => {
@@ -399,35 +405,6 @@ export default function RosterPage() {
     }, [selectedDate]);
 
 
-
-    // Settings
-    useEffect(() => {
-        const fetchSettings = async () => {
-            const settingsRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
-            const settingsData = await settingsRes.json();
-            if (settingsData.success && settingsData.data) {
-                setBatterStatCategories(settingsData.data.batter_stat_categories || []);
-                setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
-                setScoringType(settingsData.data.scoring_type || '');
-
-                setRosterPositionsConfig(settingsData.data.roster_positions || {});
-                setForeignerActiveLimit(settingsData.data.foreigner_active_limit);
-
-                // IP requirement & Add limit from settings
-                const minIP = settingsData.data.min_innings_pitched_per_week;
-                if (minIP && minIP !== 'No minimum') {
-                    const parsed = parseFloat(minIP);
-                    if (!isNaN(parsed)) setMinIPRequired(parsed);
-                }
-                const maxAcq = settingsData.data.max_acquisitions_per_week;
-                if (maxAcq && maxAcq !== 'No limit') {
-                    const parsed = parseInt(maxAcq);
-                    if (!isNaN(parsed)) setMaxAcquisitions(parsed);
-                }
-            }
-        };
-        fetchSettings();
-    }, [leagueId]);
 
     // Fetch Weekly IP & Add Count
     useEffect(() => {
@@ -1514,9 +1491,16 @@ export default function RosterPage() {
 
             <div className="p-4 sm:p-8 max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
-                    <h1 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-                        My Roster
-                    </h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                            My Roster
+                        </h1>
+                        {apiIntegrationBeta && (
+                            <span className="px-2 py-0.5 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
+                                API整合 BETA
+                            </span>
+                        )}
+                    </div>
                     <div className="flex flex-col items-start sm:items-end gap-2 sm:gap-3">
                         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                             <select

@@ -18,10 +18,18 @@ export default function Navbar() {
   const [leagues, setLeagues] = useState([])
   const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false)
   const [currentLeague, setCurrentLeague] = useState(null)
+  const [expandedDesktopLeagueId, setExpandedDesktopLeagueId] = useState(null)
+  const [expandedMobileLeagueId, setExpandedMobileLeagueId] = useState(null)
   const [taiwanTime, setTaiwanTime] = useState('')
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
   const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false)
+
+  const navigateTo = (path, { closeDropdown = false, closeMenuPanel = false } = {}) => {
+    if (closeDropdown) setLeagueDropdownOpen(false)
+    if (closeMenuPanel) setMenuOpen(false)
+    window.location.href = path
+  }
 
   // Update Taiwan time every second
   useEffect(() => {
@@ -345,19 +353,34 @@ export default function Navbar() {
                 {leagues.length > 0 ? (
                   <div className="max-h-[400px] overflow-y-auto">
                     {leagues.map((league, index) => (
-                      <Link
+                      <div
                         key={league.league_id}
-                        href={`/league/${league.league_id}`}
-                        className={`block px-4 py-3 hover:bg-blue-500/20 transition-all duration-200 ${index !== leagues.length - 1 ? 'border-b border-slate-700/50' : ''}`}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setLeagueDropdownOpen(false)
-                          window.location.href = `/league/${league.league_id}`
-                        }}
+                        className={`${index !== leagues.length - 1 ? 'border-b border-slate-700/50' : ''}`}
                       >
-                        <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
-                      </Link>
+                        <button
+                          onClick={() => setExpandedDesktopLeagueId(expandedDesktopLeagueId === league.league_id ? null : league.league_id)}
+                          className="w-full px-4 py-3 hover:bg-blue-500/20 transition-all duration-200 text-left"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
+                              <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
+                            </div>
+                            <svg className={`w-4 h-4 text-slate-400 transition-transform ${expandedDesktopLeagueId === league.league_id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </button>
+                        {expandedDesktopLeagueId === league.league_id && (
+                          <div className="px-4 pb-3 grid grid-cols-2 gap-2 bg-slate-900/40">
+                            <button onClick={() => navigateTo(`/league/${league.league_id}`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Overview</button>
+                            <button onClick={() => navigateTo(`/league/${league.league_id}/players`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Players</button>
+                            <button onClick={() => navigateTo(`/league/${league.league_id}/roster`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Roster</button>
+                            <button onClick={() => navigateTo(`/league/${league.league_id}/matchups`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Matchups</button>
+                            <button onClick={() => navigateTo(`/league/${league.league_id}/league_settings`, { closeDropdown: true })} className="col-span-2 text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Settings</button>
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -598,10 +621,31 @@ export default function Navbar() {
 
                 {leagues.length > 0 ? (
                   leagues.map(league => (
-                    <Link key={league.league_id} href={`/league/${league.league_id}`} className="block px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${league.league_id}`; }}>
-                      <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
-                    </Link>
+                    <div key={league.league_id} className="mb-1.5 rounded-lg border border-white/5 bg-white/[0.02]">
+                      <button
+                        onClick={() => setExpandedMobileLeagueId(expandedMobileLeagueId === league.league_id ? null : league.league_id)}
+                        className="w-full px-3 py-2.5 text-left hover:bg-white/10 transition-colors rounded-lg"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <div className="font-bold text-sm text-cyan-300">{league.league_name}</div>
+                            <div className="text-xs text-slate-400 mt-0.5">{league.nickname}</div>
+                          </div>
+                          <svg className={`w-4 h-4 text-slate-400 transition-transform ${expandedMobileLeagueId === league.league_id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </button>
+                      {expandedMobileLeagueId === league.league_id && (
+                        <div className="px-3 pb-3 grid grid-cols-2 gap-1.5">
+                          <button onClick={() => navigateTo(`/league/${league.league_id}`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Overview</button>
+                          <button onClick={() => navigateTo(`/league/${league.league_id}/players`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Players</button>
+                          <button onClick={() => navigateTo(`/league/${league.league_id}/roster`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Roster</button>
+                          <button onClick={() => navigateTo(`/league/${league.league_id}/matchups`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Matchups</button>
+                          <button onClick={() => navigateTo(`/league/${league.league_id}/league_settings`, { closeMenuPanel: true })} className="col-span-2 text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Settings</button>
+                        </div>
+                      )}
+                    </div>
                   ))
                 ) : (
                   <div className="px-4 py-3 text-sm text-slate-400 text-center">No leagues yet</div>

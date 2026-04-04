@@ -11,6 +11,17 @@ const supabase = createClient(
 
 const CREATE_LEAGUE_SETTING_KEY = 'disable_create_league';
 
+function getTaiwanDateString() {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  return formatter.format(new Date());
+}
+
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -34,7 +45,9 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Home bootstrap beta is admin-only' }, { status: 403 });
     }
 
-    const [settingRes, announcementsRes] = await Promise.all([
+    const taiwanToday = getTaiwanDateString();
+
+    const [settingRes, announcementsRes, scheduleRes] = await Promise.all([
       supabaseAdmin
         .from('system_settings')
         .select('value_bool')
@@ -45,6 +58,12 @@ export async function GET() {
         .select('id, title, content, created_at, updated_at')
         .eq('is_active', true)
         .order('created_at', { ascending: false }),
+      supabaseAdmin
+        .from('cpbl_schedule_2026')
+        .select('*')
+        .eq('major_game', true)
+        .eq('date', taiwanToday)
+        .order('game_no', { ascending: true }),
     ]);
 
     if (settingRes.error) {
@@ -55,12 +74,18 @@ export async function GET() {
       return NextResponse.json({ success: false, error: announcementsRes.error.message }, { status: 500 });
     }
 
+    if (scheduleRes.error) {
+      return NextResponse.json({ success: false, error: scheduleRes.error.message }, { status: 500 });
+    }
+
     const payload = {
       success: true,
       apiIntegrationBeta: true,
       isGuest: !userId,
       createLeagueDisabled: Boolean(settingRes.data?.value_bool),
       announcements: announcementsRes.data || [],
+      scheduleDate: taiwanToday,
+      scheduleGames: scheduleRes.data || [],
       user: null,
       leagues: [],
     };

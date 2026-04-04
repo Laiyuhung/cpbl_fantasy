@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
+import { getLeagueOverview } from '@/lib/leagueOverviewClient';
 
 export default function LeagueLayout({ children }) {
   const params = useParams();
@@ -53,8 +54,7 @@ export default function LeagueLayout({ children }) {
           return;
         }
 
-        const response = await fetch(`/api/league/${leagueId}`);
-        const result = await response.json();
+        const result = await getLeagueOverview(leagueId);
 
         if (result.success && result.members) {
           const isMember = result.members.some(m => m.manager_id === currentUserId);

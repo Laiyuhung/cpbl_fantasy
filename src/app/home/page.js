@@ -16,6 +16,8 @@ export default function HomePage() {
   const [showWeekRule, setShowWeekRule] = useState(false)
   const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
   const [announcements, setAnnouncements] = useState(null)
+  const [scheduleDate, setScheduleDate] = useState(null)
+  const [scheduleGames, setScheduleGames] = useState(null)
   const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false)
 
   useEffect(() => {
@@ -41,6 +43,8 @@ export default function HomePage() {
       setCreateLeagueDisabled(disabled);
       // Let AnnouncementBanner perform its own fetch in legacy mode.
       setAnnouncements(null);
+      setScheduleDate(null);
+      setScheduleGames(null);
     };
 
     const fetchHomeBootstrap = async () => {
@@ -50,6 +54,8 @@ export default function HomePage() {
         setLeagues(data.leagues || []);
         setCreateLeagueDisabled(Boolean(data.createLeagueDisabled));
         setAnnouncements(data.announcements || []);
+        setScheduleDate(data.scheduleDate || null);
+        setScheduleGames(data.scheduleGames || []);
         setApiIntegrationBeta(Boolean(data.apiIntegrationBeta));
       } catch (error) {
         await loadLegacyHomeData();
@@ -65,7 +71,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
       <div className="max-w-[1600px] mx-auto">
-        <AnnouncementBanner initialAnnouncements={announcements} />
+        {!loading && <AnnouncementBanner initialAnnouncements={announcements} />}
 
 
         <div className="flex flex-col lg:flex-row lg:items-start gap-8">
@@ -265,7 +271,7 @@ export default function HomePage() {
                   https://portaly.cc/cpblfantasy
                 </a>
               </p>
-              <CpblScheduleWidget />
+              <CpblScheduleWidget initialDate={scheduleDate} initialGames={scheduleGames} />
               <p className="mt-4 text-sm text-purple-200/90 leading-relaxed">
                 This is the Discord group link:{' '}
                 <a

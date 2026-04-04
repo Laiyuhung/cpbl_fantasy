@@ -9,6 +9,7 @@ import LeagueDailyRoster from './LeagueDailyRoster';
 import PlayerDetailModal from '@/components/PlayerDetailModal';
 import AmericanDatePicker from '@/components/AmericanDatePicker';
 import DraftTimeline from '@/components/DraftTimeline';
+import { getLeagueOverview } from '@/lib/leagueOverviewClient';
 
 // Playoff Tree Diagram Component
 const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members }) => {
@@ -261,6 +262,7 @@ export default function LeaguePage() {
   const [draftResetSaving, setDraftResetSaving] = useState(false);
   const [draftResetSuccess, setDraftResetSuccess] = useState(false);
   const [showFinalizeReminder, setShowFinalizeReminder] = useState(false);
+  const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -275,51 +277,6 @@ export default function LeaguePage() {
 
     checkAdmin();
   }, []);
-
-  useEffect(() => {
-    if (!leagueId) return;
-
-    const fetchLeagueData = async () => {
-      setLoading(true);
-      setError('');
-
-      try {
-        const response = await fetch(`/api/league/${leagueId}`);
-        const result = await response.json();
-
-        if (!response.ok) {
-          setError(result.error || 'Failed to load league data');
-          return;
-        }
-
-        if (result.success) {
-          setLeagueSettings(result.league);
-          setScheduleData(result.schedule || []);
-          setMembers(result.members || []);
-          setLeagueStatus(result.status || 'unknown');
-          setMaxTeams(result.maxTeams || 0);
-          setInvitePermissions(result.invitePermissions || 'commissioner only');
-
-          // 获取当前用户的权限
-          const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
-          const currentUserId = cookie?.split('=')[1];
-          if (currentUserId) {
-            const currentMember = result.members?.find(m => m.manager_id === currentUserId);
-            setCurrentUserRole(currentMember?.role || 'member');
-          }
-        } else {
-          setError('Failed to load league data');
-        }
-      } catch (err) {
-        console.error('Unexpected error:', err);
-        setError('An unexpected error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeagueData();
-  }, [leagueId]);
 
   // Fetch draft reset status
   useEffect(() => {
@@ -448,13 +405,8 @@ export default function LeaguePage() {
       setError('');
 
       try {
-        const response = await fetch(`/api/league/${leagueId}`);
-        const result = await response.json();
-
-        if (!response.ok) {
-          setError(result.error || 'Failed to load league data');
-          return;
-        }
+        const result = await getLeagueOverview(leagueId);
+        setApiIntegrationBeta(Boolean(result.apiIntegrationBeta));
 
         if (result.success) {
           setLeagueSettings(result.league);
@@ -528,6 +480,7 @@ export default function LeaguePage() {
         }
       } catch (err) {
         console.error('Unexpected error:', err);
+        setApiIntegrationBeta(false);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -883,6 +836,11 @@ export default function LeaguePage() {
                           leagueStatus === 'finished' ? 'Finished' :
                             leagueStatus?.toUpperCase() || 'UNKNOWN'}
               </span>
+              {apiIntegrationBeta && (
+                <span className="px-2 py-0.5 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
+                  API整合 BETA
+                </span>
+              )}
             </div>
           </div>
 
