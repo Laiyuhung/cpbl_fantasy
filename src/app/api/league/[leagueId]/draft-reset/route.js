@@ -171,13 +171,13 @@ export async function POST(request, { params }) {
         }
 
         // Update league status back to pre-draft
-        const { error: statusError } = await supabase
+        const { error: statusUpdateError } = await supabase
             .from('league_statuses')
             .update({ status: 'pre-draft' })
             .eq('league_id', leagueId);
 
-        if (statusError) {
-            console.error('Failed to update league status:', statusError);
+        if (statusUpdateError) {
+            console.error('Failed to update league status:', statusUpdateError);
         }
 
         return NextResponse.json({
