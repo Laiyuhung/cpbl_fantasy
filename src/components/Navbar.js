@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { fetchManagerLeagues } from '@/lib/leaguesClient'
 import { clearHomeBootstrapCache, getHomeBootstrap } from '@/lib/homeBootstrapClient'
 import { getCreateLeagueDisabled } from '@/lib/systemSettingsClient'
+import { clearUsernameCache, getCurrentUsername } from '@/lib/usernameClient'
 
 export default function Navbar() {
   const router = useRouter()
@@ -62,14 +63,13 @@ export default function Navbar() {
 
   const hydrateFromLegacy = useCallback(async () => {
     try {
-      const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='))
-      const uid = cookie?.split('=')[1]
+      const currentUser = await getCurrentUsername()
 
       const disabled = await getCreateLeagueDisabled()
       setCreateLeagueDisabled(disabled)
       setApiIntegrationBeta(false)
 
-      if (!uid) {
+      if (!currentUser) {
         setUserId('')
         setUserName('')
         setIsAdmin(false)
@@ -77,18 +77,11 @@ export default function Navbar() {
         return
       }
 
-      const res = await fetch('/api/username', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: uid }),
-      })
-      const data = await res.json()
-
-      if (data?.name) {
-        setUserId(uid)
-        setUserName(data.name)
-        setIsAdmin(data.is_admin || false)
-        fetchLeagues(uid)
+      if (currentUser.name) {
+        setUserId(currentUser.userId)
+        setUserName(currentUser.name)
+        setIsAdmin(currentUser.is_admin || false)
+        fetchLeagues(currentUser.userId)
       } else {
         setUserId('')
         setUserName('')
@@ -186,6 +179,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' })
     clearHomeBootstrapCache()
+    clearUsernameCache()
     // 在登出時清除 userId 並跳轉到登錄頁面
     setUserId('')  // 更新 userId
     setUserName('')  // 清空用戶名稱

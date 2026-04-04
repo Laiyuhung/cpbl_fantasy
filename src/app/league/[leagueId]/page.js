@@ -266,6 +266,11 @@ export default function LeaguePage() {
   const [bootstrapHasStandings, setBootstrapHasStandings] = useState(false);
   const [bootstrapHasTransactions, setBootstrapHasTransactions] = useState(false);
   const [bootstrapHasWatched, setBootstrapHasWatched] = useState(false);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
+  const [todayDate, setTodayDate] = useState('');
+  const [todayScheduleGames, setTodayScheduleGames] = useState([]);
+  const [dailyRosterOwnerships, setDailyRosterOwnerships] = useState([]);
+  const [dailyRosterStartingStatus, setDailyRosterStartingStatus] = useState(null);
 
   // Fetch draft reset status
   useEffect(() => {
@@ -392,6 +397,7 @@ export default function LeaguePage() {
     const fetchLeagueData = async () => {
       setLoading(true);
       setError('');
+      setBootstrapReady(false);
       setBootstrapHasStandings(false);
       setBootstrapHasTransactions(false);
       setBootstrapHasWatched(false);
@@ -405,6 +411,10 @@ export default function LeaguePage() {
           setLeagueSettings(result.league);
           setScheduleData(result.schedule || []);
           setMembers(result.members || []);
+          setTodayDate(result.todayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }));
+          setTodayScheduleGames(Array.isArray(result.todayScheduleGames) ? result.todayScheduleGames : []);
+          setDailyRosterOwnerships(Array.isArray(result.ownerships) ? result.ownerships : []);
+          setDailyRosterStartingStatus(result.startingStatus || null);
           const status = result.status || 'unknown';
           setLeagueStatus(status);
           setMaxTeams(result.maxTeams || 0);
@@ -505,6 +515,7 @@ export default function LeaguePage() {
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
+        setBootstrapReady(true);
       }
     };
 
@@ -529,6 +540,7 @@ export default function LeaguePage() {
   // Fetch standings
   useEffect(() => {
     if (!leagueId) return;
+    if (!bootstrapReady) return;
     if (bootstrapHasStandings && bootstrapHasTransactions) return;
 
     const fetchStandings = async () => {
@@ -582,7 +594,7 @@ export default function LeaguePage() {
     if (!bootstrapHasTransactions) {
       fetchTransactions();
     }
-  }, [leagueId, bootstrapHasStandings, bootstrapHasTransactions]);
+  }, [leagueId, bootstrapHasStandings, bootstrapHasTransactions, bootstrapReady]);
 
   const groupedTransactions = useMemo(() => {
     const groups = [];
@@ -1516,7 +1528,10 @@ export default function LeaguePage() {
               <span className="w-1.5 sm:w-2 h-5 sm:h-6 bg-purple-500 rounded-full"></span>
               CPBL Schedule
             </h3>
-            <CpblScheduleWidget />
+            <CpblScheduleWidget
+              initialDate={todayDate || null}
+              initialGames={Array.isArray(todayScheduleGames) ? todayScheduleGames : null}
+            />
             <div className="mt-3">
               <button
                 onClick={() => setShowWeekRule(prev => !prev)}
@@ -1545,6 +1560,8 @@ export default function LeaguePage() {
                 initialLeagueSettings={leagueSettings}
                 initialLeagueStatus={leagueStatus}
                 initialWatchedIds={Array.from(watchedPlayerIds)}
+                initialOwnerships={dailyRosterOwnerships}
+                initialStartingStatus={dailyRosterStartingStatus}
               />
           <p className="text-sm text-purple-200/90 leading-relaxed px-1">
             贊助連結：

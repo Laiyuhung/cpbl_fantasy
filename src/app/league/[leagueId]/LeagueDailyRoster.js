@@ -58,6 +58,8 @@ export default function LeagueDailyRoster({
     initialLeagueSettings = null,
     initialLeagueStatus = '',
     initialWatchedIds = null,
+    initialOwnerships = null,
+    initialStartingStatus = null,
 }) {
     const [selectedDate, setSelectedDate] = useState('');
     const [availableDates, setAvailableDates] = useState([]);
@@ -96,7 +98,7 @@ export default function LeagueDailyRoster({
     const [tradeTheirRoster, setTradeTheirRoster] = useState([]);
     const [playerMetaMap, setPlayerMetaMap] = useState({});
     const [leagueSettings, setLeagueSettings] = useState({});
-    const [ownerships, setOwnerships] = useState([]);
+    const [ownerships, setOwnerships] = useState(Array.isArray(initialOwnerships) ? initialOwnerships : []);
     const [tradeEndDate, setTradeEndDate] = useState(null);
     const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
     const [leagueStatus, setLeagueStatus] = useState('');
@@ -109,6 +111,7 @@ export default function LeagueDailyRoster({
         lineupTeams: new Set(),
         pitcherPlayerIds: new Set(),
     });
+    const skipInitialStartingStatusFetchRef = useRef(false);
 
     const isDropLockedByGameStart = (player) => {
         if (!player || !player.game_info) return false;
@@ -139,6 +142,23 @@ export default function LeagueDailyRoster({
             setWatchedPlayerIds(new Set(initialWatchedIds));
         }
     }, [initialWatchedIds]);
+
+    useEffect(() => {
+        if (Array.isArray(initialOwnerships)) {
+            setOwnerships(initialOwnerships);
+        }
+    }, [initialOwnerships]);
+
+    useEffect(() => {
+        if (initialStartingStatus && typeof initialStartingStatus === 'object') {
+            setStartingStatus({
+                lineupByPlayerId: initialStartingStatus.lineup_by_player_id || {},
+                lineupTeams: new Set(initialStartingStatus.lineup_teams || []),
+                pitcherPlayerIds: new Set((initialStartingStatus.pitcher_player_ids || []).map(String)),
+            });
+            skipInitialStartingStatusFetchRef.current = true;
+        }
+    }, [initialStartingStatus]);
 
     // Fetch watched players
     useEffect(() => {
@@ -291,30 +311,19 @@ export default function LeagueDailyRoster({
                 } catch (e) { console.error('Failed to fetch league settings:', e); }
             }
 
-            // Fetch player metadata for eligibility display in trade modal.
-            try {
-                const playersRes = await fetch('/api/playerslist');
-                const playersData = await playersRes.json();
-                if (playersData.success && Array.isArray(playersData.players)) {
-                    const metaMap = {};
-                    playersData.players.forEach((p) => {
-                        metaMap[p.player_id] = p;
-                    });
-                    setPlayerMetaMap(metaMap);
-                }
-            } catch (e) { console.error('Failed to fetch player metadata:', e); }
-
-            // Fetch ownerships for trade
-            try {
-                const ownRes = await fetch(`/api/league/${leagueId}/ownership`);
-                const ownData = await ownRes.json();
-                if (ownData.success) {
-                    setOwnerships(ownData.ownerships || []);
-                }
-            } catch (e) { console.error('Failed to fetch ownerships:', e); }
+            if (!Array.isArray(initialOwnerships)) {
+                // Fetch ownerships for trade
+                try {
+                    const ownRes = await fetch(`/api/league/${leagueId}/ownership`);
+                    const ownData = await ownRes.json();
+                    if (ownData.success) {
+                        setOwnerships(ownData.ownerships || []);
+                    }
+                } catch (e) { console.error('Failed to fetch ownerships:', e); }
+            }
         };
         fetchInit();
-    }, [leagueId, initialSchedule, initialLeagueSettings, initialLeagueStatus]);
+    }, [leagueId, initialSchedule, initialLeagueSettings, initialLeagueStatus, initialOwnerships]);
 
     // Fetch Roster
     useEffect(() => {
@@ -401,6 +410,10 @@ export default function LeagueDailyRoster({
 
     useEffect(() => {
         if (!selectedDate) return;
+        if (skipInitialStartingStatusFetchRef.current) {
+            skipInitialStartingStatusFetchRef.current = false;
+            return;
+        }
         const fetchStartingStatus = async () => {
             try {
                 const res = await fetch(`/api/starting-status?date=${selectedDate}`);

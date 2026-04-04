@@ -52,6 +52,31 @@ export default function MoveModal({
         return canSwapPlayerMoveToSourcePos(swapPlayer) ? player.position : 'BN';
     };
 
+    // Helper: Check if occupant can be swapped
+    // Rule: Filter out occupants whose game has started
+    // Exception: BN <-> NA swaps are not subject to this filter
+    const canSwapOccupant = (occupant, targetPos) => {
+        if (!occupant) return false;
+        
+        // Exception: BN <-> NA swaps allow any occupant
+        const isBnNaSwap = ['BN', 'NA'].includes(player.position) && ['BN', 'NA'].includes(targetPos);
+        if (isBnNaSwap) {
+            return true;
+        }
+        
+        // Filter: If occupant's game has started, cannot swap
+        if (occupant.game_info && occupant.game_info.time && !occupant.game_info.is_postponed) {
+            const occupantGameTimeUTC = new Date(occupant.game_info.time);
+            const nowUTC = new Date();
+            
+            if (nowUTC >= occupantGameTimeUTC) {
+                return false;
+            }
+        }
+        
+        return true; // Can swap
+    };
+
     // Helper: Check Foreigner Active Limit
     const validateMove = (targetPos, swapPlayerId) => {
         // Only check if we have a limit
@@ -251,9 +276,15 @@ export default function MoveModal({
                         // Render Logic
                         if (showSwapMode) {
                             // Full: Show Swap Options for EACH occupant
+                            // Filter occupants that can be swapped
+                            const swappableOccupants = occupants.filter(occ => canSwapOccupant(occ, pos));
+                            
+                            // If no swappable occupants, skip this position
+                            if (swappableOccupants.length === 0) return null;
+                            
                             return (
                                 <div key={pos} className="space-y-2">
-                                    {occupants.map(occ => {
+                                    {swappableOccupants.map(occ => {
                                         const validation = validateMove(pos, occ.player_id);
                                         return (
                                             <button

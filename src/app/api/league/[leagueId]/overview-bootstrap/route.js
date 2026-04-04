@@ -36,6 +36,20 @@ function getCurrentWeekFromSchedule(schedule) {
   return current?.week_number || 1;
 }
 
+function getTaiwanDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const year = parts.find((p) => p.type === 'year')?.value;
+  const month = parts.find((p) => p.type === 'month')?.value;
+  const day = parts.find((p) => p.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
 export async function GET(request, { params }) {
   try {
     const { leagueId } = params;
@@ -63,7 +77,9 @@ export async function GET(request, { params }) {
     const payload = await getLeagueOverviewData(supabase, leagueId);
     const currentWeek = getCurrentWeekFromSchedule(payload.schedule);
 
-    const [matchupsRes, standingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes] = await Promise.all([
+    const todayDate = getTaiwanDateString();
+
+    const [matchupsRes, standingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes] = await Promise.all([
       supabase
         .from('league_matchups')
         .select('*')
@@ -95,6 +111,23 @@ export async function GET(request, { params }) {
         .select('player_id')
         .eq('league_id', leagueId)
         .eq('manager_id', userId),
+      supabaseAdmin
+        .from('cpbl_schedule_2026')
+        .select('*')
+        .eq('date', todayDate)
+        .eq('major_game', true),
+      supabaseAdmin
+        .from('starting_lineup')
+        .select('team, player_id, batting_no')
+        .eq('date', todayDate),
+      supabaseAdmin
+        .from('starting_pitcher')
+        .select('player_id')
+        .eq('date', todayDate),
+      supabaseAdmin
+        .from('league_player_ownership')
+        .select('*')
+        .eq('league_id', leagueId),
     ]);
 
     if (matchupsRes.error) {
@@ -115,6 +148,22 @@ export async function GET(request, { params }) {
 
     if (watchedRes.error) {
       return NextResponse.json({ success: false, error: watchedRes.error.message }, { status: 500 });
+    }
+
+    if (todayGamesRes.error) {
+      return NextResponse.json({ success: false, error: todayGamesRes.error.message }, { status: 500 });
+    }
+
+    if (startingLineupRes.error) {
+      return NextResponse.json({ success: false, error: startingLineupRes.error.message }, { status: 500 });
+    }
+
+    if (startingPitcherRes.error) {
+      return NextResponse.json({ success: false, error: startingPitcherRes.error.message }, { status: 500 });
+    }
+
+    if (ownershipRes.error) {
+      return NextResponse.json({ success: false, error: ownershipRes.error.message }, { status: 500 });
     }
 
     const standingsWithWaiver = (standingsRes.data || []).map((team) => {
@@ -188,6 +237,21 @@ export async function GET(request, { params }) {
       manager: { nickname: memberMap[w.manager_id] || 'Unknown' },
     }));
 
+    const lineupByPlayerId = {};
+    const lineupTeams = new Set();
+    (startingLineupRes.data || []).forEach((row) => {
+      if (row.team) lineupTeams.add(row.team);
+      if (row.player_id && row.batting_no != null) {
+        lineupByPlayerId[String(row.player_id)] = Number(row.batting_no);
+      }
+    });
+
+    const startingStatus = {
+      lineup_by_player_id: lineupByPlayerId,
+      lineup_teams: Array.from(lineupTeams),
+      pitcher_player_ids: (startingPitcherRes.data || []).map((row) => String(row.player_id)).filter(Boolean),
+    };
+
     return NextResponse.json({
       ...payload,
       apiIntegrationBeta: true,
@@ -195,12 +259,16 @@ export async function GET(request, { params }) {
         manager_id: userId,
         is_admin: true,
       },
+      todayDate,
+      todayScheduleGames: todayGamesRes.data || [],
       currentWeek,
       matchups: matchupsRes.data || [],
       standings: standingsWithWaiver,
       transactions,
       waivers,
       watchedIds: (watchedRes.data || []).map((w) => w.player_id),
+      ownerships: ownershipRes.data || [],
+      startingStatus,
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;

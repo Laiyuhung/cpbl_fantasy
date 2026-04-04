@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { getLeagueOverview } from '@/lib/leagueOverviewClient';
+import { getCurrentUsername } from '@/lib/usernameClient';
 
 export default function LeagueLayout({ children }) {
   const params = useParams();
@@ -33,9 +34,8 @@ export default function LeagueLayout({ children }) {
 
         // Admin can view all pages under /league/[leagueId] regardless of membership.
         try {
-          const adminRes = await fetch('/api/username', { method: 'POST' });
-          const adminData = await adminRes.json();
-          if (adminData?.is_admin ?? adminData?.isAdmin) {
+          const currentUser = await getCurrentUsername();
+          if (currentUser?.is_admin) {
             adminBypass = true;
             setIsAdmin(true);
             setAccessDenied(false);
