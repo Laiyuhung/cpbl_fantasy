@@ -51,7 +51,14 @@ function getTodayTW() {
     return `${year}-${month}-${day}`;
 }
 
-export default function LeagueDailyRoster({ leagueId, members }) {
+export default function LeagueDailyRoster({
+    leagueId,
+    members,
+    initialSchedule = null,
+    initialLeagueSettings = null,
+    initialLeagueStatus = '',
+    initialWatchedIds = null,
+}) {
     const [selectedDate, setSelectedDate] = useState('');
     const [availableDates, setAvailableDates] = useState([]);
     const [selectedManagerId, setSelectedManagerId] = useState('');
@@ -75,7 +82,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
 
     // Watch state
-    const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
+    const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set(initialWatchedIds || []));
     const [myManagerId, setMyManagerId] = useState(null);
 
     // Trade Modal State
@@ -127,9 +134,15 @@ export default function LeagueDailyRoster({ leagueId, members }) {
         if (userId) setMyManagerId(userId);
     }, []);
 
+    useEffect(() => {
+        if (Array.isArray(initialWatchedIds)) {
+            setWatchedPlayerIds(new Set(initialWatchedIds));
+        }
+    }, [initialWatchedIds]);
+
     // Fetch watched players
     useEffect(() => {
-        if (!leagueId || !myManagerId) return;
+        if (!leagueId || !myManagerId || Array.isArray(initialWatchedIds)) return;
         const fetchWatched = async () => {
             try {
                 const res = await fetch(`/api/watched?league_id=${leagueId}&manager_id=${myManagerId}`);
@@ -142,7 +155,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
             }
         };
         fetchWatched();
-    }, [leagueId, myManagerId]);
+    }, [leagueId, myManagerId, initialWatchedIds]);
 
     // Toggle watch handler (optimistic update)
     const handleToggleWatch = async (player, isCurrentlyWatched) => {
@@ -220,47 +233,63 @@ export default function LeagueDailyRoster({ leagueId, members }) {
     // Fetch schedule (for availableDates) + league settings on mount
     useEffect(() => {
         if (!leagueId) return;
+
+        const applyScheduleData = (schedule) => {
+            if (!Array.isArray(schedule)) return;
+
+            const dates = [];
+            schedule.forEach(week => {
+                const start = new Date(week.week_start);
+                const end = new Date(week.week_end);
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    dates.push(new Date(d).toISOString().split('T')[0]);
+                }
+            });
+            setAvailableDates(dates);
+
+            if (dates.length > 0) {
+                const taiwanNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+                const todayStr = taiwanNow.toISOString().split('T')[0];
+                if (dates.includes(todayStr)) setSelectedDate(todayStr);
+                else if (todayStr < dates[0]) setSelectedDate(dates[0]);
+                else setSelectedDate(dates[dates.length - 1]);
+            }
+        };
+
+        const applyLeagueSettings = (settings, status = '') => {
+            if (!settings || typeof settings !== 'object') return;
+            setBatterStatCategories(settings.batter_stat_categories || []);
+            setPitcherStatCategories(settings.pitcher_stat_categories || []);
+            setScoringType(settings.scoring_type || '');
+            setLeagueSettings(settings);
+            setTradeEndDate(settings.trade_end_date || null);
+            setSeasonYear(settings.season_year || new Date().getFullYear());
+            setLeagueStatus(status || '');
+        };
+
         const fetchInit = async () => {
-            try {
-                // Schedule → availableDates
-                const schedData = await getLeagueOverview(leagueId);
-                if (schedData.success && schedData.schedule) {
-                    const dates = [];
-                    schedData.schedule.forEach(week => {
-                        const start = new Date(week.week_start);
-                        const end = new Date(week.week_end);
-                        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                            dates.push(new Date(d).toISOString().split('T')[0]);
-                        }
-                    });
-                    setAvailableDates(dates);
-
-                    // Init selectedDate → today (Taiwan) clamped to season
-                    if (dates.length > 0) {
-                        const taiwanNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-                        const todayStr = taiwanNow.toISOString().split('T')[0];
-                        if (dates.includes(todayStr)) setSelectedDate(todayStr);
-                        else if (todayStr < dates[0]) setSelectedDate(dates[0]);
-                        else setSelectedDate(dates[dates.length - 1]);
+            if (Array.isArray(initialSchedule) && initialSchedule.length > 0) {
+                applyScheduleData(initialSchedule);
+            } else {
+                try {
+                    const schedData = await getLeagueOverview(leagueId);
+                    if (schedData.success && schedData.schedule) {
+                        applyScheduleData(schedData.schedule);
                     }
-                }
-            } catch (e) { console.error('Failed to fetch schedule:', e); }
+                } catch (e) { console.error('Failed to fetch schedule:', e); }
+            }
 
-            try {
-                // League settings → stat categories + trade settings
-                const settRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
-                const settData = await settRes.json();
-                if (settData.success && settData.data) {
-                    setBatterStatCategories(settData.data.batter_stat_categories || []);
-                    setPitcherStatCategories(settData.data.pitcher_stat_categories || []);
-                    setScoringType(settData.data.scoring_type || '');
-                    setLeagueSettings(settData.data);
-                    setTradeEndDate(settData.data.trade_end_date || null);
-                    setSeasonYear(settData.data.season_year || new Date().getFullYear());
-                    // status comes from league_statuses table, returned at top level
-                    setLeagueStatus(settData.status || '');
-                }
-            } catch (e) { console.error('Failed to fetch league settings:', e); }
+            if (initialLeagueSettings && typeof initialLeagueSettings === 'object' && Object.keys(initialLeagueSettings).length > 0) {
+                applyLeagueSettings(initialLeagueSettings, initialLeagueStatus);
+            } else {
+                try {
+                    const settRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
+                    const settData = await settRes.json();
+                    if (settData.success && settData.data) {
+                        applyLeagueSettings(settData.data, settData.status || '');
+                    }
+                } catch (e) { console.error('Failed to fetch league settings:', e); }
+            }
 
             // Fetch player metadata for eligibility display in trade modal.
             try {
@@ -285,7 +314,7 @@ export default function LeagueDailyRoster({ leagueId, members }) {
             } catch (e) { console.error('Failed to fetch ownerships:', e); }
         };
         fetchInit();
-    }, [leagueId]);
+    }, [leagueId, initialSchedule, initialLeagueSettings, initialLeagueStatus]);
 
     // Fetch Roster
     useEffect(() => {

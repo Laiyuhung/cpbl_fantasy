@@ -78,6 +78,7 @@ export default function RosterPage() {
     const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
     const [leagueStatus, setLeagueStatus] = useState('unknown');
     const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false);
+    const [bootstrapReady, setBootstrapReady] = useState(false);
 
     // Watch State
     const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
@@ -95,6 +96,14 @@ export default function RosterPage() {
         lineupTeams: new Set(),
         pitcherPlayerIds: new Set(),
     });
+    const skipInitialRosterFetchRef = useRef(false);
+    const skipInitialStartingStatusFetchRef = useRef(false);
+    const skipInitialWeeklyIpFetchRef = useRef(false);
+    const skipInitialStatsFetchRef = useRef(false);
+    const skipInitialDailyTotalsFetchRef = useRef(false);
+    const skipInitialRosterPercentageFetchRef = useRef(false);
+    const skipInitialActiveTradesFetchRef = useRef(false);
+    const skipInitialWatchedFetchRef = useRef(false);
     // Helpers
     const parseStatName = (stat) => {
         const matches = stat.match(/\(([^)]+)\)/g);
@@ -296,8 +305,10 @@ export default function RosterPage() {
                 const payload = await getRosterBootstrap(leagueId);
                 const overview = payload.overview || {};
                 const settings = payload.settings || {};
+                const initialSelectedDate = payload.initialSelectedDate || null;
 
                 setApiIntegrationBeta(Boolean(payload.apiIntegrationBeta));
+                setDate(initialSelectedDate || getTodayTW());
 
                 if (overview.schedule) {
                     setScheduleData(overview.schedule);
@@ -315,7 +326,9 @@ export default function RosterPage() {
 
                     setAvailableDates(dates);
 
-                    if (dates.length > 0) {
+                    if (initialSelectedDate && dates.includes(initialSelectedDate)) {
+                        setSelectedDate(initialSelectedDate);
+                    } else if (dates.length > 0) {
                         const todayStr = getTodayTW();
                         if (dates.includes(todayStr)) {
                             setSelectedDate(todayStr);
@@ -360,9 +373,61 @@ export default function RosterPage() {
                     const parsed = parseInt(maxAcq);
                     if (!isNaN(parsed)) setMaxAcquisitions(parsed);
                 }
+
+                if (Array.isArray(payload.roster)) {
+                    setRoster(payload.roster);
+                    skipInitialRosterFetchRef.current = true;
+                    setLoading(false);
+                }
+
+                if (payload.startingStatus) {
+                    setStartingStatus({
+                        lineupByPlayerId: payload.startingStatus.lineup_by_player_id || {},
+                        lineupTeams: new Set(payload.startingStatus.lineup_teams || []),
+                        pitcherPlayerIds: new Set((payload.startingStatus.pitcher_player_ids || []).map(String)),
+                    });
+                    skipInitialStartingStatusFetchRef.current = true;
+                }
+
+                if (payload.weeklyIP !== undefined || payload.weeklyAddCount !== undefined) {
+                    setWeeklyIP(payload.weeklyIP ?? null);
+                    setWeeklyAddCount(payload.weeklyAddCount ?? 0);
+                    skipInitialWeeklyIpFetchRef.current = true;
+                }
+
+                if (payload.playerStats) {
+                    setPlayerStats(payload.playerStats);
+                    skipInitialStatsFetchRef.current = true;
+                }
+
+                if (payload.dailyStatsForTotals) {
+                    setDailyStatsForTotals(payload.dailyStatsForTotals);
+                    skipInitialDailyTotalsFetchRef.current = true;
+                }
+
+                if (payload.rosterPercentageMap) {
+                    setRosterPercentageMap(payload.rosterPercentageMap);
+                    skipInitialRosterPercentageFetchRef.current = true;
+                }
+
+                if (payload.activeTradePlayerIds) {
+                    setActiveTradePlayerIds(new Set(payload.activeTradePlayerIds.map(String)));
+                    skipInitialActiveTradesFetchRef.current = true;
+                }
+
+                if (payload.watchedIds) {
+                    setWatchedPlayerIds(new Set(payload.watchedIds.map(String)));
+                    skipInitialWatchedFetchRef.current = true;
+                }
+
+                if (payload.pendingTradeCount !== undefined && payload.pendingTradeCount !== null) {
+                    setPendingTradeCount(payload.pendingTradeCount);
+                }
             } catch (err) {
                 setApiIntegrationBeta(false);
                 console.error('Failed to fetch roster bootstrap:', err);
+            } finally {
+                setBootstrapReady(true);
             }
         };
 
@@ -370,6 +435,13 @@ export default function RosterPage() {
     }, [leagueId]);
 
     useEffect(() => {
+        if (!bootstrapReady) return;
+
+        if (skipInitialStartingStatusFetchRef.current) {
+            skipInitialStartingStatusFetchRef.current = false;
+            return;
+        }
+
         const fetchStartingStatus = async () => {
             const dateForStatus = selectedDate || getTodayTW();
             try {
@@ -388,11 +460,18 @@ export default function RosterPage() {
         };
 
         fetchStartingStatus();
-    }, [selectedDate]);
+    }, [selectedDate, bootstrapReady]);
 
     // Fetch roster when selectedDate changes
     useEffect(() => {
         if (!selectedDate) return;
+
+        if (!bootstrapReady) return;
+
+        if (skipInitialRosterFetchRef.current) {
+            skipInitialRosterFetchRef.current = false;
+            return;
+        }
 
         const fetchRosterForDate = async () => {
             setLoading(true);
@@ -402,13 +481,21 @@ export default function RosterPage() {
 
         fetchRosterForDate();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDate]);
+    }, [selectedDate, bootstrapReady]);
 
 
 
     // Fetch Weekly IP & Add Count
     useEffect(() => {
         if (!myManagerId || !leagueId || !selectedDate) return;
+
+        if (!bootstrapReady) return;
+
+        if (skipInitialWeeklyIpFetchRef.current) {
+            skipInitialWeeklyIpFetchRef.current = false;
+            return;
+        }
+
         const fetchWeeklyIP = async () => {
             try {
                 const res = await fetch(`/api/league/${leagueId}/weekly-ip?manager_id=${myManagerId}&date=${selectedDate}`);
@@ -420,10 +507,17 @@ export default function RosterPage() {
             } catch (e) { console.error('Failed to fetch weekly IP:', e); }
         };
         fetchWeeklyIP();
-    }, [leagueId, myManagerId, selectedDate]);
+    }, [leagueId, myManagerId, selectedDate, bootstrapReady]);
 
     // Fetch Roster Percentage
     useEffect(() => {
+        if (!bootstrapReady) return;
+
+        if (skipInitialRosterPercentageFetchRef.current) {
+            skipInitialRosterPercentageFetchRef.current = false;
+            return;
+        }
+
         const fetchRosterPercentage = async () => {
             try {
                 const res = await fetch('/api/playerslist?available=true');
@@ -438,12 +532,20 @@ export default function RosterPage() {
             } catch (e) { console.error('Failed to fetch roster percentage:', e); }
         };
         fetchRosterPercentage();
-    }, []);
+    }, [bootstrapReady]);
 
     // Fetch Active Trade Player IDs (for lock check)
     useEffect(() => {
         const fetchActiveTrades = async () => {
             if (!myManagerId) return;
+
+            if (!bootstrapReady) return;
+
+            if (skipInitialActiveTradesFetchRef.current) {
+                skipInitialActiveTradesFetchRef.current = false;
+                return;
+            }
+
             try {
                 const res = await fetch(`/api/trade/list?league_id=${leagueId}&manager_id=${myManagerId}`);
                 const data = await res.json();
@@ -463,10 +565,17 @@ export default function RosterPage() {
             }
         };
         fetchActiveTrades();
-    }, [leagueId, myManagerId]);
+    }, [leagueId, myManagerId, bootstrapReady]);
 
     // Stats
     useEffect(() => {
+        if (!bootstrapReady) return;
+
+        if (skipInitialStatsFetchRef.current) {
+            skipInitialStatsFetchRef.current = false;
+            return;
+        }
+
         const fetchStats = async () => {
             if (!timeWindow) return;
             try {
@@ -509,10 +618,17 @@ export default function RosterPage() {
             } catch (err) { console.error('Failed to fetch stats:', err); }
         };
         fetchStats();
-    }, [timeWindow, selectedDate, leagueId]);
+    }, [timeWindow, selectedDate, leagueId, bootstrapReady]);
 
     // Daily stats for category totals (always based on selectedDate, independent of timeWindow)
     useEffect(() => {
+        if (!bootstrapReady) return;
+
+        if (skipInitialDailyTotalsFetchRef.current) {
+            skipInitialDailyTotalsFetchRef.current = false;
+            return;
+        }
+
         const fetchDailyStatsForTotals = async () => {
             if (!selectedDate || !leagueId) {
                 setDailyStatsForTotals({});
@@ -547,11 +663,12 @@ export default function RosterPage() {
         };
 
         fetchDailyStatsForTotals();
-    }, [selectedDate, leagueId]);
+    }, [selectedDate, leagueId, bootstrapReady]);
 
     // Fetch Pending Trades Count
     useEffect(() => {
         if (!leagueId || !myManagerId) return;
+        if (!bootstrapReady) return;
         const fetchTrades = async () => {
             try {
                 const res = await fetch(`/api/trade/count?league_id=${leagueId}&manager_id=${myManagerId}`);
@@ -562,11 +679,19 @@ export default function RosterPage() {
             } catch (err) { console.error('Failed to fetch pending trades count:', err); }
         };
         fetchTrades();
-    }, [leagueId, myManagerId, showMyTradesModal]);
+    }, [leagueId, myManagerId, showMyTradesModal, bootstrapReady]);
 
     // Fetch watched players
     useEffect(() => {
         if (!leagueId || !myManagerId) return;
+
+        if (!bootstrapReady) return;
+
+        if (skipInitialWatchedFetchRef.current) {
+            skipInitialWatchedFetchRef.current = false;
+            return;
+        }
+
         const fetchWatched = async () => {
             try {
                 const res = await fetch(`/api/watched?league_id=${leagueId}&manager_id=${myManagerId}`);
@@ -579,7 +704,7 @@ export default function RosterPage() {
             }
         };
         fetchWatched();
-    }, [leagueId, myManagerId]);
+    }, [leagueId, myManagerId, bootstrapReady]);
 
     // Toggle watch handler (optimistic update)
     const handleToggleWatch = async (player, isCurrentlyWatched) => {

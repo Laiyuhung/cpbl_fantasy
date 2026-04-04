@@ -263,20 +263,9 @@ export default function LeaguePage() {
   const [draftResetSuccess, setDraftResetSuccess] = useState(false);
   const [showFinalizeReminder, setShowFinalizeReminder] = useState(false);
   const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false);
-
-  useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const res = await fetch('/api/username', { method: 'POST' });
-        const data = await res.json();
-        setIsAdmin(Boolean(data?.is_admin ?? data?.isAdmin));
-      } catch (err) {
-        console.error('Failed to check admin status:', err);
-      }
-    };
-
-    checkAdmin();
-  }, []);
+  const [bootstrapHasStandings, setBootstrapHasStandings] = useState(false);
+  const [bootstrapHasTransactions, setBootstrapHasTransactions] = useState(false);
+  const [bootstrapHasWatched, setBootstrapHasWatched] = useState(false);
 
   // Fetch draft reset status
   useEffect(() => {
@@ -333,7 +322,7 @@ export default function LeaguePage() {
 
   // Fetch watched players
   useEffect(() => {
-    if (!leagueId || !myManagerId) return;
+    if (!leagueId || !myManagerId || bootstrapHasWatched) return;
     const fetchWatched = async () => {
       try {
         const res = await fetch(`/api/watched?league_id=${leagueId}&manager_id=${myManagerId}`);
@@ -346,7 +335,7 @@ export default function LeaguePage() {
       }
     };
     fetchWatched();
-  }, [leagueId, myManagerId]);
+  }, [leagueId, myManagerId, bootstrapHasWatched]);
 
   // Toggle watch handler (optimistic update)
   const handleToggleWatch = async (player, isCurrentlyWatched) => {
@@ -403,10 +392,14 @@ export default function LeaguePage() {
     const fetchLeagueData = async () => {
       setLoading(true);
       setError('');
+      setBootstrapHasStandings(false);
+      setBootstrapHasTransactions(false);
+      setBootstrapHasWatched(false);
 
       try {
         const result = await getLeagueOverview(leagueId);
         setApiIntegrationBeta(Boolean(result.apiIntegrationBeta));
+        setIsAdmin(Boolean(result.user?.is_admin ?? result.user?.isAdmin ?? false));
 
         if (result.success) {
           setLeagueSettings(result.league);
@@ -462,9 +455,37 @@ export default function LeaguePage() {
                 }
               }
             }
+            if (typeof result.currentWeek === 'number') {
+              week = result.currentWeek;
+            }
+
             setCurrentWeek(week);
-            // Fetch matchups for this default week will be triggered by another effect or called here
-            fetchMatchups(week);
+
+            if (Array.isArray(result.matchups)) {
+              setMatchups(result.matchups);
+              setMatchupsLoading(false);
+            } else {
+              // Fetch matchups for this default week will be triggered by another effect or called here
+              fetchMatchups(week);
+            }
+          }
+
+          if (Array.isArray(result.standings)) {
+            setStandings(result.standings);
+            setStandingsLoading(false);
+            setBootstrapHasStandings(true);
+          }
+
+          if (Array.isArray(result.transactions) || Array.isArray(result.waivers)) {
+            setTransactions(result.transactions || []);
+            setWaiverResults(result.waivers || []);
+            setTransLoading(false);
+            setBootstrapHasTransactions(true);
+          }
+
+          if (Array.isArray(result.watchedIds)) {
+            setWatchedPlayerIds(new Set(result.watchedIds));
+            setBootstrapHasWatched(true);
           }
 
 
@@ -508,9 +529,12 @@ export default function LeaguePage() {
   // Fetch standings
   useEffect(() => {
     if (!leagueId) return;
+    if (bootstrapHasStandings && bootstrapHasTransactions) return;
 
     const fetchStandings = async () => {
-      setStandingsLoading(true);
+      if (!bootstrapHasStandings) {
+        setStandingsLoading(true);
+      }
       try {
         const response = await fetch(`/api/league/${leagueId}/standings`);
         const result = await response.json();
@@ -525,14 +549,20 @@ export default function LeaguePage() {
         console.error('Error fetching standings:', error);
         setStandings([]);
       } finally {
-        setStandingsLoading(false);
+        if (!bootstrapHasStandings) {
+          setStandingsLoading(false);
+        }
       }
     };
 
-    fetchStandings();
+    if (!bootstrapHasStandings) {
+      fetchStandings();
+    }
 
     const fetchTransactions = async () => {
-      setTransLoading(true);
+      if (!bootstrapHasTransactions) {
+        setTransLoading(true);
+      }
       try {
         const response = await fetch(`/api/league/${leagueId}/transactions`);
         const result = await response.json();
@@ -543,12 +573,16 @@ export default function LeaguePage() {
       } catch (error) {
         console.error('Error fetching transactions:', error);
       } finally {
-        setTransLoading(false);
+        if (!bootstrapHasTransactions) {
+          setTransLoading(false);
+        }
       }
     };
 
-    fetchTransactions();
-  }, [leagueId]);
+    if (!bootstrapHasTransactions) {
+      fetchTransactions();
+    }
+  }, [leagueId, bootstrapHasStandings, bootstrapHasTransactions]);
 
   const groupedTransactions = useMemo(() => {
     const groups = [];
@@ -1504,7 +1538,14 @@ export default function LeaguePage() {
           </div>
 
           {/* Daily Roster Widget */}
-          <LeagueDailyRoster leagueId={leagueId} members={members} />
+              <LeagueDailyRoster
+                leagueId={leagueId}
+                members={members}
+                initialSchedule={scheduleData}
+                initialLeagueSettings={leagueSettings}
+                initialLeagueStatus={leagueStatus}
+                initialWatchedIds={Array.from(watchedPlayerIds)}
+              />
           <p className="text-sm text-purple-200/90 leading-relaxed px-1">
             贊助連結：
             <a
