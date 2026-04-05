@@ -138,6 +138,14 @@ export default function PlayersPage() {
   const [currentRosterState, setCurrentRosterState] = useState([]); // Store roster for dynamic slot calc
   const [naLimitState, setNaLimitState] = useState(0); // Store NA limit
   const [allowNaToNaSlot, setAllowNaToNaSlot] = useState(false); // Store setting for NA slot allowed
+  const [bootstrapReady, setBootstrapReady] = useState(false);
+  const skipInitialStartingStatusFetchRef = useRef(false);
+  const skipInitialAcquisitionsFetchRef = useRef(false);
+  const skipInitialActiveTradesFetchRef = useRef(false);
+  const skipInitialWatchedFetchRef = useRef(false);
+  const skipInitialRosterLockFetchRef = useRef(false);
+  const skipInitialStatsFetchRef = useRef(false);
+  const skipInitialRankingsFetchRef = useRef(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -155,6 +163,10 @@ export default function PlayersPage() {
 
         setPlayers(payload.players || []);
         setOwnerships(payload.ownerships || []);
+
+        if (payload.myManagerId) {
+          setMyManagerId(payload.myManagerId);
+        }
 
         const leagueData = payload.league;
         if (leagueData?.success) {
@@ -179,8 +191,54 @@ export default function PlayersPage() {
           setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
           setLeagueSettings(settingsData.data || {});
         }
+
+        if (payload.startingStatus) {
+          setStartingStatus({
+            lineupByPlayerId: payload.startingStatus.lineup_by_player_id || {},
+            lineupTeams: new Set(payload.startingStatus.lineup_teams || []),
+            pitcherPlayerIds: new Set((payload.startingStatus.pitcher_player_ids || []).map(String)),
+          });
+          skipInitialStartingStatusFetchRef.current = true;
+        }
+
+        if (payload.acquisitionData) {
+          setAcquisitionData(payload.acquisitionData);
+          skipInitialAcquisitionsFetchRef.current = true;
+        }
+
+        if (Array.isArray(payload.activeTradePlayerIds)) {
+          setActiveTradePlayerIds(new Set(payload.activeTradePlayerIds.map(String)));
+          skipInitialActiveTradesFetchRef.current = true;
+        }
+
+        if (Array.isArray(payload.watchedIds)) {
+          setWatchedPlayerIds(new Set(payload.watchedIds.map(String)));
+          skipInitialWatchedFetchRef.current = true;
+        }
+
+        if (payload.myRosterLockMap) {
+          setMyRosterLockMap(payload.myRosterLockMap);
+          skipInitialRosterLockFetchRef.current = true;
+        }
+
+        if (payload.playerStats) {
+          setPlayerStats(payload.playerStats);
+          skipInitialStatsFetchRef.current = true;
+        }
+
+        if (payload.playerRankings) {
+          setPlayerRankings(payload.playerRankings);
+          skipInitialRankingsFetchRef.current = true;
+        }
+
+        if (payload.timeWindow) {
+          setTimeWindow(payload.timeWindow);
+        }
+
+        setBootstrapReady(true);
       } catch (err) {
         console.error('Unexpected error:', err);
+        setBootstrapReady(true);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -191,6 +249,12 @@ export default function PlayersPage() {
   }, [leagueId]);
 
   useEffect(() => {
+    if (!bootstrapReady) return;
+    if (skipInitialStartingStatusFetchRef.current) {
+      skipInitialStartingStatusFetchRef.current = false;
+      return;
+    }
+
     const fetchStartingStatus = async () => {
       try {
         const res = await fetch(`/api/starting-status?date=${statusDate}`);
@@ -208,7 +272,7 @@ export default function PlayersPage() {
     };
 
     fetchStartingStatus();
-  }, [statusDate]);
+  }, [statusDate, bootstrapReady]);
 
   // Determine default timeWindow based on Taiwan time vs first week start
   useEffect(() => {
@@ -283,11 +347,23 @@ export default function PlayersPage() {
   };
 
   useEffect(() => {
+    if (!bootstrapReady) return;
+    if (skipInitialAcquisitionsFetchRef.current) {
+      skipInitialAcquisitionsFetchRef.current = false;
+      return;
+    }
+
     fetchAcquisitions();
     fetchActiveTrades();
-  }, [leagueId, myManagerId]);
+  }, [leagueId, myManagerId, bootstrapReady]);
 
   useEffect(() => {
+    if (!bootstrapReady) return;
+    if (skipInitialRosterLockFetchRef.current) {
+      skipInitialRosterLockFetchRef.current = false;
+      return;
+    }
+
     const fetchMyRosterForLock = async () => {
       if (!leagueId || !myManagerId) {
         setMyRosterLockMap({});
@@ -310,7 +386,7 @@ export default function PlayersPage() {
     };
 
     fetchMyRosterForLock();
-  }, [leagueId, myManagerId, statusDate, ownerships]);
+  }, [leagueId, myManagerId, statusDate, ownerships, bootstrapReady]);
 
   const isDropLockedByGameStart = (playerLike) => {
     if (!playerLike?.player_id) return false;
@@ -346,8 +422,14 @@ export default function PlayersPage() {
   };
 
   useEffect(() => {
+    if (!bootstrapReady) return;
+    if (skipInitialWatchedFetchRef.current) {
+      skipInitialWatchedFetchRef.current = false;
+      return;
+    }
+
     fetchWatchedPlayers();
-  }, [leagueId, myManagerId]);
+  }, [leagueId, myManagerId, bootstrapReady]);
 
   // Toggle watch status (optimistic update)
   const handleToggleWatch = async (player, isCurrentlyWatched) => {
@@ -407,6 +489,12 @@ export default function PlayersPage() {
 
   // 取得球員統計數據
   useEffect(() => {
+    if (!bootstrapReady || !timeWindow) return;
+    if (skipInitialStatsFetchRef.current) {
+      skipInitialStatsFetchRef.current = false;
+      return;
+    }
+
     const fetchPlayerStats = async () => {
       if (!timeWindow) return;
       setFetchingStats(true);
@@ -441,11 +529,16 @@ export default function PlayersPage() {
     };
 
     fetchPlayerStats();
-  }, [timeWindow, filterType]);
+  }, [timeWindow, filterType, bootstrapReady]);
 
   // Fetch Rankings
   useEffect(() => {
-    if (!timeWindow) return; // Wait for timeWindow to be set
+    if (!bootstrapReady || !timeWindow) return; // Wait for bootstrap and timeWindow to be set
+    if (skipInitialRankingsFetchRef.current) {
+      skipInitialRankingsFetchRef.current = false;
+      return;
+    }
+
     const fetchRankings = async () => {
       setFetchingRankings(true);
       try {
@@ -465,7 +558,7 @@ export default function PlayersPage() {
       }
     };
     fetchRankings();
-  }, [leagueId, timeWindow]);
+  }, [leagueId, timeWindow, bootstrapReady]);
 
   // 格式化統計數據顯示
   const formatStatValue = (value, statKey) => {

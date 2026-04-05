@@ -216,7 +216,7 @@ export default function Navbar() {
           </div>
           {apiIntegrationBeta && (
             <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-black tracking-wider uppercase">
-              API整合 BETA
+              ADMIN BETA 測試
             </span>
           )}
         </Link>

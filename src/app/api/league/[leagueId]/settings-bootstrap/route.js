@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import supabaseAdmin from '@/lib/supabaseAdmin';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -25,6 +26,20 @@ export async function GET(request, { params }) {
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const { data: adminData, error: adminError } = await supabaseAdmin
+      .from('admin')
+      .select('manager_id')
+      .eq('manager_id', userId)
+      .maybeSingle();
+
+    if (adminError) {
+      return NextResponse.json({ success: false, error: adminError.message }, { status: 500 });
+    }
+
+    if (!adminData) {
+      return NextResponse.json({ success: false, error: 'Settings admin beta is admin-only' }, { status: 403 });
     }
 
     const [memberRes, settingsRes, statusRes] = await Promise.all([
@@ -70,6 +85,27 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: settingsRes.error?.message || 'Failed to load league settings' }, { status: 404 });
     }
 
+    const [scheduleRes, draftPicksRes] = await Promise.all([
+      supabase
+        .from('schedule_date')
+        .select('*')
+        .order('week_id', { ascending: true }),
+      supabase
+        .from('draft_picks')
+        .select('pick_number, manager_id, player_id, round_number')
+        .eq('league_id', leagueId)
+        .order('round_number', { ascending: true })
+        .order('pick_number', { ascending: true }),
+    ]);
+
+    if (scheduleRes.error) {
+      return NextResponse.json({ success: false, error: scheduleRes.error.message }, { status: 500 });
+    }
+
+    if (draftPicksRes.error) {
+      return NextResponse.json({ success: false, error: draftPicksRes.error.message }, { status: 500 });
+    }
+
     let categoryWeights = { batter: {}, pitcher: {} };
     if (settingsRes.data.scoring_type === 'Head-to-Head Fantasy Points') {
       const weightsRes = await supabase
@@ -86,6 +122,40 @@ export async function GET(request, { params }) {
       categoryWeights = toCategoryWeights(weightsRes.data || []);
     }
 
+    const draftPicks = draftPicksRes.data || [];
+    const hasDraftOrder = draftPicks.some((pick) => pick.player_id != null);
+
+    const draftOrder = [];
+    if (draftPicks.length > 0) {
+      const managerIds = [...new Set(draftPicks.map((pick) => pick.manager_id).filter(Boolean))];
+      const membersRes = managerIds.length > 0
+        ? await supabase
+          .from('league_members')
+          .select('manager_id, nickname')
+          .eq('league_id', leagueId)
+          .in('manager_id', managerIds)
+        : { data: [], error: null };
+
+      if (membersRes.error) {
+        return NextResponse.json({ success: false, error: membersRes.error.message }, { status: 500 });
+      }
+
+      const nicknameMap = {};
+      (membersRes.data || []).forEach((member) => {
+        nicknameMap[member.manager_id] = member.nickname;
+      });
+
+      const seenManagers = new Set();
+      draftPicks.forEach((pick) => {
+        if (!pick.manager_id || seenManagers.has(pick.manager_id)) return;
+        seenManagers.add(pick.manager_id);
+        draftOrder.push({
+          manager_id: pick.manager_id,
+          nickname: nicknameMap[pick.manager_id] || 'Unknown Manager',
+        });
+      });
+    }
+
     return NextResponse.json({
       success: true,
       apiIntegrationBeta: true,
@@ -94,6 +164,9 @@ export async function GET(request, { params }) {
       status: statusRes.data?.status || '',
       settings: settingsRes.data,
       categoryWeights,
+      scheduleData: scheduleRes.data || [],
+      hasDraftOrder,
+      draftOrder,
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message || 'Server error' }, { status: 500 });

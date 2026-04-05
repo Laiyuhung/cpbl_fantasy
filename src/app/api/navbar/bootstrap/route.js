@@ -16,6 +16,24 @@ export async function GET() {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value || null;
 
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Navbar admin beta is admin-only' }, { status: 403 });
+    }
+
+    const { data: adminData, error: adminError } = await supabase
+      .from('admin')
+      .select('manager_id')
+      .eq('manager_id', userId)
+      .maybeSingle();
+
+    if (adminError) {
+      return NextResponse.json({ success: false, error: adminError.message }, { status: 500 });
+    }
+
+    if (!adminData) {
+      return NextResponse.json({ success: false, error: 'Navbar admin beta is admin-only' }, { status: 403 });
+    }
+
     const settingRes = await supabaseAdmin
       .from('system_settings')
       .select('value_bool')
@@ -29,6 +47,7 @@ export async function GET() {
     const payload = {
       success: true,
       apiIntegrationBeta: true,
+      betaLabel: 'ADMIN BETA 測試',
       createLeagueDisabled: Boolean(settingRes.data?.value_bool),
       isGuest: !userId,
       user: null,

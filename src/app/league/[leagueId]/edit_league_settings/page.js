@@ -207,8 +207,8 @@ const sections = [
 ];
 
 // SchedulePreview 元件：根據設定值實時推算schedule_date表中的週次
-function SchedulePreview({ leagueId, settings, onValidationChange, onScheduleChange }) {
-  const [allScheduleData, setAllScheduleData] = useState([]);
+function SchedulePreview({ leagueId, settings, onValidationChange, onScheduleChange, initialScheduleData = [] }) {
+  const [allScheduleData, setAllScheduleData] = useState(initialScheduleData || []);
   const [scheduleValidationError, setScheduleValidationError] = useState('');
   const [filteredSchedule, setFilteredSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +216,13 @@ function SchedulePreview({ leagueId, settings, onValidationChange, onScheduleCha
 
   // 首次載入所有 schedule_date 資料
   useEffect(() => {
+    if (Array.isArray(initialScheduleData) && initialScheduleData.length > 0) {
+      setAllScheduleData(initialScheduleData);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     const fetchAllSchedule = async () => {
       try {
         setLoading(true);
@@ -243,7 +250,7 @@ function SchedulePreview({ leagueId, settings, onValidationChange, onScheduleCha
     if (leagueId) {
       fetchAllSchedule();
     }
-  }, [leagueId]);
+  }, [leagueId, initialScheduleData]);
 
   // 當設定改變時，即時篩選週次並加入季後賽推算
   useEffect(() => {
@@ -631,6 +638,8 @@ const EditLeagueSettingsPage = ({ params }) => {
   const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
   const [scheduleData, setScheduleData] = useState([]); // Store calculated schedule
   const [draftTimeConflicts, setDraftTimeConflicts] = useState([]);
+  const [bootstrapScheduleData, setBootstrapScheduleData] = useState([]);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
 
   const handleScheduleValidation = (error) => {
     setScheduleError(error);
@@ -642,6 +651,10 @@ const EditLeagueSettingsPage = ({ params }) => {
 
   // Check if draft order has been generated and fetch it
   useEffect(() => {
+    if (bootstrapReady) {
+      return;
+    }
+
     const checkDraftOrder = async () => {
       if (!leagueId) return;
 
@@ -706,7 +719,7 @@ const EditLeagueSettingsPage = ({ params }) => {
       }
     };
     checkDraftOrder();
-  }, [leagueId]);
+  }, [leagueId, bootstrapReady]);
 
   const handleSettingChange = (section, key, value) => {
     setSettings((prev) => {
@@ -1313,6 +1326,10 @@ const EditLeagueSettingsPage = ({ params }) => {
         setSettings(mapDbToSettings(payload.settings));
         setStatus(payload.status || '');
         setCategoryWeights(payload.categoryWeights || { batter: {}, pitcher: {} });
+        setBootstrapScheduleData(Array.isArray(payload.scheduleData) ? payload.scheduleData : []);
+        setHasDraftOrder(Boolean(payload.hasDraftOrder));
+        setDraftOrder(Array.isArray(payload.draftOrder) ? payload.draftOrder : []);
+        setBootstrapReady(Boolean(payload.apiIntegrationBeta));
       } catch (err) {
         setError(err.message || 'Failed to load league settings');
       } finally {
@@ -1792,7 +1809,7 @@ const EditLeagueSettingsPage = ({ params }) => {
 
         <div className="mt-8">
           {/* 週次預覽表 - 從schedule_date表顯示，根據設定即時篩選 */}
-          <SchedulePreview leagueId={leagueId} settings={settings} onValidationChange={handleScheduleValidation} onScheduleChange={handleScheduleChange} />
+          <SchedulePreview leagueId={leagueId} settings={settings} initialScheduleData={bootstrapScheduleData} onValidationChange={handleScheduleValidation} onScheduleChange={handleScheduleChange} />
         </div>
 
 
