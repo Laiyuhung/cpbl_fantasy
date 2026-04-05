@@ -104,6 +104,7 @@ export default function RosterPage() {
     const skipInitialRosterPercentageFetchRef = useRef(false);
     const skipInitialActiveTradesFetchRef = useRef(false);
     const skipInitialWatchedFetchRef = useRef(false);
+    const skipInitialPendingTradeCountFetchRef = useRef(false);
     // Helpers
     const parseStatName = (stat) => {
         const matches = stat.match(/\(([^)]+)\)/g);
@@ -422,6 +423,7 @@ export default function RosterPage() {
 
                 if (payload.pendingTradeCount !== undefined && payload.pendingTradeCount !== null) {
                     setPendingTradeCount(payload.pendingTradeCount);
+                    skipInitialPendingTradeCountFetchRef.current = true;
                 }
             } catch (err) {
                 setApiIntegrationBeta(false);
@@ -669,6 +671,12 @@ export default function RosterPage() {
     useEffect(() => {
         if (!leagueId || !myManagerId) return;
         if (!bootstrapReady) return;
+
+        if (skipInitialPendingTradeCountFetchRef.current) {
+            skipInitialPendingTradeCountFetchRef.current = false;
+            return;
+        }
+
         const fetchTrades = async () => {
             try {
                 const res = await fetch(`/api/trade/count?league_id=${leagueId}&manager_id=${myManagerId}`);

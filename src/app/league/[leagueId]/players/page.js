@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
 import PlayerDetailModal from '../../../../components/PlayerDetailModal';
+import { getPlayersBootstrap } from '@/lib/playersBootstrapClient';
 
 function getTodayTW() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -150,39 +151,18 @@ export default function PlayersPage() {
           setMyManagerId(userId);
         }
 
-        // 並行請求 players 和 ownerships
-        const [playersRes, ownershipsRes, leagueRes] = await Promise.all([
-          fetch('/api/playerslist?available=true'),
-          fetch(`/api/league/${leagueId}/ownership`),
-          fetch(`/api/league/${leagueId}`)
-        ]);
+        const payload = await getPlayersBootstrap(leagueId);
 
-        // 處理 players
-        const playersData = await playersRes.json();
-        if (!playersRes.ok) {
-          setError(playersData.error || 'Failed to load players');
-          return;
-        }
-        if (playersData.success) {
-          setPlayers(playersData.players || []);
-        }
+        setPlayers(payload.players || []);
+        setOwnerships(payload.ownerships || []);
 
-        // 處理 ownerships
-        const ownershipsData = await ownershipsRes.json();
-        if (ownershipsData.success) {
-          setOwnerships(ownershipsData.ownerships || []);
-        }
-
-        // 處理 members (取得 nickname 對照) 和 roster_positions
-        const leagueData = await leagueRes.json();
-        if (leagueData.success) {
-          setMembers(leagueData.members || []);
+        const leagueData = payload.league;
+        if (leagueData?.success) {
           setMembers(leagueData.members || []);
           setRosterPositions(leagueData.league?.roster_positions || {});
           setLeagueStatus(leagueData.status || 'unknown');
           setScheduleData(leagueData.schedule || []);
 
-          // Get trade deadline info
           setTradeEndDate(leagueData.league?.trade_end_date || null);
           if (leagueData.league?.start_scoring_on) {
             const parts = leagueData.league.start_scoring_on.split('.');
@@ -193,10 +173,8 @@ export default function PlayersPage() {
           }
         }
 
-        // 取得聯盟設定 (stat categories)
-        const settingsRes = await fetch(`/api/league-settings?league_id=${leagueId}`);
-        const settingsData = await settingsRes.json();
-        if (settingsData.success && settingsData.data) {
+        const settingsData = payload.settings;
+        if (settingsData?.success && settingsData.data) {
           setBatterStatCategories(settingsData.data.batter_stat_categories || []);
           setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
           setLeagueSettings(settingsData.data || {});

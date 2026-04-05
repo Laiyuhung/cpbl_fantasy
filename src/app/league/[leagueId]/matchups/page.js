@@ -15,7 +15,7 @@ export default function MatchupsPage() {
     const [loading, setLoading] = useState(true);
     const [matchups, setMatchups] = useState([]);
     const [scroingSettings, setScoringSettings] = useState(null);
-    const [selectedWeek, setSelectedWeek] = useState('1'); // Default to Week 1 or current
+    const [selectedWeek, setSelectedWeek] = useState('');
     const [availableWeeks, setAvailableWeeks] = useState([]);
     const [currentManagerId, setCurrentManagerId] = useState(null);
     const [selectedMatchupIndex, setSelectedMatchupIndex] = useState(0);
@@ -24,6 +24,7 @@ export default function MatchupsPage() {
     const [activeTab, setActiveTab] = useState('categories'); // 'categories' or 'stats'
     const [playerStats, setPlayerStats] = useState({ batting: [], pitching: [] });
     const [playerStatsLoading, setPlayerStatsLoading] = useState(false);
+    const [bootstrapReady, setBootstrapReady] = useState(false);
 
     // Get current user's manager ID
     useEffect(() => {
@@ -33,44 +34,35 @@ export default function MatchupsPage() {
         }
     }, []);
 
-    // Fetch league data and determine current week
+    // Fetch bootstrap data and determine current week
     useEffect(() => {
         if (!leagueId) return;
 
         const fetchLeagueData = async () => {
+            setLoading(true);
             try {
-                const response = await fetch(`/api/league/${leagueId}`);
+                const response = await fetch(`/api/league/${leagueId}/matchups/stats`);
                 const result = await response.json();
 
-                if (result.success && result.schedule) {
-                    setScheduleData(result.schedule);
+                if (result.success) {
+                    setMatchups(result.matchups || []);
+                    setScoringSettings(result.settings || null);
+                    setScheduleData(result.schedule || []);
 
-                    // Generate available weeks from schedule
-                    const weeks = result.schedule.map(w => w.week_number);
+                    const weeks = Array.isArray(result.availableWeeks)
+                        ? result.availableWeeks
+                        : (result.schedule || []).map(w => w.week_number);
                     setAvailableWeeks(weeks);
 
-                    // Determine current week based on today's date
-                    const today = new Date();
-                    let currentWeek = 1;
-
-                    // If before first week, use week 1
-                    if (today < new Date(result.schedule[0].week_start)) {
-                        currentWeek = 1;
+                    if (result.selectedWeek) {
+                        setSelectedWeek(String(result.selectedWeek));
                     }
-                    // If after last week, use last week
-                    else if (today > new Date(result.schedule[result.schedule.length - 1].week_end)) {
-                        currentWeek = result.schedule[result.schedule.length - 1].week_number;
-                    }
-                    // Find current week
-                    else {
-                        const current = result.schedule.find(w => today >= new Date(w.week_start) && today <= new Date(w.week_end));
-                        if (current) currentWeek = current.week_number;
-                    }
-
-                    setSelectedWeek(currentWeek.toString());
                 }
             } catch (error) {
-                console.error("Error loading league data:", error);
+                console.error("Error loading matchup bootstrap:", error);
+            } finally {
+                setLoading(false);
+                setBootstrapReady(true);
             }
         };
 
@@ -78,7 +70,7 @@ export default function MatchupsPage() {
     }, [leagueId]);
 
     useEffect(() => {
-        if (!leagueId || !selectedWeek) return;
+        if (!bootstrapReady || !leagueId || !selectedWeek) return;
 
         const fetchData = async () => {
             setLoading(true);
@@ -100,7 +92,7 @@ export default function MatchupsPage() {
         };
 
         fetchData();
-    }, [leagueId, selectedWeek]); // 移除 currentManagerId 避免雙重 fetch
+    }, [bootstrapReady, leagueId, selectedWeek]);
 
     // Fetch player stats when tab switches to 'stats' or matchup changes
     useEffect(() => {
@@ -352,7 +344,7 @@ export default function MatchupsPage() {
                         >
                             <div className="flex items-center gap-1 sm:gap-2">
                                 <span className="text-sm sm:text-lg font-black text-white tracking-wide group-hover:text-cyan-300 transition-colors">
-                                    WEEK {selectedWeek}
+                                    WEEK {selectedWeek || '-'}
                                 </span>
                                 <svg className={`w-4 h-4 text-white/50 transition-transform duration-300 ${weekDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

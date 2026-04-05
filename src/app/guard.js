@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import { getLeagueOverview } from '@/lib/leagueOverviewClient'
+import { getCurrentUsername } from '@/lib/usernameClient'
 
 export default function GuardLayout({ children }) {
   const pathname = usePathname()
@@ -50,28 +52,45 @@ export default function GuardLayout({ children }) {
       return;
     }
 
-    const checkVerificationStatus = () => {
+    const checkVerificationStatus = async () => {
       const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
       const uid = cookie?.split('=')[1];
       if (uid) {
-        fetch('/api/username', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: uid }),
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data && typeof data.email_verified !== 'undefined') {
-              setEmailVerified(data.email_verified);
-              // If not verified and NOT on profile page
-              if (!data.email_verified && !pathIsProfile) {
+        const leagueMatch = pathname.match(/^\/league\/([^\/]+)$/);
+
+        if (leagueMatch?.[1]) {
+          try {
+            const overviewData = await getLeagueOverview(leagueMatch[1]);
+            const emailVerifiedFromOverview = overviewData?.user?.email_verified;
+
+            if (typeof emailVerifiedFromOverview !== 'undefined') {
+              setEmailVerified(Boolean(emailVerifiedFromOverview));
+              if (!emailVerifiedFromOverview && !pathIsProfile) {
                 setIsRestricted(true);
               } else {
                 setIsRestricted(false);
               }
+              return;
             }
-          })
-          .catch(() => { });
+          } catch {
+            // Fall back to username API client below.
+          }
+        }
+
+        try {
+          const currentUser = await getCurrentUsername();
+          const verified = currentUser?.raw?.email_verified;
+          if (typeof verified !== 'undefined') {
+            setEmailVerified(Boolean(verified));
+            if (!verified && !pathIsProfile) {
+              setIsRestricted(true);
+            } else {
+              setIsRestricted(false);
+            }
+          }
+        } catch {
+          // Ignore transient auth fetch errors.
+        }
       }
     };
 

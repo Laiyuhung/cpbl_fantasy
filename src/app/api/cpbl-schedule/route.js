@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import supabaseAdmin from '@/lib/supabaseAdmin';
 
 export async function GET(request) {
+    const bootstrapAccess = request.headers.get('x-bootstrap-request');
+    if (bootstrapAccess !== '1') {
+        return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
     const start = searchParams.get('start');

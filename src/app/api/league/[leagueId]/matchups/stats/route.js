@@ -1,6 +1,33 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabaseServer';
 
+function getCurrentWeekFromSchedule(schedule) {
+    if (!Array.isArray(schedule) || schedule.length === 0) return 1;
+
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+
+    const getDateInTaiwan = (dateStr) => {
+        const date = new Date(dateStr);
+        return new Date(date.getTime() + (8 * 60 * 60 * 1000));
+    };
+
+    const firstWeekStart = getDateInTaiwan(schedule[0].week_start);
+    const lastWeekEnd = getDateInTaiwan(schedule[schedule.length - 1].week_end);
+
+    if (taiwanTime < firstWeekStart) return 1;
+    if (taiwanTime > lastWeekEnd) return schedule[schedule.length - 1].week_number;
+
+    const current = schedule.find((w) => {
+        const weekStart = getDateInTaiwan(w.week_start);
+        const weekEnd = getDateInTaiwan(w.week_end);
+        weekEnd.setUTCHours(23, 59, 59, 999);
+        return taiwanTime >= weekStart && taiwanTime <= weekEnd;
+    });
+
+    return current?.week_number || 1;
+}
+
 export async function GET(request, { params }) {
     const { leagueId } = params;
     const { searchParams } = new URL(request.url);
@@ -10,11 +37,26 @@ export async function GET(request, { params }) {
         return NextResponse.json({ error: 'League ID is required' }, { status: 400 });
     }
 
-    if (!week) {
-        return NextResponse.json({ error: 'Week number is required' }, { status: 400 });
-    }
-
     try {
+        let schedule = [];
+        let selectedWeek = week;
+
+        if (!selectedWeek) {
+            const { data: scheduleData, error: scheduleError } = await supabase
+                .from('league_schedule')
+                .select('week_number, week_start, week_end, week_type, week_label, id')
+                .eq('league_id', leagueId)
+                .order('week_number', { ascending: true });
+
+            if (scheduleError) {
+                console.error('Error fetching schedule:', scheduleError);
+                return NextResponse.json({ error: 'Failed to fetch league schedule' }, { status: 500 });
+            }
+
+            schedule = scheduleData || [];
+            selectedWeek = String(getCurrentWeekFromSchedule(schedule));
+        }
+
         // 1. Fetch League Settings (for scoring categories)
         const { data: settings, error: settingsError } = await supabase
             .from('league_settings')
@@ -51,7 +93,7 @@ export async function GET(request, { params }) {
             .from('league_matchups')
             .select('*')
             .eq('league_id', leagueId)
-            .eq('week_number', week);
+            .eq('week_number', selectedWeek);
 
         if (matchupsError) {
             console.error('Error fetching matchups:', matchupsError);
@@ -63,7 +105,7 @@ export async function GET(request, { params }) {
             .from('v_weekly_manager_stats')
             .select('*')
             .eq('league_id', leagueId)
-            .eq('week_number', week);
+            .eq('week_number', selectedWeek);
 
         if (statsError) {
             console.error('Error fetching stats:', statsError);
@@ -151,7 +193,7 @@ export async function GET(request, { params }) {
             };
         });
 
-        return NextResponse.json({
+        const responsePayload = {
             success: true,
             matchups: finalMatchups,
             settings: {
@@ -159,8 +201,16 @@ export async function GET(request, { params }) {
                 pitcher_categories: settings.pitcher_stat_categories,
                 scoring_type: settings.scoring_type,
                 category_weights: categoryWeights
-            }
-        });
+            },
+        };
+
+        if (!week) {
+            responsePayload.schedule = schedule;
+            responsePayload.availableWeeks = schedule.map((w) => w.week_number);
+            responsePayload.selectedWeek = String(selectedWeek);
+        }
+
+        return NextResponse.json(responsePayload);
 
     } catch (error) {
         console.error('Unexpected error:', error);

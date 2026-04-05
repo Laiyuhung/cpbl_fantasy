@@ -79,7 +79,12 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [matchupsRes, standingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes] = await Promise.all([
+    const [managerRes, matchupsRes, standingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes] = await Promise.all([
+      supabase
+        .from('managers')
+        .select('name, email_verified')
+        .eq('manager_id', userId)
+        .maybeSingle(),
       supabase
         .from('league_matchups')
         .select('*')
@@ -129,6 +134,10 @@ export async function GET(request, { params }) {
         .select('*')
         .eq('league_id', leagueId),
     ]);
+
+    if (managerRes.error) {
+      return NextResponse.json({ success: false, error: managerRes.error.message }, { status: 500 });
+    }
 
     if (matchupsRes.error) {
       return NextResponse.json({ success: false, error: matchupsRes.error.message }, { status: 500 });
@@ -257,7 +266,10 @@ export async function GET(request, { params }) {
       apiIntegrationBeta: true,
       user: {
         manager_id: userId,
+        name: managerRes.data?.name || '',
+        email_verified: Boolean(managerRes.data?.email_verified),
         is_admin: true,
+        isAdmin: true,
       },
       todayDate,
       todayScheduleGames: todayGamesRes.data || [],

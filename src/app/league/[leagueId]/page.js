@@ -327,7 +327,7 @@ export default function LeaguePage() {
 
   // Fetch watched players
   useEffect(() => {
-    if (!leagueId || !myManagerId || bootstrapHasWatched) return;
+    if (!bootstrapReady || !leagueId || !myManagerId || bootstrapHasWatched) return;
     const fetchWatched = async () => {
       try {
         const res = await fetch(`/api/watched?league_id=${leagueId}&manager_id=${myManagerId}`);
@@ -340,7 +340,7 @@ export default function LeaguePage() {
       }
     };
     fetchWatched();
-  }, [leagueId, myManagerId, bootstrapHasWatched]);
+  }, [bootstrapReady, leagueId, myManagerId, bootstrapHasWatched]);
 
   // Toggle watch handler (optimistic update)
   const handleToggleWatch = async (player, isCurrentlyWatched) => {

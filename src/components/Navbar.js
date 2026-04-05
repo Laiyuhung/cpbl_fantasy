@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { fetchManagerLeagues } from '@/lib/leaguesClient'
-import { clearHomeBootstrapCache, getHomeBootstrap } from '@/lib/homeBootstrapClient'
+import { clearHomeBootstrapCache } from '@/lib/homeBootstrapClient'
+import { clearNavbarBootstrapCache, getNavbarBootstrap } from '@/lib/navbarBootstrapClient'
 import { getCreateLeagueDisabled } from '@/lib/systemSettingsClient'
 import { clearUsernameCache, getCurrentUsername } from '@/lib/usernameClient'
 
@@ -63,11 +64,11 @@ export default function Navbar() {
 
   const hydrateFromLegacy = useCallback(async () => {
     try {
-      const currentUser = await getCurrentUsername()
-
       const disabled = await getCreateLeagueDisabled()
       setCreateLeagueDisabled(disabled)
       setApiIntegrationBeta(false)
+
+      const currentUser = await getCurrentUsername()
 
       if (!currentUser) {
         setUserId('')
@@ -99,7 +100,7 @@ export default function Navbar() {
 
   const hydrateFromBootstrap = useCallback(async (forceRefresh = false) => {
     try {
-      const data = await getHomeBootstrap({ forceRefresh })
+      const data = await getNavbarBootstrap({ forceRefresh })
 
       setCreateLeagueDisabled(Boolean(data.createLeagueDisabled))
       setApiIntegrationBeta(Boolean(data.apiIntegrationBeta))
@@ -179,6 +180,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' })
     clearHomeBootstrapCache()
+    clearNavbarBootstrapCache()
     clearUsernameCache()
     // 在登出時清除 userId 並跳轉到登錄頁面
     setUserId('')  // 更新 userId

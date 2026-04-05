@@ -41,7 +41,11 @@ export default function CpblScheduleWidget({ initialDate = null, initialGames = 
         setLoading(true);
         try {
             const dateStr = formatDate(date);
-            const res = await fetch(`/api/cpbl-schedule?date=${dateStr}`);
+            const res = await fetch(`/api/cpbl-schedule?date=${dateStr}`, {
+                headers: {
+                    'x-bootstrap-request': '1',
+                },
+            });
             const data = await res.json();
             if (data.success) {
                 setGames(data.data || []);

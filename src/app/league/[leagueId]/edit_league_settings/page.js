@@ -5,6 +5,7 @@ import supabase from '@/lib/supabase';
 import AmericanDatePicker from '@/components/AmericanDatePicker';
 import DraftTimeline from '@/components/DraftTimeline';
 import DraftTimelineInline from '@/components/DraftTimelineInline';
+import { getLeagueSettingsBootstrap } from '@/lib/leagueSettingsBootstrapClient';
 
 const cloneSettings = (settings) => JSON.parse(JSON.stringify(settings));
 
@@ -1292,72 +1293,26 @@ const EditLeagueSettingsPage = ({ params }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const payload = await getLeagueSettingsBootstrap(leagueId);
 
-        // Get current user ID from cookie
-        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
-        const currentUserId = cookie?.split('=')[1];
+        setCurrentUserRole(payload.currentUserRole || '');
 
-        if (!currentUserId) {
-          setError('Not authenticated. Please login.');
-          setLoading(false);
-          return;
-        }
-
-        // Fetch league data to check user role
-        const leagueResponse = await fetch(`/api/league/${leagueId}`);
-        const leagueResult = await leagueResponse.json();
-
-        if (!leagueResponse.ok || !leagueResult.success) {
-          setError(leagueResult.error || 'Failed to load league data');
-          setLoading(false);
-          return;
-        }
-
-        // Check if user is a member and has proper role
-        const currentMember = leagueResult.members?.find(m => m.manager_id === currentUserId);
-
-        if (!currentMember) {
-          setError('You are not a member of this league');
+        if (!payload.isAuthorized) {
+          setError(payload.error || 'Access denied. Only Commissioner or Co-Commissioner can edit league settings.');
           setIsAuthorized(false);
-          setLoading(false);
           return;
         }
 
-        const userRole = currentMember.role;
-        setCurrentUserRole(userRole);
-
-        if (userRole !== 'Commissioner' && userRole !== 'Co-Commissioner') {
-          setError('Access denied. Only Commissioner or Co-Commissioner can edit league settings.');
+        if (!payload.settings) {
+          setError('Failed to load league settings');
           setIsAuthorized(false);
-          setLoading(false);
           return;
         }
 
         setIsAuthorized(true);
-
-        // Fetch league settings
-        const res = await fetch(`/api/league-settings?league_id=${leagueId}`);
-        const json = await res.json();
-        if (!res.ok || !json.success) {
-          setError(json.error || 'Failed to load league settings');
-          setLoading(false);
-          return;
-        }
-        setSettings(mapDbToSettings(json.data));
-        setStatus(json.status || '');
-
-        // Fetch category weights if scoring type is Head-to-Head Fantasy Points
-        if (json.data.scoring_type === 'Head-to-Head Fantasy Points') {
-          const weightsRes = await fetch(`/api/league-settings/weights?league_id=${leagueId}`);
-          const weightsJson = await weightsRes.json();
-          if (weightsRes.ok && weightsJson.success) {
-            const weights = { batter: {}, pitcher: {} };
-            weightsJson.data.forEach(w => {
-              weights[w.category_type][w.category_name] = parseFloat(w.weight);
-            });
-            setCategoryWeights(weights);
-          }
-        }
+        setSettings(mapDbToSettings(payload.settings));
+        setStatus(payload.status || '');
+        setCategoryWeights(payload.categoryWeights || { batter: {}, pitcher: {} });
       } catch (err) {
         setError(err.message || 'Failed to load league settings');
       } finally {
