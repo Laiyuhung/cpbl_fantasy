@@ -1017,7 +1017,7 @@ export default function LeaguePage() {
                   const weekEnd = new Date(weekDetails?.week_end);
                   const hasStarted = now >= weekStart;
                   const isLive = now >= weekStart && now <= weekEnd;
-                  const isFinal = now > weekEnd;
+                  const isFinal = Boolean(weekDetails?.week_end && todayDate && todayDate > weekDetails.week_end);
 
                   // Get actual scores from database
                   const scoreA = matchup.score_a !== null ? parseFloat(matchup.score_a) : 0;

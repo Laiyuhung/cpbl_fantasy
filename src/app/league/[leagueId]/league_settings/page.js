@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import supabase from '@/lib/supabase';
+import { getLeagueSettingsBootstrap } from '@/lib/leagueSettingsBootstrapClient';
 
 export default function LeagueSettingsPage() {
   const params = useParams();
@@ -40,6 +41,7 @@ export default function LeagueSettingsPage() {
   const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
   const [showGenerateConfirmModal, setShowGenerateConfirmModal] = useState(false); // Confirm modal state
+  const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false);
 
 
   // Photo Resolution State
@@ -291,40 +293,59 @@ export default function LeagueSettingsPage() {
       setError('');
 
       try {
-        // 獲取聯盟設定
+        const payload = await getLeagueSettingsBootstrap(leagueId);
+
+        if (payload?.success && payload?.settings) {
+          setApiIntegrationBeta(Boolean(payload.apiIntegrationBeta));
+          setLeagueSettings(payload.settings);
+          setLeagueStatus(payload.status || 'unknown');
+          setIsFinalized(Boolean(payload.settings?.is_finalized));
+          setCategoryWeights(payload.categoryWeights || { batter: {}, pitcher: {} });
+          if (payload.currentUserRole) {
+            setCurrentUserRole(payload.currentUserRole);
+          }
+        } else {
+          setApiIntegrationBeta(false);
+        }
+
+        // Fetch members/current-user context used by this view page.
         const response = await fetch(`/api/league/${leagueId}`);
         const result = await response.json();
 
-        if (!response.ok) {
-          setError(result.error || 'Failed to load league settings');
+        if (!response.ok || !result.success) {
+          if (!payload?.success) {
+            setError(result.error || payload?.error || 'Failed to load league settings');
+          }
           return;
         }
 
-        if (result.success) {
+        setMembers(result.members || []);
+
+        // Legacy fallback when bootstrap is unavailable
+        if (!payload?.success || !payload?.settings) {
           setLeagueSettings(result.league);
           setLeagueStatus(result.status || 'unknown');
-          setMembers(result.members || []);
           setIsFinalized(result.league?.is_finalized || false);
 
-          // 獲取當前用戶的權限
-          const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
-          const currentUserId = cookie?.split('=')[1];
-          if (currentUserId) {
-            setCurrentUserId(currentUserId);
-            const currentMember = result.members?.find(m => m.manager_id === currentUserId);
-            setCurrentUserRole(currentMember?.role || 'member');
-            setCurrentNickname(currentMember?.nickname || '');
-          }
-
-          // 如果是 Fantasy Points，載入權重
           if (result.league?.scoring_type === 'Head-to-Head Fantasy Points') {
             fetchCategoryWeights();
           }
-        } else {
-          setError('Failed to load league settings');
+        }
+
+        // Get current user's role and nickname from member list.
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+        const currentUserId = cookie?.split('=')[1];
+        if (currentUserId) {
+          setCurrentUserId(currentUserId);
+          const currentMember = result.members?.find(m => m.manager_id === currentUserId);
+          if (!payload?.currentUserRole) {
+            setCurrentUserRole(currentMember?.role || 'member');
+          }
+          setCurrentNickname(currentMember?.nickname || '');
         }
       } catch (err) {
         console.error('Unexpected error:', err);
+        setApiIntegrationBeta(false);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -874,7 +895,14 @@ export default function LeagueSettingsPage() {
             <h1 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-1 sm:mb-2">
               League Settings
             </h1>
-            <p className="text-purple-300/70 text-sm sm:text-base">{leagueSettings.league_name}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-purple-300/70 text-sm sm:text-base">{leagueSettings.league_name}</p>
+              {apiIntegrationBeta && (
+                <span className="px-2 py-0.5 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
+                  ADMIN BETA 測試
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-4">
             {(currentUserRole === 'Commissioner' || currentUserRole === 'Co-Commissioner') && (
