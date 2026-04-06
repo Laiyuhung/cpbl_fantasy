@@ -662,7 +662,7 @@ export default function StatsEntryPage() {
 
     setSettlingScores(true)
     try {
-      const res = await fetch('/api/update-matchup-scores', {
+      const res = await fetch('/api/admin/update-matchup-scores', {
         method: 'POST',
       })
       const data = await res.json()
