@@ -32,6 +32,7 @@ export async function GET(request, { params }) {
     const { leagueId } = params;
     const { searchParams } = new URL(request.url);
     const week = searchParams.get('week');
+    const metaOnly = searchParams.get('metaOnly') === '1';
 
     if (!leagueId) {
         return NextResponse.json({ error: 'League ID is required' }, { status: 400 });
@@ -55,6 +56,33 @@ export async function GET(request, { params }) {
 
             schedule = scheduleData || [];
             selectedWeek = String(getCurrentWeekFromSchedule(schedule));
+        }
+
+        if (metaOnly) {
+            if (schedule.length === 0) {
+                const { data: scheduleData, error: scheduleError } = await supabase
+                    .from('league_schedule')
+                    .select('week_number, week_start, week_end, week_type, week_label, id')
+                    .eq('league_id', leagueId)
+                    .order('week_number', { ascending: true });
+
+                if (scheduleError) {
+                    console.error('Error fetching schedule:', scheduleError);
+                    return NextResponse.json({ error: 'Failed to fetch league schedule' }, { status: 500 });
+                }
+
+                schedule = scheduleData || [];
+                if (!selectedWeek) {
+                    selectedWeek = String(getCurrentWeekFromSchedule(schedule));
+                }
+            }
+
+            return NextResponse.json({
+                success: true,
+                selectedWeek: String(selectedWeek || ''),
+                availableWeeks: schedule.map((w) => w.week_number),
+                schedule,
+            });
         }
 
         // 1. Fetch League Settings (for scoring categories)

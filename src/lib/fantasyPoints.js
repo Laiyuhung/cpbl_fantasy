@@ -51,14 +51,38 @@ function getNumericStatValue(stats, abbr) {
   const lowerKey = String(abbr).toLowerCase();
   const upperKey = String(abbr).toUpperCase();
 
-  if (lowerKey === 'ip' && stats.out !== undefined && stats.out !== null) {
-    const outValue = Number(stats.out);
+  const aliasMap = {
+    out: ['out', 'outs', 'p_outs'],
+    ip: ['ip', 'ip_display', 'p_ip'],
+    'sv+h': ['sv+h', 'sv+hld', 'svhld', 'sv_hld'],
+    'sv+hld': ['sv+hld', 'sv+h', 'svhld', 'sv_hld'],
+    'k/bb': ['k/bb', 'kbb', 'k_bb'],
+    'k/9': ['k/9', 'k9', 'k_9'],
+    'bb/9': ['bb/9', 'bb9', 'bb_9'],
+    'h/9': ['h/9', 'h9', 'h_9'],
+    'win%': ['win%', 'winpct', 'win_pct'],
+  };
+
+  const candidateKeys = [
+    lowerKey,
+    upperKey,
+    abbr,
+    ...(aliasMap[lowerKey] || []),
+  ];
+
+  const raw = candidateKeys.reduce((found, key) => {
+    if (found !== undefined && found !== null) return found;
+    if (Object.prototype.hasOwnProperty.call(stats, key)) return stats[key];
+    return found;
+  }, undefined);
+
+  if (lowerKey === 'ip') {
+    const outRaw = stats.out ?? stats.outs ?? stats.p_outs;
+    const outValue = Number(outRaw);
     if (Number.isFinite(outValue)) {
       return outValue / 3;
     }
   }
-
-  const raw = stats[lowerKey] ?? stats[upperKey] ?? stats[abbr];
 
   if (lowerKey === 'ip') {
     return parseBaseballInningsValue(raw);

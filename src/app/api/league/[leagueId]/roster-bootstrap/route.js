@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getLeagueOverviewData } from '@/lib/getLeagueOverviewData';
 import supabaseAdmin from '@/lib/supabaseAdmin';
+import {
+  FANTASY_POINTS_SCORING_TYPE,
+  buildCategoryWeights,
+  calculateFantasyPoints,
+} from '@/lib/fantasyPoints';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -367,9 +372,34 @@ async function getPlayerRosterAndStats(leagueId, gameDate) {
     }
   });
 
-  const battingStats = Object.values(battingMap);
-  const pitchingStats = Object.values(pitchingMap);
-  return { battingStats, pitchingStats, leagueSettings: leagueSettingsRes.data || null };
+  const leagueSettings = leagueSettingsRes.data || null;
+
+  let categoryWeights = { batter: {}, pitcher: {} };
+  if (leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE) {
+    const { data: weightRows, error: weightError } = await supabaseAdmin
+      .from('league_stat_category_weights')
+      .select('category_type, category_name, weight')
+      .eq('league_id', leagueId);
+
+    if (weightError) throw weightError;
+    categoryWeights = buildCategoryWeights(weightRows || []);
+  }
+
+  const battingStats = Object.values(battingMap).map((stat) => ({
+    ...stat,
+    fp: leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE
+      ? calculateFantasyPoints(stat, leagueSettings.batter_stat_categories || [], categoryWeights.batter)
+      : null,
+  }));
+
+  const pitchingStats = Object.values(pitchingMap).map((stat) => ({
+    ...stat,
+    fp: leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE
+      ? calculateFantasyPoints(stat, leagueSettings.pitcher_stat_categories || [], categoryWeights.pitcher)
+      : null,
+  }));
+
+  return { battingStats, pitchingStats, leagueSettings };
 }
 
 async function getPlayersBootstrap() {

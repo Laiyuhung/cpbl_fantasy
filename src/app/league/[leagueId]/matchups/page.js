@@ -25,6 +25,7 @@ export default function MatchupsPage() {
     const [playerStats, setPlayerStats] = useState({ batting: [], pitching: [] });
     const [playerStatsLoading, setPlayerStatsLoading] = useState(false);
     const [bootstrapReady, setBootstrapReady] = useState(false);
+    const [loadedWeek, setLoadedWeek] = useState('');
 
     // Get current user's manager ID
     useEffect(() => {
@@ -41,12 +42,10 @@ export default function MatchupsPage() {
         const fetchLeagueData = async () => {
             setLoading(true);
             try {
-                const response = await fetch(`/api/league/${leagueId}/matchups/stats`);
+                const response = await fetch(`/api/league/${leagueId}/matchups/stats?metaOnly=1`);
                 const result = await response.json();
 
                 if (result.success) {
-                    setMatchups(result.matchups || []);
-                    setScoringSettings(result.settings || null);
                     setScheduleData(result.schedule || []);
 
                     const weeks = Array.isArray(result.availableWeeks)
@@ -55,7 +54,9 @@ export default function MatchupsPage() {
                     setAvailableWeeks(weeks);
 
                     if (result.selectedWeek) {
-                        setSelectedWeek(String(result.selectedWeek));
+                        const initialWeek = String(result.selectedWeek);
+                        setSelectedWeek(initialWeek);
+                        setLoadedWeek('');
                     }
                 }
             } catch (error) {
@@ -71,6 +72,7 @@ export default function MatchupsPage() {
 
     useEffect(() => {
         if (!bootstrapReady || !leagueId || !selectedWeek) return;
+        if (selectedWeek === loadedWeek) return;
 
         const fetchData = async () => {
             setLoading(true);
@@ -81,6 +83,7 @@ export default function MatchupsPage() {
                 if (data.success) {
                     setMatchups(data.matchups);
                     setScoringSettings(data.settings);
+                    setLoadedWeek(String(selectedWeek));
                 } else {
                     console.error("Failed to fetch matchups:", data.error);
                 }
@@ -92,7 +95,7 @@ export default function MatchupsPage() {
         };
 
         fetchData();
-    }, [bootstrapReady, leagueId, selectedWeek]);
+    }, [bootstrapReady, leagueId, selectedWeek, loadedWeek]);
 
     // Fetch player stats when tab switches to 'stats' or matchup changes
     useEffect(() => {
@@ -227,16 +230,22 @@ export default function MatchupsPage() {
 
     // Build batter columns: AB + league categories
     const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
+    const hasABCategory = (scroingSettings?.batter_categories || []).some(
+        (cat) => getAbbr(cat).toLowerCase() === 'ab'
+    );
     const batterColumns = [
         ...(isFantasyPoints ? ['FP'] : []),
-        'AB',
+        ...(hasABCategory ? [] : ['AB']),
         ...(scroingSettings?.batter_categories?.map(cat => getAbbr(cat)) || []),
     ];
 
     // Build pitcher columns: IP + league categories  
+    const hasIPCategory = (scroingSettings?.pitcher_categories || []).some(
+        (cat) => getAbbr(cat).toLowerCase() === 'ip'
+    );
     const pitcherColumns = [
         ...(isFantasyPoints ? ['FP'] : []),
-        'IP',
+        ...(hasIPCategory ? [] : ['IP']),
         ...(scroingSettings?.pitcher_categories?.map(cat => getAbbr(cat)) || []),
     ];
 
