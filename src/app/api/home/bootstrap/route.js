@@ -27,24 +27,6 @@ export async function GET() {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value || null;
 
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'Home bootstrap beta is admin-only' }, { status: 403 });
-    }
-
-    const { data: adminData, error: adminError } = await supabase
-      .from('admin')
-      .select('manager_id')
-      .eq('manager_id', userId)
-      .maybeSingle();
-
-    if (adminError) {
-      return NextResponse.json({ success: false, error: adminError.message }, { status: 500 });
-    }
-
-    if (!adminData) {
-      return NextResponse.json({ success: false, error: 'Home bootstrap beta is admin-only' }, { status: 403 });
-    }
-
     const taiwanToday = getTaiwanDateString();
 
     const [settingRes, announcementsRes, scheduleRes] = await Promise.all([
@@ -90,6 +72,10 @@ export async function GET() {
       leagues: [],
     };
 
+    if (!userId) {
+      return NextResponse.json(payload);
+    }
+
     const [managerRes, adminRes, leagues] = await Promise.all([
       supabase
         .from('managers')
@@ -117,8 +103,9 @@ export async function GET() {
       name: managerRes.data.name,
       email_verified: managerRes.data.email_verified,
       is_admin: Boolean(adminRes.data),
+      isAdmin: Boolean(adminRes.data),
     };
-    payload.leagues = leagues;
+    payload.leagues = leagues || [];
 
     return NextResponse.json(payload);
   } catch (error) {

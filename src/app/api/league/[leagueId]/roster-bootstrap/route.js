@@ -524,21 +524,7 @@ export async function GET(request, { params }) {
     const userId = cookieStore.get('user_id')?.value;
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'Roster bootstrap beta is admin-only' }, { status: 403 });
-    }
-
-    const { data: adminData, error: adminError } = await supabase
-      .from('admin')
-      .select('manager_id')
-      .eq('manager_id', userId)
-      .maybeSingle();
-
-    if (adminError) {
-      return NextResponse.json({ success: false, error: adminError.message }, { status: 500 });
-    }
-
-    if (!adminData) {
-      return NextResponse.json({ success: false, error: 'Roster bootstrap beta is admin-only' }, { status: 403 });
+      return NextResponse.json({ success: false, error: 'Please login first' }, { status: 401 });
     }
 
     const [overview, settingsRes] = await Promise.all([
@@ -566,17 +552,27 @@ export async function GET(request, { params }) {
     const managerId = userId;
     const currentWeek = getCurrentWeekFromSchedule(overview.schedule, initialSelectedDate);
 
-    const [roster, startingStatus, weeklyIp, playersBootstrap, dailyStats, transactionsBootstrap] = await Promise.all([
+    const [roster, startingStatus, weeklyIp, playersBootstrap, dailyStats, transactionsBootstrap, pendingTradeCountRes] = await Promise.all([
       getRosterForManager(leagueId, managerId, initialSelectedDate),
       getStartingStatus(initialSelectedDate),
       getWeeklyIp(leagueId, managerId, initialSelectedDate),
       getPlayersBootstrap(),
       getPlayerRosterAndStats(leagueId, initialSelectedDate),
       getTransactionsBootstrap(leagueId, managerId),
+      supabaseAdmin
+        .from('pending_trade')
+        .select('*', { count: 'exact', head: true })
+        .eq('league_id', leagueId)
+        .in('status', ['pending', 'accepted'])
+        .or(`initiator_manager_id.eq.${managerId},recipient_manager_id.eq.${managerId}`),
     ]);
 
+    if (pendingTradeCountRes.error) {
+      throw pendingTradeCountRes.error;
+    }
+
     const activeTradePlayerIds = new Set();
-    const pendingTradeCount = transactionsBootstrap.transactions.length;
+    const pendingTradeCount = pendingTradeCountRes.count || 0;
     // Treat all active trade players as locked for now.
     (transactionsBootstrap.transactions || []).forEach((trade) => {
       const status = String(trade.status || '').toLowerCase();

@@ -57,21 +57,7 @@ export async function GET(request, { params }) {
     const userId = cookieStore.get('user_id')?.value;
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'Overview bootstrap beta is admin-only' }, { status: 403 });
-    }
-
-    const { data: adminData, error: adminError } = await supabase
-      .from('admin')
-      .select('manager_id')
-      .eq('manager_id', userId)
-      .maybeSingle();
-
-    if (adminError) {
-      return NextResponse.json({ success: false, error: adminError.message }, { status: 500 });
-    }
-
-    if (!adminData) {
-      return NextResponse.json({ success: false, error: 'Overview bootstrap beta is admin-only' }, { status: 403 });
+      return NextResponse.json({ success: false, error: 'Please login first' }, { status: 401 });
     }
 
     const payload = await getLeagueOverviewData(supabase, leagueId);
@@ -79,10 +65,15 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [managerRes, matchupsRes, standingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes] = await Promise.all([
+    const [managerRes, adminRes, matchupsRes, standingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes] = await Promise.all([
       supabase
         .from('managers')
         .select('name, email_verified')
+        .eq('manager_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('admin')
+        .select('manager_id')
         .eq('manager_id', userId)
         .maybeSingle(),
       supabase
@@ -137,6 +128,10 @@ export async function GET(request, { params }) {
 
     if (managerRes.error) {
       return NextResponse.json({ success: false, error: managerRes.error.message }, { status: 500 });
+    }
+
+    if (adminRes.error) {
+      return NextResponse.json({ success: false, error: adminRes.error.message }, { status: 500 });
     }
 
     if (matchupsRes.error) {
@@ -261,6 +256,8 @@ export async function GET(request, { params }) {
       pitcher_player_ids: (startingPitcherRes.data || []).map((row) => String(row.player_id)).filter(Boolean),
     };
 
+    const isAdmin = Boolean(adminRes.data);
+
     return NextResponse.json({
       ...payload,
       apiIntegrationBeta: true,
@@ -268,8 +265,8 @@ export async function GET(request, { params }) {
         manager_id: userId,
         name: managerRes.data?.name || '',
         email_verified: Boolean(managerRes.data?.email_verified),
-        is_admin: true,
-        isAdmin: true,
+        is_admin: isAdmin,
+        isAdmin,
       },
       todayDate,
       todayScheduleGames: todayGamesRes.data || [],

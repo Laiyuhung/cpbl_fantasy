@@ -25,7 +25,6 @@ export default function Navbar() {
   const [taiwanTime, setTaiwanTime] = useState('')
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
-  const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false)
 
   const navigateTo = (path, { closeDropdown = false, closeMenuPanel = false } = {}) => {
     if (closeDropdown) setLeagueDropdownOpen(false)
@@ -66,7 +65,6 @@ export default function Navbar() {
     try {
       const disabled = await getCreateLeagueDisabled()
       setCreateLeagueDisabled(disabled)
-      setApiIntegrationBeta(false)
 
       const currentUser = await getCurrentUsername()
 
@@ -103,7 +101,6 @@ export default function Navbar() {
       const data = await getNavbarBootstrap({ forceRefresh })
 
       setCreateLeagueDisabled(Boolean(data.createLeagueDisabled))
-      setApiIntegrationBeta(Boolean(data.apiIntegrationBeta))
 
       if (data.isGuest || !data.user) {
         setUserId('')
@@ -186,7 +183,6 @@ export default function Navbar() {
     setUserId('')  // 更新 userId
     setUserName('')  // 清空用戶名稱
     setIsAdmin(false)
-    setApiIntegrationBeta(false)
     setLeagues([])  // 清空 leagues
     localStorage.removeItem('user_id')  // 清除 localStorage 中的 user_id
     router.push('/login')
@@ -214,11 +210,6 @@ export default function Navbar() {
           <div className="whitespace-nowrap text-sm sm:text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
             CPBL FANTASY
           </div>
-          {apiIntegrationBeta && (
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-black tracking-wider uppercase">
-              ADMIN BETA 測試
-            </span>
-          )}
         </Link>
 
         {userName && (

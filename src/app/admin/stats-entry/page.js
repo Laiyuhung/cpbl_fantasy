@@ -37,6 +37,7 @@ export default function StatsEntryPage() {
   const [pitchingPreview, setPitchingPreview] = useState([])
   const [battingPreview, setBattingPreview] = useState([])
   const [loading, setLoading] = useState(false)
+  const [settlingScores, setSettlingScores] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
   // Entry log - track which teams have been logged
@@ -654,6 +655,31 @@ export default function StatsEntryPage() {
     }
   }
 
+  // Manually trigger matchup score settlement
+  const handleSettleMatchupScores = async () => {
+    const confirmed = window.confirm('確定要手動觸發 update_matchup_scores() 嗎？')
+    if (!confirmed) return
+
+    setSettlingScores(true)
+    try {
+      const res = await fetch('/api/update-matchup-scores', {
+        method: 'POST',
+      })
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        setMessage({ type: 'error', text: `❌ 手動結算失敗: ${data.error || '未知錯誤'}` })
+        return
+      }
+
+      setMessage({ type: 'success', text: '✅ 已手動觸發對戰結算 (update_matchup_scores)' })
+    } catch (err) {
+      setMessage({ type: 'error', text: `❌ 手動結算失敗: ${err.message}` })
+    } finally {
+      setSettlingScores(false)
+    }
+  }
+
   const selectedGame = gamesForDate.find(g => g.uuid === selectedGameUuid)
 
   // Separate games by league
@@ -814,6 +840,19 @@ export default function StatsEntryPage() {
               onChange={(e) => setDate(e.target.value)}
               className="w-full md:w-64 bg-slate-800/60 border border-purple-500/30 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
+          </div>
+
+          <div className="mb-6">
+            <button
+              onClick={handleSettleMatchupScores}
+              disabled={settlingScores}
+              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            >
+              {settlingScores ? '結算中...' : '手動觸發對戰結算'}
+            </button>
+            <div className="mt-2 text-xs text-slate-400">
+              呼叫 Supabase Function: update_matchup_scores()
+            </div>
           </div>
 
           {/* Pending Teams */}

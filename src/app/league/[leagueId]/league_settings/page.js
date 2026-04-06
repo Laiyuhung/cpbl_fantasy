@@ -41,7 +41,6 @@ export default function LeagueSettingsPage() {
   const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
   const [showGenerateConfirmModal, setShowGenerateConfirmModal] = useState(false); // Confirm modal state
-  const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false);
 
 
   // Photo Resolution State
@@ -296,7 +295,6 @@ export default function LeagueSettingsPage() {
         const payload = await getLeagueSettingsBootstrap(leagueId);
 
         if (payload?.success && payload?.settings) {
-          setApiIntegrationBeta(Boolean(payload.apiIntegrationBeta));
           setLeagueSettings(payload.settings);
           setLeagueStatus(payload.status || 'unknown');
           setIsFinalized(Boolean(payload.settings?.is_finalized));
@@ -304,8 +302,6 @@ export default function LeagueSettingsPage() {
           if (payload.currentUserRole) {
             setCurrentUserRole(payload.currentUserRole);
           }
-        } else {
-          setApiIntegrationBeta(false);
         }
 
         // Fetch members/current-user context used by this view page.
@@ -345,7 +341,6 @@ export default function LeagueSettingsPage() {
         }
       } catch (err) {
         console.error('Unexpected error:', err);
-        setApiIntegrationBeta(false);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -897,11 +892,6 @@ export default function LeagueSettingsPage() {
             </h1>
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-purple-300/70 text-sm sm:text-base">{leagueSettings.league_name}</p>
-              {apiIntegrationBeta && (
-                <span className="px-2 py-0.5 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
-                  ADMIN BETA 測試
-                </span>
-              )}
             </div>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-4">

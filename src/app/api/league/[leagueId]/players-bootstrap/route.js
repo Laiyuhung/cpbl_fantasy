@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import supabaseAdmin from '@/lib/supabaseAdmin';
 
 export async function GET(request, { params }) {
   try {
@@ -14,20 +13,6 @@ export async function GET(request, { params }) {
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
-    }
-
-    const { data: adminData, error: adminError } = await supabaseAdmin
-      .from('admin')
-      .select('manager_id')
-      .eq('manager_id', userId)
-      .maybeSingle();
-
-    if (adminError) {
-      return NextResponse.json({ success: false, error: adminError.message }, { status: 500 });
-    }
-
-    if (!adminData) {
-      return NextResponse.json({ success: false, error: 'Players admin beta is admin-only' }, { status: 403 });
     }
 
     const origin = new URL(request.url).origin;
