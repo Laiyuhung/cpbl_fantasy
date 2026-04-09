@@ -398,6 +398,47 @@ export default function LeagueSettingsPage() {
     setShowNicknameModal(true);
   };
 
+  const handleCopyManagerId = async () => {
+    if (!currentUserId) {
+      setSuccessMessage({
+        title: 'Manager ID Not Ready',
+        description: 'Please try again in a moment.',
+        updatedMember: null,
+        isError: true,
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 3000);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(currentUserId);
+      setSuccessMessage({
+        title: 'Copied!',
+        description: `Manager ID copied: ${currentUserId}`,
+        updatedMember: null,
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 2500);
+    } catch (err) {
+      console.error('Copy manager ID failed:', err);
+      setSuccessMessage({
+        title: 'Copy Failed',
+        description: 'Unable to copy Manager ID. Please copy it manually.',
+        updatedMember: null,
+        isError: true,
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 3000);
+    }
+  };
+
   const handleSaveNickname = async () => {
     const trimmedNickname = newNickname.trim();
 
@@ -627,6 +668,10 @@ export default function LeagueSettingsPage() {
       setTimeout(() => {
         setShowSuccessNotification(false);
       }, 4000);
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
     } catch (err) {
       console.error('Transfer execute error:', err);
       setTransferError('Unable to execute transfer. Please try again.');
@@ -1087,6 +1132,16 @@ export default function LeagueSettingsPage() {
               </svg>
               <span className="hidden sm:inline">Edit Nickname</span>
               <span className="sm:hidden">Nickname</span>
+            </button>
+            <button
+              onClick={handleCopyManagerId}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-3 py-2 sm:px-6 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 text-sm sm:text-base"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2M10 10h8a2 2 0 012 2v8a2 2 0 01-2 2h-8a2 2 0 01-2-2v-8a2 2 0 012-2z" />
+              </svg>
+              <span className="hidden sm:inline">Copy My Manager ID</span>
+              <span className="sm:hidden">Copy ID</span>
             </button>
             {leagueStatus === 'pre-draft' && !isFinalized && (
               <button
