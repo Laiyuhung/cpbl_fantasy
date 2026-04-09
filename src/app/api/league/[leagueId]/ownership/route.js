@@ -536,6 +536,7 @@ export async function DELETE(req, { params }) {
           .from('cpbl_schedule_2026')
           .select('time, is_postponed')
           .eq('date', checkDateStr)
+          .eq('major_game', true)
           .or(`home.eq.${dropPlayerInfo.team},away.eq.${dropPlayerInfo.team}`)
           .single();
 

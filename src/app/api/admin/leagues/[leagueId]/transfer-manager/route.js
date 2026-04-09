@@ -99,31 +99,18 @@ async function updateLeagueMemberTransfer(leagueId, oldManagerId, newManagerId, 
 }
 
 async function deleteTableRows(tableName, leagueId, oldManagerId) {
-  const { data: rows, error: selectError } = await supabaseAdmin
-    .from(tableName)
-    .select('*')
-    .eq('league_id', leagueId)
-    .eq('manager_id', oldManagerId);
-
-  if (selectError) {
-    throw new Error(`${tableName}: ${selectError.message}`);
-  }
-
-  if (!rows || rows.length === 0) {
-    return { affectedRows: 0, deletedRows: [] };
-  }
-
-  const { error: deleteError } = await supabaseAdmin
+  const { data: deletedRows, error: deleteError } = await supabaseAdmin
     .from(tableName)
     .delete()
     .eq('league_id', leagueId)
-    .eq('manager_id', oldManagerId);
+    .eq('manager_id', oldManagerId)
+    .select('*');
 
   if (deleteError) {
     throw new Error(`${tableName}: ${deleteError.message}`);
   }
 
-  return { affectedRows: rows.length, deletedRows: rows };
+  return { affectedRows: deletedRows?.length || 0, deletedRows: deletedRows || [] };
 }
 
 async function updateLeagueMatchupsTransfer(leagueId, oldManagerId, newManagerId) {
@@ -141,24 +128,32 @@ async function updateLeagueMatchupsTransfer(leagueId, oldManagerId, newManagerId
     return { affectedRows: 0, originalRows: [] };
   }
 
-  for (const row of rows) {
-    const nextManagerA = row.manager_id_a === oldManagerId ? newManagerId : row.manager_id_a;
-    const nextManagerB = row.manager_id_b === oldManagerId ? newManagerId : row.manager_id_b;
-    const nextWinner = row.winner_manager_id === oldManagerId ? newManagerId : row.winner_manager_id;
-
-    const { error: updateError } = await supabaseAdmin
+  const [{ error: updateAError }, { error: updateBError }, { error: updateWinnerError }] = await Promise.all([
+    supabaseAdmin
       .from('league_matchups')
-      .update({
-        manager_id_a: nextManagerA,
-        manager_id_b: nextManagerB,
-        winner_manager_id: nextWinner,
-      })
-      .eq('id', row.id)
-      .eq('league_id', leagueId);
+      .update({ manager_id_a: newManagerId })
+      .eq('league_id', leagueId)
+      .eq('manager_id_a', oldManagerId),
+    supabaseAdmin
+      .from('league_matchups')
+      .update({ manager_id_b: newManagerId })
+      .eq('league_id', leagueId)
+      .eq('manager_id_b', oldManagerId),
+    supabaseAdmin
+      .from('league_matchups')
+      .update({ winner_manager_id: newManagerId })
+      .eq('league_id', leagueId)
+      .eq('winner_manager_id', oldManagerId),
+  ]);
 
-    if (updateError) {
-      throw new Error(`league_matchups: ${updateError.message}`);
-    }
+  if (updateAError) {
+    throw new Error(`league_matchups: ${updateAError.message}`);
+  }
+  if (updateBError) {
+    throw new Error(`league_matchups: ${updateBError.message}`);
+  }
+  if (updateWinnerError) {
+    throw new Error(`league_matchups: ${updateWinnerError.message}`);
   }
 
   return { affectedRows: rows.length, originalRows: rows };

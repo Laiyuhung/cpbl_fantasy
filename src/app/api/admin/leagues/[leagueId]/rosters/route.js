@@ -83,7 +83,7 @@ export async function GET(request, { params }) {
             supabase.from('v_batter_positions').select('player_id, position_list'),
             supabase.from('v_pitcher_positions').select('player_id, position_list'),
             supabase.from('real_life_player_status').select('player_id, status'),
-            supabase.from('cpbl_schedule_2026').select('*').eq('date', searchDateStr)
+            supabase.from('cpbl_schedule_2026').select('*').eq('date', searchDateStr).eq('major_game', true)
         ]);
 
         const positionMap = {};

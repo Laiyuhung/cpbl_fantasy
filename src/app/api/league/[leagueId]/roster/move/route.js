@@ -61,6 +61,7 @@ export async function POST(request, { params }) {
             const { data: gameData } = await supabase
                 .from('cpbl_schedule_2026')
                 .select('*')
+                .eq('major_game', true)
                 .or(`home.eq.${playerTeam},away.eq.${playerTeam}`)
                 .eq('date', gameDate)
                 .single();
