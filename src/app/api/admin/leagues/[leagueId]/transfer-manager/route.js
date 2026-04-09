@@ -126,6 +126,44 @@ async function deleteTableRows(tableName, leagueId, oldManagerId) {
   return { affectedRows: rows.length, deletedRows: rows };
 }
 
+async function updateLeagueMatchupsTransfer(leagueId, oldManagerId, newManagerId) {
+  const { data: rows, error: selectError } = await supabaseAdmin
+    .from('league_matchups')
+    .select('id, manager_id_a, manager_id_b, winner_manager_id')
+    .eq('league_id', leagueId)
+    .or(`manager_id_a.eq.${oldManagerId},manager_id_b.eq.${oldManagerId},winner_manager_id.eq.${oldManagerId}`);
+
+  if (selectError) {
+    throw new Error(`league_matchups: ${selectError.message}`);
+  }
+
+  if (!rows || rows.length === 0) {
+    return { affectedRows: 0, originalRows: [] };
+  }
+
+  for (const row of rows) {
+    const nextManagerA = row.manager_id_a === oldManagerId ? newManagerId : row.manager_id_a;
+    const nextManagerB = row.manager_id_b === oldManagerId ? newManagerId : row.manager_id_b;
+    const nextWinner = row.winner_manager_id === oldManagerId ? newManagerId : row.winner_manager_id;
+
+    const { error: updateError } = await supabaseAdmin
+      .from('league_matchups')
+      .update({
+        manager_id_a: nextManagerA,
+        manager_id_b: nextManagerB,
+        winner_manager_id: nextWinner,
+      })
+      .eq('id', row.id)
+      .eq('league_id', leagueId);
+
+    if (updateError) {
+      throw new Error(`league_matchups: ${updateError.message}`);
+    }
+  }
+
+  return { affectedRows: rows.length, originalRows: rows };
+}
+
 async function rollbackManagerId(tableName, leagueId, oldManagerId, newManagerId) {
   const { error } = await supabaseAdmin
     .from(tableName)
@@ -150,6 +188,26 @@ async function rollbackDeletedRows(tableName, deletedRows) {
   }
 }
 
+async function rollbackLeagueMatchupsTransfer(leagueId, originalRows) {
+  if (!originalRows || originalRows.length === 0) return;
+
+  for (const row of originalRows) {
+    const { error } = await supabaseAdmin
+      .from('league_matchups')
+      .update({
+        manager_id_a: row.manager_id_a,
+        manager_id_b: row.manager_id_b,
+        winner_manager_id: row.winner_manager_id,
+      })
+      .eq('id', row.id)
+      .eq('league_id', leagueId);
+
+    if (error) {
+      console.error('[transfer-manager] rollback failed for league_matchups:', error);
+    }
+  }
+}
+
 async function rollbackLeagueMemberTransfer(leagueId, newManagerId, oldMemberSnapshot) {
   if (!oldMemberSnapshot) return;
 
@@ -166,6 +224,25 @@ async function rollbackLeagueMemberTransfer(leagueId, newManagerId, oldMemberSna
 
   if (error) {
     console.error('[transfer-manager] rollback failed for league_members:', error);
+  }
+}
+
+async function refreshLeagueStandingsMaterializedView(leagueId) {
+  // Expect a Postgres function exposed by Supabase RPC that performs:
+  // REFRESH MATERIALIZED VIEW public.v_league_standings;
+  let { error } = await supabaseAdmin.rpc('refresh_v_league_standings', {
+    target_league_id: leagueId,
+  });
+
+  if (error) {
+    const retry = await supabaseAdmin.rpc('refresh_v_league_standings');
+    error = retry.error;
+  }
+
+  if (error) {
+    throw new Error(
+      `refresh_v_league_standings RPC failed: ${error.message}. Please ensure the RPC function exists and refreshes public.v_league_standings.`
+    );
   }
 }
 
@@ -291,7 +368,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    const [oldMemberRes, newManagerRes, existingNewMemberRes, collisionChecks] = await Promise.all([
+    const [oldMemberRes, newManagerRes, existingNewMemberRes, collisionChecks, leagueMatchupsCollision] = await Promise.all([
       supabaseAdmin
         .from('league_members')
         .select('league_id, manager_id, nickname, role, joined_at')
@@ -323,6 +400,12 @@ export async function POST(request, { params }) {
           return { tableName, hasConflict: !!error || (data?.length || 0) > 0 };
           })
       ),
+      supabaseAdmin
+        .from('league_matchups')
+        .select('id')
+        .eq('league_id', leagueId)
+        .or(`manager_id_a.eq.${newManagerId},manager_id_b.eq.${newManagerId},winner_manager_id.eq.${newManagerId}`)
+        .limit(1),
     ]);
 
     if (newManagerRes.error) {
@@ -360,7 +443,18 @@ export async function POST(request, { params }) {
       );
     }
 
+    if (leagueMatchupsCollision.error) {
+      return NextResponse.json(
+        { success: false, error: leagueMatchupsCollision.error.message },
+        { status: 500 }
+      );
+    }
+
     const conflictedTables = collisionChecks.filter((item) => item.hasConflict).map((item) => item.tableName);
+    if ((leagueMatchupsCollision.data?.length || 0) > 0) {
+      conflictedTables.push('league_matchups');
+    }
+
     if (conflictedTables.length > 0) {
       return NextResponse.json(
         {
@@ -386,6 +480,7 @@ export async function POST(request, { params }) {
     let deletedDraftQueues = [];
     let deletedDraftRosterAssignments = [];
     let deletedWatchedPlayers = [];
+    let originalLeagueMatchups = [];
     const oldMemberSnapshot = oldMemberRes.data;
 
     try {
@@ -419,6 +514,16 @@ export async function POST(request, { params }) {
       results.push({ table: 'watched_players', affectedRows: watchedPlayersResult.affectedRows, action: 'delete' });
       appliedTables.push('watched_players');
 
+      const leagueMatchupsResult = await runStage({
+        stage: 'update_league_matchups',
+        table: 'league_matchups',
+        action: 'update_manager_id_a_b_winner',
+        fn: () => updateLeagueMatchupsTransfer(leagueId, oldManagerId, newManagerId),
+      });
+      originalLeagueMatchups = leagueMatchupsResult.originalRows;
+      results.push({ table: 'league_matchups', affectedRows: leagueMatchupsResult.affectedRows, action: 'update' });
+      appliedTables.push('league_matchups');
+
       for (const tableName of updateOrder) {
         const affectedRows = await runStage({
           stage: `update_${tableName}`,
@@ -439,6 +544,14 @@ export async function POST(request, { params }) {
       });
       results.push({ table: 'league_members', affectedRows: memberAffectedRows, action: 'reset_profile' });
       appliedTables.push('league_members');
+
+      await runStage({
+        stage: 'refresh_v_league_standings',
+        table: 'v_league_standings',
+        action: 'refresh_materialized_view',
+        fn: () => refreshLeagueStandingsMaterializedView(leagueId),
+      });
+      results.push({ table: 'v_league_standings', affectedRows: 1, action: 'refresh_materialized_view' });
     } catch (transferError) {
       for (const tableName of [...appliedTables].reverse()) {
         if (tableName === 'draft_queues') {
@@ -451,6 +564,10 @@ export async function POST(request, { params }) {
         }
         if (tableName === 'watched_players') {
           await rollbackDeletedRows('watched_players', deletedWatchedPlayers);
+          continue;
+        }
+        if (tableName === 'league_matchups') {
+          await rollbackLeagueMatchupsTransfer(leagueId, originalLeagueMatchups);
           continue;
         }
         if (tableName === 'league_members') {
