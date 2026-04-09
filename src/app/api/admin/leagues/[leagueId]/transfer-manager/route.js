@@ -227,25 +227,6 @@ async function rollbackLeagueMemberTransfer(leagueId, newManagerId, oldMemberSna
   }
 }
 
-async function refreshLeagueStandingsMaterializedView(leagueId) {
-  // Expect a Postgres function exposed by Supabase RPC that performs:
-  // REFRESH MATERIALIZED VIEW public.v_league_standings;
-  let { error } = await supabaseAdmin.rpc('refresh_v_league_standings', {
-    target_league_id: leagueId,
-  });
-
-  if (error) {
-    const retry = await supabaseAdmin.rpc('refresh_v_league_standings');
-    error = retry.error;
-  }
-
-  if (error) {
-    throw new Error(
-      `refresh_v_league_standings RPC failed: ${error.message}. Please ensure the RPC function exists and refreshes public.v_league_standings.`
-    );
-  }
-}
-
 export async function GET(request, { params }) {
   try {
     const { leagueId } = params;
@@ -544,14 +525,6 @@ export async function POST(request, { params }) {
       });
       results.push({ table: 'league_members', affectedRows: memberAffectedRows, action: 'reset_profile' });
       appliedTables.push('league_members');
-
-      await runStage({
-        stage: 'refresh_v_league_standings',
-        table: 'v_league_standings',
-        action: 'refresh_materialized_view',
-        fn: () => refreshLeagueStandingsMaterializedView(leagueId),
-      });
-      results.push({ table: 'v_league_standings', affectedRows: 1, action: 'refresh_materialized_view' });
     } catch (transferError) {
       for (const tableName of [...appliedTables].reverse()) {
         if (tableName === 'draft_queues') {
