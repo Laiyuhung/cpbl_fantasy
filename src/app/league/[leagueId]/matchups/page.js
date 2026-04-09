@@ -251,6 +251,54 @@ export default function MatchupsPage() {
 
     const activeMatchup = matchups[selectedMatchupIndex];
 
+    const parseBaseballInnings = (value) => {
+        if (value === null || value === undefined || value === '') return 0;
+        const raw = String(value).trim();
+        const [inningPartRaw, outPartRaw = '0'] = raw.split('.');
+        const innings = Number(inningPartRaw);
+        const outs = Number(outPartRaw);
+        if (!Number.isFinite(innings)) return 0;
+        if (!Number.isFinite(outs)) return innings;
+        const safeOuts = Math.max(0, Math.min(2, outs));
+        return innings + safeOuts / 3;
+    };
+
+    const minPitchingInnings = Number(scroingSettings?.min_innings_pitched_per_week || 0);
+    const selectedWeekSchedule = scheduleData.find((w) => w.week_number === parseInt(selectedWeek));
+    const isPastWeek = (() => {
+        if (!selectedWeekSchedule?.week_end) return false;
+        const now = new Date();
+        const weekEnd = new Date(selectedWeekSchedule.week_end);
+        weekEnd.setHours(23, 59, 59, 999);
+        return now > weekEnd;
+    })();
+
+    const manager1IPValue = parseBaseballInnings(activeMatchup?.manager1_stats?.p_ip);
+    const manager2IPValue = parseBaseballInnings(activeMatchup?.manager2_stats?.p_ip);
+    const manager1PitchingJudged = isPastWeek && minPitchingInnings > 0 && manager1IPValue < minPitchingInnings;
+    const manager2PitchingJudged = isPastWeek && minPitchingInnings > 0 && manager2IPValue < minPitchingInnings;
+
+    const getPitchingValueCellClass = ({ side, dbCol, winner }) => {
+        const isIPCategory = dbCol?.toLowerCase() === 'p_ip';
+        const sideJudged = side === 1 ? manager1PitchingJudged : manager2PitchingJudged;
+        const opponentJudged = side === 1 ? manager2PitchingJudged : manager1PitchingJudged;
+
+        if (sideJudged) {
+            if (isIPCategory) return 'bg-red-600 text-white font-black rounded px-2';
+            return 'text-gray-400';
+        }
+
+        if (!sideJudged && !opponentJudged && winner === side) {
+            return 'text-yellow-300 font-bold';
+        }
+
+        if (opponentJudged && !sideJudged) {
+            return 'text-yellow-300 font-bold';
+        }
+
+        return 'text-purple-100';
+    };
+
     // Helper to determine if higher is better for a stat
     const isHigherBetter = (dbCol) => {
         const col = dbCol.toLowerCase();
@@ -596,9 +644,9 @@ export default function MatchupsPage() {
                                             {/* IP - 只在不是計分項目時顯示 */}
                                             {!scroingSettings?.pitcher_categories?.some(cat => getAbbr(cat).toLowerCase() === 'ip') && (
                                                 <TableRow className="hover:bg-slate-800/30 border-0">
-                                                    <TableCell className="w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium text-gray-400 py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12">{activeMatchup.manager1_stats.p_ip || '0.0'}</TableCell>
+                                                    <TableCell className={`w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12 ${manager1PitchingJudged ? 'bg-red-600 text-white font-black rounded px-2' : 'text-gray-400'}`}>{activeMatchup.manager1_stats.p_ip || '0.0'}</TableCell>
                                                     <TableCell className="w-[20%] text-center font-bold text-xs sm:text-sm text-gray-400 uppercase tracking-wider py-2 sm:py-3">IP</TableCell>
-                                                    <TableCell className="w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium text-gray-400 py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12">{activeMatchup.manager2_stats.p_ip || '0.0'}</TableCell>
+                                                    <TableCell className={`w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12 ${manager2PitchingJudged ? 'bg-red-600 text-white font-black rounded px-2' : 'text-gray-400'}`}>{activeMatchup.manager2_stats.p_ip || '0.0'}</TableCell>
                                                 </TableRow>
                                             )}
                                             {scroingSettings?.pitcher_categories?.map(cat => {
@@ -608,17 +656,30 @@ export default function MatchupsPage() {
                                                 const abbr = getAbbr(cat);
                                                 const weight = scroingSettings?.category_weights?.pitcher?.[cat];
                                                 const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
-                                                const winner = getWinningValue(val1, val2, dbCol, activeMatchup.manager1_stats, activeMatchup.manager2_stats);
+                                                let winner = getWinningValue(val1, val2, dbCol, activeMatchup.manager1_stats, activeMatchup.manager2_stats);
+
+                                                if (isPastWeek) {
+                                                    if (manager1PitchingJudged && manager2PitchingJudged) {
+                                                        winner = null;
+                                                    } else if (manager1PitchingJudged && !manager2PitchingJudged) {
+                                                        winner = 2;
+                                                    } else if (manager2PitchingJudged && !manager1PitchingJudged) {
+                                                        winner = 1;
+                                                    }
+                                                }
+
+                                                const cellClass1 = getPitchingValueCellClass({ side: 1, dbCol, winner });
+                                                const cellClass2 = getPitchingValueCellClass({ side: 2, dbCol, winner });
                                                 return (
                                                     <TableRow key={cat} className="hover:bg-slate-800/30 border-0">
-                                                        <TableCell className={`w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12 ${winner === 1 ? 'text-yellow-300 font-bold' : 'text-purple-100'}`}>{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
+                                                        <TableCell className={`w-[40%] text-right font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pr-4 sm:pr-8 md:pr-12 ${cellClass1}`}>{formatStat(val1, dbCol, activeMatchup.manager1_stats)}</TableCell>
                                                         <TableCell className="w-[20%] text-center py-2 sm:py-3">
                                                             <span className="font-bold text-xs sm:text-sm text-purple-300 uppercase tracking-wider">{abbr}</span>
                                                             {isFantasyPoints && weight !== undefined && (
                                                                 <span className="ml-1 text-xs text-yellow-300 font-bold">x{weight}</span>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className={`w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12 ${winner === 2 ? 'text-yellow-300 font-bold' : 'text-purple-100'}`}>{formatStat(val2, dbCol, activeMatchup.manager2_stats)}</TableCell>
+                                                        <TableCell className={`w-[40%] text-left font-mono text-base sm:text-lg md:text-xl font-medium py-2 sm:py-3 pl-4 sm:pl-8 md:pl-12 ${cellClass2}`}>{formatStat(val2, dbCol, activeMatchup.manager2_stats)}</TableCell>
                                                     </TableRow>
                                                 );
                                             })}

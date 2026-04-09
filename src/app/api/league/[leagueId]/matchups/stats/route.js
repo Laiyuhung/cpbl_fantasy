@@ -88,7 +88,7 @@ export async function GET(request, { params }) {
         // 1. Fetch League Settings (for scoring categories)
         const { data: settings, error: settingsError } = await supabase
             .from('league_settings')
-            .select('scoring_type, batter_stat_categories, pitcher_stat_categories')
+            .select('scoring_type, batter_stat_categories, pitcher_stat_categories, min_innings_pitched_per_week')
             .eq('league_id', leagueId)
             .single();
 
@@ -228,6 +228,7 @@ export async function GET(request, { params }) {
                 batter_categories: settings.batter_stat_categories,
                 pitcher_categories: settings.pitcher_stat_categories,
                 scoring_type: settings.scoring_type,
+                min_innings_pitched_per_week: settings.min_innings_pitched_per_week,
                 category_weights: categoryWeights
             },
         };

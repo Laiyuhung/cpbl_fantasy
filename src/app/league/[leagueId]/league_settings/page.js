@@ -26,6 +26,15 @@ export default function LeagueSettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferStep, setTransferStep] = useState(1);
+  const [transferOldManagerId, setTransferOldManagerId] = useState('');
+  const [transferNewManagerId, setTransferNewManagerId] = useState('');
+  const [transferConfirmText, setTransferConfirmText] = useState('');
+  const [transferPreview, setTransferPreview] = useState(null);
+  const [transferError, setTransferError] = useState('');
+  const [validatingTransfer, setValidatingTransfer] = useState(false);
+  const [submittingTransfer, setSubmittingTransfer] = useState(false);
   const [members, setMembers] = useState([]);
   const [updatingPermissions, setUpdatingPermissions] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
@@ -41,6 +50,7 @@ export default function LeagueSettingsPage() {
   const [isDraftOrderOpen, setIsDraftOrderOpen] = useState(false);
   const [hasDraftOrder, setHasDraftOrder] = useState(false);
   const [showGenerateConfirmModal, setShowGenerateConfirmModal] = useState(false); // Confirm modal state
+  const transferWarningPhrase = 'I agree to transfer this team';
 
 
   // Photo Resolution State
@@ -502,6 +512,127 @@ export default function LeagueSettingsPage() {
 
   const handleManagePermissions = () => {
     setShowPermissionsModal(true);
+  };
+
+  const resetTransferModalState = () => {
+    setShowTransferModal(false);
+    setTransferStep(1);
+    setTransferOldManagerId('');
+    setTransferNewManagerId('');
+    setTransferConfirmText('');
+    setTransferPreview(null);
+    setTransferError('');
+    setValidatingTransfer(false);
+    setSubmittingTransfer(false);
+  };
+
+  const handleOpenTransferModal = () => {
+    const defaultOldManager = members.find((m) => m.role !== 'Commissioner')?.manager_id || '';
+    setTransferStep(1);
+    setTransferOldManagerId(defaultOldManager);
+    setTransferNewManagerId('');
+    setTransferConfirmText('');
+    setTransferPreview(null);
+    setTransferError('');
+    setShowTransferModal(true);
+  };
+
+  const handleTransferStepOneConfirm = async () => {
+    const nextManagerId = transferNewManagerId.trim();
+    setTransferError('');
+
+    if (!transferOldManagerId) {
+      setTransferError('Please select old member first.');
+      return;
+    }
+
+    if (!nextManagerId) {
+      setTransferError('Please enter new manager ID.');
+      return;
+    }
+
+    if (transferConfirmText !== transferWarningPhrase) {
+      setTransferError('Warning phrase does not match.');
+      return;
+    }
+
+    setValidatingTransfer(true);
+    try {
+      const query = new URLSearchParams({
+        old_manager_id: transferOldManagerId,
+        new_manager_id: nextManagerId,
+      });
+
+      const response = await fetch(`/api/admin/leagues/${leagueId}/transfer-manager?${query.toString()}`);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setTransferError(result.error || 'Failed to validate transfer request.');
+        return;
+      }
+
+      setTransferPreview(result);
+      setTransferStep(2);
+    } catch (err) {
+      console.error('Transfer preview error:', err);
+      setTransferError('Unable to validate transfer request. Please try again.');
+    } finally {
+      setValidatingTransfer(false);
+    }
+  };
+
+  const handleConfirmTransferTeams = async () => {
+    if (!transferPreview) {
+      setTransferError('Missing transfer preview data.');
+      return;
+    }
+
+    setTransferError('');
+    setSubmittingTransfer(true);
+
+    try {
+      const response = await fetch(`/api/admin/leagues/${leagueId}/transfer-manager`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          old_manager_id: transferPreview.old_manager_id,
+          new_manager_id: transferPreview.new_manager_id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        const stageHint = result.failed_stage ? ` (failed stage: ${result.failed_stage})` : '';
+        setTransferError((result.error || 'Transfer failed') + stageHint);
+        return;
+      }
+
+      const leagueResponse = await fetch(`/api/league/${leagueId}`);
+      const leagueResult = await leagueResponse.json();
+      if (leagueResponse.ok && leagueResult.success) {
+        setMembers(leagueResult.members || []);
+      }
+
+      resetTransferModalState();
+
+      setSuccessMessage({
+        title: 'Team Transfer Completed!',
+        description: `${transferPreview.old_manager_name} -> ${transferPreview.new_manager_name}`,
+        updatedMember: null,
+      });
+      setShowSuccessNotification(true);
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+      }, 4000);
+    } catch (err) {
+      console.error('Transfer execute error:', err);
+      setTransferError('Unable to execute transfer. Please try again.');
+    } finally {
+      setSubmittingTransfer(false);
+    }
   };
 
   const handleFinalizedClick = () => {
@@ -1433,6 +1564,19 @@ export default function LeagueSettingsPage() {
               </div>
             </div>
 
+            <div className="flex items-center justify-start mb-4">
+              <button
+                onClick={handleOpenTransferModal}
+                disabled={updatingPermissions}
+                className="bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-700 hover:to-orange-700 text-white font-bold px-4 py-2.5 rounded-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Transfer Teams
+              </button>
+            </div>
+
             <div className="space-y-3">
               {members
                 .sort((a, b) => {
@@ -1544,6 +1688,153 @@ export default function LeagueSettingsPage() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Team Modal */}
+      {showTransferModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-orange-500/40 rounded-2xl shadow-2xl max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-orange-500 to-rose-500 p-3 rounded-xl">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white">Transfer Team Ownership</h2>
+                  <p className="text-orange-300/70 text-sm">Step {transferStep} of 2</p>
+                </div>
+              </div>
+              <button
+                onClick={resetTransferModalState}
+                className="text-orange-300 hover:text-white transition-colors"
+                disabled={validatingTransfer || submittingTransfer}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {transferStep === 1 ? (
+              <>
+                <div className="space-y-5 mb-6">
+                  <div>
+                    <label className="block text-orange-200 font-bold mb-2">Old Member (Team To Transfer)</label>
+                    <select
+                      value={transferOldManagerId}
+                      onChange={(e) => setTransferOldManagerId(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-orange-500/30 rounded-lg text-white focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
+                    >
+                      <option value="">Select old member...</option>
+                      {members
+                        .filter((m) => m.role !== 'Commissioner')
+                        .map((m) => (
+                          <option key={m.manager_id} value={m.manager_id}>
+                            {(m.nickname || m.managers?.name || m.manager_id)} ({m.manager_id})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-orange-200 font-bold mb-2">New Member Manager ID</label>
+                    <input
+                      type="text"
+                      value={transferNewManagerId}
+                      onChange={(e) => setTransferNewManagerId(e.target.value)}
+                      placeholder="Enter manager_id"
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-orange-500/30 rounded-lg text-white placeholder-orange-300/40 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
+                    />
+                  </div>
+
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                    <h3 className="text-red-300 font-bold mb-3">Warning Confirmation Required</h3>
+                    <p className="text-red-200/90 text-sm mb-3">Type the following to continue:</p>
+                    <div className="bg-slate-900/50 border border-red-500/30 rounded-lg p-3 mb-3">
+                      <code className="text-white font-mono text-sm">{transferWarningPhrase}</code>
+                    </div>
+                    <input
+                      type="text"
+                      value={transferConfirmText}
+                      onChange={(e) => setTransferConfirmText(e.target.value)}
+                      placeholder="Type warning phrase"
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-red-500/30 rounded-lg text-white placeholder-red-300/40 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20 font-mono"
+                    />
+                  </div>
+
+                  {transferError && (
+                    <div className="bg-red-500/15 border border-red-500/40 rounded-lg px-4 py-3 text-red-200 text-sm">
+                      {transferError}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={resetTransferModalState}
+                    disabled={validatingTransfer}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleTransferStepOneConfirm}
+                    disabled={validatingTransfer}
+                    className="flex-1 bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-bold py-3 rounded-lg transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {validatingTransfer ? 'Validating...' : 'Confirm'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-5 mb-6">
+                  <div className="bg-slate-900/40 border border-orange-500/30 rounded-xl p-4">
+                    <p className="text-orange-200 text-sm mb-2">Please confirm the transfer target:</p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center gap-4">
+                        <span className="text-slate-300">From (old manager)</span>
+                        <span className="text-white font-bold">{transferPreview?.old_manager_name} ({transferPreview?.old_manager_id})</span>
+                      </div>
+                      <div className="flex justify-between items-center gap-4">
+                        <span className="text-slate-300">To (new manager)</span>
+                        <span className="text-white font-bold">{transferPreview?.new_manager_name} ({transferPreview?.new_manager_id})</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {transferError && (
+                    <div className="bg-red-500/15 border border-red-500/40 rounded-lg px-4 py-3 text-red-200 text-sm">
+                      {transferError}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setTransferStep(1);
+                      setTransferError('');
+                    }}
+                    disabled={submittingTransfer}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg transition-all disabled:opacity-50"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleConfirmTransferTeams}
+                    disabled={submittingTransfer}
+                    className="flex-1 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-bold py-3 rounded-lg transition-all shadow-lg disabled:opacity-50"
+                  >
+                    {submittingTransfer ? 'Transferring...' : 'Confirm Transfer'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
