@@ -25,6 +25,12 @@ export default function Navbar() {
   const [taiwanTime, setTaiwanTime] = useState('')
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const [createLeagueDisabled, setCreateLeagueDisabled] = useState(false)
+  const [copyToast, setCopyToast] = useState({
+    show: false,
+    title: '',
+    description: '',
+    isError: false,
+  })
 
   const navigateTo = (path, { closeDropdown = false, closeMenuPanel = false } = {}) => {
     if (closeDropdown) setLeagueDropdownOpen(false)
@@ -173,6 +179,16 @@ export default function Navbar() {
     }
   }, [pathname, leagues])
 
+  useEffect(() => {
+    if (!copyToast.show) return
+
+    const timer = setTimeout(() => {
+      setCopyToast((prev) => ({ ...prev, show: false }))
+    }, 2500)
+
+    return () => clearTimeout(timer)
+  }, [copyToast.show])
+
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' })
@@ -190,7 +206,12 @@ export default function Navbar() {
 
   const handleCopyManagerId = async () => {
     if (!userId) {
-      window.alert('Manager ID is not ready yet. Please try again.')
+      setCopyToast({
+        show: true,
+        title: 'Copy Failed',
+        description: 'Manager ID is not ready yet. Please try again.',
+        isError: true,
+      })
       return
     }
 
@@ -198,10 +219,20 @@ export default function Navbar() {
       await navigator.clipboard.writeText(userId)
       setUserDropdownOpen(false)
       setMenuOpen(false)
-      window.alert(`Manager ID copied: ${userId}`)
+      setCopyToast({
+        show: true,
+        title: 'Copied',
+        description: `Manager ID copied: ${userId}`,
+        isError: false,
+      })
     } catch (err) {
       console.error('Failed to copy manager ID:', err)
-      window.alert('Unable to copy Manager ID. Please copy it manually.')
+      setCopyToast({
+        show: true,
+        title: 'Copy Failed',
+        description: 'Unable to copy Manager ID. Please copy it manually.',
+        isError: true,
+      })
     }
   }
 
@@ -679,6 +710,20 @@ export default function Navbar() {
 
 
             </div>
+          </div>
+        </div>
+      )}
+
+      {copyToast.show && (
+        <div className="fixed top-20 right-4 z-[1001] animate-fadeIn">
+          <div
+            className={`max-w-sm rounded-xl border px-4 py-3 shadow-2xl backdrop-blur-md ${copyToast.isError
+              ? 'bg-red-600/90 border-red-400/40 text-red-50'
+              : 'bg-emerald-600/90 border-emerald-400/40 text-emerald-50'
+              }`}
+          >
+            <div className="font-bold text-sm">{copyToast.title}</div>
+            <div className="text-xs mt-1 opacity-90 break-all">{copyToast.description}</div>
           </div>
         </div>
       )}

@@ -1735,7 +1735,7 @@ export default function LeagueSettingsPage() {
                     >
                       <option value="">Select old member...</option>
                       {members
-                        .filter((m) => m.role !== 'Commissioner')
+                        .filter((m) => m.role !== 'Commissioner' && m.manager_id !== currentUserId)
                         .map((m) => (
                           <option key={m.manager_id} value={m.manager_id}>
                             {(m.nickname || m.managers?.name || m.manager_id)} ({m.manager_id})
