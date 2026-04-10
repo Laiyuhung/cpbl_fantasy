@@ -68,7 +68,7 @@ export default function LeagueDailyRoster({
     const [actualDate, setActualDate] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Stats state keyed by player name
+    // Stats state keyed by player_id (fallback: player_name)
     const [playerStats, setPlayerStats] = useState({});
     const [statsLoading, setStatsLoading] = useState(false);
     const [batterStatCategories, setBatterStatCategories] = useState([]);
@@ -395,8 +395,18 @@ export default function LeagueDailyRoster({
                 ]);
                 const batterData = await batterRes.json();
                 const pitcherData = await pitcherRes.json();
-                if (Array.isArray(batterData)) batterData.forEach(s => { if (s.player_name) statsMap[s.player_name] = s; });
-                if (Array.isArray(pitcherData)) pitcherData.forEach(s => { if (s.player_name) statsMap[s.player_name] = s; });
+                if (Array.isArray(batterData)) {
+                    batterData.forEach((s) => {
+                        if (s.player_id) statsMap[String(s.player_id)] = s;
+                        else if (s.player_name) statsMap[s.player_name] = s;
+                    });
+                }
+                if (Array.isArray(pitcherData)) {
+                    pitcherData.forEach((s) => {
+                        if (s.player_id) statsMap[String(s.player_id)] = s;
+                        else if (s.player_name) statsMap[s.player_name] = s;
+                    });
+                }
                 setPlayerStats(statsMap);
             } catch (e) {
                 console.error('Failed to fetch stats:', e);
@@ -462,10 +472,12 @@ export default function LeagueDailyRoster({
         return matches ? matches[matches.length - 1].replace(/[()]/g, '') : cat;
     };
 
-    const getStatValue = (playerName, statKey) => {
-        if (!playerName || !playerStats[playerName]) return '-';
+    const getStatValue = (player, statKey) => {
+        if (!player) return '-';
+        const row = playerStats[String(player.player_id)] || playerStats[player.name];
+        if (!row) return '-';
         const key = parseStatKey(statKey).toLowerCase();
-        const val = playerStats[playerName][key];
+        const val = row[key];
         if (val === undefined || val === null) return '-';
         if (key === 'fp') {
             const parsed = Number(val);
@@ -504,6 +516,7 @@ export default function LeagueDailyRoster({
     };
 
     const formatCategoryTotal = (abbr, value) => {
+        if (value === 'INF') return 'INF';
         if (abbr === 'IP') return formatOutsToIp(value);
         if (abbr === 'FP') return Number(value || 0).toFixed(2);
 
@@ -527,31 +540,164 @@ export default function LeagueDailyRoster({
             (p) => p && p.player_id && p.player_id !== 'empty' && isStarterSlot(p.position)
         );
 
+        const sums = {
+            gp: 0, pa: 0, ab: 0, h: 0, bb: 0, hbp: 0, sh: 0, sf: 0, tb: 0,
+            ['1b']: 0, ['2b']: 0, ['3b']: 0, xbh: 0, cyc: 0,
+            er: 0, k: 0, tbf: 0, w: 0, l: 0,
+            fp: 0, r: 0, hr: 0, rbi: 0, sb: 0, cs: 0, gidp: 0,
+            app: 0, gs: 0, rapp: 0, pc: 0, sv: 0, hld: 0, rw: 0, rl: 0, ra: 0,
+            hr_p: 0, bb_p: 0, ibb: 0, hbp_p: 0, qs: 0, cg: 0, sho: 0, pg: 0, nh: 0,
+            outs: 0,
+        };
+
+        const addNum = (field, raw) => {
+            const num = Number(raw);
+            if (Number.isFinite(num)) sums[field] += num;
+        };
+
+        validPlayers.forEach((p) => {
+            const row = playerStats[String(p.player_id)] || playerStats[p.name];
+            if (!row) return;
+
+            addNum('gp', row.gp);
+            addNum('pa', row.pa);
+            addNum('ab', row.ab);
+            addNum('h', row.h);
+            addNum('bb', row.bb);
+            addNum('hbp', row.hbp);
+            addNum('sh', row.sh);
+            addNum('sf', row.sf);
+            addNum('tb', row.tb);
+            addNum('1b', row['1b']);
+            addNum('2b', row['2b']);
+            addNum('3b', row['3b']);
+            addNum('xbh', row.xbh);
+            addNum('cyc', row.cyc);
+
+            addNum('er', row.er);
+            addNum('k', row.k);
+            addNum('tbf', row.tbf);
+            addNum('w', row.w);
+            addNum('l', row.l);
+
+            addNum('fp', row.fp);
+            addNum('r', row.r);
+            addNum('hr', row.hr);
+            addNum('rbi', row.rbi);
+            addNum('sb', row.sb);
+            addNum('cs', row.cs);
+            addNum('gidp', row.gidp);
+            addNum('app', row.app);
+            addNum('gs', row.gs);
+            addNum('rapp', row.rapp);
+            addNum('pc', row.pc);
+            addNum('sv', row.sv);
+            addNum('hld', row.hld);
+            addNum('rw', row.rw);
+            addNum('rl', row.rl);
+            addNum('ra', row.ra);
+            addNum('hr_p', row.hr);
+            addNum('bb_p', row.bb);
+            addNum('ibb', row.ibb);
+            addNum('hbp_p', row.hbp);
+            addNum('qs', row.qs);
+            addNum('cg', row.cg);
+            addNum('sho', row.sho);
+            addNum('pg', row.pg);
+            addNum('nh', row.nh);
+
+            const outsRaw = row.out ?? row.outs;
+            if (outsRaw !== undefined && outsRaw !== null && outsRaw !== '') {
+                addNum('outs', outsRaw);
+            } else {
+                const parsedOuts = parseBaseballIpToOuts(row.ip);
+                if (Number.isFinite(parsedOuts)) sums.outs += parsedOuts;
+            }
+        });
+
+        const ip = sums.outs / 3;
+
+        const resolveValue = (key) => {
+            switch (key) {
+                case 'avg': return sums.ab > 0 ? (sums.h / sums.ab) : 0;
+                case 'obp': {
+                    const den = sums.ab + sums.bb + sums.hbp + sums.sf;
+                    return den > 0 ? ((sums.h + sums.bb + sums.hbp) / den) : 0;
+                }
+                case 'slg': return sums.ab > 0 ? (sums.tb / sums.ab) : 0;
+                case 'ops': {
+                    const den = sums.ab + sums.bb + sums.hbp + sums.sf;
+                    const obp = den > 0 ? ((sums.h + sums.bb + sums.hbp) / den) : 0;
+                    const slg = sums.ab > 0 ? (sums.tb / sums.ab) : 0;
+                    return obp + slg;
+                }
+                case 'era': return ip > 0 ? ((9 * sums.er) / ip) : 0;
+                case 'whip': return ip > 0 ? ((sums.bb_p + sums.h) / ip) : 0;
+                case 'k/9': return ip > 0 ? ((9 * sums.k) / ip) : 0;
+                case 'bb/9': return ip > 0 ? ((9 * sums.bb_p) / ip) : 0;
+                case 'h/9': return ip > 0 ? ((9 * sums.h) / ip) : 0;
+                case 'k/bb':
+                    if (sums.bb_p === 0) return sums.k > 0 ? 'INF' : 0;
+                    return sums.k / sums.bb_p;
+                case 'obpa': return sums.tbf > 0 ? ((sums.h + sums.bb_p + sums.hbp_p) / sums.tbf) : 0;
+                case 'win%': return (sums.w + sums.l) > 0 ? (sums.w / (sums.w + sums.l)) : 0;
+                case 'sv+hld': return sums.sv + sums.hld;
+                case 'ip': return sums.outs;
+                case 'out': return sums.outs;
+                case 'outs': return sums.outs;
+                default: {
+                    const raw = Number(
+                        key === 'hr' ? sums.hr :
+                            key === 'bb' ? sums.bb :
+                                key === 'hbp' ? sums.hbp :
+                                    key === 'r' ? sums.r :
+                                        key === 'rbi' ? sums.rbi :
+                                            key === 'sb' ? sums.sb :
+                                                key === 'cs' ? sums.cs :
+                                                    key === 'gidp' ? sums.gidp :
+                                                        key === 'gp' ? sums.gp :
+                                                            key === 'pa' ? sums.pa :
+                                                                key === '1b' ? sums['1b'] :
+                                                                    key === '2b' ? sums['2b'] :
+                                                                        key === '3b' ? sums['3b'] :
+                                                                            key === 'xbh' ? sums.xbh :
+                                                                                key === 'sh' ? sums.sh :
+                                                                                    key === 'cyc' ? sums.cyc :
+                                                                                        key === 'ab' ? sums.ab :
+                                                                                            key === 'app' ? sums.app :
+                                                                                                key === 'gs' ? sums.gs :
+                                                                                                    key === 'rapp' ? sums.rapp :
+                                                                                                        key === 'pc' ? sums.pc :
+                                                                                                            key === 'w' ? sums.w :
+                                                                                                                key === 'l' ? sums.l :
+                                                                                                                    key === 'sv' ? sums.sv :
+                                                                                                                        key === 'hld' ? sums.hld :
+                                                                                                                            key === 'rw' ? sums.rw :
+                                                                                                                                key === 'rl' ? sums.rl :
+                                                                                                                                    key === 'ra' ? sums.ra :
+                                                                                                                                        key === 'er' ? sums.er :
+                                                                                                                                            key === 'ibb' ? sums.ibb :
+                                                                                                                                                key === 'qs' ? sums.qs :
+                                                                                                                                                    key === 'cg' ? sums.cg :
+                                                                                                                                                        key === 'sho' ? sums.sho :
+                                                                                                                                                            key === 'pg' ? sums.pg :
+                                                                                                                                                                key === 'nh' ? sums.nh :
+                                                                                                                                                                    key === 'fp' ? sums.fp :
+                                                                                                                                                                        (sums[key] || 0)
+                    );
+                    return Number.isFinite(raw) ? raw : 0;
+                }
+            }
+        };
+
         return (categories || []).map((cat) => {
             const abbr = parseStatKey(cat);
             const key = abbr.toLowerCase();
-            let sum = 0;
-            let outs = 0;
-
-            validPlayers.forEach((p) => {
-                const row = playerStats[p.name];
-                if (!row) return;
-                const raw = row[key];
-                if (raw === null || raw === undefined || raw === '') return;
-
-                if (key === 'ip') {
-                    const parsedOuts = parseBaseballIpToOuts(raw);
-                    if (Number.isFinite(parsedOuts)) outs += parsedOuts;
-                    return;
-                }
-
-                const num = Number(raw);
-                if (Number.isFinite(num)) sum += num;
-            });
+            const computed = resolveValue(key);
 
             return {
                 abbr,
-                value: formatCategoryTotal(abbr, key === 'ip' ? outs : sum)
+                value: formatCategoryTotal(abbr, computed)
             };
         });
     };
@@ -940,7 +1086,7 @@ export default function LeagueDailyRoster({
                 <div className="flex items-end gap-x-4 flex-nowrap min-w-max">
                     {displayCats.map((cat) => {
                         const abbr = parseStatKey(cat);
-                        const val = getStatValue(p.name, cat);
+                        const val = getStatValue(p, cat);
                         const isZeroOrDash = val === '-' || val === 0 || val === '0';
                         const isFp = abbr === 'FP';
                         const isForced = !statCats.includes(cat);
