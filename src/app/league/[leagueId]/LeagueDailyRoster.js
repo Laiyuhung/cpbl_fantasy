@@ -475,6 +475,90 @@ export default function LeagueDailyRoster({
         return val;
     };
 
+    const isFantasyPoints = scoringType === 'Head-to-Head Fantasy Points';
+
+    const displayBatterCats = (() => {
+        const base = batterStatCategories.length > 0 && !batterStatCategories.some(c => parseStatKey(c) === 'AB')
+            ? ['At Bats (AB)', ...batterStatCategories]
+            : batterStatCategories;
+        return isFantasyPoints ? ['Fantasy Points (FP)', ...base] : base;
+    })();
+
+    const displayPitcherCats = (() => {
+        const base = pitcherStatCategories.length > 0 && !pitcherStatCategories.some(c => parseStatKey(c) === 'IP')
+            ? ['Innings Pitched (IP)', ...pitcherStatCategories]
+            : pitcherStatCategories;
+        return isFantasyPoints ? ['Fantasy Points (FP)', ...base] : base;
+    })();
+
+    const parseBaseballIpToOuts = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return null;
+        return Math.floor(parsed) * 3 + Math.round((parsed % 1) * 10);
+    };
+
+    const formatOutsToIp = (outs) => {
+        const safeOuts = Number.isFinite(outs) ? outs : 0;
+        return `${Math.floor(safeOuts / 3)}.${safeOuts % 3}`;
+    };
+
+    const formatCategoryTotal = (abbr, value) => {
+        if (abbr === 'IP') return formatOutsToIp(value);
+        if (abbr === 'FP') return Number(value || 0).toFixed(2);
+
+        const threeDecimals = new Set(['AVG', 'OBP', 'SLG', 'OPS', 'OBPA', 'WIN%']);
+        const twoDecimals = new Set(['ERA', 'WHIP', 'K/9', 'BB/9', 'K/BB', 'H/9']);
+
+        if (threeDecimals.has(abbr)) return Number(value || 0).toFixed(3);
+        if (twoDecimals.has(abbr)) return Number(value || 0).toFixed(2);
+
+        const rounded = Math.round(Number(value || 0));
+        return Math.abs(Number(value || 0) - rounded) < 0.000001 ? String(rounded) : Number(value || 0).toFixed(2);
+    };
+
+    const isStarterSlot = (position) => {
+        const slot = String(position || '').toUpperCase();
+        return slot !== 'BN' && slot !== 'NA';
+    };
+
+    const computeCategoryTotals = (players, categories) => {
+        const validPlayers = (players || []).filter(
+            (p) => p && p.player_id && p.player_id !== 'empty' && isStarterSlot(p.position)
+        );
+
+        return (categories || []).map((cat) => {
+            const abbr = parseStatKey(cat);
+            const key = abbr.toLowerCase();
+            let sum = 0;
+            let outs = 0;
+
+            validPlayers.forEach((p) => {
+                const row = playerStats[p.name];
+                if (!row) return;
+                const raw = row[key];
+                if (raw === null || raw === undefined || raw === '') return;
+
+                if (key === 'ip') {
+                    const parsedOuts = parseBaseballIpToOuts(raw);
+                    if (Number.isFinite(parsedOuts)) outs += parsedOuts;
+                    return;
+                }
+
+                const num = Number(raw);
+                if (Number.isFinite(num)) sum += num;
+            });
+
+            return {
+                abbr,
+                value: formatCategoryTotal(abbr, key === 'ip' ? outs : sum)
+            };
+        });
+    };
+
+    const batterCategoryTotals = computeCategoryTotals(rosterData.batters, displayBatterCats);
+    const pitcherCategoryTotals = computeCategoryTotals(rosterData.pitchers, displayPitcherCats);
+
     // Trade helper functions
     const getMyPlayers = () => ownerships.filter(o => o.manager_id === myManagerId && o.status?.toLowerCase() === 'on team');
     const getTheirPlayers = () => ownerships.filter(o => o.manager_id === tradeTargetManagerId && o.status?.toLowerCase() === 'on team');
@@ -748,7 +832,6 @@ export default function LeagueDailyRoster({
         const teamAbbr = toAbbr(p.team);
         const isPitcher = p.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(p.position);
         const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
-        const isFantasyPoints = scoringType === 'Head-to-Head Fantasy Points';
 
         // Game info — vivid inline display
         let gameInfoEl = null;
@@ -850,17 +933,7 @@ export default function LeagueDailyRoster({
         }
 
         // Stats — horizontal scroll, vertical chip layout
-        // Prepend AB (batters) or IP (pitchers) if not already in categories
-        let displayCats = statCats;
-        if (!isPitcher && statCats.length > 0 && !statCats.some(c => parseStatKey(c) === 'AB')) {
-            displayCats = ['At Bats (AB)', ...statCats];
-        }
-        if (isPitcher && statCats.length > 0 && !statCats.some(c => parseStatKey(c) === 'IP')) {
-            displayCats = ['Innings Pitched (IP)', ...statCats];
-        }
-        if (isFantasyPoints) {
-            displayCats = ['Fantasy Points (FP)', ...displayCats];
-        }
+        const displayCats = isPitcher ? displayPitcherCats : displayBatterCats;
 
         const statsRow = !isEmpty && displayCats.length > 0 ? (
             <div className="overflow-x-auto mt-1.5 pb-0.5" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 transparent' }}>
@@ -1043,6 +1116,16 @@ export default function LeagueDailyRoster({
                             <span>Batters</span>
                             <span className="text-[10px] opacity-70">{rosterData.batters.length} Players</span>
                         </h4>
+                        <div className="mb-3 overflow-x-auto pb-1">
+                            <div className="inline-flex items-center gap-2 min-w-max">
+                                <span className="px-2 py-1 rounded bg-pink-500/20 text-pink-200 border border-pink-500/30 text-[11px] font-bold">Batter Total</span>
+                                {batterCategoryTotals.map((item) => (
+                                    <span key={`overview-b-total-${item.abbr}`} className="px-2 py-1 rounded bg-slate-700/50 text-slate-100 border border-slate-600/50 text-[11px] font-mono font-bold">
+                                        {item.abbr}: {item.value}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
                         <div className="flex flex-col">
                             {rosterData.batters.length === 0 ? (
                                 <div className="text-slate-600 text-xs italic py-2">No batters found</div>
@@ -1056,6 +1139,16 @@ export default function LeagueDailyRoster({
                             <span>Pitchers</span>
                             <span className="text-[10px] opacity-70">{rosterData.pitchers.length} Players</span>
                         </h4>
+                        <div className="mb-3 overflow-x-auto pb-1">
+                            <div className="inline-flex items-center gap-2 min-w-max">
+                                <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-200 border border-orange-500/30 text-[11px] font-bold">Pitcher Total</span>
+                                {pitcherCategoryTotals.map((item) => (
+                                    <span key={`overview-p-total-${item.abbr}`} className="px-2 py-1 rounded bg-slate-700/50 text-slate-100 border border-slate-600/50 text-[11px] font-mono font-bold">
+                                        {item.abbr}: {item.value}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
                         <div className="flex flex-col">
                             {rosterData.pitchers.length === 0 ? (
                                 <div className="text-slate-600 text-xs italic py-2">No pitchers found</div>

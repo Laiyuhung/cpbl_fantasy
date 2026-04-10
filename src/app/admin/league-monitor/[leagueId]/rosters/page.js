@@ -292,8 +292,15 @@ export default function AdminLeagueRostersPage() {
         return Math.abs(Number(value || 0) - rounded) < 0.000001 ? String(rounded) : Number(value || 0).toFixed(2);
     };
 
+    const isStarterSlot = (position) => {
+        const slot = String(position || '').toUpperCase();
+        return slot !== 'BN' && slot !== 'NA';
+    };
+
     const computeCategoryTotals = (players, categories) => {
-        const validPlayers = (players || []).filter((p) => p && p.player_id && p.player_id !== 'empty');
+        const validPlayers = (players || []).filter(
+            (p) => p && p.player_id && p.player_id !== 'empty' && isStarterSlot(p.position)
+        );
 
         return (categories || []).map((cat) => {
             const abbr = parseStatKey(cat);

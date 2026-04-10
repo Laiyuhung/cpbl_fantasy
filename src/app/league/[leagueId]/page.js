@@ -305,6 +305,7 @@ export default function LeaguePage() {
   const [matchupsLoading, setMatchupsLoading] = useState(true);
   const [standings, setStandings] = useState([]);
   const [standingsLoading, setStandingsLoading] = useState(true);
+  const [weeklyAddMap, setWeeklyAddMap] = useState({});
   const [transactions, setTransactions] = useState([]);
   const [waiverResults, setWaiverResults] = useState([]);
   const [transLoading, setTransLoading] = useState(true);
@@ -389,6 +390,16 @@ export default function LeaguePage() {
         });
       }
     }
+  };
+
+  const formatWeeklyAdds = (managerId) => {
+    const data = weeklyAddMap?.[managerId];
+    if (!data) return '-';
+
+    const usage = Number.isFinite(Number(data.usage)) ? Number(data.usage) : 0;
+    const rawLimit = data.limit;
+    const limit = rawLimit === 'No Maximum' ? '∞' : rawLimit;
+    return `${usage}/${limit}`;
   };
 
   useEffect(() => {
@@ -521,6 +532,39 @@ export default function LeaguePage() {
 
     fetchLeagueData();
   }, [leagueId]);
+
+  useEffect(() => {
+    if (!bootstrapReady || !leagueId || standings.length === 0) return;
+
+    const fetchWeeklyAddsForStandings = async () => {
+      try {
+        const managerIds = [...new Set(standings.map((s) => s.manager_id).filter(Boolean))];
+        if (managerIds.length === 0) {
+          setWeeklyAddMap({});
+          return;
+        }
+
+        const res = await fetch(`/api/league/${leagueId}/acquisitions/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ manager_ids: managerIds }),
+        });
+        const data = await res.json();
+
+        if (data?.success && data.acquisitionsByManager) {
+          setWeeklyAddMap(data.acquisitionsByManager);
+          return;
+        }
+
+        setWeeklyAddMap({});
+      } catch (e) {
+        console.error('Error fetching standings weekly adds:', e);
+        setWeeklyAddMap({});
+      }
+    };
+
+    fetchWeeklyAddsForStandings();
+  }, [bootstrapReady, leagueId, standings]);
 
   const fetchMatchups = async (week) => {
     setMatchupsLoading(true);
@@ -1219,7 +1263,8 @@ export default function LeaguePage() {
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Record</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Win %</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Streak</th>
-                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Waiver Priority</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Adds</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Waiver</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -1263,6 +1308,11 @@ export default function LeaguePage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
+                            <span className="font-mono text-cyan-200 font-bold">
+                              {formatWeeklyAdds(team.manager_id)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
                             <span className="font-mono text-slate-300 font-bold">
                               {team.waiver_rank || '-'}
                             </span>
@@ -1288,6 +1338,9 @@ export default function LeaguePage() {
                         <div className="flex-1 min-w-0">
                           <span className="font-black text-white text-sm leading-tight truncate block">
                             {team.nickname}
+                          </span>
+                          <span className="text-[10px] text-cyan-300/80 leading-tight block mt-0.5">
+                            Adds {formatWeeklyAdds(team.manager_id)}
                           </span>
                         </div>
                         <span className="font-mono text-cyan-300 text-xs font-semibold flex-shrink-0">{team.record_display}</span>

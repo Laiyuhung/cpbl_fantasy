@@ -182,11 +182,12 @@ export default function AdminMatchupsPage() {
     // Get stat value from player data
     const getStatValue = (stat, abbr) => {
         const key = abbr.toLowerCase();
-        const val = key === 'out' ? (stat.outs ?? stat.out) : stat[key];
         if (key === 'fp') {
-            const parsed = Number(val);
+            if (stat.fp === null || stat.fp === undefined) return '-';
+            const parsed = Number(stat.fp);
             return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
         }
+        const val = key === 'out' ? (stat.outs ?? stat.out) : stat[key];
         // Format rate stats
         if (['avg', 'obp', 'slg', 'ops'].includes(key)) {
             return typeof val === 'number' ? val.toFixed(3) : (val ?? '.000');
@@ -208,11 +209,26 @@ export default function AdminMatchupsPage() {
         return val ?? 0;
     };
 
-    // Build batter columns: AB + league categories
-    const batterColumns = ['AB', ...(scroingSettings?.batter_categories?.map(cat => getAbbr(cat)) || [])];
+    // Build player stats columns: add FP for fantasy points leagues,
+    // and avoid duplicate AB/IP when those are already scoring categories.
+    const isFantasyPoints = scroingSettings?.scoring_type === 'Head-to-Head Fantasy Points';
+    const hasABCategory = (scroingSettings?.batter_categories || []).some(
+        (cat) => getAbbr(cat).toLowerCase() === 'ab'
+    );
+    const batterColumns = [
+        ...(isFantasyPoints ? ['FP'] : []),
+        ...(hasABCategory ? [] : ['AB']),
+        ...(scroingSettings?.batter_categories?.map(cat => getAbbr(cat)) || []),
+    ];
 
-    // Build pitcher columns: IP + league categories  
-    const pitcherColumns = ['IP', ...(scroingSettings?.pitcher_categories?.map(cat => getAbbr(cat)) || [])];
+    const hasIPCategory = (scroingSettings?.pitcher_categories || []).some(
+        (cat) => getAbbr(cat).toLowerCase() === 'ip'
+    );
+    const pitcherColumns = [
+        ...(isFantasyPoints ? ['FP'] : []),
+        ...(hasIPCategory ? [] : ['IP']),
+        ...(scroingSettings?.pitcher_categories?.map(cat => getAbbr(cat)) || []),
+    ];
 
     // Helper to determine if higher is better for a stat
     const isHigherBetter = (dbCol) => {
@@ -587,7 +603,7 @@ export default function AdminMatchupsPage() {
                                                         <tr className="bg-slate-800/60 text-purple-300 text-xs uppercase">
                                                             <th className="px-3 py-2 text-left">Player</th>
                                                             {batterColumns.map(col => (
-                                                                <th key={col} className="px-2 py-2 text-center">{col}</th>
+                                                                <th key={col} className={`px-2 py-2 text-center ${col === 'FP' ? 'text-amber-300' : ''}`}>{col}</th>
                                                             ))}
                                                         </tr>
                                                     </thead>
@@ -602,7 +618,7 @@ export default function AdminMatchupsPage() {
                                                                         <span className={`ml-1 text-xs font-bold ${getTeamColor(stat.player_team)}`}>{getTeamAbbr(stat.player_team)}</span>
                                                                     </td>
                                                                     {batterColumns.map(col => (
-                                                                        <td key={col} className="px-2 py-2 text-center text-slate-300 font-mono">{getStatValue(stat, col)}</td>
+                                                                        <td key={col} className={`px-2 py-2 text-center font-mono ${col === 'FP' ? 'text-amber-300 font-black' : 'text-slate-300'}`}>{getStatValue(stat, col)}</td>
                                                                     ))}
                                                                 </tr>
                                                             ))}
@@ -626,7 +642,7 @@ export default function AdminMatchupsPage() {
                                                         <tr className="bg-slate-800/60 text-cyan-300 text-xs uppercase">
                                                             <th className="px-3 py-2 text-left">Player</th>
                                                             {batterColumns.map(col => (
-                                                                <th key={col} className="px-2 py-2 text-center">{col}</th>
+                                                                <th key={col} className={`px-2 py-2 text-center ${col === 'FP' ? 'text-amber-300' : ''}`}>{col}</th>
                                                             ))}
                                                         </tr>
                                                     </thead>
@@ -641,7 +657,7 @@ export default function AdminMatchupsPage() {
                                                                         <span className={`ml-1 text-xs font-bold ${getTeamColor(stat.player_team)}`}>{getTeamAbbr(stat.player_team)}</span>
                                                                     </td>
                                                                     {batterColumns.map(col => (
-                                                                        <td key={col} className="px-2 py-2 text-center text-slate-300 font-mono">{getStatValue(stat, col)}</td>
+                                                                        <td key={col} className={`px-2 py-2 text-center font-mono ${col === 'FP' ? 'text-amber-300 font-black' : 'text-slate-300'}`}>{getStatValue(stat, col)}</td>
                                                                     ))}
                                                                 </tr>
                                                             ))}
@@ -665,7 +681,7 @@ export default function AdminMatchupsPage() {
                                                         <tr className="bg-slate-800/60 text-purple-300 text-xs uppercase">
                                                             <th className="px-3 py-2 text-left">Player</th>
                                                             {pitcherColumns.map(col => (
-                                                                <th key={col} className="px-2 py-2 text-center">{col}</th>
+                                                                <th key={col} className={`px-2 py-2 text-center ${col === 'FP' ? 'text-amber-300' : ''}`}>{col}</th>
                                                             ))}
                                                         </tr>
                                                     </thead>
@@ -680,7 +696,7 @@ export default function AdminMatchupsPage() {
                                                                         <span className={`ml-1 text-xs font-bold ${getTeamColor(stat.player_team)}`}>{getTeamAbbr(stat.player_team)}</span>
                                                                     </td>
                                                                     {pitcherColumns.map(col => (
-                                                                        <td key={col} className="px-2 py-2 text-center text-slate-300 font-mono">{getStatValue(stat, col)}</td>
+                                                                        <td key={col} className={`px-2 py-2 text-center font-mono ${col === 'FP' ? 'text-amber-300 font-black' : 'text-slate-300'}`}>{getStatValue(stat, col)}</td>
                                                                     ))}
                                                                 </tr>
                                                             ))}
@@ -704,7 +720,7 @@ export default function AdminMatchupsPage() {
                                                         <tr className="bg-slate-800/60 text-cyan-300 text-xs uppercase">
                                                             <th className="px-3 py-2 text-left">Player</th>
                                                             {pitcherColumns.map(col => (
-                                                                <th key={col} className="px-2 py-2 text-center">{col}</th>
+                                                                <th key={col} className={`px-2 py-2 text-center ${col === 'FP' ? 'text-amber-300' : ''}`}>{col}</th>
                                                             ))}
                                                         </tr>
                                                     </thead>
@@ -719,7 +735,7 @@ export default function AdminMatchupsPage() {
                                                                         <span className={`ml-1 text-xs font-bold ${getTeamColor(stat.player_team)}`}>{getTeamAbbr(stat.player_team)}</span>
                                                                     </td>
                                                                     {pitcherColumns.map(col => (
-                                                                        <td key={col} className="px-2 py-2 text-center text-slate-300 font-mono">{getStatValue(stat, col)}</td>
+                                                                        <td key={col} className={`px-2 py-2 text-center font-mono ${col === 'FP' ? 'text-amber-300 font-black' : 'text-slate-300'}`}>{getStatValue(stat, col)}</td>
                                                                     ))}
                                                                 </tr>
                                                             ))}
