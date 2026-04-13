@@ -425,10 +425,7 @@ export default function LeaguePage() {
     if (!Array.isArray(standings) || standings.length === 0) return null;
 
     const top = standings.find((s) => Number(s.rank) === 1) || standings[0];
-    const parsed = parseWinsLosses(top);
-    if (!parsed) return null;
-
-    return parsed;
+    return parseWinsLosses(top);
   }, [standings]);
 
   const getGamesBehindValue = (team) => {
@@ -441,12 +438,6 @@ export default function LeaguePage() {
     if (!Number.isFinite(gb)) return '-';
     if (Math.abs(gb) < 0.000001) return 'LEADER';
     return gb.toFixed(1);
-  };
-
-  const getGamesBehindText = (team) => {
-    const value = getGamesBehindValue(team);
-    if (value === '-' || value === 'LEADER') return value;
-    return `${value} GB behind`;
   };
 
   useEffect(() => {
@@ -1310,7 +1301,7 @@ export default function LeaguePage() {
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Record</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Win %</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Streak</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">GB</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">GB</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Adds</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Waiver</th>
                       </tr>
@@ -1376,21 +1367,11 @@ export default function LeaguePage() {
                   </table>
                 </div>
 
-                {/* Mobile Standings */}
+                {/* Mobile Cards */}
                 <div className="md:hidden divide-y divide-white/5">
-                  <div className="grid grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_46px_52px] items-center gap-1 px-3 py-2 bg-gradient-to-r from-purple-900/35 to-blue-900/35 border-b border-white/10">
-                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Rank</span>
-                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight">Team</span>
-                    <div className="grid grid-cols-2 gap-1 px-1">
-                      <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Record</span>
-                      <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Win %</span>
-                    </div>
-                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">STK</span>
-                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Waiver</span>
-                  </div>
                   {standings.map((team) => (
                     <div key={team.manager_id} className="px-3 py-2.5 hover:bg-purple-500/10 transition-colors">
-                      <div className="grid grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_46px_52px] items-start gap-1.5">
+                      <div className="flex items-center gap-2">
                         <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
                           team.rank === 2 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
                             team.rank === 3 ? 'bg-orange-600/20 text-orange-300 border border-orange-600/30' :
@@ -1398,29 +1379,34 @@ export default function LeaguePage() {
                           }`}>
                           {team.rank}
                         </span>
-                        <div className="min-w-0">
-                          <span className="font-black text-white text-sm leading-tight whitespace-normal break-words block max-h-10 overflow-hidden">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-black text-white text-sm leading-tight whitespace-normal break-words block">
                             {team.nickname}
                           </span>
                           <span className="text-[10px] text-cyan-300/80 leading-tight block mt-0.5">
                             Adds {formatWeeklyAdds(team.manager_id)}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 min-w-0 px-1">
-                          <span className="font-mono text-cyan-300 text-xs font-semibold text-center">{team.record_display}</span>
-                          <span className="font-mono text-purple-300 text-xs font-semibold text-center">{team.win_pct.toFixed(3)}</span>
-                          <span className="col-span-2 text-[9px] text-cyan-300/80 leading-tight text-left whitespace-nowrap overflow-hidden text-ellipsis">
-                            {getGamesBehindText(team)}
+                        <div className="min-w-[92px] flex-shrink-0 flex flex-col items-stretch">
+                          <div className="grid grid-cols-2 gap-1 items-center">
+                            <span className="font-mono text-cyan-300 text-xs font-semibold text-center">{team.record_display}</span>
+                            <span className="font-mono text-purple-300 text-xs font-semibold text-center">{team.win_pct.toFixed(3)}</span>
+                          </div>
+                          <span className="col-span-2 text-[9px] text-cyan-300/80 leading-tight text-center mt-0.5">
+                            {getGamesBehindValue(team) === 'LEADER' ? 'LEADER' : `${getGamesBehindValue(team)} GB behind`}
                           </span>
                         </div>
-                        <span className={`inline-flex items-center justify-center px-1 py-0.5 rounded-full text-[9px] font-bold ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300' :
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300' :
                           team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300' :
                             team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300' :
                               'bg-slate-700/40 text-slate-400'
                           }`}>
                           {team.streak}
                         </span>
-                        <span className="text-xs font-bold text-purple-200 text-center">{team.waiver_rank || '-'}</span>
+                        <div className="flex flex-col items-center flex-shrink-0 min-w-[30px]">
+                          <span className="text-[8px] text-slate-500 uppercase tracking-tighter leading-none mb-0.5">Waiver</span>
+                          <span className="text-xs font-bold text-purple-200 leading-none">{team.waiver_rank || '-'}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
