@@ -374,6 +374,19 @@ async function getPlayerRosterAndStats(leagueId, gameDate) {
 
   const leagueSettings = leagueSettingsRes.data || null;
 
+  Object.values(pitchingMap).forEach((p) => {
+    const ipRaw = p.out / 3;
+    p.ip = `${Math.floor(p.out / 3)}.${p.out % 3}`;
+    p.era = ipRaw ? Number((9 * p.er / ipRaw).toFixed(2)) : 0;
+    p.whip = ipRaw ? Number(((p.bb + p.h) / ipRaw).toFixed(2)) : 0;
+    p['win%'] = (p.w + p.l) > 0 ? Number((p.w / (p.w + p.l)).toFixed(3)) : 0;
+    p['k/9'] = ipRaw ? Number((9 * p.k / ipRaw).toFixed(2)) : 0;
+    p['bb/9'] = ipRaw ? Number((9 * p.bb / ipRaw).toFixed(2)) : 0;
+    p['k/bb'] = p.bb > 0 ? Number((p.k / p.bb).toFixed(2)) : Number(p.k.toFixed(2));
+    p['h/9'] = ipRaw ? Number((9 * p.h / ipRaw).toFixed(2)) : 0;
+    p.obpa = p.tbf > 0 ? Number(((p.h + p.bb + p.hbp) / p.tbf).toFixed(3)) : 0;
+  });
+
   let categoryWeights = { batter: {}, pitcher: {} };
   if (leagueSettings?.scoring_type === FANTASY_POINTS_SCORING_TYPE) {
     const { data: weightRows, error: weightError } = await supabaseAdmin

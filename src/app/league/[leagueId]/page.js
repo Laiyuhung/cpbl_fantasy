@@ -402,6 +402,46 @@ export default function LeaguePage() {
     return `${usage}/${limit}`;
   };
 
+  const parseWinsLosses = (team) => {
+    if (!team) return null;
+
+    const directWins = Number(team.wins ?? team.w ?? team.win ?? team.total_wins);
+    const directLosses = Number(team.losses ?? team.l ?? team.loss ?? team.total_losses);
+    if (Number.isFinite(directWins) && Number.isFinite(directLosses)) {
+      return { wins: directWins, losses: directLosses };
+    }
+
+    const record = String(team.record_display || '').trim();
+    const match = record.match(/^(\d+)\s*-\s*(\d+)/);
+    if (!match) return null;
+
+    return {
+      wins: Number(match[1]),
+      losses: Number(match[2]),
+    };
+  };
+
+  const leaderRecord = useMemo(() => {
+    if (!Array.isArray(standings) || standings.length === 0) return null;
+
+    const top = standings.find((s) => Number(s.rank) === 1) || standings[0];
+    const parsed = parseWinsLosses(top);
+    if (!parsed) return null;
+
+    return parsed;
+  }, [standings]);
+
+  const getGamesBehindValue = (team) => {
+    if (!leaderRecord) return '-';
+
+    const parsed = parseWinsLosses(team);
+    if (!parsed) return '-';
+
+    const gb = ((leaderRecord.wins - parsed.wins) + (parsed.losses - leaderRecord.losses)) / 2;
+    if (!Number.isFinite(gb)) return '-';
+    return gb.toFixed(1);
+  };
+
   useEffect(() => {
     if (!leagueId) return;
 
@@ -1263,6 +1303,7 @@ export default function LeaguePage() {
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Record</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Win %</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Streak</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">GB</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Adds</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Waiver</th>
                       </tr>
@@ -1308,6 +1349,11 @@ export default function LeaguePage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
+                            <span className="font-mono text-slate-200 font-semibold">
+                              {getGamesBehindValue(team)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
                             <span className="font-mono text-cyan-200 font-bold">
                               {formatWeeklyAdds(team.manager_id)}
                             </span>
@@ -1323,11 +1369,19 @@ export default function LeaguePage() {
                   </table>
                 </div>
 
-                {/* Mobile Cards */}
+                {/* Mobile Standings */}
                 <div className="md:hidden divide-y divide-white/5">
+                  <div className="grid grid-cols-[42px_minmax(0,1fr)_64px_56px_58px_56px] items-center gap-1 px-3 py-2 bg-gradient-to-r from-purple-900/35 to-blue-900/35 border-b border-white/10">
+                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Rank</span>
+                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight">Team</span>
+                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Record</span>
+                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Win %</span>
+                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Streak</span>
+                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-tight text-center">Waiver</span>
+                  </div>
                   {standings.map((team) => (
                     <div key={team.manager_id} className="px-3 py-2.5 hover:bg-purple-500/10 transition-colors">
-                      <div className="flex items-center gap-2">
+                      <div className="grid grid-cols-[42px_minmax(0,1fr)_64px_56px_58px_56px] items-center gap-1.5">
                         <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
                           team.rank === 2 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
                             team.rank === 3 ? 'bg-orange-600/20 text-orange-300 border border-orange-600/30' :
@@ -1335,16 +1389,18 @@ export default function LeaguePage() {
                           }`}>
                           {team.rank}
                         </span>
-                        <div className="flex-1 min-w-0">
+                        <div className="min-w-0">
                           <span className="font-black text-white text-sm leading-tight truncate block">
                             {team.nickname}
                           </span>
-                          <span className="text-[10px] text-cyan-300/80 leading-tight block mt-0.5">
-                            Adds {formatWeeklyAdds(team.manager_id)}
+                        </div>
+                        <div className="text-center">
+                          <span className="font-mono text-cyan-300 text-xs font-semibold block">{team.record_display}</span>
+                          <span className="text-[9px] text-cyan-300/80 leading-tight block mt-0.5">
+                            {getGamesBehindValue(team)} GB behind
                           </span>
                         </div>
-                        <span className="font-mono text-cyan-300 text-xs font-semibold flex-shrink-0">{team.record_display}</span>
-                        <span className="font-mono text-purple-300 text-xs font-semibold flex-shrink-0">{team.win_pct.toFixed(3)}</span>
+                        <span className="font-mono text-purple-300 text-xs font-semibold text-center">{team.win_pct.toFixed(3)}</span>
                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300' :
                           team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300' :
                             team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300' :
@@ -1352,10 +1408,7 @@ export default function LeaguePage() {
                           }`}>
                           {team.streak}
                         </span>
-                        <div className="flex flex-col items-center flex-shrink-0 min-w-[30px]">
-                          <span className="text-[8px] text-slate-500 uppercase tracking-tighter leading-none mb-0.5">Waiver</span>
-                          <span className="text-xs font-bold text-purple-200 leading-none">{team.waiver_rank || '-'}</span>
-                        </div>
+                        <span className="text-xs font-bold text-purple-200 text-center">{team.waiver_rank || '-'}</span>
                       </div>
                     </div>
                   ))}
