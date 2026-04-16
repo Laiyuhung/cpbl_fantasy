@@ -977,7 +977,7 @@ export default function LeagueDailyRoster({
         const name = p.name || (isEmpty ? 'Empty' : 'Unknown');
         const teamAbbr = toAbbr(p.team);
         const isPitcher = p.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(p.position);
-        const positionEligibility = p.position_list || (isPitcher ? 'P' : 'Util');
+        const positionEligibility = filterPositions(p);
         const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
 
         // Game info — vivid inline display
