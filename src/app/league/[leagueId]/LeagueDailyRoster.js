@@ -977,6 +977,7 @@ export default function LeagueDailyRoster({
         const name = p.name || (isEmpty ? 'Empty' : 'Unknown');
         const teamAbbr = toAbbr(p.team);
         const isPitcher = p.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(p.position);
+        const positionEligibility = p.position_list || (isPitcher ? 'P' : 'Util');
         const statCats = isPitcher ? pitcherStatCategories : batterStatCategories;
 
         // Game info — vivid inline display
@@ -1118,10 +1119,15 @@ export default function LeagueDailyRoster({
                             >
                                 {name}
                             </span>
+                            {statBadges}
+                            {!isEmpty && (
+                                <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">
+                                    - {positionEligibility}
+                                </span>
+                            )}
                             {!isEmpty && p.team && (
                                 <span className={`${getTeamColor(p.team)} font-bold text-[10px] flex-shrink-0`}>{teamAbbr}</span>
                             )}
-                            {statBadges}
                             {gameInfoEl}
                             {!isEmpty && startingBadge}
                         </div>

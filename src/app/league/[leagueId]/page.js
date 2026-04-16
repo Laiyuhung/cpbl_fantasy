@@ -1392,7 +1392,7 @@ export default function LeaguePage() {
                             <span className="font-mono text-cyan-300 text-xs font-semibold text-center">{team.record_display}</span>
                             <span className="font-mono text-purple-300 text-xs font-semibold text-center">{team.win_pct.toFixed(3)}</span>
                           </div>
-                          <span className="col-span-2 text-[9px] text-cyan-300/80 leading-tight text-center mt-0.5">
+                          <span className="col-span-2 text-[11px] text-cyan-300/80 leading-tight text-center mt-0.5">
                             {getGamesBehindValue(team) === 'LEADER' ? 'LEADER' : `${getGamesBehindValue(team)} GB behind`}
                           </span>
                         </div>
