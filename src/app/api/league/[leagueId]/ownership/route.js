@@ -143,10 +143,11 @@ export async function POST(req, { params }) {
       .eq('player_id', player_id)
       .single();
 
-    // 假設加入這名球員，預設放在 BN (最嚴格 Active 計算)
+    // 假設加入這名球員，優先使用前端指定的目標 slot；未指定時才預設 BN
+    const projectedPosition = (position || 'BN').toUpperCase();
     const projectedRoster = [
       ...targetRosterSnapshot,
-      { player_id: player_id, position: 'BN', player: { identity: targetPlayerInfo?.identity } }
+      { player_id: player_id, position: projectedPosition, player: { identity: targetPlayerInfo?.identity } }
     ];
 
     const isInactiveOrNA = (pos) => ['NA', 'MINOR', 'IL', 'DL'].includes((pos || '').toUpperCase());

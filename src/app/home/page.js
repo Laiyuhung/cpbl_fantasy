@@ -18,7 +18,6 @@ export default function HomePage() {
   const [announcements, setAnnouncements] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(null)
   const [scheduleGames, setScheduleGames] = useState(null)
-  const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false)
 
   useEffect(() => {
     const getCookie = (name) => {
@@ -56,10 +55,8 @@ export default function HomePage() {
         setAnnouncements(data.announcements || []);
         setScheduleDate(data.scheduleDate || null);
         setScheduleGames(data.scheduleGames || []);
-        setApiIntegrationBeta(Boolean(data.apiIntegrationBeta));
       } catch (error) {
         await loadLegacyHomeData();
-        setApiIntegrationBeta(false);
       } finally {
         setLoading(false);
       }
@@ -83,11 +80,6 @@ export default function HomePage() {
                 <span className="w-1.5 h-6 bg-purple-400 rounded-full"></span>
                 My Leagues
               </h2>
-              {apiIntegrationBeta && (
-                <span className="inline-flex items-center px-2 py-1 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] sm:text-xs font-extrabold tracking-wider uppercase">
-                  API整合 BETA
-                </span>
-              )}
               <div className="flex items-center gap-2">
                 {new Date() < new Date('2026-04-16') ? (
                   <>

@@ -77,7 +77,6 @@ export default function RosterPage() {
     const [isAutoStarting, setIsAutoStarting] = useState(false);
     const [activeTradePlayerIds, setActiveTradePlayerIds] = useState(new Set());
     const [leagueStatus, setLeagueStatus] = useState('unknown');
-    const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false);
     const [bootstrapReady, setBootstrapReady] = useState(false);
 
     // Watch State
@@ -308,7 +307,6 @@ export default function RosterPage() {
                 const settings = payload.settings || {};
                 const initialSelectedDate = payload.initialSelectedDate || null;
 
-                setApiIntegrationBeta(Boolean(payload.apiIntegrationBeta));
                 setDate(initialSelectedDate || getTodayTW());
 
                 if (overview.schedule) {
@@ -426,7 +424,6 @@ export default function RosterPage() {
                     skipInitialPendingTradeCountFetchRef.current = true;
                 }
             } catch (err) {
-                setApiIntegrationBeta(false);
                 console.error('Failed to fetch roster bootstrap:', err);
             } finally {
                 setBootstrapReady(true);
@@ -1628,11 +1625,6 @@ export default function RosterPage() {
                         <h1 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
                             My Roster
                         </h1>
-                        {apiIntegrationBeta && (
-                            <span className="px-2 py-0.5 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
-                                API整合 BETA
-                            </span>
-                        )}
                     </div>
                     <div className="flex flex-col items-start sm:items-end gap-2 sm:gap-3">
                         <div className="flex flex-wrap items-center gap-2 sm:gap-4">

@@ -262,7 +262,6 @@ export default function LeaguePage() {
   const [draftResetSaving, setDraftResetSaving] = useState(false);
   const [draftResetSuccess, setDraftResetSuccess] = useState(false);
   const [showFinalizeReminder, setShowFinalizeReminder] = useState(false);
-  const [apiIntegrationBeta, setApiIntegrationBeta] = useState(false);
   const [bootstrapHasStandings, setBootstrapHasStandings] = useState(false);
   const [bootstrapHasTransactions, setBootstrapHasTransactions] = useState(false);
   const [bootstrapHasWatched, setBootstrapHasWatched] = useState(false);
@@ -453,7 +452,6 @@ export default function LeaguePage() {
 
       try {
         const result = await getLeagueOverview(leagueId);
-        setApiIntegrationBeta(Boolean(result.apiIntegrationBeta));
         setIsAdmin(Boolean(result.user?.is_admin ?? result.user?.isAdmin ?? false));
 
         if (result.success) {
@@ -560,7 +558,6 @@ export default function LeaguePage() {
         }
       } catch (err) {
         console.error('Unexpected error:', err);
-        setApiIntegrationBeta(false);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -964,11 +961,6 @@ export default function LeaguePage() {
                           leagueStatus === 'finished' ? 'Finished' :
                             leagueStatus?.toUpperCase() || 'UNKNOWN'}
               </span>
-              {apiIntegrationBeta && (
-                <span className="px-2 py-0.5 rounded-md border border-amber-400/50 bg-amber-500/15 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
-                  API整合 BETA
-                </span>
-              )}
             </div>
           </div>
 
