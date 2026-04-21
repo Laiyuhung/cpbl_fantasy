@@ -256,11 +256,15 @@ function formatStats(stats) {
     const formatted = { ...stats };
     metadataFields.forEach(field => delete formatted[field]);
 
-    // K/BB: BB=0 且 K>0 時以 null 表示無限大，交由前端顯示 INF
+    // K/BB: BB=0 且 K>0 時以 null 表示無限大，0/0 時返回 0.00
     const pitchingK = Number(formatted.p_k);
     const pitchingBB = Number(formatted.p_bb);
-    if (Number.isFinite(pitchingK) && Number.isFinite(pitchingBB) && pitchingBB === 0 && pitchingK > 0) {
-        formatted['p_k/bb'] = null;
+    if (Number.isFinite(pitchingBB) && pitchingBB === 0) {
+        if (Number.isFinite(pitchingK) && pitchingK > 0) {
+            formatted['p_k/bb'] = null;  // K/0 = INF
+        } else if (Number.isFinite(pitchingK) && pitchingK === 0) {
+            formatted['p_k/bb'] = 0.00;  // 0/0 = 0.00
+        }
     }
 
     // 3位小數: AVG, OBP, SLG, OPS, WIN%, OBPA
