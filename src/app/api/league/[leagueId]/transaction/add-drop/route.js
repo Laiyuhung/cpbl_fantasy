@@ -20,13 +20,14 @@ export async function POST(request, { params }) {
         // 1. Fetch Settings
         const { data: settings } = await supabase
             .from('league_settings')
-            .select('roster_positions, foreigner_on_team_limit, foreigner_active_limit, waiver_players_unfreeze_time, max_acquisitions_per_week')
+            .select('roster_positions, foreigner_on_team_limit, foreigner_active_limit, waiver_players_unfreeze_time, max_acquisitions_per_week, allow_injured_to_injury_slot')
             .eq('league_id', leagueId)
             .single();
 
         const rosterConfig = settings?.roster_positions || {};
         const minorKey = Object.keys(rosterConfig).find(k => k.toLowerCase() === 'minor') || 'Minor';
         const naLimit = rosterConfig[minorKey] || 0;
+        const allowInjuredToInjurySlot = (settings?.allow_injured_to_injury_slot || '').toLowerCase() === 'yes';
 
         let waiverDays = 2; // Default
         if (settings?.waiver_players_unfreeze_time) {
@@ -360,15 +361,20 @@ export async function POST(request, { params }) {
         }
 
         // Determine target Slot (BN or NA)
-        let targetSlot = 'BN'; // Default
+        let targetSlot = 'BN';
+        const requestedSlotUpper = String(requestedSlot || '').toUpperCase();
+        const currentNaCount = targetRosterSnapshot.filter(p => (p.position || '').toUpperCase() === 'NA').length;
+        const canUseNaSlot = allowInjuredToInjurySlot && isNaEligible && naLimit > 0;
+        const hasNaSpace = currentNaCount < naLimit;
 
-        if (requestedSlot && ['NA', 'BN'].includes(requestedSlot)) {
-            targetSlot = requestedSlot;
-        } else if (isNaEligible) {
-            const currentNaCount = targetRosterSnapshot.filter(p => (p.position || '').toUpperCase() === 'NA').length;
-            if (currentNaCount < naLimit) {
+        if (requestedSlotUpper === 'NA') {
+            if (canUseNaSlot && hasNaSpace) {
                 targetSlot = 'NA';
             }
+        } else if (requestedSlotUpper === 'BN') {
+            targetSlot = 'BN';
+        } else if (canUseNaSlot && hasNaSpace) {
+            targetSlot = 'NA';
         }
 
         // Apply new target slot to snapshot virtually

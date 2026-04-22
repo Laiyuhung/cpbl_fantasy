@@ -20,9 +20,11 @@ export async function POST(req, { params }) {
     // 1. Fetch Settings
     const { data: settings } = await supabase
       .from('league_settings')
-      .select('roster_positions, foreigner_on_team_limit, foreigner_active_limit, max_acquisitions_per_week')
+      .select('roster_positions, foreigner_on_team_limit, foreigner_active_limit, max_acquisitions_per_week, allow_injured_to_injury_slot')
       .eq('league_id', leagueId)
       .single();
+
+    const allowInjuredToInjurySlot = (settings?.allow_injured_to_injury_slot || '').toLowerCase() === 'yes';
 
     const limitSetting = settings?.max_acquisitions_per_week;
     let maxAcquisitions = Infinity;
@@ -143,8 +145,17 @@ export async function POST(req, { params }) {
       .eq('player_id', player_id)
       .single();
 
+    const { data: targetPlayerStatus } = await supabase
+      .from('real_life_player_status')
+      .select('status')
+      .eq('player_id', player_id)
+      .single();
+
+    const isNaEligible = (targetPlayerStatus?.status || 'Active').toUpperCase() !== 'MAJOR';
+
     // 假設加入這名球員，優先使用前端指定的目標 slot；未指定時才預設 BN
-    const projectedPosition = (position || 'BN').toUpperCase();
+    const requestedPosition = (position || 'BN').toUpperCase();
+    const projectedPosition = (requestedPosition === 'NA' && allowInjuredToInjurySlot && isNaEligible) ? 'NA' : 'BN';
     const projectedRoster = [
       ...targetRosterSnapshot,
       { player_id: player_id, position: projectedPosition, player: { identity: targetPlayerInfo?.identity } }
@@ -296,8 +307,11 @@ export async function POST(req, { params }) {
 
         // Check if frontend provided a position (e.g. 'NA')
         // Only accept Valid positions if needed, or trust frontend?
-        if (position && ['NA', 'BN'].includes(position)) {
-          targetPos = position;
+        if (requestedPosition === 'NA' && allowInjuredToInjurySlot && isNaEligible) {
+          targetPos = 'NA';
+          console.log(`[AddPlayer] Using requested position: ${targetPos}`);
+        } else if (requestedPosition === 'BN') {
+          targetPos = 'BN';
           console.log(`[AddPlayer] Using requested position: ${targetPos}`);
         } else {
           // Auto-calculate logic (Fallback)
