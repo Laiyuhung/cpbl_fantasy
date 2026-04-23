@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import LegendModal from '../../../../components/LegendModal';
 import PlayerDetailModal from '../../../../components/PlayerDetailModal';
 import { getPlayersBootstrap } from '@/lib/playersBootstrapClient';
+import { formatStatDisplayValue, extractStatAbbr } from '@/lib/statDisplayFormat';
 
 function getTodayTW() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -564,12 +565,14 @@ export default function PlayersPage() {
   const formatStatValue = (value, statKey) => {
     if (value === null || value === undefined) return '-';
 
-    const statAbbrMatches = String(statKey || '').match(/\(([^)]+)\)/g);
-    const statAbbr = statAbbrMatches
-      ? statAbbrMatches[statAbbrMatches.length - 1].replace(/[()]/g, '').toLowerCase()
-      : String(statKey || '').toLowerCase();
+    const statAbbr = extractStatAbbr(statKey);
+    const formatted = formatStatDisplayValue(value, statKey);
 
-    if (statAbbr === 'fp') {
+    if (formatted !== value) {
+      return formatted;
+    }
+
+    if (statAbbr === 'FP') {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
     }
@@ -602,17 +605,24 @@ export default function PlayersPage() {
   };
 
   const getStatAbbr = (cat) => {
-    const matches = cat.match(/\(([^)]+)\)/g);
-    return matches ? matches[matches.length - 1].replace(/[()]/g, '') : cat;
+    return extractStatAbbr(cat);
   };
 
   const getPlayerStatRaw = (playerId, statKey) => {
-    const val = getPlayerStat(playerId, statKey);
-    // If val is a React element (gray 0), extract clean number
-    if (typeof val === 'object' && val?.props?.children) {
-      return 0; // It was a gray 0
+    const stats = playerStats[playerId];
+    if (!stats) return -999;
+
+    let fieldName = statKey;
+    const matches = String(statKey || '').match(/\(([^)]+)\)/g);
+    if (matches) {
+      fieldName = matches[matches.length - 1].replace(/[()]/g, '');
     }
-    return val === '-' ? -999 : Number(val) || 0;
+
+    const rawValue = stats[String(fieldName).toLowerCase()];
+    if (rawValue === null || rawValue === undefined || rawValue === '') return -999;
+
+    const parsed = Number(rawValue);
+    return Number.isFinite(parsed) ? parsed : 0;
   };
 
   // 根據 roster_positions 過濾守備位置

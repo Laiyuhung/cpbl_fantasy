@@ -8,6 +8,7 @@ import MyTradesModal from '../../../../components/MyTradesModal';
 import WaiverModal from '../../../../components/WaiverModal';
 import PlayerDetailModal from '../../../../components/PlayerDetailModal';
 import { getRosterBootstrap } from '@/lib/rosterBootstrapClient';
+import { formatStatDisplayValue } from '@/lib/statDisplayFormat';
 
 function getTodayTW() {
     const parts = new Intl.DateTimeFormat('en-US', {
@@ -769,15 +770,13 @@ export default function RosterPage() {
         if (matches) fieldName = matches[matches.length - 1].replace(/[()]/g, '');
         const fieldKey = fieldName.toLowerCase();
         const value = stats[fieldKey];
-        if (fieldKey === 'fp' && value !== undefined && value !== null) {
-            const parsed = Number(value);
-            return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
-        }
         return value !== undefined && value !== null ? value : '-';
     };
 
-    const formatStat = (value) => {
+    const formatStat = (value, statKey) => {
         if (value === '-' || value === null || value === undefined) return '-';
+        const formatted = formatStatDisplayValue(value, statKey);
+        if (formatted !== value) return formatted;
         if (Number(value) === 0) return <span className="text-slate-500 font-bold">0</span>;
         return value;
     };
@@ -1345,6 +1344,9 @@ export default function RosterPage() {
         if (value === 'INF') return 'INF';
         if (abbr === 'IP') return formatOutsToIp(value);
         if (abbr === 'FP') return Number(value || 0).toFixed(2);
+
+        const formatted = formatStatDisplayValue(value, abbr);
+        if (formatted !== value) return formatted;
 
         const threeDecimals = new Set(['AVG', 'OBP', 'SLG', 'OPS', 'OBPA', 'WIN%']);
         const twoDecimals = new Set(['ERA', 'WHIP', 'K/9', 'BB/9', 'K/BB', 'H/9']);
@@ -2109,7 +2111,7 @@ export default function RosterPage() {
                                                 const isForced = !batterStatCategories.includes(stat);
                                                 return (
                                                     <td key={stat} className={`px-4 py-4 text-center font-mono hidden sm:table-cell ${isFp ? 'text-amber-300 font-black' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                                                        {formatStat(getPlayerStat(player.player_id, stat))}
+                                                        {formatStat(getPlayerStat(player.player_id, stat), parseStatName(stat))}
                                                     </td>
                                                 );
                                             })}
@@ -2122,7 +2124,7 @@ export default function RosterPage() {
                                                     const isForced = !batterStatCategories.includes(stat);
                                                     return (
                                                         <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
-                                                            <span className={`font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat))}</span>
+                                                            <span className={`font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat), parseStatName(stat))}</span>
                                                         </td>
                                                     );
                                                 })}
@@ -2340,7 +2342,7 @@ export default function RosterPage() {
                                                 const isForced = !pitcherStatCategories.includes(stat);
                                                 return (
                                                     <td key={stat} className={`px-4 py-4 text-center font-mono hidden sm:table-cell ${isFp ? 'text-amber-300 font-black' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                                                        {formatStat(getPlayerStat(player.player_id, stat))}
+                                                        {formatStat(getPlayerStat(player.player_id, stat), parseStatName(stat))}
                                                     </td>
                                                 );
                                             })}
@@ -2353,7 +2355,7 @@ export default function RosterPage() {
                                                     const isForced = !pitcherStatCategories.includes(stat);
                                                     return (
                                                         <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
-                                                            <span className={`font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat))}</span>
+                                                            <span className={`font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat), parseStatName(stat))}</span>
                                                         </td>
                                                     );
                                                 })}

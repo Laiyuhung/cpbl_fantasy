@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatStatDisplayValue } from '@/lib/statDisplayFormat';
 
 export default function MatchupsPage() {
     const params = useParams();
@@ -149,8 +150,8 @@ export default function MatchupsPage() {
             return '0';
         }
 
-        // 直接返回後端提供的值（包括 "0.000" 這種字串）
-        return val;
+        const formatted = formatStatDisplayValue(val, cat);
+        return formatted !== val ? formatted : val;
     };
 
     const getAbbr = (cat) => {
@@ -207,13 +208,6 @@ export default function MatchupsPage() {
             return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
         }
         const val = key === 'out' ? (stat.outs ?? stat.out) : stat[key];
-        // Format rate stats
-        if (['avg', 'obp', 'slg', 'ops'].includes(key)) {
-            return typeof val === 'number' ? val.toFixed(3) : (val ?? '.000');
-        }
-        if (['era', 'whip'].includes(key)) {
-            return val ?? '0.00';
-        }
         if (key === 'ip') {
             return stat.ip_display ?? '0.0';
         }
@@ -225,7 +219,13 @@ export default function MatchupsPage() {
             }
             return val === null || val === undefined ? 'INF' : val;
         }
-        return val ?? 0;
+
+        if (val === null || val === undefined) {
+            return 0;
+        }
+
+        const formatted = formatStatDisplayValue(val, abbr);
+        return formatted !== val ? formatted : val;
     };
 
     // Build batter columns: AB + league categories

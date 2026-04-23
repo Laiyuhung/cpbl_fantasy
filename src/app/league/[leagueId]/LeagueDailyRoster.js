@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import PlayerDetailModal from '../../../components/PlayerDetailModal';
 import { getLeagueOverview } from '@/lib/leagueOverviewClient';
+import { formatStatDisplayValue } from '@/lib/statDisplayFormat';
 
 function toAbbr(team) {
     switch (team) {
@@ -479,10 +480,8 @@ export default function LeagueDailyRoster({
         const key = parseStatKey(statKey).toLowerCase();
         const val = row[key];
         if (val === undefined || val === null) return '-';
-        if (key === 'fp') {
-            const parsed = Number(val);
-            return Number.isFinite(parsed) ? parsed.toFixed(2) : '-';
-        }
+        const formatted = formatStatDisplayValue(val, parseStatKey(statKey));
+        if (formatted !== val) return formatted;
         if (Number(val) === 0) return <span className="text-slate-600">0</span>;
         return val;
     };
@@ -519,6 +518,9 @@ export default function LeagueDailyRoster({
         if (value === 'INF') return 'INF';
         if (abbr === 'IP') return formatOutsToIp(value);
         if (abbr === 'FP') return Number(value || 0).toFixed(2);
+
+        const formatted = formatStatDisplayValue(value, abbr);
+        if (formatted !== value) return formatted;
 
         const threeDecimals = new Set(['AVG', 'OBP', 'SLG', 'OPS', 'OBPA', 'WIN%']);
         const twoDecimals = new Set(['ERA', 'WHIP', 'K/9', 'BB/9', 'K/BB', 'H/9']);
