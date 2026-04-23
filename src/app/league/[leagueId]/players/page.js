@@ -1293,6 +1293,7 @@ export default function PlayersPage() {
         const ownershipsRes = await fetch(`/api/league/${leagueId}/ownership`);
         const od = await ownershipsRes.json();
         if (od.success) setOwnerships(od.ownerships || []);
+        await fetchAcquisitions();
         setIsRefreshing(false);
       } else {
         setErrorMessage(data.error);
@@ -1400,6 +1401,7 @@ export default function PlayersPage() {
           if (ownershipsData.success) {
             setOwnerships(ownershipsData.ownerships || []);
           }
+          await fetchAcquisitions();
           setIsRefreshing(false);
         } else {
           setIsAdding(false);

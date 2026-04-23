@@ -2,7 +2,7 @@
   "functions": {
     "src/app/api/**/*.js": {
       "memory": 512,
-      "maxDuration": 10
+      "maxDuration": 20
     }
   }
 }
