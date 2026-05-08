@@ -216,7 +216,7 @@ export async function POST(req, { params }) {
       );
     }
 
-    if (existing) {
+    if (existing?.manager_id) {
       // 球員已被佔用，返回具體錯誤
       if (existing.manager_id === manager_id) {
         return NextResponse.json(
@@ -227,6 +227,44 @@ export async function POST(req, { params }) {
         return NextResponse.json(
           { success: false, error: 'This player has been taken by another team' },
           { status: 409 }
+        );
+      }
+    }
+
+    // 在真正寫入前再確認一次，避免前面檢查後被其他請求先撿走
+    const { data: latestOwnership, error: latestCheckError } = await supabase
+      .from('league_player_ownership')
+      .select('id, manager_id')
+      .eq('league_id', leagueId)
+      .eq('player_id', player_id)
+      .maybeSingle();
+
+    if (latestCheckError) {
+      console.error('Latest ownership check error:', latestCheckError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to verify player status', details: latestCheckError.message },
+        { status: 500 }
+      );
+    }
+
+    if (latestOwnership?.manager_id) {
+      return NextResponse.json(
+        { success: false, error: 'This player has been taken by another team' },
+        { status: 409 }
+      );
+    }
+
+    if (latestOwnership && !latestOwnership.manager_id) {
+      const { error: cleanupError } = await supabase
+        .from('league_player_ownership')
+        .delete()
+        .eq('id', latestOwnership.id);
+
+      if (cleanupError) {
+        console.error('Cleanup waiver ownership error:', cleanupError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to verify player status', details: cleanupError.message },
+          { status: 500 }
         );
       }
     }

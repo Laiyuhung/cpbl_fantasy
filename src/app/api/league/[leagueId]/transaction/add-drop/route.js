@@ -429,11 +429,36 @@ export async function POST(request, { params }) {
         // OR delete old waiver row and insert new?
         // Standard logic: Delete any existing ownership for simple processing, then insert new.
         // Or check unique constraint.
-        const { error: deleteOldOwn } = await supabase
+        const { data: latestAddOwnership, error: latestAddCheckError } = await supabase
             .from('league_player_ownership')
-            .delete()
+            .select('id, manager_id')
             .eq('league_id', leagueId)
-            .eq('player_id', addPlayerId);
+            .eq('player_id', addPlayerId)
+            .maybeSingle();
+
+        if (latestAddCheckError) {
+            throw latestAddCheckError;
+        }
+
+        if (latestAddOwnership?.manager_id) {
+            if (latestAddOwnership.manager_id === managerId) {
+                return NextResponse.json({ success: false, error: 'You already own this player' }, { status: 409 });
+            }
+
+            return NextResponse.json({ success: false, error: 'This player has been taken by another team' }, { status: 409 });
+        }
+
+        if (latestAddOwnership && !latestAddOwnership.manager_id) {
+            const { error: cleanupError } = await supabase
+                .from('league_player_ownership')
+                .delete()
+                .eq('id', latestAddOwnership.id);
+
+            if (cleanupError) {
+                throw cleanupError;
+            }
+        }
+
         // This clears any waiver status or previous ownership artifacts
 
         const { error: addOwnError } = await supabase
