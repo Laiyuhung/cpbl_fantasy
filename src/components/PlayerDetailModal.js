@@ -782,7 +782,7 @@ export default function PlayerDetailModal({
                                                                     const val = windowStats ? windowStats[abbr.toLowerCase()] : null;
                                                                     const displayVal = abbr === 'FP'
                                                                         ? formatFpValue(val)
-                                                                        : (val === null || val === undefined ? '-' : val);
+                                                                        : formatStatDisplayValue(val, abbr);
                                                                     const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
                                                                     const isRefStat = abbr === 'AB' || abbr === 'IP';
                                                                     const isFp = abbr === 'FP';

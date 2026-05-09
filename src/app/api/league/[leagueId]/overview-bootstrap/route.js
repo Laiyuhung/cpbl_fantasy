@@ -39,7 +39,7 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [managerRes, adminRes, matchupsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes] = await Promise.all([
+    const [managerRes, adminRes, matchupsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, leagueRes, testLeagueRes, leagueStatusRes] = await Promise.all([
       supabase
         .from('managers')
         .select('name, email_verified')
@@ -103,6 +103,15 @@ export async function GET(request, { params }) {
         .from('league_player_ownership')
         .select('*')
         .eq('league_id', leagueId),
+      supabase
+        .from('league_settings')
+        .select('league_id'),
+      supabase
+        .from('test_league')
+        .select('league_id'),
+      supabase
+        .from('league_statuses')
+        .select('league_id, status'),
     ]);
 
     if (managerRes.error) {
@@ -152,6 +161,32 @@ export async function GET(request, { params }) {
 
     if (ownershipRes.error) {
       return NextResponse.json({ success: false, error: ownershipRes.error.message }, { status: 500 });
+    }
+
+    // Calculate roster_percentage (exclude test_league and pre-draft/drafting now)
+    const testLeagueIds = new Set((testLeagueRes.data || []).map(t => t.league_id));
+    const activeLeagueIds = new Set(
+      (leagueStatusRes.data || [])
+        .filter(s => s.status !== 'pre-draft' && s.status !== 'drafting now')
+        .map(s => s.league_id)
+    );
+    const totalLeagues = (leagueRes.data || []).filter(
+      l => !testLeagueIds.has(l.league_id) && activeLeagueIds.has(l.league_id)
+    ).length;
+
+    const rosterPercentageMap = {};
+    if (ownershipRes.data && totalLeagues > 0) {
+      const playerLeagueMap = {};
+      ownershipRes.data.forEach(r => {
+        if (r.status?.toLowerCase() !== 'on team') return; // Only count "on team" status
+        if (testLeagueIds.has(r.league_id)) return; // 排除測試聯盟
+        if (!activeLeagueIds.has(r.league_id)) return; // 排除 pre-draft / drafting now
+        if (!playerLeagueMap[r.player_id]) playerLeagueMap[r.player_id] = new Set();
+        playerLeagueMap[r.player_id].add(r.league_id);
+      });
+      Object.entries(playerLeagueMap).forEach(([playerId, leagues]) => {
+        rosterPercentageMap[playerId] = Math.round((leagues.size / totalLeagues) * 100);
+      });
     }
 
     const standingsWithWaiver = (standingsRes.data || []).map((team) => {
@@ -215,6 +250,7 @@ export async function GET(request, { params }) {
           playerMap[p.player_id] = {
             ...p,
             position_list: posMap[p.player_id],
+            roster_percentage: rosterPercentageMap[p.player_id] ?? 0,
           };
         });
       }
@@ -271,6 +307,7 @@ export async function GET(request, { params }) {
       ownerships: ownershipRes.data || [],
       startingStatus,
       liveStandings: liveStandingsWithWaiver,
+      rosterPercentageMap,
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;
