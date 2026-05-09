@@ -115,23 +115,24 @@ export async function POST(request, { params }) {
 
         const tradeGroupId = crypto.randomUUID();
 
-        // 2. Process DROP first (to free up space/limits)
-        if (dropPlayerId) {
-            // --- DROP RESTRICTION CHECK ---
-            // 1. Get Taiwan Time for proper comparison
-            const dropTime = new Date();
-            const taiwanDateStr = getTaiwanDateString(dropTime); // YYYY-MM-DD format
+        // 2. Preflight DROP only; actual write happens after ADD succeeds.
+        let plannedDrop = null;
+        let dropPlayerInfo = null;
+        let dropOwnership = null;
 
-            // 2. Fetch Dropped Player Team
-            const { data: dropPlayerInfo, error: dpError } = await supabase
+        if (dropPlayerId) {
+            const dropTime = new Date();
+            const taiwanDateStr = getTaiwanDateString(dropTime);
+
+            const { data: dropPlayerData, error: dpError } = await supabase
                 .from('player_list')
                 .select('team, name')
                 .eq('player_id', dropPlayerId)
                 .single();
 
             if (dpError) throw dpError;
+            dropPlayerInfo = dropPlayerData;
 
-            // 3. Check Roster Position for Today
             const { data: rosterPos, error: rpError } = await supabase
                 .from('league_roster_positions')
                 .select('position')
@@ -141,10 +142,8 @@ export async function POST(request, { params }) {
                 .eq('game_date', taiwanDateStr)
                 .single();
 
-            // Only proceed with game check if player is in a starting position (Not BN, Not NA)
             if (rosterPos && !['BN', 'NA'].includes(rosterPos.position)) {
-                // 4. Check Schedule for Team on Today
-                const { data: teamGame, error: gameError } = await supabase
+                const { data: teamGame } = await supabase
                     .from('cpbl_schedule_2026')
                     .select('time, is_postponed')
                     .eq('date', taiwanDateStr)
@@ -153,13 +152,10 @@ export async function POST(request, { params }) {
                     .single();
 
                 if (teamGame && teamGame.time && !teamGame.is_postponed) {
-                    // teamGame.time is stored as timestamptz (e.g., '2026-03-09 10:35:00+00')
-                    // Compare directly using UTC
                     const gameTimeUTC = new Date(teamGame.time);
                     const nowUTC = new Date();
 
-                    const isGameStarted = nowUTC >= gameTimeUTC;
-                    if (isGameStarted) {
+                    if (nowUTC >= gameTimeUTC) {
                         return NextResponse.json({
                             success: false,
                             error: `Cannot drop ${dropPlayerInfo.name} - Game has started and player is in active lineup (${rosterPos.position}).`
@@ -167,10 +163,8 @@ export async function POST(request, { params }) {
                     }
                 }
             }
-            // -----------------------------
 
-            // Check Drop Player Ownership Info for acquired_at
-            const { data: dropOwnership, error: fetchDropError } = await supabase
+            const { data: fetchedDropOwnership, error: fetchDropError } = await supabase
                 .from('league_player_ownership')
                 .select('*')
                 .eq('league_id', leagueId)
@@ -178,125 +172,30 @@ export async function POST(request, { params }) {
                 .eq('player_id', dropPlayerId)
                 .single();
 
-            if (fetchDropError || !dropOwnership) {
-                // Might already be dropped or invalid? just ignore or error?
-                // Safer: Skip drop logic if not owned, but technically validation should catch this.
-                // We will throw to be safe
+            if (fetchDropError || !fetchedDropOwnership) {
                 throw new Error('Drop player not owned by manager.');
             }
 
-            // Date Check (Taiwan Time)
+            dropOwnership = fetchedDropOwnership;
+
             const now = new Date();
             const todayIso = getTaiwanDateString(now);
-
-            const acquiredDate = new Date(dropOwnership.acquired_at);
-            const acquiredIso = getTaiwanDateString(acquiredDate);
-
+            const acquiredIso = getTaiwanDateString(new Date(dropOwnership.acquired_at));
             const isSameDay = todayIso === acquiredIso;
 
-
-
             if (isSameDay || waiverDays === 0) {
-                // Same Day OR Waiver Time 0 -> Delete Ownership (Treat as FA Drop / Undo)
-                const { error: ownError } = await supabase
-                    .from('league_player_ownership')
-                    .delete()
-                    .eq('league_id', leagueId)
-                    .eq('manager_id', managerId)
-                    .eq('player_id', dropPlayerId);
-
-                if (ownError) throw ownError;
+                plannedDrop = {
+                    mode: 'delete',
+                    todayIso
+                };
             } else {
-                // Different Day -> Move to Waiver
-                // Calculate Off Waiver Date
-                // Logic: "X days" means X full days.
-                // Example: 5 days. Drop 2/13. Full days: 14, 15, 16, 17, 18. Available 2/19.
-                // Formula: Today + Days + 1. (If 0 days, immediate).
                 const addDays = waiverDays > 0 ? waiverDays + 1 : 0;
-
-                const offWaiverDate = addTaiwanDays(now, addDays);
-
-                const { error: waiverError } = await supabase
-                    .from('league_player_ownership')
-                    .update({
-                        status: 'Waiver',
-                        off_waiver_date: offWaiverDate,
-                        manager_id: null // Ownership cleared from manager? 
-                        // Wait, usually Waiver means "Dropped by X, available on Waiver".
-                        // ownership table usually tracks "who owns them". If on Waiver, manager_id should be null?
-                        // OR we map waiver status in a different way?
-                        // In standard Yahoo: Dropped player goes to Waiver list, no one owns them.
-                        // So manager_id = null is correct.
-                        // BUT `league_player_ownership` link player to manager.
-                        // If manager_id is null, how do we track 'off_waiver_date'?
-                        // Maybe update the row to manager_id=null? Or delete and insert a 'system' ownership?
-                        // Usually we DELETE the ownership row for the user, and UPDATE the 'player_list' or a separate 'waivers' table?
-                        // Let's assume standard logic provided by user: "status改Waiver ... 把off_waiver填入".
-                        // If I keep manager_id, it implies they still own them? No.
-                        // The user said: "delete that row (FA)... otherwise modify status to Waiver".
-                        // If I modify status to Waiver but keep manager_id, they still appear on roster?
-                        // No, Roster Position is deleted. 
-                        // But `ownerships` query usually checks `manager_id`.
-                        // If I leave manager_id, they will show up as "Waiver" on MY team?
-                        // User said: "status改Waiver... 並且... 把league_player_ownership.off_waiver日期...".
-                        // This implies keeping the row but changing status?
-                        // BUT `league_ownerships` table usually has unique constraints or implies current ownership.
-                        // If I drop them, I shouldn't own them.
-                        // Maybe I should set manager_id to NULL?
-                        // But if I set manager_id to NULL, how do I find this row later? By player_id?
-                        // If multiple people drop the same player (impossible sequentially)?
-                        // A player can only be owned by one person.
-                        // So setting manager_id = NULL (or a specific system ID) + status = 'Waiver' makes sense.
-                        // Let's assume setting `manager_id = NULL` is correct for "On Waiver (Unowned)".
-                    })
-                    .eq('league_id', leagueId)
-                    .eq('manager_id', managerId)
-                    .eq('player_id', dropPlayerId);
-
-                // Wait, if I set manager_id to NULL, I must ensure current query handles it.
-                // Actually, if I update, I must strictly match the row.
-                // Let's TRY updating status to 'Waiver' and SET manager_id to NULL to detach from user.
-
-                // Update: The requirement is "status改Waiver...". 
-                // If I keep manager_id, it confuses "My Players".
-                // I will set manager_id to NULL to indicate "No Team (Waiver)".
-                // Note: The delete logic above deletes it entirely.
-                // The update logic keeps it but detaches from manager.
-                const { error: updateError } = await supabase
-                    .from('league_player_ownership')
-                    .update({
-                        status: 'Waiver',
-                        off_waiver: offWaiverDate,
-                        manager_id: null // DETACH
-                    })
-                    .eq('league_id', leagueId)
-                    //.eq('manager_id', managerId) // If I detach, I match by PK or IDs
-                    .eq('player_id', dropPlayerId); // Player is unique in league ownership usually?
-                // Verify: league_player_ownership PK is usually (league_id, player_id) or similar.
-
-                if (updateError) throw updateError;
+                plannedDrop = {
+                    mode: 'waiver',
+                    todayIso,
+                    offWaiverDate: addTaiwanDays(now, addDays)
+                };
             }
-
-            // Delete roster rows from Taiwan today onward (keep historical days intact)
-            const dropTodayTw = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
-            const { error: posError } = await supabase
-                .from('league_roster_positions')
-                .delete()
-                .eq('league_id', leagueId)
-                .eq('manager_id', managerId)
-                .eq('player_id', dropPlayerId)
-                .gte('game_date', dropTodayTw);
-
-            if (posError) throw posError;
-
-            // Log Drop Transaction
-            await supabase.from('transactions_2026').insert({
-                league_id: leagueId,
-                player_id: dropPlayerId,
-                manager_id: managerId,
-                transaction_type: 'DROP',
-                trade_group_id: tradeGroupId
-            });
         }
 
         // 3. Process ADD
@@ -358,6 +257,10 @@ export async function POST(request, { params }) {
                     .eq('game_date', futureDates[0].game_date);
                 targetRosterSnapshot = nextRosterData || [];
             }
+        }
+
+        if (plannedDrop) {
+            targetRosterSnapshot = targetRosterSnapshot.filter((player) => player.player_id !== dropPlayerId);
         }
 
         // Determine target Slot (BN or NA)
@@ -461,6 +364,8 @@ export async function POST(request, { params }) {
 
         // This clears any waiver status or previous ownership artifacts
 
+        let addOwnershipInserted = false;
+
         const { error: addOwnError } = await supabase
             .from('league_player_ownership')
             .insert({
@@ -472,6 +377,7 @@ export async function POST(request, { params }) {
             });
 
         if (addOwnError) throw addOwnError;
+        addOwnershipInserted = true;
 
         // Insert Roster Position (Full Season Generation)
         // Logic adapted from ownership/route.js to ensure consistency (game_date range)
@@ -535,14 +441,92 @@ export async function POST(request, { params }) {
             if (addPosError) throw addPosError;
         }
 
-        // Log Add Transaction
-        await supabase.from('transactions_2026').insert({
+        const rollbackAddedPlayer = async () => {
+            if (!addOwnershipInserted) {
+                return;
+            }
+
+            await supabase
+                .from('league_player_ownership')
+                .delete()
+                .eq('league_id', leagueId)
+                .eq('player_id', addPlayerId)
+                .eq('manager_id', managerId);
+
+            await supabase
+                .from('league_roster_positions')
+                .delete()
+                .eq('league_id', leagueId)
+                .eq('manager_id', managerId)
+                .eq('player_id', addPlayerId);
+        };
+
+        try {
+            if (plannedDrop) {
+                if (plannedDrop.mode === 'delete') {
+                    const { error: dropOwnershipError } = await supabase
+                        .from('league_player_ownership')
+                        .delete()
+                        .eq('league_id', leagueId)
+                        .eq('manager_id', managerId)
+                        .eq('player_id', dropPlayerId);
+
+                    if (dropOwnershipError) throw dropOwnershipError;
+                } else {
+                    const { error: dropOwnershipError } = await supabase
+                        .from('league_player_ownership')
+                        .update({
+                            status: 'Waiver',
+                            off_waiver: plannedDrop.offWaiverDate,
+                            manager_id: null
+                        })
+                        .eq('league_id', leagueId)
+                        .eq('player_id', dropPlayerId);
+
+                    if (dropOwnershipError) throw dropOwnershipError;
+                }
+
+                const { error: posError } = await supabase
+                    .from('league_roster_positions')
+                    .delete()
+                    .eq('league_id', leagueId)
+                    .eq('manager_id', managerId)
+                    .eq('player_id', dropPlayerId)
+                    .gte('game_date', plannedDrop.todayIso);
+
+                if (posError) throw posError;
+            }
+        } catch (dropError) {
+            await rollbackAddedPlayer();
+            throw dropError;
+        }
+
+        // Log transactions only after both writes succeed.
+        const { error: addTransError } = await supabase.from('transactions_2026').insert({
             league_id: leagueId,
             player_id: addPlayerId,
             manager_id: managerId,
             transaction_type: 'ADD',
             trade_group_id: tradeGroupId
         });
+
+        if (addTransError) {
+            console.error('Failed to log ADD transaction:', addTransError);
+        }
+
+        if (plannedDrop) {
+            const { error: dropTransError } = await supabase.from('transactions_2026').insert({
+                league_id: leagueId,
+                player_id: dropPlayerId,
+                manager_id: managerId,
+                transaction_type: 'DROP',
+                trade_group_id: tradeGroupId
+            });
+
+            if (dropTransError) {
+                console.error('Failed to log DROP transaction:', dropTransError);
+            }
+        }
 
         return NextResponse.json({ success: true, slot: targetSlot });
 
