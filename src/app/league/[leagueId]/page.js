@@ -1243,8 +1243,7 @@ export default function LeaguePage() {
                   title={liveMode ? 'Live standings from current matchup scores' : 'Finalized standings'}
                 >
                   <span className={`w-2 h-2 rounded-full ${liveMode ? 'bg-red-400 animate-pulse' : 'bg-slate-400'}`}></span>
-                  <span className="hidden sm:inline">LIVE</span>
-                  <span className="sm:hidden">●</span>
+                  <span>LIVE</span>
                 </button>
               </div>
               <button
