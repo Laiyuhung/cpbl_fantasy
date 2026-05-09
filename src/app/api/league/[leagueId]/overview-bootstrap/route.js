@@ -101,7 +101,8 @@ export async function GET(request, { params }) {
         .eq('date', todayDate),
       supabaseAdmin
         .from('league_player_ownership')
-        .select('*')
+        .select('player_id, league_id')
+        .ilike('status', 'on team')
         .eq('league_id', leagueId),
       supabase
         .from('league_settings')
@@ -178,7 +179,6 @@ export async function GET(request, { params }) {
     if (ownershipRes.data && totalLeagues > 0) {
       const playerLeagueMap = {};
       ownershipRes.data.forEach(r => {
-        if (r.status?.toLowerCase() !== 'on team') return; // Only count "on team" status
         if (testLeagueIds.has(r.league_id)) return; // 排除測試聯盟
         if (!activeLeagueIds.has(r.league_id)) return; // 排除 pre-draft / drafting now
         if (!playerLeagueMap[r.player_id]) playerLeagueMap[r.player_id] = new Set();
