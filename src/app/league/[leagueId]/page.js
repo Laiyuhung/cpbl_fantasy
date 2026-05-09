@@ -423,12 +423,14 @@ export default function LeaguePage() {
     };
   };
 
-  const leaderRecord = useMemo(() => {
-    if (!Array.isArray(standings) || standings.length === 0) return null;
+  const displayedStandings = liveMode ? liveStandings : standings;
 
-    const top = standings.find((s) => Number(s.rank) === 1) || standings[0];
+  const leaderRecord = useMemo(() => {
+    if (!Array.isArray(displayedStandings) || displayedStandings.length === 0) return null;
+
+    const top = displayedStandings.find((s) => Number(s.rank) === 1) || displayedStandings[0];
     return parseWinsLosses(top);
-  }, [standings]);
+  }, [displayedStandings]);
 
   const getGamesBehindValue = (team) => {
     if (!leaderRecord) return '-';
