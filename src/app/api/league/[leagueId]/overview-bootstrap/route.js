@@ -3,38 +3,12 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getLeagueOverviewData } from '@/lib/getLeagueOverviewData';
 import supabaseAdmin from '@/lib/supabaseAdmin';
+import { getCurrentWeekFromSchedule } from '@/lib/getCurrentWeekFromSchedule';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
-
-function getCurrentWeekFromSchedule(schedule) {
-  if (!Array.isArray(schedule) || schedule.length === 0) return 1;
-
-  const now = new Date();
-  const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-
-  const getDateInTaiwan = (dateStr) => {
-    const date = new Date(dateStr);
-    return new Date(date.getTime() + (8 * 60 * 60 * 1000));
-  };
-
-  const firstWeekStart = getDateInTaiwan(schedule[0].week_start);
-  const lastWeekEnd = getDateInTaiwan(schedule[schedule.length - 1].week_end);
-
-  if (taiwanTime < firstWeekStart) return 1;
-  if (taiwanTime > lastWeekEnd) return schedule[schedule.length - 1].week_number;
-
-  const current = schedule.find((w) => {
-    const weekStart = getDateInTaiwan(w.week_start);
-    const weekEnd = getDateInTaiwan(w.week_end);
-    weekEnd.setUTCHours(23, 59, 59, 999);
-    return taiwanTime >= weekStart && taiwanTime <= weekEnd;
-  });
-
-  return current?.week_number || 1;
-}
 
 function getTaiwanDateString(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -65,7 +39,7 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [managerRes, adminRes, matchupsRes, standingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes] = await Promise.all([
+    const [managerRes, adminRes, matchupsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes] = await Promise.all([
       supabase
         .from('managers')
         .select('name, email_verified')
@@ -83,6 +57,11 @@ export async function GET(request, { params }) {
         .eq('week_number', currentWeek),
       supabase
         .from('v_league_standings')
+        .select('*')
+        .eq('league_id', leagueId)
+        .order('rank', { ascending: true }),
+      supabaseAdmin
+        .from('v_live_league_standings')
         .select('*')
         .eq('league_id', leagueId)
         .order('rank', { ascending: true }),
@@ -142,6 +121,11 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: standingsRes.error.message }, { status: 500 });
     }
 
+    if (liveStandingsRes.error) {
+      console.warn('Warning: Failed to fetch live standings:', liveStandingsRes.error.message);
+      // Don't fail - live standings are optional
+    }
+
     if (transRes.error) {
       return NextResponse.json({ success: false, error: transRes.error.message }, { status: 500 });
     }
@@ -171,6 +155,14 @@ export async function GET(request, { params }) {
     }
 
     const standingsWithWaiver = (standingsRes.data || []).map((team) => {
+      const waiver = waiverPriorityRes.data?.find((w) => w.manager_id === team.manager_id);
+      return {
+        ...team,
+        waiver_rank: waiver ? waiver.rank : '-',
+      };
+    });
+
+    const liveStandingsWithWaiver = (liveStandingsRes.data || []).map((team) => {
       const waiver = waiverPriorityRes.data?.find((w) => w.manager_id === team.manager_id);
       return {
         ...team,
@@ -278,6 +270,7 @@ export async function GET(request, { params }) {
       watchedIds: (watchedRes.data || []).map((w) => w.player_id),
       ownerships: ownershipRes.data || [],
       startingStatus,
+      liveStandings: liveStandingsWithWaiver,
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;

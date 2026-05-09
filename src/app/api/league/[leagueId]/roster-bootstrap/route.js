@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getLeagueOverviewData } from '@/lib/getLeagueOverviewData';
 import supabaseAdmin from '@/lib/supabaseAdmin';
+import { getCurrentWeekFromSchedule } from '@/lib/getCurrentWeekFromSchedule';
 import {
   FANTASY_POINTS_SCORING_TYPE,
   buildCategoryWeights,
@@ -49,16 +50,6 @@ function getInitialDateFromSchedule(schedule) {
 
   const current = schedule.find((week) => todayStr >= week.week_start && todayStr <= week.week_end);
   return current?.week_start && current?.week_end ? todayStr : firstDate;
-}
-
-function getCurrentWeekFromSchedule(schedule, gameDate) {
-  if (!Array.isArray(schedule) || schedule.length === 0) return 1;
-
-  const target = gameDate || getTaiwanDateString();
-  const current = schedule.find((week) => target >= week.week_start && target <= week.week_end);
-  if (current) return current.week_number;
-  if (target < schedule[0].week_start) return 1;
-  return schedule[schedule.length - 1].week_number;
 }
 
 function buildPlayerStatMap(rows = [], type = 'batting', leagueSettings = null) {

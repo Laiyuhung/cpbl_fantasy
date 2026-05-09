@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { formatStatDisplayValue } from '@/lib/statDisplayFormat';
 
 const TIME_WINDOWS = [
     'Today',
@@ -353,7 +354,7 @@ export default function PlayerDetailModal({
                     const val = windowStats[abbr.toLowerCase()];
                     const displayVal = abbr === 'FP'
                         ? formatFpValue(val)
-                        : (val === null || val === undefined ? '-' : val);
+                        : formatStatDisplayValue(val, abbr);
                     const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
                     const isRefStat = abbr === 'AB' || abbr === 'IP';
                     const isFp = abbr === 'FP';
@@ -842,14 +843,9 @@ export default function PlayerDetailModal({
                                                             </td>
                                                             {abbreviations.map((abbr, i) => {
                                                                 const val = game[abbr];
-                                                                const isRateCol = ['AVG', 'OBP', 'SLG', 'ERA', 'WHIP'].includes(abbr);
                                                                 const displayVal = abbr === 'FP'
                                                                     ? formatFpValue(val)
-                                                                    : (val == null || val === '-'
-                                                                        ? '-'
-                                                                        : isRateCol
-                                                                            ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3)
-                                                                            : val);
+                                                                    : formatStatDisplayValue(val, abbr);
                                                                 const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
                                                                 const isRefStat = abbr === 'AB' || abbr === 'IP';
                                                                 const isFp = abbr === 'FP';
@@ -891,14 +887,9 @@ export default function PlayerDetailModal({
                                                             <div className="grid grid-flow-col auto-cols-[56px]">
                                                                 {abbreviations.map((abbr, i) => {
                                                                     const val = game[abbr];
-                                                                    const isRateCol = ['AVG', 'OBP', 'SLG', 'ERA', 'WHIP'].includes(abbr);
                                                                     const displayVal = abbr === 'FP'
                                                                         ? formatFpValue(val)
-                                                                        : (val == null || val === '-'
-                                                                            ? '-'
-                                                                            : isRateCol
-                                                                                ? parseFloat(val).toFixed(abbr === 'ERA' || abbr === 'WHIP' ? 2 : 3)
-                                                                                : val);
+                                                                        : formatStatDisplayValue(val, abbr);
                                                                     const isZeroOrDash = displayVal === '-' || displayVal === 0 || displayVal === '0';
                                                                     const isRefStat = abbr === 'AB' || abbr === 'IP';
                                                                     const isFp = abbr === 'FP';

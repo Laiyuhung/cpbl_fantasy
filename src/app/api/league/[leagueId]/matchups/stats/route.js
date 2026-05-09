@@ -1,32 +1,6 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabaseServer';
-
-function getCurrentWeekFromSchedule(schedule) {
-    if (!Array.isArray(schedule) || schedule.length === 0) return 1;
-
-    const now = new Date();
-    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-
-    const getDateInTaiwan = (dateStr) => {
-        const date = new Date(dateStr);
-        return new Date(date.getTime() + (8 * 60 * 60 * 1000));
-    };
-
-    const firstWeekStart = getDateInTaiwan(schedule[0].week_start);
-    const lastWeekEnd = getDateInTaiwan(schedule[schedule.length - 1].week_end);
-
-    if (taiwanTime < firstWeekStart) return 1;
-    if (taiwanTime > lastWeekEnd) return schedule[schedule.length - 1].week_number;
-
-    const current = schedule.find((w) => {
-        const weekStart = getDateInTaiwan(w.week_start);
-        const weekEnd = getDateInTaiwan(w.week_end);
-        weekEnd.setUTCHours(23, 59, 59, 999);
-        return taiwanTime >= weekStart && taiwanTime <= weekEnd;
-    });
-
-    return current?.week_number || 1;
-}
+import { getCurrentWeekFromSchedule } from '@/lib/getCurrentWeekFromSchedule';
 
 export async function GET(request, { params }) {
     const { leagueId } = params;

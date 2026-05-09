@@ -304,6 +304,9 @@ export default function LeaguePage() {
   const [matchupsLoading, setMatchupsLoading] = useState(true);
   const [standings, setStandings] = useState([]);
   const [standingsLoading, setStandingsLoading] = useState(true);
+  const [liveMode, setLiveMode] = useState(false);
+  const [liveStandings, setLiveStandings] = useState([]);
+  const [liveStandingsLoading, setLiveStandingsLoading] = useState(false);
   const [weeklyAddMap, setWeeklyAddMap] = useState({});
   const [transactions, setTransactions] = useState([]);
   const [waiverResults, setWaiverResults] = useState([]);
@@ -533,6 +536,11 @@ export default function LeaguePage() {
             setBootstrapHasStandings(true);
           }
 
+          // Initialize liveStandings from bootstrap
+          if (Array.isArray(result.liveStandings)) {
+            setLiveStandings(result.liveStandings);
+          }
+
           if (Array.isArray(result.transactions) || Array.isArray(result.waivers)) {
             setTransactions(result.transactions || []);
             setWaiverResults(result.waivers || []);
@@ -674,6 +682,17 @@ export default function LeaguePage() {
       fetchTransactions();
     }
   }, [leagueId, bootstrapHasStandings, bootstrapHasTransactions, bootstrapReady]);
+
+  // No separate fetch needed - liveStandings loaded from bootstrap
+  useEffect(() => {
+    if (!liveMode) {
+      setLiveStandingsLoading(false);
+      return;
+    }
+
+    // liveStandings already populated from bootstrap
+    setLiveStandingsLoading(false);
+  }, [liveMode]);
 
   const groupedTransactions = useMemo(() => {
     const groups = [];
@@ -1206,10 +1225,26 @@ export default function LeaguePage() {
           {/* STANDINGS Section */}
           <div className="mt-6 sm:mt-12">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h2 className="text-base sm:text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
-                <span className="w-1.5 sm:w-2 h-5 sm:h-6 bg-cyan-500 rounded-full"></span>
-                Standings
-              </h2>
+              <div className="flex items-center gap-2 sm:gap-4">
+                <h2 className="text-base sm:text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-1.5 sm:w-2 h-5 sm:h-6 bg-cyan-500 rounded-full"></span>
+                  Standings
+                </h2>
+                {/* LIVE Toggle Button */}
+                <button
+                  onClick={() => setLiveMode(!liveMode)}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                    liveMode
+                      ? 'bg-red-500/30 text-red-300 border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.3)]'
+                      : 'bg-slate-800/60 text-slate-400 border-white/10 hover:bg-slate-700/60'
+                  }`}
+                  title={liveMode ? 'Live standings from current matchup scores' : 'Finalized standings'}
+                >
+                  <span className={`w-2 h-2 rounded-full ${liveMode ? 'bg-red-400 animate-pulse' : 'bg-slate-400'}`}></span>
+                  <span className="hidden sm:inline">LIVE</span>
+                  <span className="sm:hidden">●</span>
+                </button>
+              </div>
               <button
                 onClick={() => setShowTieBreakRules(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all bg-slate-800/60 text-slate-400 border-white/10 hover:bg-purple-500/20 hover:text-purple-300 hover:border-purple-500/30"
@@ -1270,12 +1305,12 @@ export default function LeaguePage() {
               </div>
             )}
 
-            {standingsLoading ? (
+            {(liveMode ? liveStandingsLoading : standingsLoading) ? (
               <div className="w-full h-48 bg-white/5 rounded-3xl animate-pulse border border-white/5 flex flex-col items-center justify-center gap-4">
                 <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-purple-300 font-bold tracking-widest uppercase text-sm">Loading Standings...</span>
               </div>
-            ) : standings.length === 0 ? (
+            ) : (liveMode ? liveStandings : standings).length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
                 <div className="text-4xl mb-3">📊</div>
                 <h3 className="text-lg font-bold text-white mb-2">No Standings Available</h3>
@@ -1287,7 +1322,7 @@ export default function LeaguePage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-b border-white/10">
+                      <tr className={`border-b border-white/10 ${liveMode ? 'bg-gradient-to-r from-red-900/40 to-orange-900/40' : 'bg-gradient-to-r from-purple-900/40 to-blue-900/40'}`}>
                         <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Rank</th>
                         <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-wider">Team</th>
                         <th className="px-6 py-4 text-center text-xs font-bold text-purple-300 uppercase tracking-wider">Record</th>
@@ -1299,7 +1334,12 @@ export default function LeaguePage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {standings.map((team, index) => (
+                      {(liveMode ? liveStandings : standings).map((team, index) => {
+                        // Always get streak from regular standings (not live)
+                        const regularStandings = standings.find(s => s.manager_id === team.manager_id);
+                        const streak = regularStandings?.streak || team.streak || '-';
+
+                        return (
                         <tr key={team.manager_id} className="hover:bg-purple-500/10 transition-colors">
                           <td className="px-6 py-4">
                             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
@@ -1330,12 +1370,12 @@ export default function LeaguePage() {
                             <span className="font-mono text-purple-300 font-semibold">{team.win_pct.toFixed(3)}</span>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                              team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                                team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${streak.startsWith('W') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                              streak.startsWith('L') ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                                streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
                                   'bg-slate-700/40 text-slate-400'
                               }`}>
-                              {team.streak}
+                              {streak}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
@@ -1354,14 +1394,20 @@ export default function LeaguePage() {
                             </span>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Mobile Cards */}
                 <div className="md:hidden divide-y divide-white/5">
-                  {standings.map((team) => (
+                  {(liveMode ? liveStandings : standings).map((team) => {
+                    // Always get streak from regular standings (not live)
+                    const regularStandings = standings.find(s => s.manager_id === team.manager_id);
+                    const streak = regularStandings?.streak || team.streak || '-';
+
+                    return (
                     <div key={team.manager_id} className="px-3 py-2.5 hover:bg-purple-500/10 transition-colors">
                       <div className="flex items-center gap-2">
                         <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${team.rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
@@ -1388,12 +1434,12 @@ export default function LeaguePage() {
                             {getGamesBehindValue(team) === 'LEADER' ? 'LEADER' : `${getGamesBehindValue(team)} GB behind`}
                           </span>
                         </div>
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${team.streak.startsWith('W') ? 'bg-green-500/20 text-green-300' :
-                          team.streak.startsWith('L') ? 'bg-red-500/20 text-red-300' :
-                            team.streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300' :
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${streak.startsWith('W') ? 'bg-green-500/20 text-green-300' :
+                          streak.startsWith('L') ? 'bg-red-500/20 text-red-300' :
+                            streak.startsWith('T') ? 'bg-yellow-500/20 text-yellow-300' :
                               'bg-slate-700/40 text-slate-400'
                           }`}>
-                          {team.streak}
+                          {streak}
                         </span>
                         <div className="flex flex-col items-center flex-shrink-0 min-w-[30px]">
                           <span className="text-[8px] text-slate-500 uppercase tracking-tighter leading-none mb-0.5">Waiver</span>
@@ -1401,7 +1447,8 @@ export default function LeaguePage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
