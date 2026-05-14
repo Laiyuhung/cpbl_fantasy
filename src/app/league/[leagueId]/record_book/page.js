@@ -182,9 +182,6 @@ function StatTable({ title, description, categories, managers, totalsByManager, 
                   <TableHead key={category} className="min-w-[100px] text-center text-cyan-100 font-bold" title={category}>
                     <div className="flex flex-col items-center gap-1">
                       <span>{getCategoryAbbr(category)}</span>
-                      <span className={`text-[10px] uppercase tracking-widest ${isLowerBetter(category, type) ? 'text-amber-300' : 'text-emerald-300'}`}>
-                        {isLowerBetter(category, type) ? 'Lower' : 'Higher'}
-                      </span>
                     </div>
                   </TableHead>
                 ))}
@@ -205,7 +202,7 @@ function StatTable({ title, description, categories, managers, totalsByManager, 
                       const value = resolveCategoryValue(totals, category, type);
                       return (
                         <TableCell key={category} className="text-center font-mono text-white/90 whitespace-nowrap">
-                          {formatCategoryValue(category, type, value)}
+                          {formatCategoryValue(category, value)}
                         </TableCell>
                       );
                     })}
@@ -262,6 +259,84 @@ function RecordTable({ title, description, categories, managers, recordsByManage
                         </TableCell>
                       );
                     })}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AllCompletedWeeksBestWorst({
+  title,
+  description,
+  categories,
+  weeklyBestWorstByCategory,
+}) {
+  if (Object.keys(weeklyBestWorstByCategory).length === 0) {
+    return (
+      <Card className="border-white/10 bg-white/5 backdrop-blur-sm shadow-2xl shadow-black/30 overflow-hidden">
+        <CardHeader className="space-y-1 border-b border-white/10 bg-white/5">
+          <CardTitle className="text-xl sm:text-2xl font-black text-white">{title}</CardTitle>
+          <p className="text-sm text-slate-300">{description}</p>
+        </CardHeader>
+        <CardContent className="p-6 text-center text-slate-400">
+          No completed weeks yet.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-white/10 bg-white/5 backdrop-blur-sm shadow-2xl shadow-black/30 overflow-hidden">
+      <CardHeader className="space-y-1 border-b border-white/10 bg-white/5">
+        <CardTitle className="text-xl sm:text-2xl font-black text-white">{title}</CardTitle>
+        <p className="text-sm text-slate-300">{description}</p>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-white/10 hover:bg-white/5">
+                <TableHead className="min-w-[100px] text-left text-cyan-100 font-bold">Category</TableHead>
+                <TableHead className="min-w-[200px] text-left text-emerald-100 font-bold">Best</TableHead>
+                <TableHead className="min-w-[200px] text-left text-rose-100 font-bold">Worst</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {categories.map((category) => {
+                const data = weeklyBestWorstByCategory[category];
+                if (!data) return null;
+
+                const bestEntry = data.best[0];
+                const worstEntry = data.worst[0];
+
+                return (
+                  <TableRow key={category} className="border-white/10 hover:bg-white/5">
+                    <TableCell className="font-bold text-slate-200 py-3">{getCategoryAbbr(category)}</TableCell>
+                    <TableCell className="text-emerald-200 font-semibold py-3">
+                      {bestEntry ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold">{bestEntry.managerName}</span>
+                          <span className="text-xs text-emerald-300/80">{formatCategoryValue(category, bestEntry.value)} (W{bestEntry.week})</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-500">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-rose-200 font-semibold py-3">
+                      {worstEntry ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold">{worstEntry.managerName}</span>
+                          <span className="text-xs text-rose-300/80">{formatCategoryValue(category, worstEntry.value)} (W{worstEntry.week})</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-500">-</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -523,6 +598,67 @@ export default function RecordBookPage() {
     return schedule.find((week) => String(week.week_number) === String(selectedWeek));
   }, [schedule, selectedWeek]);
 
+  // 判断周次是否已完成 (week_end < 当前日期)
+  const isWeekCompleted = (weekEndStr) => {
+    if (!weekEndStr) return false;
+    const weekEndDate = new Date(weekEndStr);
+    return new Date() > weekEndDate;
+  };
+
+  // 获取已完成的周次
+  const completedWeeks = useMemo(() => {
+    return (schedule || []).filter((week) => isWeekCompleted(week.week_end));
+  }, [schedule]);
+
+  // 计算 Weekly Best / Worst
+  const weeklyBestWorstByCategory = useMemo(() => {
+    if (completedWeeks.length === 0) return {};
+
+    const result = {};
+    const allCategories = [...(settings.batter_categories || []), ...(settings.pitcher_categories || [])];
+
+    allCategories.forEach((category) => {
+      const type = getCategoryType(category, settings);
+      if (!type) return;
+
+      const entries = []; // { manager, value, managerName }
+
+      completedWeeks.forEach((week) => {
+        const weekKey = String(week.week_number);
+        const weekRows = statsByWeekAndManager.get(weekKey) || new Map();
+
+        managerList.forEach((manager) => {
+          const row = weekRows.get(String(manager.manager_id));
+          if (row) {
+            const value = resolveCategoryValue(row, category, type);
+            if (Number.isFinite(value)) {
+              entries.push({
+                manager,
+                managerName: manager.displayName,
+                value,
+                week: week.week_number,
+              });
+            }
+          }
+        });
+      });
+
+      if (entries.length === 0) return;
+
+      // 排序：lower is better 则升序，否则降序
+      const isLower = isLowerBetter(category, type);
+      entries.sort((a, b) => isLower ? a.value - b.value : b.value - a.value);
+
+      // 取最佳3个和最差3个
+      const best = entries.slice(0, 3);
+      const worst = entries.slice(-3).reverse();
+
+      result[category] = { best, worst };
+    });
+
+    return result;
+  }, [completedWeeks, managerList, statsByWeekAndManager, settings]);
+
   const totalMatchups = matchups.length;
   const weekCount = availableWeeks.length;
   const managerCount = managerList.length;
@@ -693,6 +829,24 @@ export default function RecordBookPage() {
             </div>
           </CardContent>
         </Card>
+
+        {completedWeeks.length > 0 && (
+          <div className="grid gap-6 xl:grid-cols-2">
+            <AllCompletedWeeksBestWorst
+              title="All Completed Weeks - Batting Best/Worst"
+              description="Across all completed weeks, the top and bottom performer in each batting category."
+              categories={sectionData.batter}
+              weeklyBestWorstByCategory={weeklyBestWorstByCategory}
+            />
+
+            <AllCompletedWeeksBestWorst
+              title="All Completed Weeks - Pitching Best/Worst"
+              description="Across all completed weeks, the top and bottom performer in each pitching category."
+              categories={sectionData.pitcher}
+              weeklyBestWorstByCategory={weeklyBestWorstByCategory}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
