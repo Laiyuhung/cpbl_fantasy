@@ -632,11 +632,11 @@ export default function RecordBookPage() {
   }, [schedule, selectedWeek]);
 
   // 判断周次是否已完成 (week_end < 当前日期)
-  const isWeekCompleted = (weekEndStr) => {
+  function isWeekCompleted(weekEndStr) {
     if (!weekEndStr) return false;
     const weekEndDate = new Date(weekEndStr);
     return new Date() > weekEndDate;
-  };
+  }
 
   // 获取已完成的周次
   const completedWeeks = useMemo(() => {
