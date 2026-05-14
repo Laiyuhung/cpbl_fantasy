@@ -1009,6 +1009,13 @@ export default function PlayersPage() {
 
   // Pre-Check Logic
   const preCheckAddPlayer = async (player) => {
+    // Reset state from previous operation
+    setProjectedAddSlot('');
+    setCurrentRosterState([]);
+    setNaLimitState(0);
+    setAllowNaToNaSlot(false);
+    setDropCandidateID(null);
+
     // 0. Check Acquisition Limit
     if (acquisitionData && acquisitionData.limit !== 'No Maximum') {
       const limit = parseInt(acquisitionData.limit);
@@ -1309,6 +1316,10 @@ export default function PlayersPage() {
       setIsAdding(false);
       setPendingAddPlayer(null);
       setDropCandidateID(null);
+      setProjectedAddSlot(''); // Reset slot state
+      setCurrentRosterState([]);
+      setNaLimitState(0);
+      setAllowNaToNaSlot(false);
     }
   };
 
@@ -1428,6 +1439,10 @@ export default function PlayersPage() {
       setPlayerToAdd(null);
       setWaiverMode(false);
       setWaiverDropPlayerId('');
+      setProjectedAddSlot(''); // Reset slot state
+      setCurrentRosterState([]);
+      setNaLimitState(0);
+      setAllowNaToNaSlot(false);
     }
   };
 
@@ -1487,6 +1502,10 @@ export default function PlayersPage() {
       setIsRefreshing(false);
     } finally {
       setPlayerToDrop(null);
+      setProjectedAddSlot(''); // Reset slot state
+      setCurrentRosterState([]);
+      setNaLimitState(0);
+      setAllowNaToNaSlot(false);
     }
   };
 
