@@ -184,7 +184,7 @@ function StatTable({ title, description, categories, managers, totalsByManager, 
           <Table>
             <TableHeader>
               <TableRow className="border-white/10 hover:bg-white/5">
-                <TableHead className="sticky left-0 z-30 min-w-[140px] sm:min-w-[180px] bg-slate-950/95 text-cyan-100 font-bold shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">Manager</TableHead>
+                <TableHead className="sticky left-0 z-30 min-w-[140px] sm:min-w-[180px] bg-[#020617] text-cyan-100 font-bold shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">Manager</TableHead>
                 {categories.map((category) => (
                   <TableHead key={category} className="min-w-[72px] sm:min-w-[100px] text-center text-cyan-100 font-bold px-2 sm:px-3" title={category}>
                     <div className="flex flex-col items-center gap-1">
@@ -199,7 +199,7 @@ function StatTable({ title, description, categories, managers, totalsByManager, 
                 const totals = totalsByManager.get(String(manager.manager_id)) || makeEmptyAggregate();
                 return (
                   <TableRow key={manager.manager_id} className="border-white/10 hover:bg-white/5">
-                    <TableCell className="sticky left-0 z-20 bg-slate-950/90 font-bold text-white align-top shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">
+                    <TableCell className="sticky left-0 z-20 bg-[#020617] font-bold text-white align-top shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">
                       <div className="flex flex-col gap-0.5 whitespace-normal break-words leading-snug">
                         <span>{getManagerLabel(manager)}</span>
                       </div>
@@ -235,7 +235,7 @@ function RecordTable({ title, description, categories, managers, recordsByManage
           <Table>
             <TableHeader>
               <TableRow className="border-white/10 hover:bg-white/5">
-                <TableHead className="sticky left-0 z-30 min-w-[140px] sm:min-w-[180px] bg-slate-950/95 text-cyan-100 font-bold shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">Manager</TableHead>
+                <TableHead className="sticky left-0 z-30 min-w-[140px] sm:min-w-[180px] bg-[#020617] text-cyan-100 font-bold shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">Manager</TableHead>
                 {categories.map((category) => (
                   <TableHead key={category} className="min-w-[72px] sm:min-w-[100px] text-center text-cyan-100 font-bold px-2 sm:px-3" title={category}>
                     <span className="text-xs sm:text-sm leading-tight">{getCategoryAbbr(category)}</span>
@@ -248,7 +248,7 @@ function RecordTable({ title, description, categories, managers, recordsByManage
                 const record = recordsByManager.get(String(manager.manager_id)) || {};
                 return (
                   <TableRow key={manager.manager_id} className="border-white/10 hover:bg-white/5">
-                    <TableCell className="sticky left-0 z-20 bg-slate-950/90 font-bold text-white align-top shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">
+                    <TableCell className="sticky left-0 z-20 bg-[#020617] font-bold text-white align-top shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">
                       <div className="flex flex-col gap-0.5 whitespace-normal break-words leading-snug">
                         <span>{getManagerLabel(manager)}</span>
                       </div>
@@ -403,7 +403,7 @@ function WeeklyExtremes({
               <div key={category} className="rounded-2xl border border-white/10 bg-slate-950/40 p-3 sm:p-4 shadow-lg shadow-black/20">
                 <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
                   <div>
-                    <div className="sticky left-0 z-20 inline-flex items-center rounded-md bg-slate-950/90 px-2 py-1 text-sm sm:text-base font-black text-white shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]" title={category}>{abbr}</div>
+                    <div className="sticky left-0 z-20 inline-flex items-center rounded-md bg-[#020617] px-2 py-1 text-sm sm:text-base font-black text-white shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]" title={category}>{abbr}</div>
                     <div className={`text-[10px] uppercase tracking-[0.2em] mt-1 ${isLowerBetter(category, type) ? 'text-amber-300' : 'text-emerald-300'}`}>
                       {isLowerBetter(category, type) ? 'Lower is better' : 'Higher is better'}
                     </div>

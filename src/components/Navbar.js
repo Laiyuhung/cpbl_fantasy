@@ -422,7 +422,7 @@ export default function Navbar() {
                             <button onClick={() => navigateTo(`/league/${league.league_id}/roster`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Roster</button>
                             <button onClick={() => navigateTo(`/league/${league.league_id}/matchups`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Matchups</button>
                             <button onClick={() => navigateTo(`/league/${league.league_id}/record_book`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Record</button>
-                            <button onClick={() => navigateTo(`/league/${league.league_id}/league_settings`, { closeDropdown: true })} className="col-span-2 text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Settings</button>
+                            <button onClick={() => navigateTo(`/league/${league.league_id}/league_settings`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Settings</button>
                           </div>
                         )}
                       </div>
@@ -716,7 +716,7 @@ export default function Navbar() {
                           <button onClick={() => navigateTo(`/league/${league.league_id}/roster`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Roster</button>
                           <button onClick={() => navigateTo(`/league/${league.league_id}/matchups`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Matchups</button>
                           <button onClick={() => navigateTo(`/league/${league.league_id}/record_book`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Record</button>
-                          <button onClick={() => navigateTo(`/league/${league.league_id}/league_settings`, { closeMenuPanel: true })} className="col-span-2 text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Settings</button>
+                          <button onClick={() => navigateTo(`/league/${league.league_id}/league_settings`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Settings</button>
                         </div>
                       )}
                     </div>
