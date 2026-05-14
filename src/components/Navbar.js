@@ -306,6 +306,15 @@ export default function Navbar() {
                     MATCHUPS
                   </a>
                   <a
+                    href={`/league/${activeLeagueId}/record_book`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/record_book')
+                      ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
+                      : 'hover:bg-white/10 hover:text-cyan-300'
+                      }`}
+                  >
+                    RECORD
+                  </a>
+                  <a
                     href={`/league/${activeLeagueId}/league_settings`}
                     className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings')
                       ? 'bg-blue-500/30 text-cyan-300 border border-blue-500/50'
@@ -412,6 +421,7 @@ export default function Navbar() {
                             <button onClick={() => navigateTo(`/league/${league.league_id}/players`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Players</button>
                             <button onClick={() => navigateTo(`/league/${league.league_id}/roster`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Roster</button>
                             <button onClick={() => navigateTo(`/league/${league.league_id}/matchups`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Matchups</button>
+                            <button onClick={() => navigateTo(`/league/${league.league_id}/record_book`, { closeDropdown: true })} className="text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Record</button>
                             <button onClick={() => navigateTo(`/league/${league.league_id}/league_settings`, { closeDropdown: true })} className="col-span-2 text-left text-xs px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-blue-500/20 text-slate-200">Settings</button>
                           </div>
                         )}
@@ -641,6 +651,13 @@ export default function Navbar() {
                     MATCHUPS
                   </Link>
                   <Link
+                    href={`/league/${currentLeague.league_id}/record_book`}
+                    className={`block px-3 py-2.5 rounded-lg transition-colors font-medium text-sm ${pathname?.includes('/record_book') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
+                    onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/record_book`; }}
+                  >
+                    RECORD
+                  </Link>
+                  <Link
                     href={`/league/${currentLeague.league_id}/league_settings`}
                     className={`block px-3 py-2.5 rounded-lg transition-colors font-medium text-sm ${pathname?.includes('/league_settings') || pathname?.includes('/edit_league_settings') ? 'bg-white/10 text-cyan-300' : 'hover:bg-white/10'}`}
                     onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = `/league/${currentLeague.league_id}/league_settings`; }}
@@ -698,6 +715,7 @@ export default function Navbar() {
                           <button onClick={() => navigateTo(`/league/${league.league_id}/players`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Players</button>
                           <button onClick={() => navigateTo(`/league/${league.league_id}/roster`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Roster</button>
                           <button onClick={() => navigateTo(`/league/${league.league_id}/matchups`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Matchups</button>
+                          <button onClick={() => navigateTo(`/league/${league.league_id}/record_book`, { closeMenuPanel: true })} className="text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Record</button>
                           <button onClick={() => navigateTo(`/league/${league.league_id}/league_settings`, { closeMenuPanel: true })} className="col-span-2 text-left text-xs px-2 py-1.5 rounded bg-white/5 hover:bg-blue-500/20">Settings</button>
                         </div>
                       )}

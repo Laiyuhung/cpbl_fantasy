@@ -15,14 +15,21 @@ const BATTER_SUM_FIELDS = ['b_gp', 'b_pa', 'b_ab', 'b_r', 'b_h', 'b_1b', 'b_2b',
 const PITCHER_SUM_FIELDS = ['p_app', 'p_gs', 'p_rapp', 'p_tbf', 'p_pc', 'p_w', 'p_l', 'p_sv', 'p_hld', 'p_svhld', 'p_rw', 'p_rl', 'p_k', 'p_bb', 'p_ibb', 'p_hbp', 'p_h', 'p_hr', 'p_ra', 'p_er', 'p_qs', 'p_cg', 'p_sho', 'p_pg', 'p_nh'];
 
 function getCategoryAbbr(category) {
-  const match = String(category || '').match(/\(([^)]+)\)/);
-  return (match ? match[1] : category || '').trim().toUpperCase();
+  const matches = String(category || '').match(/\(([^)]+)\)/g);
+  if (matches && matches.length > 0) {
+    return matches[matches.length - 1].replace(/[()]/g, '').trim().toUpperCase();
+  }
+  return (category || '').trim().toUpperCase();
 }
 
 function getCategoryType(category, settings) {
   if (settings?.batter_categories?.includes(category)) return 'batter';
   if (settings?.pitcher_categories?.includes(category)) return 'pitcher';
   return null;
+}
+
+function getCategoryRecordKey(type, category) {
+  return `${type}:${category}`;
 }
 
 function parseBaseballIpToOuts(value) {
@@ -177,11 +184,11 @@ function StatTable({ title, description, categories, managers, totalsByManager, 
           <Table>
             <TableHeader>
               <TableRow className="border-white/10 hover:bg-white/5">
-                <TableHead className="min-w-[180px] text-cyan-100 font-bold">Manager</TableHead>
+                <TableHead className="sticky left-0 z-30 min-w-[140px] sm:min-w-[180px] bg-slate-950/95 text-cyan-100 font-bold shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">Manager</TableHead>
                 {categories.map((category) => (
-                  <TableHead key={category} className="min-w-[100px] text-center text-cyan-100 font-bold" title={category}>
+                  <TableHead key={category} className="min-w-[72px] sm:min-w-[100px] text-center text-cyan-100 font-bold px-2 sm:px-3" title={category}>
                     <div className="flex flex-col items-center gap-1">
-                      <span>{getCategoryAbbr(category)}</span>
+                      <span className="text-xs sm:text-sm leading-tight">{getCategoryAbbr(category)}</span>
                     </div>
                   </TableHead>
                 ))}
@@ -192,16 +199,15 @@ function StatTable({ title, description, categories, managers, totalsByManager, 
                 const totals = totalsByManager.get(String(manager.manager_id)) || makeEmptyAggregate();
                 return (
                   <TableRow key={manager.manager_id} className="border-white/10 hover:bg-white/5">
-                    <TableCell className="font-bold text-white">
-                      <div className="flex flex-col">
+                    <TableCell className="sticky left-0 z-20 bg-slate-950/90 font-bold text-white align-top shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">
+                      <div className="flex flex-col gap-0.5 whitespace-normal break-words leading-snug">
                         <span>{getManagerLabel(manager)}</span>
-                        <span className="text-xs text-slate-400 font-normal">{manager.manager_id}</span>
                       </div>
                     </TableCell>
                     {categories.map((category) => {
                       const value = resolveCategoryValue(totals, category, type);
                       return (
-                        <TableCell key={category} className="text-center font-mono text-white/90 whitespace-nowrap">
+                        <TableCell key={category} className="text-center font-mono text-white/90 whitespace-nowrap px-2 sm:px-3 py-2 text-xs sm:text-sm">
                           {formatCategoryValue(category, value)}
                         </TableCell>
                       );
@@ -217,7 +223,7 @@ function StatTable({ title, description, categories, managers, totalsByManager, 
   );
 }
 
-function RecordTable({ title, description, categories, managers, recordsByManager }) {
+function RecordTable({ title, description, categories, managers, recordsByManager, type }) {
   return (
     <Card className="border-white/10 bg-white/5 backdrop-blur-sm shadow-2xl shadow-black/30 overflow-hidden">
       <CardHeader className="space-y-1 border-b border-white/10 bg-white/5">
@@ -229,10 +235,10 @@ function RecordTable({ title, description, categories, managers, recordsByManage
           <Table>
             <TableHeader>
               <TableRow className="border-white/10 hover:bg-white/5">
-                <TableHead className="min-w-[180px] text-cyan-100 font-bold">Manager</TableHead>
+                <TableHead className="sticky left-0 z-30 min-w-[140px] sm:min-w-[180px] bg-slate-950/95 text-cyan-100 font-bold shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">Manager</TableHead>
                 {categories.map((category) => (
-                  <TableHead key={category} className="min-w-[100px] text-center text-cyan-100 font-bold" title={category}>
-                    {getCategoryAbbr(category)}
+                  <TableHead key={category} className="min-w-[72px] sm:min-w-[100px] text-center text-cyan-100 font-bold px-2 sm:px-3" title={category}>
+                    <span className="text-xs sm:text-sm leading-tight">{getCategoryAbbr(category)}</span>
                   </TableHead>
                 ))}
               </TableRow>
@@ -242,18 +248,16 @@ function RecordTable({ title, description, categories, managers, recordsByManage
                 const record = recordsByManager.get(String(manager.manager_id)) || {};
                 return (
                   <TableRow key={manager.manager_id} className="border-white/10 hover:bg-white/5">
-                    <TableCell className="font-bold text-white">
-                      <div className="flex flex-col">
+                    <TableCell className="sticky left-0 z-20 bg-slate-950/90 font-bold text-white align-top shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]">
+                      <div className="flex flex-col gap-0.5 whitespace-normal break-words leading-snug">
                         <span>{getManagerLabel(manager)}</span>
-                        <span className="text-xs text-slate-400 font-normal">{manager.manager_id}</span>
                       </div>
                     </TableCell>
                     {categories.map((category) => {
-                      const abbr = getCategoryAbbr(category);
-                      const value = record[category] || { w: 0, l: 0, t: 0 };
+                      const value = record[getCategoryRecordKey(type, category)] || { w: 0, l: 0, t: 0 };
                       return (
-                        <TableCell key={category} className="text-center">
-                          <Badge className="bg-white/10 text-white border border-white/10 font-mono text-xs">
+                        <TableCell key={category} className="text-center px-2 sm:px-3 py-2">
+                          <Badge className="bg-white/10 text-white border border-white/10 font-mono text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 whitespace-nowrap">
                             {value.w}-{value.l}-{value.t}
                           </Badge>
                         </TableCell>
@@ -275,6 +279,7 @@ function AllCompletedWeeksBestWorst({
   description,
   categories,
   weeklyBestWorstByCategory,
+  type,
 }) {
   if (Object.keys(weeklyBestWorstByCategory).length === 0) {
     return (
@@ -308,7 +313,7 @@ function AllCompletedWeeksBestWorst({
             </TableHeader>
             <TableBody>
               {categories.map((category) => {
-                const data = weeklyBestWorstByCategory[category];
+                const data = weeklyBestWorstByCategory[getCategoryRecordKey(type, category)];
                 if (!data) return null;
 
                 const bestEntry = data.best[0];
@@ -374,7 +379,7 @@ function WeeklyExtremes({
         </div>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
           {categories.map((category) => {
             const abbr = getCategoryAbbr(category);
             const rows = managers.map((manager) => {
@@ -395,10 +400,10 @@ function WeeklyExtremes({
             const worstManagers = rows.filter((entry) => Math.abs(normalizeComparableValue(entry.value) - worstComparable) < 1e-9).map((entry) => getManagerLabel(entry.manager));
 
             return (
-              <div key={category} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 shadow-lg shadow-black/20">
-                <div className="flex items-start justify-between gap-3 mb-4">
+              <div key={category} className="rounded-2xl border border-white/10 bg-slate-950/40 p-3 sm:p-4 shadow-lg shadow-black/20">
+                <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
                   <div>
-                    <div className="text-base font-black text-white" title={category}>{abbr}</div>
+                    <div className="sticky left-0 z-20 inline-flex items-center rounded-md bg-slate-950/90 px-2 py-1 text-sm sm:text-base font-black text-white shadow-[8px_0_16px_-12px_rgba(0,0,0,0.9)]" title={category}>{abbr}</div>
                     <div className={`text-[10px] uppercase tracking-[0.2em] mt-1 ${isLowerBetter(category, type) ? 'text-amber-300' : 'text-emerald-300'}`}>
                       {isLowerBetter(category, type) ? 'Lower is better' : 'Higher is better'}
                     </div>
@@ -408,16 +413,16 @@ function WeeklyExtremes({
                   </Badge>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                <div className="space-y-2.5 sm:space-y-3">
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 sm:p-3">
                     <div className="text-[10px] uppercase tracking-[0.25em] text-emerald-300 font-bold">Best</div>
-                    <div className="mt-1 text-sm font-bold text-white">{bestManagers.join(', ')}</div>
-                    <div className="mt-1 font-mono text-emerald-200">{formatCategoryValue(category, type, bestValue)}</div>
+                    <div className="mt-1 font-mono text-emerald-200 text-sm sm:text-base">{formatCategoryValue(category, bestValue)}</div>
+                    <div className="mt-1 text-xs sm:text-sm font-bold text-white leading-snug break-words">{bestManagers.join(', ')}</div>
                   </div>
-                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3">
+                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 sm:p-3">
                     <div className="text-[10px] uppercase tracking-[0.25em] text-rose-300 font-bold">Worst</div>
-                    <div className="mt-1 text-sm font-bold text-white">{worstManagers.join(', ')}</div>
-                    <div className="mt-1 font-mono text-rose-200">{formatCategoryValue(category, type, worstValue)}</div>
+                    <div className="mt-1 font-mono text-rose-200 text-sm sm:text-base">{formatCategoryValue(category, worstValue)}</div>
+                    <div className="mt-1 text-xs sm:text-sm font-bold text-white leading-snug break-words">{worstManagers.join(', ')}</div>
                   </div>
                 </div>
               </div>
@@ -525,21 +530,31 @@ export default function RecordBookPage() {
   const recordsByManager = useMemo(() => {
     const createRecordBucket = () => {
       const bucket = {};
-      [...settings.batter_categories, ...settings.pitcher_categories].forEach((category) => {
-        bucket[category] = { w: 0, l: 0, t: 0 };
+      (settings.batter_categories || []).forEach((category) => {
+        bucket[getCategoryRecordKey('batter', category)] = { w: 0, l: 0, t: 0 };
+      });
+      (settings.pitcher_categories || []).forEach((category) => {
+        bucket[getCategoryRecordKey('pitcher', category)] = { w: 0, l: 0, t: 0 };
       });
       return bucket;
     };
 
     const map = new Map();
     managerList.forEach((manager) => map.set(String(manager.manager_id), createRecordBucket()));
+    const completedWeekKeys = new Set(
+      (schedule || [])
+        .filter((week) => isWeekCompleted(week.week_end))
+        .map((week) => String(week.week_number))
+    );
 
     (matchups || []).forEach((matchup) => {
+      const weekKey = String(matchup.week_number);
+      if (!completedWeekKeys.has(weekKey)) return;
+
       const managerA = String(matchup.manager_id_a || '');
       const managerB = String(matchup.manager_id_b || '');
       if (!managerA || !managerB) return;
 
-      const weekKey = String(matchup.week_number);
       const weekRows = statsByWeekAndManager.get(weekKey) || new Map();
       const rowA = weekRows.get(managerA) || normalizeStatRow({ manager_id: managerA, week_number: matchup.week_number });
       const rowB = weekRows.get(managerB) || normalizeStatRow({ manager_id: managerB, week_number: matchup.week_number });
@@ -551,16 +566,17 @@ export default function RecordBookPage() {
           const comparison = compareCategoryValues(valueA, valueB, category, 'batter');
           const bucketA = map.get(managerA);
           const bucketB = map.get(managerB);
+          const recordKey = getCategoryRecordKey('batter', category);
           if (!bucketA || !bucketB) return;
           if (comparison < 0) {
-            bucketA[category].w += 1;
-            bucketB[category].l += 1;
+            bucketA[recordKey].w += 1;
+            bucketB[recordKey].l += 1;
           } else if (comparison > 0) {
-            bucketA[category].l += 1;
-            bucketB[category].w += 1;
+            bucketA[recordKey].l += 1;
+            bucketB[recordKey].w += 1;
           } else {
-            bucketA[category].t += 1;
-            bucketB[category].t += 1;
+            bucketA[recordKey].t += 1;
+            bucketB[recordKey].t += 1;
           }
         });
 
@@ -571,23 +587,24 @@ export default function RecordBookPage() {
           const comparison = compareCategoryValues(valueA, valueB, category, 'pitcher');
           const bucketA = map.get(managerA);
           const bucketB = map.get(managerB);
+          const recordKey = getCategoryRecordKey('pitcher', category);
           if (!bucketA || !bucketB) return;
 
           if (comparison < 0) {
-            bucketA[category].w += 1;
-            bucketB[category].l += 1;
+            bucketA[recordKey].w += 1;
+            bucketB[recordKey].l += 1;
           } else if (comparison > 0) {
-            bucketA[category].l += 1;
-            bucketB[category].w += 1;
+            bucketA[recordKey].l += 1;
+            bucketB[recordKey].w += 1;
           } else {
-            bucketA[category].t += 1;
-            bucketB[category].t += 1;
+            bucketA[recordKey].t += 1;
+            bucketB[recordKey].t += 1;
           }
         });
     });
 
     return map;
-  }, [matchups, managerList, settings, statsByWeekAndManager]);
+  }, [matchups, managerList, schedule, settings, statsByWeekAndManager]);
 
   const selectedWeekRowsByManager = useMemo(() => {
     const weekRows = statsByWeekAndManager.get(String(selectedWeek)) || new Map();
@@ -636,6 +653,7 @@ export default function RecordBookPage() {
     allCategories.forEach((category) => {
       const type = getCategoryType(category, settings);
       if (!type) return;
+      const recordKey = getCategoryRecordKey(type, category);
 
       const entries = []; // { manager, value, managerName }
 
@@ -669,7 +687,7 @@ export default function RecordBookPage() {
       const best = entries.slice(0, 3);
       const worst = entries.slice(-3).reverse();
 
-      result[category] = { best, worst };
+      result[recordKey] = { best, worst };
     });
 
     return result;
@@ -710,51 +728,6 @@ export default function RecordBookPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.15),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.16),_transparent_30%),linear-gradient(135deg,_#020617_0%,_#111827_45%,_#0f172a_100%)] text-white">
       <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 space-y-6">
-        <Card className="overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm shadow-2xl shadow-black/30">
-          <CardContent className="p-5 sm:p-7 lg:p-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.25em] text-cyan-200">
-                  Record Book
-                </div>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-200 to-violet-300">
-                  {leagueName}
-                </h1>
-                <p className="max-w-3xl text-sm sm:text-base text-slate-300">
-                  Frontend-only aggregation for regular-season matchup records, category totals, and weekly leaders.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Badge className="bg-white/10 text-white border border-white/10 px-3 py-1.5">Weeks: {weekCount}</Badge>
-                <Badge className="bg-white/10 text-white border border-white/10 px-3 py-1.5">Managers: {managerCount}</Badge>
-                <Badge className="bg-white/10 text-white border border-white/10 px-3 py-1.5">Matchups: {totalMatchups}</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm shadow-lg shadow-black/20">
-            <CardContent className="p-5">
-              <div className="text-xs uppercase tracking-[0.25em] text-slate-400">Regular Season Weeks</div>
-              <div className="mt-2 text-3xl font-black text-cyan-200">{weekCount}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm shadow-lg shadow-black/20">
-            <CardContent className="p-5">
-              <div className="text-xs uppercase tracking-[0.25em] text-slate-400">Managers Included</div>
-              <div className="mt-2 text-3xl font-black text-violet-200">{managerCount}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm shadow-lg shadow-black/20">
-            <CardContent className="p-5">
-              <div className="text-xs uppercase tracking-[0.25em] text-slate-400">Matchups Calculated</div>
-              <div className="mt-2 text-3xl font-black text-emerald-200">{totalMatchups}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         <div className="grid gap-6 xl:grid-cols-2">
           <StatTable
             title="Season Totals - Batting"
@@ -782,6 +755,7 @@ export default function RecordBookPage() {
             categories={sectionData.batter}
             managers={managerList}
             recordsByManager={recordsByManager}
+            type="batter"
           />
 
           <RecordTable
@@ -790,6 +764,7 @@ export default function RecordBookPage() {
             categories={sectionData.pitcher}
             managers={managerList}
             recordsByManager={recordsByManager}
+            type="pitcher"
           />
         </div>
 
@@ -800,6 +775,7 @@ export default function RecordBookPage() {
               description="Across all completed weeks, the top and bottom performer in each batting category."
               categories={sectionData.batter}
               weeklyBestWorstByCategory={weeklyBestWorstByCategory}
+              type="batter"
             />
 
             <AllCompletedWeeksBestWorst
@@ -807,6 +783,7 @@ export default function RecordBookPage() {
               description="Across all completed weeks, the top and bottom performer in each pitching category."
               categories={sectionData.pitcher}
               weeklyBestWorstByCategory={weeklyBestWorstByCategory}
+              type="pitcher"
             />
           </div>
         )}
