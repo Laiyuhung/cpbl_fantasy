@@ -544,30 +544,46 @@ export default function RecordBookPage() {
       const rowA = weekRows.get(managerA) || normalizeStatRow({ manager_id: managerA, week_number: matchup.week_number });
       const rowB = weekRows.get(managerB) || normalizeStatRow({ manager_id: managerB, week_number: matchup.week_number });
 
-      [...settings.batter_categories, ...settings.pitcher_categories].forEach((category) => {
-        const type = getCategoryType(category, settings);
-        if (!type) return;
+        // Process batter categories explicitly with 'batter' type (b_h, b_k, b_bb, etc.)
+        (settings.batter_categories || []).forEach((category) => {
+          const valueA = resolveCategoryValue(rowA, category, 'batter');
+          const valueB = resolveCategoryValue(rowB, category, 'batter');
+          const comparison = compareCategoryValues(valueA, valueB, category, 'batter');
+          const bucketA = map.get(managerA);
+          const bucketB = map.get(managerB);
+          if (!bucketA || !bucketB) return;
+          if (comparison < 0) {
+            bucketA[category].w += 1;
+            bucketB[category].l += 1;
+          } else if (comparison > 0) {
+            bucketA[category].l += 1;
+            bucketB[category].w += 1;
+          } else {
+            bucketA[category].t += 1;
+            bucketB[category].t += 1;
+          }
+        });
 
-        const valueA = resolveCategoryValue(rowA, category, type);
-        const valueB = resolveCategoryValue(rowB, category, type);
-        const comparison = compareCategoryValues(valueA, valueB, category, type);
-        const categoryKey = category;
+        // Process pitcher categories explicitly with 'pitcher' type (p_h, p_k, p_bb, etc.)
+        (settings.pitcher_categories || []).forEach((category) => {
+          const valueA = resolveCategoryValue(rowA, category, 'pitcher');
+          const valueB = resolveCategoryValue(rowB, category, 'pitcher');
+          const comparison = compareCategoryValues(valueA, valueB, category, 'pitcher');
+          const bucketA = map.get(managerA);
+          const bucketB = map.get(managerB);
+          if (!bucketA || !bucketB) return;
 
-        const bucketA = map.get(managerA);
-        const bucketB = map.get(managerB);
-        if (!bucketA || !bucketB) return;
-
-        if (comparison < 0) {
-          bucketA[categoryKey].w += 1;
-          bucketB[categoryKey].l += 1;
-        } else if (comparison > 0) {
-          bucketA[categoryKey].l += 1;
-          bucketB[categoryKey].w += 1;
-        } else {
-          bucketA[categoryKey].t += 1;
-          bucketB[categoryKey].t += 1;
-        }
-      });
+          if (comparison < 0) {
+            bucketA[category].w += 1;
+            bucketB[category].l += 1;
+          } else if (comparison > 0) {
+            bucketA[category].l += 1;
+            bucketB[category].w += 1;
+          } else {
+            bucketA[category].t += 1;
+            bucketB[category].t += 1;
+          }
+        });
     });
 
     return map;
@@ -776,59 +792,6 @@ export default function RecordBookPage() {
             recordsByManager={recordsByManager}
           />
         </div>
-
-        <Card className="border-white/10 bg-white/5 backdrop-blur-sm shadow-2xl shadow-black/30 overflow-hidden">
-          <CardHeader className="space-y-4 border-b border-white/10 bg-white/5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <CardTitle className="text-xl sm:text-2xl font-black text-white">Weekly Best / Worst</CardTitle>
-                <p className="text-sm text-slate-300 mt-1">Select a regular-season week and compare the best and worst team in every active category.</p>
-              </div>
-              <div className="w-full lg:w-[320px]">
-                <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                  <SelectTrigger className="bg-slate-950/70 border-white/10 text-white">
-                    <SelectValue placeholder="Select week" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {schedule.map((week) => (
-                      <SelectItem key={week.week_number} value={String(week.week_number)}>
-                        Week {week.week_number} - {week.week_start} to {week.week_end}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="text-xs uppercase tracking-[0.25em] text-cyan-200/80">{selectedWeekMeta?.week_label || `Week ${selectedWeek || '-'}`} · {selectedWeekRange}</div>
-          </CardHeader>
-          <CardContent className="p-5 sm:p-6">
-            <div className="grid gap-6 xl:grid-cols-2">
-              <WeeklyExtremes
-                title="Batting Leaders"
-                description="Best means the highest value, except for lower-is-better batting categories like K and CS."
-                categories={sectionData.batter}
-                managers={managerList}
-                rowsByManager={selectedWeekRowsByManager}
-                selectedWeek={selectedWeek}
-                weekLabel={selectedWeekMeta?.week_label || `Week ${selectedWeek || '-'}`}
-                weekRange={selectedWeekRange}
-                type="batter"
-              />
-
-              <WeeklyExtremes
-                title="Pitching Leaders"
-                description="Lower-is-better pitching categories such as ERA, WHIP, and OBPA flip the worst/best logic accordingly."
-                categories={sectionData.pitcher}
-                managers={managerList}
-                rowsByManager={selectedWeekRowsByManager}
-                selectedWeek={selectedWeek}
-                weekLabel={selectedWeekMeta?.week_label || `Week ${selectedWeek || '-'}`}
-                weekRange={selectedWeekRange}
-                type="pitcher"
-              />
-            </div>
-          </CardContent>
-        </Card>
 
         {completedWeeks.length > 0 && (
           <div className="grid gap-6 xl:grid-cols-2">
