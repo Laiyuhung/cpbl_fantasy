@@ -917,12 +917,23 @@ export default function RosterPage() {
     };
 
     const buildAutoStartPlan = (rosterForDate, gameDate) => {
+        console.log(`\n📋 Building auto start plan for ${gameDate}`);
+        
         const rosterPlayers = rosterForDate.filter(player => !player.isEmpty && player.player_id !== 'empty');
+        console.log(`📊 Total players in roster: ${rosterPlayers.length}`);
+        
         const fixedPlayerIds = new Set(
             rosterPlayers
                 .filter(player => ACTIVE_POSITIONS_ORDER.includes(player.position) && !isMoveAllowedForDate(player, gameDate))
                 .map(player => player.player_id)
         );
+        
+        if (fixedPlayerIds.size > 0) {
+            console.log(`🔒 Fixed players (locked - cannot move):`);
+            rosterPlayers
+                .filter(p => fixedPlayerIds.has(p.player_id))
+                .forEach(p => console.log(`  - ${p.name} (${p.position})`));
+        }
 
         const availableSlots = [];
         ACTIVE_POSITIONS_ORDER.forEach(position => {
@@ -933,6 +944,8 @@ export default function RosterPage() {
                 availableSlots.push({ id: `${position}-${index}`, position });
             }
         });
+        
+        console.log(`📌 Available slots after fixed players: ${JSON.stringify(ACTIVE_POSITIONS_ORDER.map(pos => `${pos}:${availableSlots.filter(s => s.position === pos).length}`).join(', '))}`);
 
         const candidates = rosterPlayers
             .filter(player => !fixedPlayerIds.has(player.player_id))
@@ -966,6 +979,8 @@ export default function RosterPage() {
                 }
                 return left.player.name.localeCompare(right.player.name);
             });
+
+        console.log(`🔍 Candidates for assignment (${candidates.length}):`, candidates.map(c => `${c.player.name}(${c.player.position}→${c.eligibleSlots.map(s => s.position).join(',')})`).join(', '));
 
         const candidateById = new Map(candidates.map(entry => [entry.player.player_id, entry]));
         const slotMatches = new Map();
@@ -1044,6 +1059,15 @@ export default function RosterPage() {
             }
         });
 
+        // Log final plan
+        console.log(`✅ Final desired positions:`);
+        rosterPlayers.forEach(player => {
+            const desired = desiredPositions.get(player.player_id);
+            if (desired !== player.position) {
+                console.log(`  ${player.name}: ${player.position} → ${desired}`);
+            }
+        });
+
         return { desiredPositions, fixedPlayerIds };
     };
 
@@ -1082,6 +1106,8 @@ export default function RosterPage() {
     };
 
     const executeStartActiveForDate = async (gameDate) => {
+        console.log(`🔄 Start Active for ${gameDate}`);
+        
         const res = await fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}&game_date=${gameDate}`);
         const data = await res.json();
         if (!res.ok || !data.success) {
@@ -1093,45 +1119,77 @@ export default function RosterPage() {
         const rosterPlayers = rosterForDate.filter(player => !player.isEmpty && player.player_id !== 'empty');
         const currentPositions = new Map(rosterPlayers.map(player => [player.player_id, player.position]));
 
+        // Build locked positions map from fixedPlayerIds
+        const lockedByPosition = new Map();
+        rosterPlayers.forEach(player => {
+            if (fixedPlayerIds.has(player.player_id) && ACTIVE_POSITIONS_ORDER.includes(player.position)) {
+                lockedByPosition.set(player.position, { name: player.name, player_id: player.player_id });
+                console.log(`🔒 Locked: ${player.name} (${player.position}) - cannot move`);
+            }
+        });
+
         const playersToBench = rosterPlayers
             .filter(player => ACTIVE_POSITIONS_ORDER.includes(player.position))
             .filter(player => !fixedPlayerIds.has(player.player_id))
-            .filter(player => isMoveAllowedForDate(player, gameDate))
             .filter(player => desiredPositions.get(player.player_id) !== player.position)
             .sort((left, right) => ACTIVE_POSITIONS_ORDER.indexOf(left.position) - ACTIVE_POSITIONS_ORDER.indexOf(right.position));
 
+        console.log(`📋 Players to bench (${playersToBench.length}):`, playersToBench.map(p => `${p.name}(${p.position})`).join(', ') || 'none');
+
+        // Filter playersToActivate: exclude those whose target position is occupied by a locked player
         const playersToActivate = rosterPlayers
             .filter(player => desiredPositions.get(player.player_id))
             .filter(player => ACTIVE_POSITIONS_ORDER.includes(desiredPositions.get(player.player_id)))
             .filter(player => desiredPositions.get(player.player_id) !== player.position)
+            .filter(player => {
+                const targetPos = desiredPositions.get(player.player_id);
+                const isTargetLocked = lockedByPosition.has(targetPos);
+                if (isTargetLocked) {
+                    console.log(`⚠️  Skip ${player.name}: target position ${targetPos} is locked by ${lockedByPosition.get(targetPos).name}`);
+                }
+                return !isTargetLocked;
+            })
             .sort((left, right) => {
                 const leftTarget = ACTIVE_POSITIONS_ORDER.indexOf(desiredPositions.get(left.player_id));
                 const rightTarget = ACTIVE_POSITIONS_ORDER.indexOf(desiredPositions.get(right.player_id));
                 return leftTarget - rightTarget;
             });
 
+        console.log(`📋 Players to activate (${playersToActivate.length}):`, playersToActivate.map(p => `${p.name}(${p.position}->${desiredPositions.get(p.player_id)})`).join(', ') || 'none');
+
         const moveDetails = [];
 
+        // Bench moves first
         for (const player of playersToBench) {
             const currentPosition = currentPositions.get(player.player_id);
             if (currentPosition === 'BN') continue;
 
+            console.log(`✅ Moving ${player.name} from ${currentPosition} to BN`);
             await applyRosterMove(player.player_id, currentPosition, 'BN', gameDate);
             currentPositions.set(player.player_id, 'BN');
             moveDetails.push(`${player.name} -> BN`);
         }
 
+        // Activate moves
         for (const player of playersToActivate) {
             const targetPosition = desiredPositions.get(player.player_id);
             const currentPosition = currentPositions.get(player.player_id);
 
             if (!targetPosition || currentPosition === targetPosition) continue;
 
+            // Double-check target position not occupied by a locked player
+            if (lockedByPosition.has(targetPosition)) {
+                console.log(`❌ Cannot move ${player.name} to ${targetPosition}: position locked by ${lockedByPosition.get(targetPosition).name}`);
+                continue;
+            }
+
+            console.log(`✅ Moving ${player.name} from ${currentPosition} to ${targetPosition}`);
             await applyRosterMove(player.player_id, currentPosition, targetPosition, gameDate);
             currentPositions.set(player.player_id, targetPosition);
             moveDetails.push(`${player.name} -> ${targetPosition}`);
         }
 
+        console.log(`📊 Total moves: ${moveDetails.length}`, moveDetails);
         return moveDetails;
     };
 
@@ -2455,12 +2513,6 @@ export default function RosterPage() {
                                     className="w-full px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-colors"
                                 >
                                     Today
-                                </button>
-                                <button
-                                    onClick={() => handleStartActive('five-days')}
-                                    className="w-full px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition-colors"
-                                >
-                                    5 Days (include today)
                                 </button>
                                 <button
                                     onClick={() => setShowStartActiveModal(false)}
