@@ -143,10 +143,13 @@ async function getRosterForManager(leagueId, managerId, gameDate) {
 
   const gameMap = {};
   (scheduleData.data || []).forEach((game) => {
+    // Validate time field - must be a valid timestamp string
+    const validTime = game.time && typeof game.time === 'string' ? game.time : null;
+    
     gameMap[game.home] = {
       opponent: game.away,
       is_home: true,
-      time: game.time,
+      time: validTime,
       place: game.place || 'Stadium',
       away_team_score: game.away_team_score,
       home_team_score: game.home_team_score,
@@ -155,7 +158,7 @@ async function getRosterForManager(leagueId, managerId, gameDate) {
     gameMap[game.away] = {
       opponent: game.home,
       is_home: false,
-      time: game.time,
+      time: validTime,
       place: game.place || 'Stadium',
       away_team_score: game.away_team_score,
       home_team_score: game.home_team_score,

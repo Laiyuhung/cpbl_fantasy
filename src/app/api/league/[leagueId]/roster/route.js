@@ -216,11 +216,17 @@ export async function GET(request, { params }) {
         const gameMap = {};
         if (scheduleData) {
             scheduleData.forEach(game => {
+                // Validate time field - must be a valid timestamp string
+                const validTime = game.time && typeof game.time === 'string' ? game.time : null;
+                if (!validTime) {
+                    console.warn(`⚠️  Game ${game.home} vs ${game.away} on ${gameDateStr} has invalid time: ${game.time}`);
+                }
+
                 // Map Home Team Key
                 gameMap[game.home] = {
                     opponent: game.away,
                     is_home: true,
-                    time: game.time,
+                    time: validTime,
                     place: game.place || 'Stadium',
                     away_team_score: game.away_team_score,
                     home_team_score: game.home_team_score,
@@ -230,7 +236,7 @@ export async function GET(request, { params }) {
                 gameMap[game.away] = {
                     opponent: game.home,
                     is_home: false,
-                    time: game.time,
+                    time: validTime,
                     place: game.place || 'Stadium',
                     away_team_score: game.away_team_score,
                     home_team_score: game.home_team_score,

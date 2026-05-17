@@ -658,7 +658,7 @@ export default function PlayerDetailModal({
                                     })()
                                 ) : (
                                     <span className="text-slate-400 font-mono text-xs">
-                                        {new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        {player.game_info.time ? new Date(player.game_info.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : 'TBD'}
                                         {' '}
                                         {player.game_info.is_home ? 'vs' : '@'}
                                         {' '}

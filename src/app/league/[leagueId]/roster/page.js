@@ -810,6 +810,28 @@ export default function RosterPage() {
     };
 
     // Move Restriction Helper
+    const getGameStartedInfo = (player, gameDate) => {
+        if (!gameDate || !player.game_info) return null;
+
+        const todayStr = getTodayTW();
+        if (gameDate !== todayStr) return null;
+        if (!player.game_info.time) return null;
+        if (player.game_info.is_postponed) return null;
+
+        try {
+            const gameTimeUTC = new Date(player.game_info.time);
+            const nowUTC = new Date();
+            if (nowUTC >= gameTimeUTC) {
+                const minutesElapsed = Math.floor((nowUTC - gameTimeUTC) / 60000);
+                return { isStarted: true, minutesElapsed };
+            }
+        } catch (e) {
+            console.error(`Error parsing time for ${player.name}:`, e);
+        }
+
+        return null;
+    };
+
     const isMoveAllowedForDate = (player, gameDate) => {
         if (!gameDate) return true;
 
@@ -922,6 +944,26 @@ export default function RosterPage() {
         const rosterPlayers = rosterForDate.filter(player => !player.isEmpty && player.player_id !== 'empty');
         console.log(`📊 Total players in roster: ${rosterPlayers.length}`);
         
+        // Identify starters with games (not BN/NA/IL/etc)
+        const starterPlayersWithGames = rosterPlayers.filter(p => 
+            ACTIVE_POSITIONS_ORDER.includes(p.position) && 
+            p.game_info && 
+            !p.game_info.is_postponed
+        );
+        
+        if (starterPlayersWithGames.length > 0) {
+            console.log(`\n⏰ Game time analysis (${starterPlayersWithGames.length} starters with games):`);
+            starterPlayersWithGames.forEach(p => {
+                const started = getGameStartedInfo(p, gameDate);
+                if (started) {
+                    console.log(`  🎮 STARTED: ${p.name} (${p.position}) - 已開賽 ${started.minutesElapsed} 分鐘 | ${p.game_info.is_home ? 'vs' : '@'} ${p.game_info.opponent}`);
+                } else {
+                    const gameTime = p.game_info.time ? new Date(p.game_info.time).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false}) : 'TBD';
+                    console.log(`  ⏳ UPCOMING: ${p.name} (${p.position}) - ${gameTime} | ${p.game_info.is_home ? 'vs' : '@'} ${p.game_info.opponent}`);
+                }
+            });
+        }
+        
         const fixedPlayerIds = new Set(
             rosterPlayers
                 .filter(player => ACTIVE_POSITIONS_ORDER.includes(player.position) && !isMoveAllowedForDate(player, gameDate))
@@ -929,10 +971,17 @@ export default function RosterPage() {
         );
         
         if (fixedPlayerIds.size > 0) {
-            console.log(`🔒 Fixed players (locked - cannot move):`);
+            console.log(`\n🔒 Locked/Fixed players (cannot move):`);
             rosterPlayers
                 .filter(p => fixedPlayerIds.has(p.player_id))
-                .forEach(p => console.log(`  - ${p.name} (${p.position})`));
+                .forEach(p => {
+                    const started = getGameStartedInfo(p, gameDate);
+                    if (started) {
+                        console.log(`  🚫 ${p.name} (${p.position}) - 已開賽 ${started.minutesElapsed} 分鐘`);
+                    } else {
+                        console.log(`  🚫 ${p.name} (${p.position})`);
+                    }
+                });
         }
 
         const availableSlots = [];
@@ -1121,10 +1170,18 @@ export default function RosterPage() {
 
         // Build locked positions map from fixedPlayerIds
         const lockedByPosition = new Map();
+        console.log(`\n🔍 Analyzing locked/started players:`);
+        
         rosterPlayers.forEach(player => {
             if (fixedPlayerIds.has(player.player_id) && ACTIVE_POSITIONS_ORDER.includes(player.position)) {
+                const started = getGameStartedInfo(player, gameDate);
                 lockedByPosition.set(player.position, { name: player.name, player_id: player.player_id });
-                console.log(`🔒 Locked: ${player.name} (${player.position}) - cannot move`);
+                
+                if (started) {
+                    console.log(`🔒 LOCKED (已開賽): ${player.name} (${player.position}) - 開賽 ${started.minutesElapsed} 分鐘 | ${player.game_info?.is_home ? 'vs' : '@'} ${player.game_info?.opponent}`);
+                } else {
+                    console.log(`🔒 LOCKED: ${player.name} (${player.position})`);
+                }
             }
         });
 
@@ -1134,7 +1191,7 @@ export default function RosterPage() {
             .filter(player => desiredPositions.get(player.player_id) !== player.position)
             .sort((left, right) => ACTIVE_POSITIONS_ORDER.indexOf(left.position) - ACTIVE_POSITIONS_ORDER.indexOf(right.position));
 
-        console.log(`📋 Players to bench (${playersToBench.length}):`, playersToBench.map(p => `${p.name}(${p.position})`).join(', ') || 'none');
+        console.log(`\n📋 Players to bench (${playersToBench.length}):`, playersToBench.map(p => `${p.name}(${p.position})`).join(', ') || 'none');
 
         // Filter playersToActivate: exclude those whose target position is occupied by a locked player
         const playersToActivate = rosterPlayers
@@ -1145,7 +1202,13 @@ export default function RosterPage() {
                 const targetPos = desiredPositions.get(player.player_id);
                 const isTargetLocked = lockedByPosition.has(targetPos);
                 if (isTargetLocked) {
-                    console.log(`⚠️  Skip ${player.name}: target position ${targetPos} is locked by ${lockedByPosition.get(targetPos).name}`);
+                    const lockedPlayer = lockedByPosition.get(targetPos);
+                    const started = getGameStartedInfo(lockedPlayer, gameDate);
+                    if (started) {
+                        console.log(`⚠️  Skip ${player.name}: target position ${targetPos} locked by ${lockedPlayer.name} (已開賽 ${started.minutesElapsed} 分鐘)`);
+                    } else {
+                        console.log(`⚠️  Skip ${player.name}: target position ${targetPos} locked by ${lockedPlayer.name}`);
+                    }
                 }
                 return !isTargetLocked;
             })
@@ -1155,11 +1218,12 @@ export default function RosterPage() {
                 return leftTarget - rightTarget;
             });
 
-        console.log(`📋 Players to activate (${playersToActivate.length}):`, playersToActivate.map(p => `${p.name}(${p.position}->${desiredPositions.get(p.player_id)})`).join(', ') || 'none');
+        console.log(`\n📋 Players to activate (${playersToActivate.length}):`, playersToActivate.map(p => `${p.name}(${p.position}->${desiredPositions.get(p.player_id)})`).join(', ') || 'none');
 
         const moveDetails = [];
 
         // Bench moves first
+        console.log(`\n📤 Executing bench moves...`);
         for (const player of playersToBench) {
             const currentPosition = currentPositions.get(player.player_id);
             if (currentPosition === 'BN') continue;
@@ -1171,6 +1235,7 @@ export default function RosterPage() {
         }
 
         // Activate moves
+        console.log(`\n📥 Executing activation moves...`);
         for (const player of playersToActivate) {
             const targetPosition = desiredPositions.get(player.player_id);
             const currentPosition = currentPositions.get(player.player_id);
@@ -1189,7 +1254,7 @@ export default function RosterPage() {
             moveDetails.push(`${player.name} -> ${targetPosition}`);
         }
 
-        console.log(`📊 Total moves: ${moveDetails.length}`, moveDetails);
+        console.log(`\n📊 Total moves completed: ${moveDetails.length}`, moveDetails);
         return moveDetails;
     };
 
