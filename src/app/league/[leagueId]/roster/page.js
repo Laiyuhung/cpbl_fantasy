@@ -820,16 +820,26 @@ export default function RosterPage() {
 
         try {
             const gameTimeUTC = new Date(player.game_info.time);
+            
+            if (isNaN(gameTimeUTC.getTime())) {
+                return null;
+            }
+            
             const nowUTC = new Date();
             if (nowUTC >= gameTimeUTC) {
                 const minutesElapsed = Math.floor((nowUTC - gameTimeUTC) / 60000);
                 return { isStarted: true, minutesElapsed };
             }
         } catch (e) {
-            console.error(`Error parsing time for ${player.name}:`, e);
+            return null;
         }
 
         return null;
+    };
+
+    const isGameStartedForPlayer = (player, gameDate) => {
+        const started = getGameStartedInfo(player, gameDate);
+        return started && started.isStarted === true;
     };
 
     const isMoveAllowedForDate = (player, gameDate) => {
@@ -844,16 +854,25 @@ export default function RosterPage() {
         if (gameDate === todayStr && player.game_info && player.game_info.time) {
             // game_info.time is stored as timestamptz (e.g., '2026-03-09 10:35:00+00')
             // Compare directly using UTC
-            const gameTimeUTC = new Date(player.game_info.time);
-            const nowUTC = new Date();
-            const isGameStarted = nowUTC >= gameTimeUTC;
-
-            if (isGameStarted && !player.game_info.is_postponed) {
-                // Starter Locked
-                if (!['BN', 'NA'].includes(player.position)) {
-                    return false;
+            try {
+                const gameTimeUTC = new Date(player.game_info.time);
+                
+                if (isNaN(gameTimeUTC.getTime())) {
+                    return true; // Allow if can't parse
                 }
-                // BN/NA are allowed to move (but target restricted)
+                
+                const nowUTC = new Date();
+                const isGameStarted = nowUTC >= gameTimeUTC;
+
+                if (isGameStarted && !player.game_info.is_postponed) {
+                    // Starter Locked - cannot move
+                    if (!['BN', 'NA'].includes(player.position)) {
+                        return false;
+                    }
+                    // BN/NA are allowed to move (but target restricted)
+                }
+            } catch (e) {
+                return true; // Allow if error
             }
         }
 
@@ -944,26 +963,28 @@ export default function RosterPage() {
         const rosterPlayers = rosterForDate.filter(player => !player.isEmpty && player.player_id !== 'empty');
         console.log(`📊 Total players in roster: ${rosterPlayers.length}`);
         
-        // Identify starters with games (not BN/NA/IL/etc)
-        const starterPlayersWithGames = rosterPlayers.filter(p => 
-            ACTIVE_POSITIONS_ORDER.includes(p.position) && 
-            p.game_info && 
-            !p.game_info.is_postponed
-        );
-        
-        if (starterPlayersWithGames.length > 0) {
-            console.log(`\n⏰ Game time analysis (${starterPlayersWithGames.length} starters with games):`);
-            starterPlayersWithGames.forEach(p => {
+        // Analyze all players with games today
+        const todayStr = getTodayTW();
+        if (gameDate === todayStr) {
+            const playersWithGames = rosterPlayers.filter(p => p.game_info && !p.game_info.is_postponed);
+            console.log(`\n⏰ Game time status (${playersWithGames.length} players with games today):`);
+            
+            playersWithGames.forEach(p => {
                 const started = getGameStartedInfo(p, gameDate);
                 if (started) {
                     console.log(`  🎮 STARTED: ${p.name} (${p.position}) - 已開賽 ${started.minutesElapsed} 分鐘 | ${p.game_info.is_home ? 'vs' : '@'} ${p.game_info.opponent}`);
-                } else {
-                    const gameTime = p.game_info.time ? new Date(p.game_info.time).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false}) : 'TBD';
-                    console.log(`  ⏳ UPCOMING: ${p.name} (${p.position}) - ${gameTime} | ${p.game_info.is_home ? 'vs' : '@'} ${p.game_info.opponent}`);
+                } else if (p.game_info.time) {
+                    try {
+                        const gameTime = new Date(p.game_info.time).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false});
+                        console.log(`  ⏳ UPCOMING: ${p.name} (${p.position}) - ${gameTime} | ${p.game_info.is_home ? 'vs' : '@'} ${p.game_info.opponent}`);
+                    } catch (e) {
+                        console.log(`  ⏳ UPCOMING: ${p.name} (${p.position}) - TBD | ${p.game_info.is_home ? 'vs' : '@'} ${p.game_info.opponent}`);
+                    }
                 }
             });
         }
         
+        // Identify locked players (active starters that cannot move)
         const fixedPlayerIds = new Set(
             rosterPlayers
                 .filter(player => ACTIVE_POSITIONS_ORDER.includes(player.position) && !isMoveAllowedForDate(player, gameDate))
@@ -971,7 +992,7 @@ export default function RosterPage() {
         );
         
         if (fixedPlayerIds.size > 0) {
-            console.log(`\n🔒 Locked/Fixed players (cannot move):`);
+            console.log(`\n🔒 Locked active starters (cannot move to bench):`);
             rosterPlayers
                 .filter(p => fixedPlayerIds.has(p.player_id))
                 .forEach(p => {
@@ -994,12 +1015,21 @@ export default function RosterPage() {
             }
         });
         
-        console.log(`📌 Available slots after fixed players: ${JSON.stringify(ACTIVE_POSITIONS_ORDER.map(pos => `${pos}:${availableSlots.filter(s => s.position === pos).length}`).join(', '))}`);
+        console.log(`📌 Available slots: ${ACTIVE_POSITIONS_ORDER.map(pos => `${pos}:${availableSlots.filter(s => s.position === pos).length}`).join(', ')}`);
 
         const candidates = rosterPlayers
             .filter(player => !fixedPlayerIds.has(player.player_id))
             .filter(player => !['NA', 'IL', 'MINOR', 'MN'].includes(String(player.position || '').toUpperCase()))
             .filter(player => !(player.position === 'BN' && !isMoveAllowedForDate(player, gameDate)))
+            // 🔴 CRITICAL: Exclude already-started players - they cannot move to active slots
+            .filter(player => {
+                if (isGameStartedForPlayer(player, gameDate)) {
+                    const started = getGameStartedInfo(player, gameDate);
+                    console.log(`🚫 EXCLUDE: ${player.name} (${player.position}) - 已開賽 ${started.minutesElapsed} 分鐘，不能激活`);
+                    return false;
+                }
+                return true;
+            })
             .map(player => {
                 const eligibleSlots = getEligibleActivePositions(player)
                     .flatMap(position => availableSlots.filter(slot => slot.position === position))
@@ -1109,13 +1139,34 @@ export default function RosterPage() {
         });
 
         // Log final plan
-        console.log(`✅ Final desired positions:`);
+        console.log(`\n✅ Final desired positions:`);
+        
+        // Count changes
+        let benches = 0;
+        let activations = 0;
+        const excludedStarted = rosterPlayers.filter(p => isGameStartedForPlayer(p, gameDate) && ACTIVE_POSITIONS_ORDER.includes(p.position));
+        
         rosterPlayers.forEach(player => {
             const desired = desiredPositions.get(player.player_id);
             if (desired !== player.position) {
+                if (desired === 'BN') {
+                    benches++;
+                } else if (ACTIVE_POSITIONS_ORDER.includes(desired)) {
+                    activations++;
+                }
                 console.log(`  ${player.name}: ${player.position} → ${desired}`);
             }
         });
+
+        if (excludedStarted.length > 0) {
+            console.log(`\n🚫 Excluded from activation (已開賽球員): ${excludedStarted.length}`);
+            excludedStarted.forEach(p => {
+                const started = getGameStartedInfo(p, gameDate);
+                console.log(`  ${p.name} (${p.position}) - 已開賽 ${started.minutesElapsed} 分鐘`);
+            });
+        }
+        
+        console.log(`\n📊 Summary: ${benches} bench moves, ${activations} activations, ${excludedStarted.length} excluded (started)`);
 
         return { desiredPositions, fixedPlayerIds };
     };
@@ -1155,107 +1206,118 @@ export default function RosterPage() {
     };
 
     const executeStartActiveForDate = async (gameDate) => {
-        console.log(`🔄 Start Active for ${gameDate}`);
+        console.log(`🔄 Executing Start Active for ${gameDate}`);
         
-        const res = await fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}&game_date=${gameDate}`);
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-            throw new Error(data.error || `Failed to load roster for ${gameDate}`);
-        }
-
-        const rosterForDate = data.roster || [];
-        const { desiredPositions, fixedPlayerIds } = buildAutoStartPlan(rosterForDate, gameDate);
-        const rosterPlayers = rosterForDate.filter(player => !player.isEmpty && player.player_id !== 'empty');
-        const currentPositions = new Map(rosterPlayers.map(player => [player.player_id, player.position]));
-
-        // Build locked positions map from fixedPlayerIds
-        const lockedByPosition = new Map();
-        console.log(`\n🔍 Analyzing locked/started players:`);
-        
-        rosterPlayers.forEach(player => {
-            if (fixedPlayerIds.has(player.player_id) && ACTIVE_POSITIONS_ORDER.includes(player.position)) {
-                const started = getGameStartedInfo(player, gameDate);
-                lockedByPosition.set(player.position, { name: player.name, player_id: player.player_id });
-                
-                if (started) {
-                    console.log(`🔒 LOCKED (已開賽): ${player.name} (${player.position}) - 開賽 ${started.minutesElapsed} 分鐘 | ${player.game_info?.is_home ? 'vs' : '@'} ${player.game_info?.opponent}`);
-                } else {
-                    console.log(`🔒 LOCKED: ${player.name} (${player.position})`);
-                }
+        try {
+            const res = await fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}&game_date=${gameDate}`);
+            const data = await res.json();
+            
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || `Failed to load roster for ${gameDate}`);
             }
-        });
 
-        const playersToBench = rosterPlayers
-            .filter(player => ACTIVE_POSITIONS_ORDER.includes(player.position))
-            .filter(player => !fixedPlayerIds.has(player.player_id))
-            .filter(player => desiredPositions.get(player.player_id) !== player.position)
-            .sort((left, right) => ACTIVE_POSITIONS_ORDER.indexOf(left.position) - ACTIVE_POSITIONS_ORDER.indexOf(right.position));
+            const rosterForDate = data.roster || [];
+            const { desiredPositions, fixedPlayerIds } = buildAutoStartPlan(rosterForDate, gameDate);
+            const rosterPlayers = rosterForDate.filter(player => !player.isEmpty && player.player_id !== 'empty');
+            const currentPositions = new Map(rosterPlayers.map(player => [player.player_id, player.position]));
 
-        console.log(`\n📋 Players to bench (${playersToBench.length}):`, playersToBench.map(p => `${p.name}(${p.position})`).join(', ') || 'none');
-
-        // Filter playersToActivate: exclude those whose target position is occupied by a locked player
-        const playersToActivate = rosterPlayers
-            .filter(player => desiredPositions.get(player.player_id))
-            .filter(player => ACTIVE_POSITIONS_ORDER.includes(desiredPositions.get(player.player_id)))
-            .filter(player => desiredPositions.get(player.player_id) !== player.position)
-            .filter(player => {
-                const targetPos = desiredPositions.get(player.player_id);
-                const isTargetLocked = lockedByPosition.has(targetPos);
-                if (isTargetLocked) {
-                    const lockedPlayer = lockedByPosition.get(targetPos);
-                    const started = getGameStartedInfo(lockedPlayer, gameDate);
-                    if (started) {
-                        console.log(`⚠️  Skip ${player.name}: target position ${targetPos} locked by ${lockedPlayer.name} (已開賽 ${started.minutesElapsed} 分鐘)`);
-                    } else {
-                        console.log(`⚠️  Skip ${player.name}: target position ${targetPos} locked by ${lockedPlayer.name}`);
-                    }
+            // Build locked positions map from fixedPlayerIds
+            const lockedByPosition = new Map();
+            const lockedPlayers = [];
+            rosterPlayers.forEach(player => {
+                if (fixedPlayerIds.has(player.player_id) && ACTIVE_POSITIONS_ORDER.includes(player.position)) {
+                    lockedByPosition.set(player.position, { name: player.name, player_id: player.player_id });
+                    lockedPlayers.push(player);
                 }
-                return !isTargetLocked;
-            })
-            .sort((left, right) => {
-                const leftTarget = ACTIVE_POSITIONS_ORDER.indexOf(desiredPositions.get(left.player_id));
-                const rightTarget = ACTIVE_POSITIONS_ORDER.indexOf(desiredPositions.get(right.player_id));
-                return leftTarget - rightTarget;
             });
 
-        console.log(`\n📋 Players to activate (${playersToActivate.length}):`, playersToActivate.map(p => `${p.name}(${p.position}->${desiredPositions.get(p.player_id)})`).join(', ') || 'none');
+            const playersToBench = rosterPlayers
+                .filter(player => ACTIVE_POSITIONS_ORDER.includes(player.position))
+                .filter(player => !fixedPlayerIds.has(player.player_id))
+                .filter(player => desiredPositions.get(player.player_id) !== player.position)
+                .sort((left, right) => ACTIVE_POSITIONS_ORDER.indexOf(left.position) - ACTIVE_POSITIONS_ORDER.indexOf(right.position));
 
-        const moveDetails = [];
+            console.log(`\n🔐 Protected from benching (${lockedPlayers.length}):`);
+            lockedPlayers.forEach(p => {
+                const started = getGameStartedInfo(p, gameDate);
+                if (started) {
+                    console.log(`  🚫 ${p.name} (${p.position}) - 已開賽 ${started.minutesElapsed} 分鐘 | ${p.game_info?.is_home ? 'vs' : '@'} ${p.game_info?.opponent}`);
+                } else {
+                    console.log(`  🚫 ${p.name} (${p.position}) - 保護中`);
+                }
+            });
 
-        // Bench moves first
-        console.log(`\n📤 Executing bench moves...`);
-        for (const player of playersToBench) {
-            const currentPosition = currentPositions.get(player.player_id);
-            if (currentPosition === 'BN') continue;
+            console.log(`\n📥 Will bench (${playersToBench.length}):`, playersToBench.map(p => `${p.name}(${p.position})`).join(', ') || 'none');
 
-            console.log(`✅ Moving ${player.name} from ${currentPosition} to BN`);
-            await applyRosterMove(player.player_id, currentPosition, 'BN', gameDate);
-            currentPositions.set(player.player_id, 'BN');
-            moveDetails.push(`${player.name} -> BN`);
-        }
+            // Filter playersToActivate: exclude those whose target position is occupied by a locked player
+            const playersToActivate = rosterPlayers
+                .filter(player => desiredPositions.get(player.player_id))
+                .filter(player => ACTIVE_POSITIONS_ORDER.includes(desiredPositions.get(player.player_id)))
+                .filter(player => desiredPositions.get(player.player_id) !== player.position)
+                .filter(player => {
+                    const targetPos = desiredPositions.get(player.player_id);
+                    return !lockedByPosition.has(targetPos);
+                })
+                .sort((left, right) => {
+                    const leftTarget = ACTIVE_POSITIONS_ORDER.indexOf(desiredPositions.get(left.player_id));
+                    const rightTarget = ACTIVE_POSITIONS_ORDER.indexOf(desiredPositions.get(right.player_id));
+                    return leftTarget - rightTarget;
+                });
 
-        // Activate moves
-        console.log(`\n📥 Executing activation moves...`);
-        for (const player of playersToActivate) {
-            const targetPosition = desiredPositions.get(player.player_id);
-            const currentPosition = currentPositions.get(player.player_id);
+            console.log(`📊 Plan: bench ${playersToBench.length}, activate ${playersToActivate.length}`);
 
-            if (!targetPosition || currentPosition === targetPosition) continue;
+            console.log(`\n📋 Activation targets (${playersToActivate.length}):`);
+            playersToActivate.forEach(p => {
+                const targetPos = desiredPositions.get(p.player_id);
+                console.log(`  ✅ ${p.name} (${p.position}) → ${targetPos}`);
+            });
 
-            // Double-check target position not occupied by a locked player
-            if (lockedByPosition.has(targetPosition)) {
-                console.log(`❌ Cannot move ${player.name} to ${targetPosition}: position locked by ${lockedByPosition.get(targetPosition).name}`);
-                continue;
+            const moveDetails = [];
+
+            // Bench moves first
+            console.log(`\n⏳ Executing bench moves...`);
+            let benchCount = 0;
+            for (const player of playersToBench) {
+                const currentPosition = currentPositions.get(player.player_id);
+                if (currentPosition === 'BN') continue;
+
+                console.log(`  ▶️ ${player.name}: ${currentPosition} → BN`);
+                await applyRosterMove(player.player_id, currentPosition, 'BN', gameDate);
+                currentPositions.set(player.player_id, 'BN');
+                moveDetails.push(`${player.name} -> BN`);
+                benchCount++;
             }
+            console.log(`  ✅ Benched: ${benchCount}`);
 
-            console.log(`✅ Moving ${player.name} from ${currentPosition} to ${targetPosition}`);
-            await applyRosterMove(player.player_id, currentPosition, targetPosition, gameDate);
-            currentPositions.set(player.player_id, targetPosition);
-            moveDetails.push(`${player.name} -> ${targetPosition}`);
+            // Activate moves
+            console.log(`\n⏳ Executing activation moves...`);
+            let activateCount = 0;
+            for (const player of playersToActivate) {
+                const targetPosition = desiredPositions.get(player.player_id);
+                const currentPosition = currentPositions.get(player.player_id);
+
+                if (!targetPosition || currentPosition === targetPosition) continue;
+
+                // Double-check target position not occupied by a locked player
+                if (lockedByPosition.has(targetPosition)) {
+                    console.log(`  ⚠️  ${player.name}: target ${targetPosition} locked, skip`);
+                    continue;
+                }
+
+                console.log(`  ▶️ ${player.name}: ${currentPosition} → ${targetPosition}`);
+                await applyRosterMove(player.player_id, currentPosition, targetPosition, gameDate);
+                currentPositions.set(player.player_id, targetPosition);
+                moveDetails.push(`${player.name} -> ${targetPosition}`);
+                activateCount++;
+            }
+            console.log(`  ✅ Activated: ${activateCount}`);
+
+            console.log(`\n📊 Total: ${moveDetails.length} moves completed\n`);
+            return moveDetails;
+        } catch (error) {
+            console.error(`❌ executeStartActiveForDate error: ${error.message}`);
+            throw error;
         }
-
-        console.log(`\n📊 Total moves completed: ${moveDetails.length}`, moveDetails);
-        return moveDetails;
     };
 
     const handleStartActive = async (mode = 'today') => {
