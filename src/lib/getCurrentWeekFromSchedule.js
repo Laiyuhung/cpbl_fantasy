@@ -1,9 +1,21 @@
 import { getTaiwanDateString } from '@/lib/taiwanDate';
 
+function normalizeReferenceDate(referenceDate) {
+  if (typeof referenceDate === 'string') {
+    return referenceDate.slice(0, 10);
+  }
+
+  if (referenceDate instanceof Date && !Number.isNaN(referenceDate.getTime())) {
+    return getTaiwanDateString(referenceDate);
+  }
+
+  return getTaiwanDateString(new Date());
+}
+
 export function getCurrentWeekFromSchedule(schedule, referenceDate = new Date()) {
   if (!Array.isArray(schedule) || schedule.length === 0) return 1;
 
-  const targetDate = getTaiwanDateString(referenceDate);
+  const targetDate = normalizeReferenceDate(referenceDate);
   const firstWeek = schedule[0];
   const lastWeek = schedule[schedule.length - 1];
 
