@@ -2105,6 +2105,7 @@ export default function LeaguePage() {
                     onAdd={handleAddPlayer}
                     onDrop={handleDropPlayer}
                     onTrade={handleOpenTrade}
+                    previewOnly
               />
           <p className="text-sm text-purple-200/90 leading-relaxed px-1">
             贊助連結：
@@ -2124,6 +2125,7 @@ export default function LeaguePage() {
           onClose={() => setSelectedPlayerModal(null)}
           player={selectedPlayerModal}
           leagueId={leagueId}
+          previewOnly
           myManagerId={myManagerId}
           ownership={selectedPlayerModal ? dailyRosterOwnerships.find((item) => String(item.player_id) === String(selectedPlayerModal.player_id)) : null}
           leagueStatus={leagueStatus}

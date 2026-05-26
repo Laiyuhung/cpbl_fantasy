@@ -64,6 +64,7 @@ export default function LeagueDailyRoster({
     onAdd,
     onDrop,
     onTrade,
+    previewOnly = false,
 }) {
     const [selectedDate, setSelectedDate] = useState('');
     const [availableDates, setAvailableDates] = useState([]);
@@ -1320,6 +1321,7 @@ export default function LeagueDailyRoster({
                 onClose={() => setSelectedPlayerModal(null)}
                 player={selectedPlayerModal}
                 leagueId={leagueId}
+                previewOnly={previewOnly}
                 myManagerId={myManagerId}
                 ownership={selectedPlayerModal ? ownerships.find(o => o.player_id === selectedPlayerModal.player_id) : null}
                 leagueStatus={leagueStatus}

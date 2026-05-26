@@ -40,7 +40,7 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [managerRes, adminRes, matchupsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, leagueRes, testLeagueRes, leagueStatusRes] = await Promise.all([
+    const [managerRes, adminRes, matchupsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, allLeagueRes, testLeagueRes, leagueStatusRes] = await Promise.all([
       supabase
         .from('managers')
         .select('name, email_verified')
@@ -103,7 +103,7 @@ export async function GET(request, { params }) {
       supabaseAdmin
         .from('league_player_ownership')
         .select('player_id, league_id, manager_id, status')
-        .eq('league_id', leagueId),
+        .ilike('status', 'on team'),
       supabase
         .from('league_settings')
         .select('league_id'),
@@ -166,9 +166,18 @@ export async function GET(request, { params }) {
 
     const rosterPercentageMap = buildRosterPercentageMap({
       rosterRows: ownershipRes.data || [],
-      leagueRows: leagueRes.data || [],
+      leagueRows: allLeagueRes.data || [],
       statusRows: leagueStatusRes.data || [],
       testLeagueRows: testLeagueRes.data || [],
+    });
+
+    console.log('[overview-bootstrap] roster% summary', {
+      leagueId,
+      ownershipRows: (ownershipRes.data || []).length,
+      allLeagueRows: (allLeagueRes.data || []).length,
+      testLeagueRows: (testLeagueRes.data || []).length,
+      activeLeagueRows: (leagueStatusRes.data || []).filter((row) => row.status !== 'pre-draft' && row.status !== 'drafting now').length,
+      sampleRosterPercentages: Object.entries(rosterPercentageMap).slice(0, 10),
     });
 
     const standingsWithWaiver = (standingsRes.data || []).map((team) => {

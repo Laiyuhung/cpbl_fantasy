@@ -18,6 +18,7 @@ export default function PlayerDetailModal({
     onClose,
     player,
     leagueId,
+    previewOnly = false,
     // Transaction Props (optional - if provided, enables action buttons)
     myManagerId,
     ownership,          // { manager_id, status } for this player
@@ -81,6 +82,7 @@ export default function PlayerDetailModal({
             name: player.name,
             ownershipStatus: ownership?.status || null,
             ownershipManagerId: ownership?.manager_id || null,
+            previewOnly,
             actionType,
             hasAdd: typeof onAdd === 'function',
             hasDrop: typeof onDrop === 'function',
@@ -93,7 +95,7 @@ export default function PlayerDetailModal({
             isPlayerLocked,
             isDropLockedByGameStart,
         });
-    }, [isOpen, player, onAdd, onDrop, onTrade, onToggleWatch, ownership, leagueStatus, tradeEndDate, seasonYear, isPlayerLocked, isDropLockedByGameStart]);
+    }, [isOpen, player, onAdd, onDrop, onTrade, onToggleWatch, ownership, leagueStatus, tradeEndDate, seasonYear, isPlayerLocked, isDropLockedByGameStart, previewOnly]);
 
     // Reset state when modal opens
     useEffect(() => {
@@ -448,13 +450,71 @@ export default function PlayerDetailModal({
     };
 
     const renderActionButton = () => {
-        if (!myManagerId || (!onAdd && !onDrop && !onTrade)) return null;
+        if (!previewOnly && (!myManagerId || (!onAdd && !onDrop && !onTrade))) return null;
+
+        if (previewOnly) {
+            if (!ownership) {
+                return (
+                    <div className="flex flex-col items-start gap-0.5">
+                        <button
+                            type="button"
+                            disabled
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-green-600 text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg cursor-not-allowed"
+                            title="請到 Players page 使用"
+                            aria-disabled="true"
+                        >
+                            <span>FA</span>
+                        </button>
+                        <span className="text-[10px] font-semibold text-slate-400">請到 Players page 使用</span>
+                    </div>
+                );
+            }
+
+            const status = ownership.status?.toLowerCase();
+            if (status === 'waiver') {
+                return (
+                    <div className="flex flex-col items-start gap-0.5">
+                        <button
+                            type="button"
+                            disabled
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-yellow-500 text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg cursor-not-allowed"
+                            title="請到 Players page 使用"
+                            aria-disabled="true"
+                        >
+                            <span>Waiver</span>
+                        </button>
+                        <span className="text-[10px] font-semibold text-slate-400">請到 Players page 使用</span>
+                    </div>
+                );
+            }
+
+            if (status === 'on team') {
+                const isMine = ownership.manager_id === myManagerId;
+                return (
+                    <div className="flex flex-col items-start gap-0.5">
+                        <button
+                            type="button"
+                            disabled
+                            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg cursor-not-allowed ${isMine ? 'bg-red-600' : 'bg-blue-600'}`}
+                            title="請到 Players page 使用"
+                            aria-disabled="true"
+                        >
+                            <span>On team</span>
+                        </button>
+                        <span className="text-[10px] font-semibold text-slate-400">請到 Players page 使用</span>
+                    </div>
+                );
+            }
+
+            return null;
+        }
 
         // No ownership = Free Agent (green + button)
         if (!ownership) {
             if (!onAdd) return null;
             return (
                 <button
+                    type="button"
                     onClick={() => { onClose(); onAdd(player, false); }}
                     className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-green-600 hover:bg-green-500 text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg"
                 >
@@ -471,6 +531,7 @@ export default function PlayerDetailModal({
             if (!onAdd) return null;
             return (
                 <button
+                    type="button"
                     onClick={() => { onClose(); onAdd(player, true); }}
                     className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-yellow-500 hover:bg-yellow-400 text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg"
                     title="Claim via Waiver"
@@ -505,6 +566,7 @@ export default function PlayerDetailModal({
                 if (!onDrop) return null;
                 return (
                     <button
+                        type="button"
                         onClick={() => { onClose(); onDrop(player); }}
                         className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-red-600 hover:bg-red-500 text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg"
                         title="Drop Player"
@@ -518,6 +580,7 @@ export default function PlayerDetailModal({
                 if (isTradeDeadlinePassed() || !onTrade) return null;
                 return (
                     <button
+                        type="button"
                         onClick={() => { onClose(); onTrade(player, ownership.manager_id); }}
                         className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-all flex items-center gap-1.5 shadow-lg"
                         title="Propose Trade"
