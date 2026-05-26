@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getLeagueOverviewData } from '@/lib/getLeagueOverviewData';
+import { buildRosterPercentageMap } from '@/lib/rosterPercentage';
 import supabaseAdmin from '@/lib/supabaseAdmin';
 import { getCurrentWeekFromSchedule } from '@/lib/getCurrentWeekFromSchedule';
 import {
@@ -428,23 +429,12 @@ async function getPlayersBootstrap() {
   const statusMap = {};
   (realStatusRes.data || []).forEach((row) => { statusMap[row.player_id] = row.status; });
 
-  const testLeagueIds = new Set((testLeagueRes.data || []).map((t) => t.league_id));
-  const activeLeagueIds = new Set((leagueStatusRes.data || []).filter((row) => row.status !== 'pre-draft' && row.status !== 'drafting now').map((row) => row.league_id));
-  const totalLeagues = (leagueRes.data || []).filter((l) => !testLeagueIds.has(l.league_id) && activeLeagueIds.has(l.league_id)).length;
-
-  const rosterPercentageMap = {};
-  if (rosterRes.data && totalLeagues > 0) {
-    const playerLeagueMap = {};
-    rosterRes.data.forEach((row) => {
-      if (testLeagueIds.has(row.league_id)) return;
-      if (!activeLeagueIds.has(row.league_id)) return;
-      if (!playerLeagueMap[row.player_id]) playerLeagueMap[row.player_id] = new Set();
-      playerLeagueMap[row.player_id].add(row.league_id);
+    const rosterPercentageMap = buildRosterPercentageMap({
+        rosterRows: rosterRes.data || [],
+        leagueRows: leagueRes.data || [],
+        statusRows: leagueStatusRes.data || [],
+        testLeagueRows: testLeagueRes.data || [],
     });
-    Object.entries(playerLeagueMap).forEach(([playerId, leagues]) => {
-      rosterPercentageMap[playerId] = Math.round((leagues.size / totalLeagues) * 100);
-    });
-  }
 
   const players = (playersRes.data || []).map((player) => ({
     ...player,

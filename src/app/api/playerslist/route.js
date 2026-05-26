@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
+import { buildRosterPercentageMap } from '@/lib/rosterPercentage';
 
 // GET - 獲取球員列表
 export async function GET(req) {
@@ -132,19 +133,12 @@ export async function GET(req) {
       l => !testLeagueIds.has(l.league_id) && activeLeagueIds.has(l.league_id)
     ).length;
 
-    const rosterPercentageMap = {};
-    if (rosterRes.data && totalLeagues > 0) {
-      const playerLeagueMap = {};
-      rosterRes.data.forEach(r => {
-        if (testLeagueIds.has(r.league_id)) return; // 排除測試聯盟
-        if (!activeLeagueIds.has(r.league_id)) return; // 排除 pre-draft / drafting now
-        if (!playerLeagueMap[r.player_id]) playerLeagueMap[r.player_id] = new Set();
-        playerLeagueMap[r.player_id].add(r.league_id);
-      });
-      Object.entries(playerLeagueMap).forEach(([playerId, leagues]) => {
-        rosterPercentageMap[playerId] = Math.round((leagues.size / totalLeagues) * 100);
-      });
-    }
+    const rosterPercentageMap = buildRosterPercentageMap({
+      rosterRows: rosterRes.data || [],
+      leagueRows: leagueRes.data || [],
+      statusRows: leagueStatusRes.data || [],
+      testLeagueRows: testLeagueRes.data || [],
+    });
 
     // 將位置資料、真實狀態和賽程資料加入球員資料
     const playersWithPositions = (players || []).map(player => ({

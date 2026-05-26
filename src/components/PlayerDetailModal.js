@@ -62,6 +62,25 @@ export default function PlayerDetailModal({
     // or fall back to position if undefined
     const isPitcher = player?.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(player?.position);
 
+    useEffect(() => {
+        if (!isOpen || !player) return;
+
+        console.log('[PlayerDetailModal] open', {
+            playerId: player.player_id,
+            name: player.name,
+            hasAdd: typeof onAdd === 'function',
+            hasDrop: typeof onDrop === 'function',
+            hasTrade: typeof onTrade === 'function',
+            hasWatch: typeof onToggleWatch === 'function',
+            ownership,
+            leagueStatus,
+            tradeEndDate,
+            seasonYear,
+            isPlayerLocked,
+            isDropLockedByGameStart,
+        });
+    }, [isOpen, player, onAdd, onDrop, onTrade, onToggleWatch, ownership, leagueStatus, tradeEndDate, seasonYear, isPlayerLocked, isDropLockedByGameStart]);
+
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {

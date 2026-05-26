@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import supabase from '../../../../../../lib/supabase';
 import { cookies } from 'next/headers';
+import { buildRosterPercentageMap } from '@/lib/rosterPercentage';
 
 export async function GET(request, { params }) {
     try {
@@ -65,30 +66,12 @@ export async function GET(request, { params }) {
         if (waiverRes.error) throw waiverRes.error;
         if (membersRes.error) throw membersRes.error;
 
-        // 3. Calculate roster_percentage (exclude test_league and pre-draft/drafting now)
-        const testLeagueIds = new Set((testLeagueRes.data || []).map(t => t.league_id));
-        const activeLeagueIds = new Set(
-            (leagueStatusRes.data || [])
-                .filter(s => s.status !== 'pre-draft' && s.status !== 'drafting now')
-                .map(s => s.league_id)
-        );
-        const totalLeagues = (leagueRes.data || []).filter(
-            l => !testLeagueIds.has(l.league_id) && activeLeagueIds.has(l.league_id)
-        ).length;
-
-        const rosterPercentageMap = {};
-        if (rosterRes.data && totalLeagues > 0) {
-            const playerLeagueMap = {};
-            rosterRes.data.forEach(r => {
-                if (testLeagueIds.has(r.league_id)) return; // 排除測試聯盟
-                if (!activeLeagueIds.has(r.league_id)) return; // 排除 pre-draft / drafting now
-                if (!playerLeagueMap[r.player_id]) playerLeagueMap[r.player_id] = new Set();
-                playerLeagueMap[r.player_id].add(r.league_id);
-            });
-            Object.entries(playerLeagueMap).forEach(([playerId, leagues]) => {
-                rosterPercentageMap[playerId] = Math.round((leagues.size / totalLeagues) * 100);
-            });
-        }
+        const rosterPercentageMap = buildRosterPercentageMap({
+            rosterRows: rosterRes.data || [],
+            leagueRows: leagueRes.data || [],
+            statusRows: leagueStatusRes.data || [],
+            testLeagueRows: testLeagueRes.data || [],
+        });
 
         // 4. Fetch all relevant player names
         const playerIds = new Set();

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getLeagueOverviewData } from '@/lib/getLeagueOverviewData';
+import { buildRosterPercentageMap } from '@/lib/rosterPercentage';
 import supabaseAdmin from '@/lib/supabaseAdmin';
 import { getCurrentWeekFromSchedule } from '@/lib/getCurrentWeekFromSchedule';
 
@@ -163,30 +164,12 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: ownershipRes.error.message }, { status: 500 });
     }
 
-    // Calculate roster_percentage (exclude test_league and pre-draft/drafting now)
-    const testLeagueIds = new Set((testLeagueRes.data || []).map(t => t.league_id));
-    const activeLeagueIds = new Set(
-      (leagueStatusRes.data || [])
-        .filter(s => s.status !== 'pre-draft' && s.status !== 'drafting now')
-        .map(s => s.league_id)
-    );
-    const totalLeagues = (leagueRes.data || []).filter(
-      l => !testLeagueIds.has(l.league_id) && activeLeagueIds.has(l.league_id)
-    ).length;
-
-    const rosterPercentageMap = {};
-    if (ownershipRes.data && totalLeagues > 0) {
-      const playerLeagueMap = {};
-      ownershipRes.data.forEach(r => {
-        if (testLeagueIds.has(r.league_id)) return; // 排除測試聯盟
-        if (!activeLeagueIds.has(r.league_id)) return; // 排除 pre-draft / drafting now
-        if (!playerLeagueMap[r.player_id]) playerLeagueMap[r.player_id] = new Set();
-        playerLeagueMap[r.player_id].add(r.league_id);
-      });
-      Object.entries(playerLeagueMap).forEach(([playerId, leagues]) => {
-        rosterPercentageMap[playerId] = Math.round((leagues.size / totalLeagues) * 100);
-      });
-    }
+    const rosterPercentageMap = buildRosterPercentageMap({
+      rosterRows: ownershipRes.data || [],
+      leagueRows: leagueRes.data || [],
+      statusRows: leagueStatusRes.data || [],
+      testLeagueRows: testLeagueRes.data || [],
+    });
 
     const standingsWithWaiver = (standingsRes.data || []).map((team) => {
       const waiver = waiverPriorityRes.data?.find((w) => w.manager_id === team.manager_id);
