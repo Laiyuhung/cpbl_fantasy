@@ -397,8 +397,6 @@ export default function PlayerDetailModal({
     const positionStr = player.position_list || player.position || (isPitcher ? 'P' : 'Util');
 
     // Transaction Helpers
-    const canShowActionButtons = myManagerId && (onAdd || onDrop || onTrade);
-
     const isTradeDeadlinePassed = () => {
         if (!tradeEndDate || tradeEndDate.trim().toLowerCase() === 'no trade deadline') return false;
         try {
@@ -416,14 +414,8 @@ export default function PlayerDetailModal({
         }
     };
 
-    const isAllowedLeagueStatus = () => {
-        const allowedStatuses = ['post-draft & pre-season', 'in season', 'playoffs'];
-        const currentStatus = (leagueStatus || '').toLowerCase();
-        return allowedStatuses.includes(currentStatus);
-    };
-
     const renderActionButton = () => {
-        if (!canShowActionButtons || !isAllowedLeagueStatus()) return null;
+        if (!myManagerId || (!onAdd && !onDrop && !onTrade)) return null;
 
         // No ownership = Free Agent (green + button)
         if (!ownership) {
