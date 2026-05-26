@@ -62,7 +62,11 @@ export default function PlayerDetailModal({
     // Decide which stats to show based on player.batter_or_pitcher 
     // or fall back to position if undefined
     const isPitcher = player?.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(player?.position);
-    const currentLeagueOwnership = !leagueId || String(ownership?.league_id || '') === String(leagueId) ? ownership : null;
+    const currentLeagueOwnership = !ownership
+        ? null
+        : !leagueId || !ownership.league_id || String(ownership.league_id) === String(leagueId)
+            ? ownership
+            : null;
 
     useEffect(() => {
         if (!isOpen || !player) return;
@@ -492,6 +496,19 @@ export default function PlayerDetailModal({
 
             if (status === 'on team') {
                 const isMine = currentLeagueOwnership.manager_id === myManagerId;
+                if (!isMine) {
+                    if (isTradeDeadlinePassed() || !onTrade) return null;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => { onClose(); onTrade(player, currentLeagueOwnership.manager_id); }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-all flex items-center gap-1.5 shadow-lg"
+                            title="Propose Trade"
+                        >
+                            <span className="text-base">⇌</span> Trade
+                        </button>
+                    );
+                }
                 return (
                     <div className="flex flex-col items-start gap-0.5">
                         <button
@@ -501,7 +518,7 @@ export default function PlayerDetailModal({
                             title="請到 Players page 使用"
                             aria-disabled="true"
                         >
-                            <span>On team</span>
+                            <span>Drop</span>
                         </button>
                         <span className="text-[10px] font-semibold text-slate-400">請到 Players page 使用</span>
                     </div>
