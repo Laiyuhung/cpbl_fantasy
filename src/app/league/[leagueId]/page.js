@@ -323,6 +323,18 @@ export default function LeaguePage() {
   const [showTieBreakRules, setShowTieBreakRules] = useState(false);
   const [showWeekRule, setShowWeekRule] = useState(false);
   const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
+  const [showTradeModal, setShowTradeModal] = useState(false);
+  const [tradeTargetManagerId, setTradeTargetManagerId] = useState(null);
+  const [selectedMyPlayers, setSelectedMyPlayers] = useState([]);
+  const [selectedTheirPlayers, setSelectedTheirPlayers] = useState([]);
+  const [tradeLoading, setTradeLoading] = useState(false);
+  const [isFetchingTradeData, setIsFetchingTradeData] = useState(false);
+  const [tradeMyRoster, setTradeMyRoster] = useState([]);
+  const [tradeTheirRoster, setTradeTheirRoster] = useState([]);
+  const [showTradeSuccessNotification, setShowTradeSuccessNotification] = useState(false);
+  const [showTradeErrorNotification, setShowTradeErrorNotification] = useState(false);
+  const [tradeSuccessMessage, setTradeSuccessMessage] = useState({ title: '', description: '' });
+  const [tradeErrorMessage, setTradeErrorMessage] = useState({ title: '', description: '' });
 
   // Watch state
   const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
