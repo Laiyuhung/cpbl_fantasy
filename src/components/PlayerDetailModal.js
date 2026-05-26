@@ -65,9 +65,23 @@ export default function PlayerDetailModal({
     useEffect(() => {
         if (!isOpen || !player) return;
 
+        const normalizedStatus = (ownership?.status || '').toString().trim().toLowerCase();
+        const actionType = !ownership
+            ? 'Add'
+            : normalizedStatus === 'waiver'
+                ? 'Waiver'
+                : normalizedStatus === 'on team' && ownership.manager_id === myManagerId
+                    ? 'Drop'
+                    : normalizedStatus === 'on team'
+                        ? 'Trade'
+                        : 'None';
+
         console.log('[PlayerDetailModal] open', {
             playerId: player.player_id,
             name: player.name,
+            ownershipStatus: ownership?.status || null,
+            ownershipManagerId: ownership?.manager_id || null,
+            actionType,
             hasAdd: typeof onAdd === 'function',
             hasDrop: typeof onDrop === 'function',
             hasTrade: typeof onTrade === 'function',

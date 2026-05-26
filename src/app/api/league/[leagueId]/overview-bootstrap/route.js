@@ -102,8 +102,8 @@ export async function GET(request, { params }) {
         .eq('date', todayDate),
       supabaseAdmin
         .from('league_player_ownership')
-        .select('player_id, league_id')
-        .ilike('status', 'on team'),
+        .select('player_id, league_id, manager_id, status')
+        .eq('league_id', leagueId),
       supabase
         .from('league_settings')
         .select('league_id'),

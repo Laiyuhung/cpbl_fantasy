@@ -797,6 +797,21 @@ export default function LeaguePage() {
     return dailyRosterOwnerships.find((item) => String(item.player_id) === String(player.player_id)) || null;
   };
 
+  const openOverviewPlayerModal = (player) => {
+    const ownership = getPlayerOwnership(player);
+    console.log('[LeagueOverview] open player modal', {
+      playerId: player?.player_id,
+      name: player?.name,
+      ownershipStatus: ownership?.status || null,
+      ownershipManagerId: ownership?.manager_id || null,
+      isOwned: Boolean(ownership),
+      hasAdd: typeof handleAddPlayer === 'function',
+      hasDrop: typeof handleDropPlayer === 'function',
+      hasTrade: typeof handleOpenTrade === 'function',
+    });
+    setSelectedPlayerModal(player);
+  };
+
   const handleAddPlayer = async (player, isWaiver = false) => {
     if (!myManagerId || !player?.player_id) return;
 
@@ -1895,7 +1910,7 @@ export default function LeaguePage() {
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span
                                           className="text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight"
-                                          onClick={() => item.player && setSelectedPlayerModal(item.player)}
+                                          onClick={() => item.player && openOverviewPlayerModal(item.player)}
                                         >
                                           {item.player?.name}
                                         </span>
@@ -1977,7 +1992,7 @@ export default function LeaguePage() {
                                   <div className="flex flex-col min-w-0">
                                     <span
                                       className="text-sm sm:text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight truncate"
-                                      onClick={() => w.player && setSelectedPlayerModal(w.player)}
+                                      onClick={() => w.player && openOverviewPlayerModal(w.player)}
                                     >
                                       {w.player?.name}
                                     </span>
@@ -1994,7 +2009,7 @@ export default function LeaguePage() {
                                     <div className="flex flex-col min-w-0">
                                       <span
                                         className="text-sm sm:text-base font-black text-white hover:text-slate-200 cursor-pointer transition-colors leading-tight truncate"
-                                        onClick={() => w.drop_player && setSelectedPlayerModal(w.drop_player)}
+                                        onClick={() => w.drop_player && openOverviewPlayerModal(w.drop_player)}
                                       >
                                         {w.drop_player?.name}
                                       </span>

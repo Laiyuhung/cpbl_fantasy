@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
+import { buildRosterPercentageMap } from '@/lib/rosterPercentage';
 
 export async function GET(request, { params }) {
     const { leagueId } = params;
@@ -245,6 +246,31 @@ export async function GET(request, { params }) {
             });
         }
 
+        const { data: leagueRows } = await supabase
+            .from('league_settings')
+            .select('league_id')
+            .order('league_id', { ascending: true });
+
+        const { data: testLeagueRows } = await supabase
+            .from('test_league')
+            .select('league_id');
+
+        const { data: leagueStatusRows } = await supabase
+            .from('league_statuses')
+            .select('league_id, status');
+
+        const { data: rosterOwnershipRows } = await supabase
+            .from('league_player_ownership')
+            .select('player_id, league_id')
+            .ilike('status', 'on team');
+
+        const rosterPercentageMap = buildRosterPercentageMap({
+            rosterRows: rosterOwnershipRows || [],
+            leagueRows: leagueRows || [],
+            statusRows: leagueStatusRows || [],
+            testLeagueRows: testLeagueRows || [],
+        });
+
         const roster = (rosterData || []).map(item => {
             const defaultPos = item.player?.batter_or_pitcher === 'pitcher' ? 'P' : 'Util';
             // Use the map populated from the full views
@@ -260,6 +286,7 @@ export async function GET(request, { params }) {
                 batter_or_pitcher: item.player?.batter_or_pitcher,
                 identity: item.player?.identity,
                 real_life_status: statusMap[item.player_id] || 'UNREGISTERED',
+                roster_percentage: rosterPercentageMap[item.player_id] ?? 0,
                 game_info: gameInfo
             };
         }).sort((a, b) => {
