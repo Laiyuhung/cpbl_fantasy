@@ -18,7 +18,6 @@ export function buildRosterPercentageMap({ rosterRows = [], leagueRows = [], sta
   const playerLeagueMap = {};
   rosterRows.forEach((row) => {
     if (testLeagueIds.has(row.league_id)) return;
-    if (!activeLeagueIds.has(row.league_id)) return;
     if (!playerLeagueMap[row.player_id]) playerLeagueMap[row.player_id] = new Set();
     playerLeagueMap[row.player_id].add(row.league_id);
   });

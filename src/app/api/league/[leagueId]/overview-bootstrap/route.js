@@ -103,8 +103,7 @@ export async function GET(request, { params }) {
       supabaseAdmin
         .from('league_player_ownership')
         .select('player_id, league_id, manager_id, status')
-        .eq('league_id', leagueId)
-        .ilike('status', 'on team'),
+        .eq('league_id', leagueId),
       supabase
         .from('league_settings')
         .select('league_id'),
@@ -165,8 +164,13 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: ownershipRes.error.message }, { status: 500 });
     }
 
+    const ownershipRows = (ownershipRes.data || []).filter((row) => {
+      const status = String(row.status || '').trim().toLowerCase();
+      return status === 'on team' || status === 'waiver';
+    });
+
     const rosterPercentageMap = buildRosterPercentageMap({
-      rosterRows: ownershipRes.data || [],
+      rosterRows: ownershipRows,
       leagueRows: allLeagueRes.data || [],
       statusRows: leagueStatusRes.data || [],
       testLeagueRows: testLeagueRes.data || [],
@@ -174,7 +178,7 @@ export async function GET(request, { params }) {
 
     console.log('[overview-bootstrap] roster% summary', {
       leagueId,
-      ownershipRows: (ownershipRes.data || []).length,
+      ownershipRows: ownershipRows.length,
       allLeagueRows: (allLeagueRes.data || []).length,
       testLeagueRows: (testLeagueRes.data || []).length,
       activeLeagueRows: (leagueStatusRes.data || []).filter((row) => row.status !== 'pre-draft' && row.status !== 'drafting now').length,
@@ -296,7 +300,7 @@ export async function GET(request, { params }) {
       transactions,
       waivers,
       watchedIds: (watchedRes.data || []).map((w) => w.player_id),
-      ownerships: ownershipRes.data || [],
+      ownerships: ownershipRows,
       startingStatus,
       liveStandings: liveStandingsWithWaiver,
       rosterPercentageMap,
