@@ -323,6 +323,8 @@ export default function LeaguePage() {
   const [showTieBreakRules, setShowTieBreakRules] = useState(false);
   const [showWeekRule, setShowWeekRule] = useState(false);
   const [selectedPlayerModal, setSelectedPlayerModal] = useState(null);
+  const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
+  const [tradeEndDate, setTradeEndDate] = useState(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeTargetManagerId, setTradeTargetManagerId] = useState(null);
   const [selectedMyPlayers, setSelectedMyPlayers] = useState([]);
@@ -478,6 +480,14 @@ export default function LeaguePage() {
           setTodayScheduleGames(Array.isArray(result.todayScheduleGames) ? result.todayScheduleGames : []);
           setDailyRosterOwnerships(Array.isArray(result.ownerships) ? result.ownerships : []);
           setDailyRosterStartingStatus(result.startingStatus || null);
+          setTradeEndDate(result.league?.trade_end_date || null);
+          if (result.league?.start_scoring_on) {
+            const parts = String(result.league.start_scoring_on).split('.');
+            if (parts.length > 0) {
+              const year = parseInt(parts[0], 10);
+              if (!Number.isNaN(year)) setSeasonYear(year);
+            }
+          }
           const status = result.status || 'unknown';
           setLeagueStatus(status);
           setMaxTeams(result.maxTeams || 0);
