@@ -40,7 +40,7 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [managerRes, adminRes, matchupsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, allLeagueRes, testLeagueRes, leagueStatusRes] = await Promise.all([
+    const [managerRes, adminRes, matchupsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, rosterRes, allLeagueRes, testLeagueRes, leagueStatusRes] = await Promise.all([
       supabase
         .from('managers')
         .select('name, email_verified')
@@ -104,6 +104,9 @@ export async function GET(request, { params }) {
         .from('league_player_ownership')
         .select('player_id, league_id, manager_id, status')
         .eq('league_id', leagueId),
+      supabaseAdmin
+        .from('league_player_ownership')
+        .select('player_id, league_id'),
       supabase
         .from('league_settings')
         .select('league_id'),
@@ -164,13 +167,17 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: ownershipRes.error.message }, { status: 500 });
     }
 
+    if (rosterRes.error) {
+      return NextResponse.json({ success: false, error: rosterRes.error.message }, { status: 500 });
+    }
+
     const ownershipRows = (ownershipRes.data || []).filter((row) => {
       const status = String(row.status || '').trim().toLowerCase();
       return status === 'on team' || status === 'waiver';
     });
 
     const rosterPercentageMap = buildRosterPercentageMap({
-      rosterRows: ownershipRows,
+      rosterRows: rosterRes.data || [],
       leagueRows: allLeagueRes.data || [],
       statusRows: leagueStatusRes.data || [],
       testLeagueRows: testLeagueRes.data || [],
