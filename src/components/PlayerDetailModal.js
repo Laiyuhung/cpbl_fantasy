@@ -62,16 +62,17 @@ export default function PlayerDetailModal({
     // Decide which stats to show based on player.batter_or_pitcher 
     // or fall back to position if undefined
     const isPitcher = player?.batter_or_pitcher === 'pitcher' || ['SP', 'RP', 'P'].includes(player?.position);
+    const currentLeagueOwnership = !leagueId || String(ownership?.league_id || '') === String(leagueId) ? ownership : null;
 
     useEffect(() => {
         if (!isOpen || !player) return;
 
-        const normalizedStatus = (ownership?.status || '').toString().trim().toLowerCase();
-        const actionType = !ownership
+        const normalizedStatus = (currentLeagueOwnership?.status || '').toString().trim().toLowerCase();
+        const actionType = !currentLeagueOwnership
             ? 'Add'
             : normalizedStatus === 'waiver'
                 ? 'Waiver'
-                : normalizedStatus === 'on team' && ownership.manager_id === myManagerId
+                : normalizedStatus === 'on team' && currentLeagueOwnership.manager_id === myManagerId
                     ? 'Drop'
                     : normalizedStatus === 'on team'
                         ? 'Trade'
@@ -80,22 +81,23 @@ export default function PlayerDetailModal({
         console.log('[PlayerDetailModal] open', {
             playerId: player.player_id,
             name: player.name,
-            ownershipStatus: ownership?.status || null,
-            ownershipManagerId: ownership?.manager_id || null,
+            ownershipLeagueId: currentLeagueOwnership?.league_id || null,
+            ownershipStatus: currentLeagueOwnership?.status || null,
+            ownershipManagerId: currentLeagueOwnership?.manager_id || null,
             previewOnly,
             actionType,
             hasAdd: typeof onAdd === 'function',
             hasDrop: typeof onDrop === 'function',
             hasTrade: typeof onTrade === 'function',
             hasWatch: typeof onToggleWatch === 'function',
-            ownership,
+            ownership: currentLeagueOwnership,
             leagueStatus,
             tradeEndDate,
             seasonYear,
             isPlayerLocked,
             isDropLockedByGameStart,
         });
-    }, [isOpen, player, onAdd, onDrop, onTrade, onToggleWatch, ownership, leagueStatus, tradeEndDate, seasonYear, isPlayerLocked, isDropLockedByGameStart, previewOnly]);
+    }, [isOpen, player, onAdd, onDrop, onTrade, onToggleWatch, currentLeagueOwnership, leagueStatus, tradeEndDate, seasonYear, isPlayerLocked, isDropLockedByGameStart, previewOnly]);
 
     // Reset state when modal opens
     useEffect(() => {
@@ -453,7 +455,7 @@ export default function PlayerDetailModal({
         if (!previewOnly && (!myManagerId || (!onAdd && !onDrop && !onTrade))) return null;
 
         if (previewOnly) {
-            if (!ownership) {
+            if (!currentLeagueOwnership) {
                 return (
                     <div className="flex flex-col items-start gap-0.5">
                         <button
@@ -470,7 +472,7 @@ export default function PlayerDetailModal({
                 );
             }
 
-            const status = ownership.status?.toLowerCase();
+            const status = currentLeagueOwnership.status?.toLowerCase();
             if (status === 'waiver') {
                 return (
                     <div className="flex flex-col items-start gap-0.5">
@@ -489,7 +491,7 @@ export default function PlayerDetailModal({
             }
 
             if (status === 'on team') {
-                const isMine = ownership.manager_id === myManagerId;
+                const isMine = currentLeagueOwnership.manager_id === myManagerId;
                 return (
                     <div className="flex flex-col items-start gap-0.5">
                         <button
@@ -510,7 +512,7 @@ export default function PlayerDetailModal({
         }
 
         // No ownership = Free Agent (green + button)
-        if (!ownership) {
+        if (!currentLeagueOwnership) {
             if (!onAdd) return null;
             return (
                 <button
@@ -524,7 +526,7 @@ export default function PlayerDetailModal({
             );
         }
 
-        const status = ownership.status?.toLowerCase();
+        const status = currentLeagueOwnership.status?.toLowerCase();
 
         // Waiver status = yellow + button
         if (status === 'waiver') {
@@ -545,7 +547,7 @@ export default function PlayerDetailModal({
         // On team
         if (status === 'on team') {
             // My player
-            if (ownership.manager_id === myManagerId) {
+            if (currentLeagueOwnership.manager_id === myManagerId) {
                 // Check if locked in trade
                 if (isPlayerLocked) {
                     return (
@@ -581,7 +583,7 @@ export default function PlayerDetailModal({
                 return (
                     <button
                         type="button"
-                        onClick={() => { onClose(); onTrade(player, ownership.manager_id); }}
+                        onClick={() => { onClose(); onTrade(player, currentLeagueOwnership.manager_id); }}
                         className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-all flex items-center gap-1.5 shadow-lg"
                         title="Propose Trade"
                     >
