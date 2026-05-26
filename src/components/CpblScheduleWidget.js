@@ -1,14 +1,24 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { getTaiwanDateString } from '@/lib/taiwanDate';
 
 export default function CpblScheduleWidget({ initialDate = null, initialGames = null }) {
+    const parseYmdToDate = (ymd) => {
+        if (!ymd) return null;
+        const [y, m, d] = ymd.split('-').map((v) => Number(v));
+        return new Date(y, m - 1, d);
+    };
+
     const [currentDate, setCurrentDate] = useState(() => {
         if (initialDate) {
-            return new Date(`${initialDate}T00:00:00`);
+            return parseYmdToDate(initialDate);
         }
-        return new Date();
+
+        // default to Taiwan current date (so "Today" and initial view match Taiwan time)
+        const taiwanYmd = getTaiwanDateString();
+        return parseYmdToDate(taiwanYmd) || new Date();
     });
     const [games, setGames] = useState(initialGames || []);
     const [loading, setLoading] = useState(false);
@@ -94,10 +104,9 @@ export default function CpblScheduleWidget({ initialDate = null, initialGames = 
     };
 
     const isToday = (date) => {
-        const today = new Date();
-        return date.getDate() === today.getDate() &&
-            date.getMonth() === today.getMonth() &&
-            date.getFullYear() === today.getFullYear();
+        const taiwanYmd = getTaiwanDateString();
+        const dateYmd = formatDate(date);
+        return dateYmd === taiwanYmd;
     };
 
     const displayDate = currentDate.toLocaleDateString('en-US', {
@@ -292,10 +301,10 @@ export default function CpblScheduleWidget({ initialDate = null, initialGames = 
 
                 {/* Today Button */}
                 <button
-                    onClick={() => setCurrentDate(new Date())}
+                    onClick={() => setCurrentDate(parseYmdToDate(getTaiwanDateString()))}
                     onTouchEnd={(e) => {
                         e.preventDefault();
-                        setCurrentDate(new Date());
+                        setCurrentDate(parseYmdToDate(getTaiwanDateString()));
                     }}
                     className="p-2 bg-purple-500/10 hover:bg-purple-500/20 active:bg-purple-500/30 text-purple-300 rounded-lg border border-purple-500/20 transition-all flex flex-col items-center justify-center gap-0.5 group touch-manipulation"
                     title="Go to Today"

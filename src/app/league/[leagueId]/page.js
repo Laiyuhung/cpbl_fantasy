@@ -244,6 +244,7 @@ export default function LeaguePage() {
   const [error, setError] = useState('');
   const [leagueStatus, setLeagueStatus] = useState('');
   const [currentUserRole, setCurrentUserRole] = useState('');
+  const [myManagerId, setMyManagerId] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [maxTeams, setMaxTeams] = useState(0);
   const [invitePermissions, setInvitePermissions] = useState('');
@@ -294,6 +295,12 @@ export default function LeaguePage() {
   }, [leagueId, leagueStatus]);
 
   useEffect(() => {
+    const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
+    const userId = cookie?.split('=')[1];
+    if (userId) setMyManagerId(userId);
+  }, []);
+
+  useEffect(() => {
     if (!loading && leagueStatus === 'pre-draft' && !leagueSettings?.is_finalized) {
       setShowFinalizeReminder(true);
     }
@@ -319,14 +326,6 @@ export default function LeaguePage() {
 
   // Watch state
   const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
-  const [myManagerId, setMyManagerId] = useState(null);
-
-  // Get current user's manager ID
-  useEffect(() => {
-    const cookie = document.cookie.split('; ').find(row => row.startsWith('user_id='));
-    const userId = cookie?.split('=')[1];
-    if (userId) setMyManagerId(userId);
-  }, []);
 
   // Fetch watched players
   useEffect(() => {
@@ -742,6 +741,366 @@ export default function LeaguePage() {
 
     return groups;
   }, [transactions]);
+
+  const refreshOwnerships = async () => {
+    try {
+      const res = await fetch(`/api/league/${leagueId}/ownership`);
+      const data = await res.json();
+      if (data.success) {
+        setDailyRosterOwnerships(data.ownerships || []);
+      }
+    } catch (error) {
+      console.error('Failed to refresh ownerships:', error);
+    }
+  };
+
+  const isTradeDeadlinePassed = () => {
+    if (!tradeEndDate || String(tradeEndDate).trim().toLowerCase() === 'no trade deadline') return false;
+
+    try {
+      const trimmedDate = String(tradeEndDate).trim();
+      const dateStr = /\d{4}/.test(trimmedDate) ? trimmedDate : `${trimmedDate}, ${seasonYear}`;
+      const deadline = new Date(dateStr);
+      if (Number.isNaN(deadline.getTime())) return false;
+      deadline.setHours(23, 59, 59, 999);
+      return new Date() > deadline;
+    } catch (error) {
+      console.error('Failed to evaluate trade deadline:', error);
+      return false;
+    }
+  };
+
+  const getPlayerOwnership = (player) => {
+    if (!player?.player_id) return null;
+    return dailyRosterOwnerships.find((item) => String(item.player_id) === String(player.player_id)) || null;
+  };
+
+  const handleAddPlayer = async (player, isWaiver = false) => {
+    if (!myManagerId || !player?.player_id) return;
+
+    try {
+      if (isWaiver) {
+        const targetOwnership = getPlayerOwnership(player);
+        const res = await fetch('/api/waiver_claims', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            league_id: leagueId,
+            manager_id: myManagerId,
+            player_id: player.player_id,
+            drop_player_id: null,
+            off_waiver: targetOwnership?.off_waiver || null,
+          }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert(data.error || 'Waiver claim failed');
+          return;
+        }
+      } else {
+        const res = await fetch(`/api/league/${leagueId}/ownership`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player_id: player.player_id,
+            manager_id: myManagerId,
+            position: 'BN',
+          }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert(data.error || 'Failed to add player');
+          return;
+        }
+      }
+
+      await refreshOwnerships();
+      await fetchAcquisitions();
+    } catch (error) {
+      console.error('Failed to add player:', error);
+      alert('Failed to add player');
+    }
+  };
+
+  const handleDropPlayer = async (player) => {
+    if (!myManagerId || !player?.player_id) return;
+
+    try {
+      const res = await fetch(`/api/league/${leagueId}/ownership`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: player.player_id,
+          manager_id: myManagerId,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Failed to drop player');
+        return;
+      }
+
+      await refreshOwnerships();
+      await fetchAcquisitions();
+    } catch (error) {
+      console.error('Failed to drop player:', error);
+      alert('Failed to drop player');
+    }
+  };
+
+  const validateTradeRoster = (currentRoster, losingPlayerIds, gainingPlayerIds, settings, gainingRoster) => {
+    if (!settings || !settings.roster_positions) return [];
+
+    const losingSet = new Set(losingPlayerIds.map(String));
+    const futureRoster = currentRoster.filter((player) => !losingSet.has(String(player.player_id)));
+    const gainingPlayers = Array.isArray(gainingRoster) ? gainingRoster.filter((player) => gainingPlayerIds.includes(player.player_id)) : [];
+    const futureRosterWithIncoming = [
+      ...futureRoster,
+      ...gainingPlayers.map((player) => ({ ...player, position: 'BN', identity: player.identity || 'local' })),
+    ];
+
+    const rosterConfig = settings.roster_positions || {};
+    const totalLimit = Object.values(rosterConfig).reduce((sum, count) => sum + count, 0);
+
+    const foreigners = futureRosterWithIncoming.filter((player) => player.identity?.toLowerCase() === 'foreigner');
+    const foreignerCount = foreigners.length;
+    const foreignerLimit = parseInt(settings.foreigner_on_team_limit) || 999;
+
+    const activePlayers = futureRosterWithIncoming.filter((player) => {
+      const pos = String(player.position || '').toUpperCase();
+      return !['NA', 'MINOR', 'MN', 'DL', 'IL'].includes(pos);
+    });
+    const activeCount = activePlayers.length;
+
+    const activeLimit = Object.entries(rosterConfig)
+      .filter(([key]) => {
+        const normalized = key.toUpperCase();
+        return !['MINOR', 'NA', 'MN', 'DL', 'IL'].includes(normalized);
+      })
+      .reduce((sum, [, count]) => sum + count, 0);
+
+    const activeForeigners = activePlayers.filter((player) => player.identity?.toLowerCase() === 'foreigner');
+    const activeForeignerCount = activeForeigners.length;
+    const activeForeignerLimit = parseInt(settings.foreigner_active_limit) || 999;
+
+    const violations = [];
+    if (futureRosterWithIncoming.length > totalLimit) violations.push(`Total Players: ${futureRosterWithIncoming.length}/${totalLimit}`);
+    if (activeCount > activeLimit) violations.push(`Active Players: ${activeCount}/${activeLimit}`);
+    if (foreignerCount > foreignerLimit) violations.push(`Foreign Players: ${foreignerCount}/${foreignerLimit}`);
+    if (activeForeignerCount > activeForeignerLimit) violations.push(`Active Foreigners: ${activeForeignerCount}/${activeForeignerLimit}`);
+
+    return violations;
+  };
+
+  const handleOpenTrade = (player, ownerManagerId) => {
+    setTradeTargetManagerId(ownerManagerId);
+    setSelectedMyPlayers([]);
+    setSelectedTheirPlayers([player.player_id]);
+    setShowTradeModal(true);
+  };
+
+  useEffect(() => {
+    if (!showTradeModal || !myManagerId || !tradeTargetManagerId) return;
+
+    const fetchTradeRosters = async () => {
+      setIsFetchingTradeData(true);
+      try {
+        const [myRes, theirRes] = await Promise.all([
+          fetch(`/api/league/${leagueId}/roster?manager_id=${myManagerId}`),
+          fetch(`/api/league/${leagueId}/roster?manager_id=${tradeTargetManagerId}`),
+        ]);
+        const myData = await myRes.json();
+        const theirData = await theirRes.json();
+        if (myData.success) setTradeMyRoster(myData.roster || []);
+        if (theirData.success) setTradeTheirRoster(theirData.roster || []);
+      } catch (error) {
+        console.error('Failed to fetch trade rosters:', error);
+      } finally {
+        setIsFetchingTradeData(false);
+      }
+    };
+
+    fetchTradeRosters();
+  }, [showTradeModal, myManagerId, tradeTargetManagerId, leagueId]);
+
+  const handleSubmitTrade = async () => {
+    setTradeLoading(true);
+
+    if (!selectedMyPlayers.length || !selectedTheirPlayers.length) {
+      setTradeErrorMessage({ title: 'Validation Error', description: 'Both sides must select at least one player to trade.' });
+      setShowTradeErrorNotification(true);
+      setTimeout(() => setShowTradeErrorNotification(false), 4000);
+      setTradeLoading(false);
+      return;
+    }
+
+    const myViolations = validateTradeRoster(tradeMyRoster, selectedMyPlayers, selectedTheirPlayers, leagueSettings, tradeTheirRoster);
+    const theirViolations = validateTradeRoster(tradeTheirRoster, selectedTheirPlayers, selectedMyPlayers, leagueSettings, tradeMyRoster);
+    if (myViolations.length > 0 || theirViolations.length > 0) {
+      const allViolations = [...myViolations.map((value) => `You: ${value}`), ...theirViolations.map((value) => `Opponent: ${value}`)];
+      setTradeErrorMessage({ title: 'Roster Violation', description: allViolations.join('; ') });
+      setShowTradeErrorNotification(true);
+      setTimeout(() => setShowTradeErrorNotification(false), 4000);
+      setTradeLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/trade/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          league_id: leagueId,
+          initiator_manager_id: myManagerId,
+          recipient_manager_id: tradeTargetManagerId,
+          initiator_player_ids: selectedMyPlayers,
+          recipient_player_ids: selectedTheirPlayers,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTradeSuccessMessage({ title: 'Trade Proposal Sent!', description: 'Your trade request has been submitted.' });
+        setShowTradeSuccessNotification(true);
+        setShowTradeModal(false);
+        setTimeout(() => setShowTradeSuccessNotification(false), 4000);
+      } else {
+        setTradeErrorMessage({ title: 'Trade Failed', description: data.error || 'Failed to submit trade.' });
+        setShowTradeErrorNotification(true);
+        setTimeout(() => setShowTradeErrorNotification(false), 4000);
+      }
+    } catch (error) {
+      setTradeErrorMessage({ title: 'Trade Failed', description: 'Please try again later' });
+      setShowTradeErrorNotification(true);
+      setTimeout(() => setShowTradeErrorNotification(false), 4000);
+    } finally {
+      setTradeLoading(false);
+    }
+  };
+
+  const renderTradeModal = () => {
+    if (!showTradeModal) return null;
+
+    const myPlayers = tradeMyRoster.filter((player) => !['IL', 'NA', 'MN'].includes(String(player.position || '').toUpperCase()));
+    const theirPlayers = tradeTheirRoster.filter((player) => !['IL', 'NA', 'MN'].includes(String(player.position || '').toUpperCase()));
+    const myNick = members.find((member) => member.manager_id === myManagerId)?.nickname || 'You';
+    const theirNick = members.find((member) => member.manager_id === tradeTargetManagerId)?.nickname || 'Opponent';
+
+    const myViolations = validateTradeRoster(tradeMyRoster, selectedMyPlayers, selectedTheirPlayers, leagueSettings, tradeTheirRoster);
+    const theirViolations = validateTradeRoster(tradeTheirRoster, selectedTheirPlayers, selectedMyPlayers, leagueSettings, tradeMyRoster);
+    const isValid = myViolations.length === 0 && theirViolations.length === 0 && selectedMyPlayers.length > 0 && selectedTheirPlayers.length > 0;
+
+    return (
+      <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="bg-gradient-to-br from-purple-700/90 to-blue-800/90 border border-purple-400/40 rounded-2xl shadow-2xl w-full max-w-2xl relative max-h-[90vh] flex flex-col">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-purple-400/20 bg-gradient-to-r from-purple-600/80 to-blue-700/80 rounded-t-2xl shrink-0">
+            <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+              <span className="text-2xl sm:text-3xl">⇌</span> Trade Proposal
+            </h2>
+            <button className="text-purple-200 hover:text-white text-2xl font-bold" onClick={() => setShowTradeModal(false)}>
+              ×
+            </button>
+          </div>
+
+          {isFetchingTradeData ? (
+            <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+              <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+              <div className="text-purple-200 font-bold">Loading rosters...</div>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between px-4 sm:px-6 pt-3 sm:pt-4 pb-2 shrink-0">
+                <div className="font-bold text-sm sm:text-base text-purple-200">{myNick}</div>
+                <div className="font-bold text-sm sm:text-base text-pink-200">{theirNick}</div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 px-4 sm:px-6 pb-2 flex-1 min-h-0 overflow-hidden">
+                <div className="flex flex-col max-h-[40vh] sm:h-full overflow-hidden">
+                  <h3 className="text-purple-300 font-bold mb-2 shrink-0">My Players</h3>
+                  <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                    {myPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
+                    {myPlayers.map((player) => {
+                      const isSelected = selectedMyPlayers.includes(player.player_id);
+                      const currentSlot = player.position || '-';
+
+                      return (
+                        <label key={player.player_id} className={`flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer ${isSelected ? 'bg-purple-600/20 border-purple-400' : 'bg-slate-800/40 border-slate-700 hover:bg-slate-800/80'}`}>
+                          <input type="checkbox" className="hidden" checked={isSelected} onChange={(e) => setSelectedMyPlayers((value) => e.target.checked ? [...value, player.player_id] : value.filter((id) => id !== player.player_id))} />
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-slate-500'}`}>
+                            {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <div className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{player.name || 'Unknown'}</div>
+                            <div className="text-xs text-slate-400 flex items-center gap-1.5 truncate">
+                              <span className="text-cyan-300 font-bold">{player.team || '-'}</span>
+                              <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                              <span>{player.position || '-'}</span>
+                              <span className="text-yellow-400 font-bold ml-1">({currentSlot})</span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex flex-col max-h-[40vh] sm:h-full overflow-hidden">
+                  <h3 className="text-pink-300 font-bold mb-2 shrink-0">Their Players</h3>
+                  <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                    {theirPlayers.length === 0 && <div className="text-gray-400 p-2 italic">No tradable players</div>}
+                    {theirPlayers.map((player) => {
+                      const isSelected = selectedTheirPlayers.includes(player.player_id);
+                      const currentSlot = player.position || '-';
+
+                      return (
+                        <label key={player.player_id} className={`flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer ${isSelected ? 'bg-pink-600/20 border-pink-400' : 'bg-slate-800/40 border-slate-700 hover:bg-slate-800/80'}`}>
+                          <input type="checkbox" className="hidden" checked={isSelected} onChange={(e) => setSelectedTheirPlayers((value) => e.target.checked ? [...value, player.player_id] : value.filter((id) => id !== player.player_id))} />
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-pink-500 border-pink-500' : 'border-slate-500'}`}>
+                            {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <div className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{player.name || 'Unknown'}</div>
+                            <div className="text-xs text-slate-400 flex items-center gap-1.5 truncate">
+                              <span className="text-cyan-300 font-bold">{player.team || '-'}</span>
+                              <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                              <span>{player.position || '-'}</span>
+                              <span className="text-yellow-400 font-bold ml-1">({currentSlot})</span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {(myViolations.length > 0 || theirViolations.length > 0) && (
+                <div className="px-4 sm:px-6 pb-2">
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                    <h4 className="text-red-300 font-bold text-sm mb-1">⚠ Roster Violations</h4>
+                    <ul className="text-xs text-red-200 list-disc list-inside space-y-0.5">
+                      {myViolations.map((value, index) => <li key={`my-${index}`}>You: {value}</li>)}
+                      {theirViolations.map((value, index) => <li key={`their-${index}`}>{theirNick}: {value}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 sm:px-6 py-3 sm:py-4 border-t border-purple-400/20 bg-gradient-to-r from-purple-700/60 to-blue-800/60 rounded-b-2xl shrink-0 gap-2 sm:gap-0">
+                <div className="text-[10px] sm:text-xs text-purple-200/60 italic">* Received players are assumed to occupy Active (BN) slots.</div>
+                <div className="flex gap-2 sm:gap-3 w-full sm:w-auto justify-end">
+                  <button className="px-4 sm:px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm font-semibold" onClick={() => setShowTradeModal(false)} disabled={tradeLoading}>Cancel</button>
+                  <button className={`px-4 sm:px-6 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 ${isValid && !tradeLoading ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`} onClick={handleSubmitTrade} disabled={tradeLoading || !isValid}>
+                    {tradeLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                    {tradeLoading ? 'Submitting...' : 'Submit Trade'}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const handleWeekChange = (direction) => {
     const maxWeek = scheduleData.length > 0 ? scheduleData[scheduleData.length - 1].week_number : 1;
@@ -1706,6 +2065,9 @@ export default function LeaguePage() {
                 initialWatchedIds={Array.from(watchedPlayerIds)}
                 initialOwnerships={dailyRosterOwnerships}
                 initialStartingStatus={dailyRosterStartingStatus}
+                    onAdd={handleAddPlayer}
+                    onDrop={handleDropPlayer}
+                    onTrade={handleOpenTrade}
               />
           <p className="text-sm text-purple-200/90 leading-relaxed px-1">
             贊助連結：
@@ -1726,9 +2088,18 @@ export default function LeaguePage() {
           player={selectedPlayerModal}
           leagueId={leagueId}
           myManagerId={myManagerId}
+          ownership={selectedPlayerModal ? dailyRosterOwnerships.find((item) => String(item.player_id) === String(selectedPlayerModal.player_id)) : null}
+          leagueStatus={leagueStatus}
+          tradeEndDate={tradeEndDate}
+          seasonYear={seasonYear}
+          isDropLockedByGameStart={false}
+          onAdd={handleAddPlayer}
+          onDrop={handleDropPlayer}
+          onTrade={handleOpenTrade}
           isWatched={selectedPlayerModal ? watchedPlayerIds.has(selectedPlayerModal.player_id) : false}
           onToggleWatch={handleToggleWatch}
         />
+        {renderTradeModal()}
       </div>
     );
   }

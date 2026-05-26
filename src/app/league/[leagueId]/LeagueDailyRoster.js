@@ -61,6 +61,9 @@ export default function LeagueDailyRoster({
     initialWatchedIds = null,
     initialOwnerships = null,
     initialStartingStatus = null,
+    onAdd,
+    onDrop,
+    onTrade,
 }) {
     const [selectedDate, setSelectedDate] = useState('');
     const [availableDates, setAvailableDates] = useState([]);
@@ -1324,7 +1327,9 @@ export default function LeagueDailyRoster({
                 seasonYear={seasonYear}
                 statusDate={selectedDate}
                 isDropLockedByGameStart={selectedPlayerModal ? isDropLockedByGameStart(selectedPlayerModal) : false}
-                onTrade={handleOpenTrade}
+                onAdd={onAdd}
+                onDrop={onDrop}
+                onTrade={onTrade || handleOpenTrade}
                 isWatched={selectedPlayerModal ? watchedPlayerIds.has(selectedPlayerModal.player_id) : false}
                 onToggleWatch={handleToggleWatch}
             />
