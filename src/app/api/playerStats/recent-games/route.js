@@ -16,19 +16,29 @@ function calcPitchingStats(g) {
     const ip = parseFloat(g.innings_pitched) || 0;
     // IP format: 5.1 = 5 innings + 1 out = 16 outs, 5.2 = 17 outs
     const outs = Math.floor(ip) * 3 + Math.round((ip * 10) % 10);
+        const inningsDenominator = outs / 3;
+
+        const formatRatio = (numerator, denominator) => {
+            if (denominator > 0) {
+                return (numerator / denominator).toFixed(2);
+            }
+            return numerator > 0 ? 'INF' : '0.00';
+        };
 
     // All calculations use outs/3 as the denominator
     // ERA = ER * 9 / (outs/3) = ER * 27 / outs
-    const era = outs > 0 ? ((g.earned_runs || 0) * 27 / outs).toFixed(2) : '-';
+        const era = formatRatio((g.earned_runs || 0) * 9, inningsDenominator);
     // WHIP = (BB + H) / (outs/3) = (BB + H) * 3 / outs
-    const whip = outs > 0 ? (((g.walks || 0) + (g.hits_allowed || 0)) * 3 / outs).toFixed(2) : '-';
+        const whip = formatRatio((g.walks || 0) + (g.hits_allowed || 0), inningsDenominator);
     // K/9 = K * 9 / (outs/3) = K * 27 / outs
-    const k9 = outs > 0 ? ((g.strikeouts || 0) * 27 / outs).toFixed(2) : '-';
+        const k9 = formatRatio(g.strikeouts || 0, inningsDenominator);
     // BB/9 = BB * 9 / (outs/3) = BB * 27 / outs
-    const bb9 = outs > 0 ? ((g.walks || 0) * 27 / outs).toFixed(2) : '-';
+        const bb9 = formatRatio(g.walks || 0, inningsDenominator);
     // H/9 = H * 9 / (outs/3) = H * 27 / outs
-    const h9 = outs > 0 ? ((g.hits_allowed || 0) * 27 / outs).toFixed(2) : '-';
-    const kbb = (g.walks || 0) > 0 ? ((g.strikeouts || 0) / (g.walks || 1)).toFixed(2) : (g.strikeouts || 0);
+        const h9 = formatRatio(g.hits_allowed || 0, inningsDenominator);
+        const kbb = (g.walks || 0) > 0
+                ? ((g.strikeouts || 0) / (g.walks || 1)).toFixed(2)
+                : ((g.strikeouts || 0) > 0 ? 'INF' : '0.00');
 
     // QS: position contains SP, outs >= 18 (6 IP), ER <= 3
     const isStarter = g.position && g.position.includes('SP');

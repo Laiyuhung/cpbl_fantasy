@@ -119,9 +119,8 @@ export async function POST(request, { params }) {
     }
 
     const { count: scheduleWeeksCount, error: weekCountError } = await supabase
-      .from('league_schedule')
+      .from('schedule_date')
       .select('*', { count: 'exact', head: true })
-      .eq('league_id', leagueId)
       .gte('week_start', weekData.week_start)
       .lte('week_start', weekData.week_end);
 
