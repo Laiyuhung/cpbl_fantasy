@@ -1627,33 +1627,39 @@ export default function RosterPage() {
 
         const ip = sums.outs / 3;
 
+        const ratioValue = (numerator, denominator) => {
+            if (denominator > 0) return numerator / denominator;
+            return numerator > 0 ? 'INF' : 0;
+        };
+
         const resolveValue = (key) => {
             switch (key) {
                 // Batting rate stats (must be calculated from totals)
-                case 'avg': return sums.ab > 0 ? (sums.h / sums.ab) : 0;
+                case 'avg': return ratioValue(sums.h, sums.ab);
                 case 'obp': {
                     const den = sums.ab + sums.bb + sums.hbp + sums.sf;
-                    return den > 0 ? ((sums.h + sums.bb + sums.hbp) / den) : 0;
+                    return ratioValue(sums.h + sums.bb + sums.hbp, den);
                 }
-                case 'slg': return sums.ab > 0 ? (sums.tb / sums.ab) : 0;
+                case 'slg': return ratioValue(sums.tb, sums.ab);
                 case 'ops': {
                     const den = sums.ab + sums.bb + sums.hbp + sums.sf;
-                    const obp = den > 0 ? ((sums.h + sums.bb + sums.hbp) / den) : 0;
-                    const slg = sums.ab > 0 ? (sums.tb / sums.ab) : 0;
+                    const obp = ratioValue(sums.h + sums.bb + sums.hbp, den);
+                    const slg = ratioValue(sums.tb, sums.ab);
+                    if (obp === 'INF' || slg === 'INF') return 'INF';
                     return obp + slg;
                 }
 
                 // Pitching rate stats (must be calculated from totals)
-                case 'era': return ip > 0 ? ((9 * sums.er) / ip) : 0;
-                case 'whip': return ip > 0 ? ((sums.bb_p + sums.h) / ip) : 0;
-                case 'k/9': return ip > 0 ? ((9 * sums.k) / ip) : 0;
-                case 'bb/9': return ip > 0 ? ((9 * sums.bb_p) / ip) : 0;
-                case 'h/9': return ip > 0 ? ((9 * sums.h) / ip) : 0;
+                case 'era': return ratioValue(9 * sums.er, ip);
+                case 'whip': return ratioValue(sums.bb_p + sums.h, ip);
+                case 'k/9': return ratioValue(9 * sums.k, ip);
+                case 'bb/9': return ratioValue(9 * sums.bb_p, ip);
+                case 'h/9': return ratioValue(9 * sums.h, ip);
                 case 'k/bb':
                     if (sums.bb_p === 0) return sums.k > 0 ? 'INF' : 0;
                     return sums.k / sums.bb_p;
-                case 'obpa': return sums.tbf > 0 ? ((sums.h + sums.bb_p + sums.hbp_p) / sums.tbf) : 0;
-                case 'win%': return (sums.w + sums.l) > 0 ? (sums.w / (sums.w + sums.l)) : 0;
+                case 'obpa': return ratioValue(sums.h + sums.bb_p + sums.hbp_p, sums.tbf);
+                case 'win%': return ratioValue(sums.w, sums.w + sums.l);
 
                 // Special stats
                 case 'sv+hld': return sums.sv + sums.hld;
