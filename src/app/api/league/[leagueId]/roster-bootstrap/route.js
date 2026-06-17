@@ -53,6 +53,18 @@ function getInitialDateFromSchedule(schedule) {
   return current?.week_start && current?.week_end ? todayStr : firstDate;
 }
 
+function parseAcquisitionLimit(limitValue) {
+  const parsed = parseInt(limitValue, 10);
+  return Number.isNaN(parsed) ? Infinity : parsed;
+}
+
+function formatDateRange(start, end) {
+  if (!start || !end) return '';
+  const startObj = new Date(start);
+  const endObj = new Date(end);
+  return `${startObj.getMonth() + 1}/${startObj.getDate()} - ${endObj.getMonth() + 1}/${endObj.getDate()}`;
+}
+
 function buildPlayerStatMap(rows = [], type = 'batting', leagueSettings = null) {
   const map = {};
 
@@ -222,6 +234,14 @@ async function getStartingStatus(date) {
 }
 
 async function getWeeklyIp(leagueId, managerId, date) {
+  const { data: settings } = await supabaseAdmin
+    .from('league_settings')
+    .select('max_acquisitions_per_week')
+    .eq('league_id', leagueId)
+    .single();
+
+  const baseLimit = parseAcquisitionLimit(settings?.max_acquisitions_per_week || 'No maximum');
+
   const { data: weekData } = await supabaseAdmin
     .from('league_schedule')
     .select('week_number, week_start, week_end')
@@ -231,7 +251,7 @@ async function getWeeklyIp(leagueId, managerId, date) {
     .single();
 
   if (!weekData) {
-    return { ip: 0, weekNumber: null, addCount: 0 };
+    return { ip: 0, weekNumber: null, addCount: 0, weeklyAddLimit: null, weeklyAddWeek: '' };
   }
 
   const { data: statsData } = await supabaseAdmin
@@ -254,10 +274,25 @@ async function getWeeklyIp(leagueId, managerId, date) {
     .gte('transaction_time', startTw.toISOString())
     .lte('transaction_time', endTw.toISOString());
 
+  const { count: scheduleWeeksCount, error: weekCountError } = await supabaseAdmin
+    .from('schedule_date')
+    .select('*', { count: 'exact', head: true })
+    .gte('week_start', weekData.week_start)
+    .lte('week_start', weekData.week_end);
+
+  if (weekCountError) {
+    throw weekCountError;
+  }
+
+  const multiplier = scheduleWeeksCount && scheduleWeeksCount > 0 ? scheduleWeeksCount : 1;
+  const weeklyAddLimit = baseLimit === Infinity ? null : baseLimit * multiplier;
+
   return {
     ip: statsData?.p_ip ?? 0,
     weekNumber: weekData.week_number,
     addCount: addCount || 0,
+    weeklyAddLimit,
+    weeklyAddWeek: formatDateRange(weekData.week_start, weekData.week_end),
   };
 }
 
@@ -622,6 +657,8 @@ export async function GET(request, { params }) {
       startingStatus,
       weeklyIP: weeklyIp.ip,
       weeklyAddCount: weeklyIp.addCount,
+      weeklyAddLimit: weeklyIp.weeklyAddLimit,
+      weeklyAddWeek: weeklyIp.weeklyAddWeek,
       playerStats: {
         ...buildPlayerStatMap(dailyStats.battingStats, 'batting', dailyStats.leagueSettings),
         ...buildPlayerStatMap(dailyStats.pitchingStats, 'pitching', dailyStats.leagueSettings),

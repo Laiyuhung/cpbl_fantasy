@@ -389,9 +389,12 @@ export default function RosterPage() {
                     skipInitialStartingStatusFetchRef.current = true;
                 }
 
-                if (payload.weeklyIP !== undefined || payload.weeklyAddCount !== undefined) {
+                if (payload.weeklyIP !== undefined || payload.weeklyAddCount !== undefined || payload.weeklyAddLimit !== undefined) {
                     setWeeklyIP(payload.weeklyIP ?? null);
                     setWeeklyAddCount(payload.weeklyAddCount ?? 0);
+                    if (payload.weeklyAddLimit !== undefined) {
+                        setMaxAcquisitions(payload.weeklyAddLimit ?? null);
+                    }
                     skipInitialWeeklyIpFetchRef.current = true;
                 }
 
@@ -503,6 +506,9 @@ export default function RosterPage() {
                 if (data.success) {
                     setWeeklyIP(data.ip);
                     setWeeklyAddCount(data.addCount || 0);
+                    if (data.weeklyAddLimit !== undefined) {
+                        setMaxAcquisitions(data.weeklyAddLimit ?? null);
+                    }
                 }
             } catch (e) { console.error('Failed to fetch weekly IP:', e); }
         };
