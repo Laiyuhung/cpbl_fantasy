@@ -18,6 +18,13 @@ function formatIP(outs) {
   return `${fullInnings}.${remainder}`
 }
 
+function ratioOrInf(numerator, denominator, decimals = 2) {
+  if (denominator > 0) {
+    return Number((numerator / denominator).toFixed(decimals))
+  }
+  return numerator > 0 ? 'INF' : 0
+}
+
 export async function POST(req) {
   try {
     const { date, league_id: leagueId } = await req.json()
@@ -91,13 +98,13 @@ export async function POST(req) {
     for (const [_, p] of playerMap.entries()) {
       // Rate stats
       const ip_raw = p.out / 3
-      p.era = ip_raw ? Number((9 * p.er / ip_raw).toFixed(2)) : 0
-      p.whip = ip_raw ? Number(((p.bb + p.h) / ip_raw).toFixed(2)) : 0
+      p.era = ratioOrInf(9 * p.er, ip_raw, 2)
+      p.whip = ratioOrInf(p.bb + p.h, ip_raw, 2)
       p['win%'] = (p.w + p.l) > 0 ? Number((p.w / (p.w + p.l)).toFixed(3)) : 0
-      p['k/9'] = ip_raw ? Number((9 * p.k / ip_raw).toFixed(2)) : 0
-      p['bb/9'] = ip_raw ? Number((9 * p.bb / ip_raw).toFixed(2)) : 0
-      p['k/bb'] = p.bb > 0 ? Number((p.k / p.bb).toFixed(2)) : Number(p.k.toFixed(2))
-      p['h/9'] = ip_raw ? Number((9 * p.h / ip_raw).toFixed(2)) : 0
+      p['k/9'] = ratioOrInf(9 * p.k, ip_raw, 2)
+      p['bb/9'] = ratioOrInf(9 * p.bb, ip_raw, 2)
+      p['k/bb'] = ratioOrInf(p.k, p.bb, 2)
+      p['h/9'] = ratioOrInf(9 * p.h, ip_raw, 2)
       p.obpa = p.tbf > 0 ? Number(((p.h + p.bb + p.hbp) / p.tbf).toFixed(3)) : 0
       results.push({
         player_id: p.player_id,

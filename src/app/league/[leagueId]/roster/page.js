@@ -776,11 +776,16 @@ export default function RosterPage() {
         if (matches) fieldName = matches[matches.length - 1].replace(/[()]/g, '');
         const fieldKey = fieldName.toLowerCase();
         const value = stats[fieldKey];
-        return value !== undefined && value !== null ? value : '-';
+        
+        // === 改成下方這樣：先經過 formatStat 格式化再回傳 ===
+        return formatStat(value, fieldName); 
     };
 
     const formatStat = (value, statKey) => {
         if (value === '-' || value === null || value === undefined) return '-';
+        // === 加上這一行：如果是 INF 字串，直接原樣回傳，不丟進格式化工具 ===
+        if (value === 'INF') return 'INF'; 
+        
         const formatted = formatStatDisplayValue(value, statKey);
         if (formatted !== value) return formatted;
         if (Number(value) === 0) return <span className="text-slate-500 font-bold">0</span>;

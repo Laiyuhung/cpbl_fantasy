@@ -1016,6 +1016,21 @@ export default function LeagueSettingsPage() {
     ? Math.max(...draftOrder.map(p => p.round_number))
     : 0;
 
+  const formatTaiwanDateTime = (value) => {
+    if (!value) return 'Not set';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Taipei',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(date);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
@@ -1134,6 +1149,18 @@ export default function LeagueSettingsPage() {
                 <span className="text-purple-300/70 font-medium">Draft Type</span>
                 <span className="text-white font-semibold">{leagueSettings.draft_type}</span>
               </div>
+              {leagueSettings.draft_type === 'Live Draft' && (
+                <>
+                  <div className="flex justify-between items-center py-3 border-b border-purple-500/20">
+                    <span className="text-purple-300/70 font-medium">Live Draft Pick Time</span>
+                    <span className="text-white font-semibold">{leagueSettings.live_draft_pick_time || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-purple-500/20">
+                    <span className="text-purple-300/70 font-medium">Live Draft Time (Taipei)</span>
+                    <span className="text-white font-semibold">{formatTaiwanDateTime(leagueSettings.live_draft_time)}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between items-center py-3 border-b border-purple-500/20">
                 <span className="text-purple-300/70 font-medium">Max Teams</span>
                 <span className="text-white font-semibold">{leagueSettings.max_teams}</span>
@@ -1318,8 +1345,56 @@ export default function LeagueSettingsPage() {
                   <div className="text-white font-semibold">{leagueSettings.trade_review || 'Not set'}</div>
                 </div>
                 <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
+                  <div className="text-purple-300/70 text-sm mb-2">Trade Reject Time</div>
+                  <div className="text-white font-semibold">
+                    {leagueSettings.trade_review === 'No review'
+                      ? 'N/A (No review)'
+                      : (leagueSettings.trade_reject_time || 'Not set')}
+                  </div>
+                </div>
+                <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
+                  <div className="text-purple-300/70 text-sm mb-2">Trade Reject Percentage Needed</div>
+                  <div className="text-white font-semibold">
+                    {leagueSettings.trade_review === 'No review'
+                      ? 'N/A (No review)'
+                      : (leagueSettings.trade_reject_percentage || 'Not set')}
+                  </div>
+                </div>
+                <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
+                  <div className="text-purple-300/70 text-sm mb-2">Start Scoring On</div>
+                  <div className="text-white font-semibold">{leagueSettings.start_scoring_on || 'Not set'}</div>
+                </div>
+                <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
                   <div className="text-purple-300/70 text-sm mb-2">Playoff Teams</div>
                   <div className="text-white font-semibold">{leagueSettings.playoffs || 'Not set'}</div>
+                </div>
+                <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
+                  <div className="text-purple-300/70 text-sm mb-2">Playoffs Start</div>
+                  <div className="text-white font-semibold">
+                    {leagueSettings.playoffs === 'No playoffs'
+                      ? 'N/A (No playoffs)'
+                      : (leagueSettings.playoffs_start || 'Not set')}
+                  </div>
+                </div>
+                <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
+                  <div className="text-purple-300/70 text-sm mb-2">Playoff/Ranking Tie-Breaker</div>
+                  <div className="text-white font-semibold">{leagueSettings.playoff_tie_breaker || 'Not set'}</div>
+                </div>
+                <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
+                  <div className="text-purple-300/70 text-sm mb-2">Playoff Reseeding</div>
+                  <div className="text-white font-semibold">
+                    {leagueSettings.playoffs === 'No playoffs'
+                      ? 'N/A (No playoffs)'
+                      : (leagueSettings.playoff_reseeding || 'Not set')}
+                  </div>
+                </div>
+                <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
+                  <div className="text-purple-300/70 text-sm mb-2">Lock Eliminated Teams</div>
+                  <div className="text-white font-semibold">
+                    {leagueSettings.playoffs === 'No playoffs'
+                      ? 'N/A (No playoffs)'
+                      : (leagueSettings.lock_eliminated_teams || 'Not set')}
+                  </div>
                 </div>
                 <div className="bg-slate-900/40 rounded-lg p-4 border border-purple-500/20">
                   <div className="text-purple-300/70 text-sm mb-2">Publicly Viewable</div>
