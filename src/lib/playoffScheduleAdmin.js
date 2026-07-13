@@ -217,6 +217,7 @@ export function buildSeedMap(standingsRows, teamCount) {
       ...row,
       seed,
     }
+    seedMap[seed] = entry
     seedMap[row.manager_id] = entry
     seedList.push(entry)
   })
