@@ -77,7 +77,7 @@ export async function POST(request) {
     // 插入新的 seed 記錄
     const seedRows = seeds.map((seed) => ({
       league_id: leagueId,
-      manager_id: seed.managerId,
+      manager_id: seed.manager_id,
       seed: seed.seed,
     }))
 
