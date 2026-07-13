@@ -797,11 +797,13 @@ export default function AdminPlayoffSchedulePage() {
 
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
+                <div className="flex items-center gap-3">
                   <h2 className="text-xl font-black text-slate-900">插入預覽</h2>
-                  <p className="text-sm text-slate-500 mt-1">
-                    這裡顯示的是即將寫入 `league_matchups` 的預覽 rows，可以直接手動調整對戰組合後再確認送出。
-                  </p>
+                  {league?.playoff_reseeding === 'Yes' && (
+                    <span className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-700">
+                      RESEED
+                    </span>
+                  )}
                 </div>
                 <button
                   onClick={handleInsert}

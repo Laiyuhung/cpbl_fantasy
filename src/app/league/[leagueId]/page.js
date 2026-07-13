@@ -79,7 +79,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
               </span>
             </div>
             <div className="truncate text-sm font-black text-white">
-              {isBye ? 'BYE' : getManagerName(managerId)}
+              {getManagerName(managerId)}
             </div>
           </div>
           <div className="shrink-0 text-right">
@@ -109,27 +109,8 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
               </span>
             </div>
             <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-white/40">
-              {currentWeekLabel ? `${currentWeekLabel} Stage` : 'Bracket overview'}
+              {currentWeekLabel || 'Bracket overview'}
             </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center">
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center sm:text-left">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Format</div>
-            <div className="mt-1 text-lg font-black text-white">{playoffType || '-'}</div>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center sm:text-left">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Teams</div>
-            <div className="mt-1 text-lg font-black text-white">{participantCount || 0}</div>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center sm:text-left">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Matchups</div>
-            <div className="mt-1 text-lg font-black text-white">{Array.isArray(realMatchups) ? realMatchups.length : 0}</div>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center sm:text-left">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Rounds</div>
-            <div className="mt-1 text-lg font-black text-white">{groupedBracketRows.length}</div>
           </div>
         </div>
       </div>
@@ -170,7 +151,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
 
                         <div className="space-y-3">
                           {renderParticipant('Player A', row.manager_a_seed, matchupRow || {}, 'a', isBye)}
-                          {renderParticipant('Player B', isBye ? 'BYE' : row.manager_b_seed, matchupRow || {}, 'b', isBye)}
+                          {renderParticipant('Player B', row.manager_b_seed, matchupRow || {}, 'b', isBye)}
                         </div>
 
                       </div>
