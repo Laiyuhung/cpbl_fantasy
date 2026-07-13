@@ -252,7 +252,7 @@ function PlayoffMatchupsPanel({ rows, members, standings, liveStandings, seedSou
 function DraftPreviewTable({ rows, members, onRowChange }) {
   const memberOptions = members.map((member) => ({
     value: member.manager_id,
-    label: `${member.nickname || 'Unnamed'} · ${member.manager_id}`,
+    label: member.nickname || 'Unnamed',
   }))
 
   return (
@@ -287,8 +287,9 @@ function DraftPreviewTable({ rows, members, onRowChange }) {
                 <select
                   value={row.manager_id_a || ''}
                   onChange={(e) => onRowChange(index, 'manager_id_a', e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none ${!row.manager_id_a ? 'border-amber-400 bg-amber-50 text-slate-800 focus:border-amber-500' : 'border-slate-300 bg-white text-slate-800 focus:border-purple-500'}`}
                 >
+                  <option value="">Select Manager</option>
                   {memberOptions.map((member) => (
                     <option key={member.value} value={member.value}>{member.label}</option>
                   ))}
@@ -304,8 +305,9 @@ function DraftPreviewTable({ rows, members, onRowChange }) {
                     <select
                       value={row.manager_id_b || ''}
                       onChange={(e) => onRowChange(index, 'manager_id_b', e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                      className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none ${!row.manager_id_b ? 'border-amber-400 bg-amber-50 text-slate-800 focus:border-amber-500' : 'border-slate-300 bg-white text-slate-800 focus:border-purple-500'}`}
                     >
+                      <option value="">Select Manager</option>
                       {memberOptions.map((member) => (
                         <option key={member.value} value={member.value}>{member.label}</option>
                       ))}
@@ -523,6 +525,21 @@ export default function AdminPlayoffSchedulePage() {
 
   const handleInsert = async () => {
     if (!league || !selectedPlayoffWeek) return
+
+    // 驗證所有非 bye 比賽都必須選擇 manager
+    const incompleteRows = draftRows.filter((row) => {
+      if (row.matchup_type === 'bye') return false
+      return !row.manager_id_a || !row.manager_id_b
+    })
+
+    if (incompleteRows.length > 0) {
+      setNotice({
+        type: 'error',
+        title: 'Incomplete Selection',
+        detail: `請為所有比賽選擇 Manager A 和 Manager B（${incompleteRows.length} 筆未完成）`,
+      })
+      return
+    }
 
     setSaving(true)
     setError('')

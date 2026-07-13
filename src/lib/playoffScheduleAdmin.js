@@ -43,13 +43,13 @@ const BRACKET_DEFINITIONS = {
         key: 'bye1',
         type: 'bye',
         left: { kind: 'seed', seed: 1 },
-        label: 'Bye',
+        label: 'Quarterfinal',
       },
       {
         key: 'bye2',
         type: 'bye',
         left: { kind: 'seed', seed: 2 },
-        label: 'Bye',
+        label: 'Quarterfinal',
       },
       {
         key: 'm1',
@@ -257,6 +257,8 @@ function resolveRef(ref, { seedMap, resolvedKeys }) {
 
 function makeRoundRow({ leagueId, weekRow, entry, left, right, rowKey }) {
   const isBye = entry.type === 'bye'
+  const leftIsEmpty = left?.empty === true
+  const rightIsEmpty = right?.empty === true
 
   return {
     rowKey,
@@ -265,9 +267,9 @@ function makeRoundRow({ leagueId, weekRow, entry, left, right, rowKey }) {
     week_type: 'playoffs',
     start_date: weekRow.week_start,
     end_date: weekRow.week_end,
-    manager_id_a: left?.manager_id || null,
+    manager_id_a: leftIsEmpty ? null : (left?.manager_id || null),
     score_a: 0,
-    manager_id_b: isBye ? null : right?.manager_id || null,
+    manager_id_b: isBye ? null : (rightIsEmpty ? null : (right?.manager_id || null)),
     score_b: 0,
     winner_manager_id: isBye ? (left?.manager_id || null) : null,
     is_tie: false,
@@ -278,8 +280,8 @@ function makeRoundRow({ leagueId, weekRow, entry, left, right, rowKey }) {
     matchup_type: entry.type,
     left_seed: left?.seed ?? null,
     right_seed: right?.seed ?? null,
-    left_nickname: left?.nickname || '-',
-    right_nickname: isBye ? 'BYE' : (right?.nickname || '-'),
+    left_nickname: leftIsEmpty ? 'TBD' : (left?.nickname || '-'),
+    right_nickname: isBye ? 'BYE' : (rightIsEmpty ? 'TBD' : (right?.nickname || '-')),
   }
 }
 
