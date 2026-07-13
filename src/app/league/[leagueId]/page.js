@@ -128,7 +128,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
               <Card key={group.roundNumber} className="overflow-hidden border-white/10 bg-white/5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-md">
                 <CardHeader className="border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent pb-4">
                   <CardTitle className="text-lg font-black text-cyan-200 uppercase tracking-[0.18em]">
-                    {group.rows[0]?.bracket_label || `Round ${group.roundNumber}`}
+                    {group.rows.find(row => String(row.bracket_type || '').toLowerCase() !== 'bye')?.bracket_label || `Round ${group.roundNumber}`}
                   </CardTitle>
                 </CardHeader>
 
