@@ -810,7 +810,7 @@ export default function AdminPlayoffSchedulePage() {
                                     const newSeed = e.target.value ? Number(e.target.value) : null
                                     setPlayoffSeeds(prev => {
                                       const filtered = prev.filter(s => s.manager_id !== member.manager_id)
-                                      if (newSeed) {
+                                      if (newSeed !== null && newSeed !== '') {
                                         filtered.push({ manager_id: member.manager_id, seed: newSeed })
                                       }
                                       return filtered.sort((a, b) => a.seed - b.seed)
@@ -860,12 +860,13 @@ export default function AdminPlayoffSchedulePage() {
                     <button
                       onClick={async () => {
                         try {
+                          const validSeeds = playoffSeeds.filter(s => s.manager_id && s.seed)
                           const res = await fetch('/api/admin/playoff-seeds', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                               leagueId: selectedLeagueId,
-                              seeds: playoffSeeds,
+                              seeds: validSeeds,
                             }),
                           })
                           const data = await res.json()
