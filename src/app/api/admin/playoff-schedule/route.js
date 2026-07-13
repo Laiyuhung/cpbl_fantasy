@@ -69,6 +69,32 @@ async function loadLeagueData(leagueId) {
   }
 }
 
+function buildInsertPayloadRows(rows, baseRows) {
+  return rows.map((row, index) => {
+    const baseRow = baseRows[index]
+    if (!baseRow) {
+      throw new Error(`Preview row ${index + 1} is missing a base row.`)
+    }
+
+    return {
+      league_id: baseRow.league_id,
+      week_number: baseRow.week_number,
+      week_type: baseRow.week_type,
+      start_date: baseRow.start_date,
+      end_date: baseRow.end_date,
+      manager_id_a: row?.manager_id_a ?? baseRow.manager_id_a,
+      score_a: row?.score_a ?? baseRow.score_a ?? 0,
+      manager_id_b: row?.manager_id_b ?? baseRow.manager_id_b,
+      score_b: row?.score_b ?? baseRow.score_b ?? 0,
+      winner_manager_id: row?.winner_manager_id ?? baseRow.winner_manager_id ?? null,
+      is_tie: row?.is_tie ?? baseRow.is_tie ?? false,
+      created_at: baseRow.created_at ?? null,
+      updated_at: baseRow.updated_at ?? null,
+      tie_categories_count: row?.tie_categories_count ?? baseRow.tie_categories_count ?? 0,
+    }
+  })
+}
+
 export async function GET(request) {
   try {
     const auth = await requireAdmin()
@@ -76,6 +102,9 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url)
     const leagueId = searchParams.get('leagueId')?.trim()
+    const targetWeekNumberParam = searchParams.get('targetWeekNumber')?.trim()
+    const seedSource = String(searchParams.get('seedSource') || 'final').trim() === 'live' ? 'live' : 'final'
+    const targetWeekNumber = targetWeekNumberParam ? Number(targetWeekNumberParam) : null
 
     const { data: leagues, error: leaguesError } = await supabaseAdmin
       .from('league_settings')
@@ -97,8 +126,7 @@ export async function GET(request) {
 
     const config = parsePlayoffConfig(leagueData.league.playoffs)
     const playoffWeeks = leagueData.schedule.filter((week) => week.week_type === 'playoffs')
-
-    return NextResponse.json({
+    const responsePayload = {
       success: true,
       leagues: leagues || [],
       league: leagueData.league,
@@ -109,7 +137,36 @@ export async function GET(request) {
       liveStandings: leagueData.liveStandings,
       matchups: leagueData.matchups,
       playoffWeeks,
-    })
+    }
+
+    if (Number.isInteger(targetWeekNumber)) {
+      const standingsRows = seedSource === 'live' ? leagueData.liveStandings : leagueData.standings
+      const playoffRows = leagueData.matchups.filter((row) => row.week_type === 'playoffs')
+
+      const plan = buildPlayoffInsertPlan({
+        leagueId,
+        leagueName: leagueData.league.league_name,
+        playoffsText: leagueData.league.playoffs,
+        playoffReseeding: leagueData.league.playoff_reseeding,
+        standingsRows,
+        scheduleRows: leagueData.schedule,
+        existingPlayoffRows: playoffRows,
+        targetWeekNumber,
+        seedSource,
+      })
+
+      if (plan.error) {
+        return NextResponse.json({ ...responsePayload, success: false, error: plan.error, details: plan.error }, { status: 400 })
+      }
+
+      responsePayload.preview = plan.rows
+      responsePayload.roundIndex = plan.roundIndex
+      responsePayload.targetWeekNumber = targetWeekNumber
+      responsePayload.seedSource = seedSource
+      responsePayload.previewWeek = plan.targetWeekRow
+    }
+
+    return NextResponse.json(responsePayload)
   } catch (error) {
     console.error('[admin/playoff-schedule] GET error:', error)
     return NextResponse.json({ success: false, error: 'Server error', details: error.message }, { status: 500 })
@@ -125,6 +182,7 @@ export async function POST(request) {
     const leagueId = String(body?.leagueId || '').trim()
     const targetWeekNumber = Number(body?.targetWeekNumber)
     const seedSource = String(body?.seedSource || 'final').trim() === 'live' ? 'live' : 'final'
+    const incomingRows = Array.isArray(body?.rows) ? body.rows : null
 
     if (!leagueId || !Number.isInteger(targetWeekNumber)) {
       return NextResponse.json({ success: false, error: 'leagueId and targetWeekNumber are required' }, { status: 400 })
@@ -154,6 +212,17 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: plan.error }, { status: 400 })
     }
 
+    if (incomingRows && incomingRows.length !== plan.rows.length) {
+      return NextResponse.json({
+        success: false,
+        error: `Preview row count mismatch. Expected ${plan.rows.length}, received ${incomingRows.length}.`,
+      }, { status: 400 })
+    }
+
+    const insertPayload = incomingRows && incomingRows.length > 0
+      ? buildInsertPayloadRows(incomingRows, plan.rows)
+      : plan.rows.map(({ rowKey, matchup_label, matchup_type, left_seed, right_seed, left_nickname, right_nickname, ...dbRow }) => dbRow)
+
     const existingRows = playoffRows.filter((row) => Number(row.week_number) === Number(targetWeekNumber))
     if (existingRows.length > 0) {
       const { error: deleteError } = await supabaseAdmin
@@ -167,8 +236,6 @@ export async function POST(request) {
         return NextResponse.json({ success: false, error: 'Failed to clear existing playoff rows', details: deleteError.message }, { status: 500 })
       }
     }
-
-    const insertPayload = plan.rows.map(({ rowKey, matchup_label, matchup_type, left_seed, right_seed, left_nickname, right_nickname, ...dbRow }) => dbRow)
 
     const { data: insertedRows, error: insertError } = await supabaseAdmin
       .from('league_matchups')

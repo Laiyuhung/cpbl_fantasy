@@ -262,8 +262,8 @@ export default function AdminPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M5 11h14M7 21h10a2 2 0 002-2v-6a2 2 0 00-2-2H7a2 2 0 00-2 2v6a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Playoff Scheduler</h2>
-            <p className="text-gray-600">Insert playoff rounds into league_matchups using standings and schedule data</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Playoff Schedule Approve</h2>
+            <p className="text-gray-600">Preview, adjust, and approve playoff rounds before writing them into league_matchups</p>
           </div>
 
           <div

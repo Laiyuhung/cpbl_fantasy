@@ -119,10 +119,129 @@ function MatchupsTable({ rows }) {
   )
 }
 
+function DraftPreviewTable({ rows, members, onRowChange }) {
+  const memberOptions = members.map((member) => ({
+    value: member.manager_id,
+    label: `${member.nickname || 'Unnamed'} · ${member.manager_id}`,
+  }))
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] tracking-[0.16em]">
+          <tr>
+            <th className="px-4 py-3 text-left">Week</th>
+            <th className="px-4 py-3 text-left">Round</th>
+            <th className="px-4 py-3 text-left">Left Seed</th>
+            <th className="px-4 py-3 text-left">Manager A</th>
+            <th className="px-4 py-3 text-left">Right Seed</th>
+            <th className="px-4 py-3 text-left">Manager B</th>
+            <th className="px-4 py-3 text-left">Score</th>
+            <th className="px-4 py-3 text-left">Winner</th>
+            <th className="px-4 py-3 text-left">Tie</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 bg-white">
+          {rows.map((row, index) => (
+            <tr key={row.rowKey || `${row.week_number}-${index}`} className="align-top hover:bg-slate-50/80">
+              <td className="px-4 py-3 font-mono text-slate-700 whitespace-nowrap">
+                <div>W{row.week_number}</div>
+                <div className="text-[11px] text-slate-400 mt-1">{fmtDate(row.start_date)} - {fmtDate(row.end_date)}</div>
+              </td>
+              <td className="px-4 py-3">
+                <RowBadge tone={row.matchup_type === 'bye' ? 'amber' : 'purple'}>{row.matchup_label || row.matchup_type || 'match'}</RowBadge>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono">{row.rowKey || `row-${index + 1}`}</div>
+              </td>
+              <td className="px-4 py-3 font-black text-slate-700 whitespace-nowrap">#{row.left_seed ?? '-'}</td>
+              <td className="px-4 py-3 min-w-[240px]">
+                <select
+                  value={row.manager_id_a || ''}
+                  onChange={(e) => onRowChange(index, 'manager_id_a', e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                >
+                  {memberOptions.map((member) => (
+                    <option key={member.value} value={member.value}>{member.label}</option>
+                  ))}
+                </select>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono break-all">{row.left_nickname || '-'}</div>
+              </td>
+              <td className="px-4 py-3 font-black text-slate-700 whitespace-nowrap">#{row.right_seed ?? '-'}</td>
+              <td className="px-4 py-3 min-w-[240px]">
+                {row.matchup_type === 'bye' ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-slate-500 text-sm">BYE</div>
+                ) : (
+                  <>
+                    <select
+                      value={row.manager_id_b || ''}
+                      onChange={(e) => onRowChange(index, 'manager_id_b', e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                    >
+                      {memberOptions.map((member) => (
+                        <option key={member.value} value={member.value}>{member.label}</option>
+                      ))}
+                    </select>
+                    <div className="text-[11px] text-slate-400 mt-1 font-mono break-all">{row.right_nickname || '-'}</div>
+                  </>
+                )}
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={row.score_a ?? 0}
+                    onChange={(e) => onRowChange(index, 'score_a', e.target.value)}
+                    className="w-20 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                  />
+                  <span className="text-slate-400 font-black">-</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={row.score_b ?? 0}
+                    onChange={(e) => onRowChange(index, 'score_b', e.target.value)}
+                    className="w-20 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+              </td>
+              <td className="px-4 py-3 min-w-[220px]">
+                {row.matchup_type === 'bye' ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-slate-500 text-sm">Auto winner</div>
+                ) : (
+                  <select
+                    value={row.winner_manager_id || ''}
+                    onChange={(e) => onRowChange(index, 'winner_manager_id', e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                  >
+                    <option value="">Auto / None</option>
+                    {row.manager_id_a ? <option value={row.manager_id_a}>{row.left_nickname || row.manager_id_a}</option> : null}
+                    {row.manager_id_b ? <option value={row.manager_id_b}>{row.right_nickname || row.manager_id_b}</option> : null}
+                  </select>
+                )}
+              </td>
+              <td className="px-4 py-3">
+                <label className="inline-flex items-center gap-2 text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(row.is_tie)}
+                    onChange={(e) => onRowChange(index, 'is_tie', e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                  />
+                  <span className="text-sm">{row.tie_categories_count ?? 0}</span>
+                </label>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 export default function AdminPlayoffSchedulePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [previewError, setPreviewError] = useState('')
   const [leagues, setLeagues] = useState([])
   const [selectedLeagueId, setSelectedLeagueId] = useState('')
   const [league, setLeague] = useState(null)
@@ -134,6 +253,8 @@ export default function AdminPlayoffSchedulePage() {
   const [playoffWeeks, setPlayoffWeeks] = useState([])
   const [seedSource, setSeedSource] = useState('final')
   const [selectedWeekNumber, setSelectedWeekNumber] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [draftRows, setDraftRows] = useState([])
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -184,7 +305,10 @@ export default function AdminPlayoffSchedulePage() {
         setPlayoffWeeks(data.playoffWeeks || [])
 
         const firstPlayoffWeek = (data.playoffWeeks || [])[0]?.week_number || ''
-        setSelectedWeekNumber((prev) => prev || firstPlayoffWeek)
+        setSelectedWeekNumber((prev) => {
+          const hasPrev = (data.playoffWeeks || []).some((week) => String(week.week_number) === String(prev))
+          return hasPrev ? prev : String(firstPlayoffWeek || '')
+        })
 
         setSeedSource((data.liveStandings || []).length > 0 ? 'live' : 'final')
       } catch (err) {
@@ -198,34 +322,69 @@ export default function AdminPlayoffSchedulePage() {
     loadLeague()
   }, [selectedLeagueId])
 
-  const selectedStandings = seedSource === 'live' ? liveStandings : standings
+  useEffect(() => {
+    if (!league?.league_id || league.league_id !== selectedLeagueId || !selectedWeekNumber) {
+      setDraftRows([])
+      return
+    }
+
+    const loadPreview = async () => {
+      setPreviewLoading(true)
+      setPreviewError('')
+      setMessage('')
+      try {
+        const params = new URLSearchParams({
+          leagueId: selectedLeagueId,
+          targetWeekNumber: String(selectedWeekNumber),
+          seedSource,
+        })
+
+        const res = await fetch(`/api/admin/playoff-schedule?${params.toString()}`)
+        const data = await res.json()
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.error || 'Failed to load preview rows')
+        }
+
+        setDraftRows((data.preview || []).map((row) => ({
+          ...row,
+          score_a: row.score_a ?? 0,
+          score_b: row.score_b ?? 0,
+          winner_manager_id: row.winner_manager_id ?? '',
+        })))
+      } catch (err) {
+        console.error('Failed to load playoff preview:', err)
+        setPreviewError(err.message || 'Failed to load preview rows')
+        setDraftRows([])
+      } finally {
+        setPreviewLoading(false)
+      }
+    }
+
+    loadPreview()
+  }, [league?.league_id, selectedLeagueId, selectedWeekNumber, seedSource])
+
   const selectedPlayoffWeek = useMemo(
     () => playoffWeeks.find((week) => Number(week.week_number) === Number(selectedWeekNumber)) || null,
     [playoffWeeks, selectedWeekNumber],
   )
 
-  const previewRows = useMemo(() => {
-    if (!league || !selectedPlayoffWeek) return []
+  const handleRowChange = (index, field, value) => {
+    setDraftRows((prev) => prev.map((row, rowIndex) => {
+      if (rowIndex !== index) return row
 
-    const selectedRows = selectedStandings.length > 0 ? selectedStandings : standings
-    const seedCountMatch = String(league.playoffs || '').match(/(\d+)\s+teams?/i)
-    const requiredTeams = seedCountMatch ? Number.parseInt(seedCountMatch[1], 10) : 0
+      let nextValue = value
+      if (field === 'score_a' || field === 'score_b' || field === 'tie_categories_count') {
+        nextValue = value === '' ? 0 : Number(value)
+      } else if (field === 'is_tie') {
+        nextValue = Boolean(value)
+      }
 
-    if (!requiredTeams) return []
-
-    const ordered = [...selectedRows].sort((a, b) => Number(a.rank ?? 9999) - Number(b.rank ?? 9999)).slice(0, requiredTeams)
-    return ordered.map((row, index) => ({
-      rank: index + 1,
-      nickname: row.nickname,
-      manager_id: row.manager_id,
-      wins: row.wins,
-      losses: row.losses,
-      ties: row.ties,
-      win_pct: row.win_pct,
-      streak: row.streak,
-      seed: index + 1,
+      return {
+        ...row,
+        [field]: nextValue,
+      }
     }))
-  }, [league, selectedPlayoffWeek, selectedStandings, standings])
+  }
 
   const handleInsert = async () => {
     if (!league || !selectedPlayoffWeek) return
@@ -242,6 +401,7 @@ export default function AdminPlayoffSchedulePage() {
           leagueId: league.league_id,
           targetWeekNumber: Number(selectedPlayoffWeek.week_number),
           seedSource,
+          rows: draftRows,
         }),
       })
       const data = await res.json()
@@ -333,9 +493,10 @@ export default function AdminPlayoffSchedulePage() {
             </div>
           </div>
 
-          {(error || message) && (
+          {(error || previewError || message) && (
             <div className="mt-5 space-y-3">
               {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
+              {previewError ? <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm">{previewError}</div> : null}
               {message ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm">{message}</div> : null}
             </div>
           )}
@@ -472,15 +633,15 @@ export default function AdminPlayoffSchedulePage() {
                 <div>
                   <h2 className="text-xl font-black text-slate-900">插入預覽</h2>
                   <p className="text-sm text-slate-500 mt-1">
-                    選擇輪次後，會根據目前 standings 預先顯示將寫入的季後賽對戰。
+                    這裡顯示的是即將寫入 `league_matchups` 的預覽 rows，可以直接手動調整對戰組合後再確認送出。
                   </p>
                 </div>
                 <button
                   onClick={handleInsert}
-                  disabled={!selectedPlayoffWeek || saving || previewRows.length === 0}
+                    disabled={!selectedPlayoffWeek || saving || draftRows.length === 0 || previewLoading}
                   className="px-5 py-3 rounded-2xl bg-slate-900 text-white font-black text-sm tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors"
                 >
-                  {saving ? 'Saving...' : 'Insert Playoff Rows'}
+                  {saving ? 'Saving...' : 'Confirm & Insert'}
                 </button>
               </div>
 
@@ -490,34 +651,15 @@ export default function AdminPlayoffSchedulePage() {
                 </div>
               ) : null}
 
-              {previewRows.length > 0 ? (
-                <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] tracking-[0.16em]">
-                      <tr>
-                        <th className="px-4 py-3 text-left">Seed</th>
-                        <th className="px-4 py-3 text-left">Nick</th>
-                        <th className="px-4 py-3 text-left">Manager</th>
-                        <th className="px-4 py-3 text-left">Record</th>
-                        <th className="px-4 py-3 text-left">Pct</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {previewRows.map((row) => (
-                        <tr key={row.manager_id} className="hover:bg-slate-50/80">
-                          <td className="px-4 py-3 font-black text-slate-700">#{row.seed}</td>
-                          <td className="px-4 py-3 text-slate-800">{row.nickname || '-'}</td>
-                          <td className="px-4 py-3 font-mono text-slate-600">{row.manager_id}</td>
-                          <td className="px-4 py-3 font-mono text-slate-700">{row.wins ?? 0}-{row.losses ?? 0}-{row.ties ?? 0}</td>
-                          <td className="px-4 py-3 font-mono text-slate-700">{row.win_pct ?? '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {previewLoading ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-500">
+                  Loading preview rows...
                 </div>
+              ) : draftRows.length > 0 ? (
+                <DraftPreviewTable rows={draftRows} members={members} onRowChange={handleRowChange} />
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-500">
-                  選擇聯盟與季後賽輪次後，這裡會顯示即將插入的賽程。
+                  選擇聯盟與季後賽輪次後，這裡會顯示將要寫入 `league_matchups` 的預覽列。
                 </div>
               )}
             </div>
