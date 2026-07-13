@@ -12,10 +12,47 @@ import DraftTimeline from '@/components/DraftTimeline';
 import { getLeagueOverview } from '@/lib/leagueOverviewClient';
 
 // Playoff Tree Diagram Component
-const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members }) => {
+const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members, brackets = [] }) => {
   const teamsMatch = playoffType?.match(/^(\d+) teams/);
   const numTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
   const isReseeding = playoffReseeding === 'Yes';
+  const groupedBracketRows = useMemo(() => {
+    if (!Array.isArray(brackets) || brackets.length === 0) {
+      return [];
+    }
+
+    const groups = new Map();
+    brackets.forEach((row) => {
+      const roundNumber = Number(row.round_number) || 0;
+      if (!groups.has(roundNumber)) {
+        groups.set(roundNumber, []);
+      }
+      groups.get(roundNumber).push(row);
+    });
+
+    return Array.from(groups.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([roundNumber, rows]) => ({
+        roundNumber,
+        rows: rows.slice().sort((left, right) => {
+          const labelLeft = String(left.bracket_label || '');
+          const labelRight = String(right.bracket_label || '');
+          if (labelLeft !== labelRight) {
+            return labelLeft.localeCompare(labelRight);
+          }
+
+          const seedLeft = Number(left.manager_a_seed ?? Number.MAX_SAFE_INTEGER);
+          const seedRight = Number(right.manager_a_seed ?? Number.MAX_SAFE_INTEGER);
+          if (seedLeft !== seedRight) {
+            return seedLeft - seedRight;
+          }
+
+          return String(left.matchup_id || '').localeCompare(String(right.matchup_id || ''));
+        }),
+      }));
+  }, [brackets]);
+
+  const normalizedCurrentWeekLabel = String(currentWeekLabel || '').trim().toLowerCase();
 
   const getTeamNameBySeed = (seed) => {
     if (typeof seed !== 'number') return seed;
@@ -202,6 +239,77 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
     }
   };
 
+  const renderBracketFromTable = () => {
+    if (groupedBracketRows.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="relative w-full mt-8">
+        <div
+          className="grid gap-4 xl:gap-5 items-start"
+          style={{ gridTemplateColumns: `repeat(${groupedBracketRows.length}, minmax(220px, 1fr))` }}
+        >
+          {groupedBracketRows.map((group) => {
+            const groupLabel = String(group.rows[0]?.bracket_label || `Round ${group.roundNumber}`);
+            const isActiveRound = group.rows.some((row) => String(row.bracket_label || '').trim().toLowerCase() === normalizedCurrentWeekLabel);
+
+            return (
+              <div
+                key={group.roundNumber}
+                className={`rounded-2xl border p-4 ${isActiveRound ? 'border-purple-500/70 bg-purple-500/10 shadow-[0_0_40px_rgba(168,85,247,0.15)]' : 'border-white/10 bg-white/5'}`}
+              >
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <div className={`text-[10px] font-black uppercase tracking-[0.24em] ${isActiveRound ? 'text-purple-300' : 'text-white/30'}`}>
+                      Round {group.roundNumber}
+                    </div>
+                    <div className="text-sm font-black text-white">{groupLabel}</div>
+                  </div>
+                  <div className={`text-[10px] px-2 py-1 rounded-full border font-black uppercase ${isActiveRound ? 'border-purple-500/40 text-purple-300 bg-purple-500/10' : 'border-white/10 text-white/50 bg-white/5'}`}>
+                    {group.rows.length} row{group.rows.length === 1 ? '' : 's'}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {group.rows.map((row) => {
+                    const isBye = String(row.bracket_type || '').toLowerCase() === 'bye';
+                    return (
+                      <div
+                        key={row.id || row.matchup_id}
+                        className={`rounded-xl border p-3 ${isBye ? 'border-amber-500/30 bg-amber-500/10' : 'border-white/10 bg-slate-900/70'}`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className={`text-[10px] font-black uppercase tracking-[0.22em] ${isBye ? 'text-amber-300' : 'text-cyan-300'}`}>
+                            {row.bracket_label || row.bracket_type || 'match'}
+                          </span>
+                          <span className="text-[10px] font-bold text-white/40 font-mono">
+                            #{String(row.matchup_id || '').slice(0, 8)}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${isBye ? 'bg-amber-500/10' : 'bg-white/5'}`}>
+                            <span className="text-xs font-bold text-white/60 uppercase tracking-[0.18em]">Seed A</span>
+                            <span className="text-sm font-black text-white">{row.manager_a_seed ?? '-'}</span>
+                          </div>
+                          <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${isBye ? 'bg-amber-500/10' : 'bg-white/5'}`}>
+                            <span className="text-xs font-bold text-white/60 uppercase tracking-[0.18em]">Seed B</span>
+                            <span className="text-sm font-black text-white">{isBye ? 'BYE' : (row.manager_b_seed ?? '-')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full bg-slate-950/20 border border-white/5 rounded-[2.5rem] p-8 mt-12 overflow-x-auto">
       <div className="flex items-center justify-between mb-8">
@@ -226,7 +334,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
       </div>
 
       <div className="min-w-[800px]">
-        {renderBracket()}
+        {groupedBracketRows.length > 0 ? renderBracketFromTable() : renderBracket()}
       </div>
     </div>
   );
@@ -240,6 +348,7 @@ export default function LeaguePage() {
   const [leagueSettings, setLeagueSettings] = useState(null);
   const [scheduleData, setScheduleData] = useState([]);
   const [members, setMembers] = useState([]);
+  const [playoffBrackets, setPlayoffBrackets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [leagueStatus, setLeagueStatus] = useState('');
@@ -476,6 +585,7 @@ export default function LeaguePage() {
           setLeagueSettings(result.league);
           setScheduleData(result.schedule || []);
           setMembers(result.members || []);
+          setPlayoffBrackets(Array.isArray(result.brackets) ? result.brackets : []);
           setTodayDate(result.todayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }));
           setTodayScheduleGames(Array.isArray(result.todayScheduleGames) ? result.todayScheduleGames : []);
           setDailyRosterOwnerships(Array.isArray(result.ownerships) ? result.ownerships : []);
@@ -1616,6 +1726,7 @@ export default function LeaguePage() {
                 participantCount={members.length}
                 realMatchups={matchups}
                 members={members}
+                brackets={playoffBrackets}
               />
             )
           }

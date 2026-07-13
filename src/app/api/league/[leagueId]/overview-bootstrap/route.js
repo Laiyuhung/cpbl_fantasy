@@ -40,7 +40,7 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [managerRes, adminRes, matchupsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, rosterRes, allLeagueRes, testLeagueRes, leagueStatusRes] = await Promise.all([
+    const [managerRes, adminRes, matchupsRes, bracketsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, rosterRes, allLeagueRes, testLeagueRes, leagueStatusRes] = await Promise.all([
       supabase
         .from('managers')
         .select('name, email_verified')
@@ -56,6 +56,11 @@ export async function GET(request, { params }) {
         .select('*')
         .eq('league_id', leagueId)
         .eq('week_number', currentWeek),
+      supabaseAdmin
+        .from('league_playoff_bracket')
+        .select('*')
+        .eq('league_id', leagueId)
+        .order('round_number', { ascending: true }),
       supabase
         .from('v_league_standings')
         .select('*')
@@ -128,6 +133,10 @@ export async function GET(request, { params }) {
 
     if (matchupsRes.error) {
       return NextResponse.json({ success: false, error: matchupsRes.error.message }, { status: 500 });
+    }
+
+    if (bracketsRes.error) {
+      return NextResponse.json({ success: false, error: bracketsRes.error.message }, { status: 500 });
     }
 
     if (standingsRes.error) {
@@ -303,6 +312,7 @@ export async function GET(request, { params }) {
       todayScheduleGames: todayGamesRes.data || [],
       currentWeek,
       matchups: matchupsRes.data || [],
+      brackets: bracketsRes.data || [],
       standings: standingsWithWaiver,
       transactions,
       waivers,

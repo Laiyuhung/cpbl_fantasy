@@ -25,7 +25,7 @@ async function requireAdmin() {
 }
 
 async function loadLeagueData(leagueId) {
-  const [leagueRes, membersRes, scheduleRes, standingsRes, liveStandingsRes, matchupsRes] = await Promise.all([
+  const [leagueRes, membersRes, scheduleRes, standingsRes, liveStandingsRes, matchupsRes, bracketRes] = await Promise.all([
     supabaseAdmin
       .from('league_settings')
       .select('league_id, league_name, playoffs, playoffs_start, playoff_reseeding, playoff_tie_breaker, scoring_type, start_scoring_on, max_teams, created_at, updated_at')
@@ -56,6 +56,11 @@ async function loadLeagueData(leagueId) {
       .select('*')
       .eq('league_id', leagueId)
       .order('week_number', { ascending: true }),
+    supabaseAdmin
+      .from('league_playoff_bracket')
+      .select('*')
+      .eq('league_id', leagueId)
+      .order('round_number', { ascending: true }),
   ])
 
   return {
@@ -66,6 +71,7 @@ async function loadLeagueData(leagueId) {
     standings: standingsRes.data || [],
     liveStandings: liveStandingsRes.data || [],
     matchups: matchupsRes.data || [],
+    brackets: bracketRes.data || [],
   }
 }
 
@@ -96,6 +102,33 @@ function buildInsertPayloadRows(rows, baseRows) {
       created_at: baseRow.created_at ?? null,
       updated_at: baseRow.updated_at ?? null,
       tie_categories_count: row?.tie_categories_count ?? baseRow.tie_categories_count ?? 0,
+    }
+  })
+}
+
+function buildBracketInsertPayloadRows(rows, insertedMatchups, roundNumber) {
+  let matchupIndex = 0
+
+  return rows.map((row, index) => {
+    const isBye = String(row.matchup_type || '').toLowerCase() === 'bye'
+    const insertedMatchup = isBye ? null : insertedMatchups[matchupIndex++]
+
+    if (!isBye && !insertedMatchup?.id) {
+      throw new Error(`Inserted matchup row ${index + 1} is missing an id.`)
+    }
+
+    return {
+      league_id: row.league_id,
+      matchup_id: isBye ? crypto.randomUUID() : insertedMatchup.id,
+      round_number: roundNumber,
+      bracket_type: isBye ? 'bye' : (row.matchup_type || 'match'),
+      winner_to_matchup_id: null,
+      winner_slot: null,
+      loser_to_matchup_id: null,
+      loser_slot: null,
+      bracket_label: row.matchup_label || null,
+      manager_a_seed: row.left_seed ?? null,
+      manager_b_seed: row.right_seed ?? null,
     }
   })
 }
@@ -228,32 +261,67 @@ export async function POST(request) {
       ? buildInsertPayloadRows(incomingRows, plan.rows)
       : plan.rows.map(({ rowKey, matchup_label, matchup_type, left_seed, right_seed, left_nickname, right_nickname, ...dbRow }) => dbRow)
 
-    const existingRows = playoffRows.filter((row) => Number(row.week_number) === Number(targetWeekNumber))
-    if (existingRows.length > 0) {
-      const { error: deleteError } = await supabaseAdmin
-        .from('league_matchups')
-        .delete()
-        .eq('league_id', leagueId)
-        .eq('week_number', targetWeekNumber)
-        .eq('week_type', 'playoffs')
+    const matchupInsertPayload = insertPayload.filter((_, index) => String(plan.rows[index]?.matchup_type || '').toLowerCase() !== 'bye')
 
-      if (deleteError) {
-        return NextResponse.json({ success: false, error: 'Failed to clear existing playoff rows', details: deleteError.message }, { status: 500 })
-      }
+    const targetRoundNumber = Number(plan.roundIndex) + 1
+
+    const { error: deleteMatchupError } = await supabaseAdmin
+      .from('league_matchups')
+      .delete()
+      .eq('league_id', leagueId)
+      .eq('week_number', targetWeekNumber)
+      .eq('week_type', 'playoffs')
+
+    if (deleteMatchupError) {
+      return NextResponse.json({ success: false, error: 'Failed to clear existing playoff rows', details: deleteMatchupError.message }, { status: 500 })
     }
 
-    const { data: insertedRows, error: insertError } = await supabaseAdmin
-      .from('league_matchups')
-      .insert(insertPayload)
+    const { error: deleteBracketError } = await supabaseAdmin
+      .from('league_playoff_bracket')
+      .delete()
+      .eq('league_id', leagueId)
+      .eq('round_number', targetRoundNumber)
+
+    if (deleteBracketError) {
+      return NextResponse.json({ success: false, error: 'Failed to clear existing playoff bracket rows', details: deleteBracketError.message }, { status: 500 })
+    }
+
+    let insertedRows = []
+    if (matchupInsertPayload.length > 0) {
+      const { data, error: insertError } = await supabaseAdmin
+        .from('league_matchups')
+        .insert(matchupInsertPayload)
+        .select('*')
+
+      if (insertError) {
+        return NextResponse.json({ success: false, error: 'Failed to insert playoff rows', details: insertError.message }, { status: 500 })
+      }
+
+      insertedRows = data || []
+    }
+
+    const bracketPayload = buildBracketInsertPayloadRows(plan.rows, insertedRows || [], targetRoundNumber)
+    const { data: insertedBrackets, error: bracketError } = await supabaseAdmin
+      .from('league_playoff_bracket')
+      .insert(bracketPayload)
       .select('*')
 
-    if (insertError) {
-      return NextResponse.json({ success: false, error: 'Failed to insert playoff rows', details: insertError.message }, { status: 500 })
+    if (bracketError) {
+      const insertedIds = (insertedRows || []).map((row) => row.id).filter(Boolean)
+      if (insertedIds.length > 0) {
+        await supabaseAdmin
+          .from('league_matchups')
+          .delete()
+          .in('id', insertedIds)
+      }
+
+      return NextResponse.json({ success: false, error: 'Failed to insert playoff bracket rows', details: bracketError.message }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
       inserted: insertedRows || [],
+      insertedBrackets: insertedBrackets || [],
       submitted: insertPayload,
       preview: plan.rows,
       roundIndex: plan.roundIndex,
