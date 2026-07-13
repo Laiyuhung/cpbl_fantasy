@@ -119,6 +119,136 @@ function MatchupsTable({ rows }) {
   )
 }
 
+function PlayoffMatchupsPanel({ rows, members, standings, liveStandings, seedSource }) {
+  const visibleRows = rows.filter((row) => row.week_type === 'playoffs')
+  const rankingRows = seedSource === 'live' ? liveStandings : standings
+
+  const memberLookup = useMemo(() => {
+    const map = new Map()
+
+    ;(members || []).forEach((member) => {
+      map.set(String(member.manager_id), {
+        nickname: member.nickname || '-',
+        role: member.role || '-',
+      })
+    })
+
+    return map
+  }, [members])
+
+  const rankingLookup = useMemo(() => {
+    const map = new Map()
+
+    ;(rankingRows || []).forEach((row) => {
+      map.set(String(row.manager_id), {
+        rank: row.rank ?? '-',
+        record: row.record_display || `${row.wins ?? 0}-${row.losses ?? 0}-${row.ties ?? 0}`,
+        winPct: row.win_pct ?? '-',
+      })
+    })
+
+    return map
+  }, [rankingRows])
+
+  const getManagerCard = (managerId) => {
+    const member = memberLookup.get(String(managerId)) || {}
+    const rank = rankingLookup.get(String(managerId)) || {}
+
+    return {
+      nickname: member.nickname || 'BYE',
+      role: member.role || '-',
+      rank: rank.rank,
+      record: rank.record,
+      winPct: rank.winPct,
+    }
+  }
+
+  if (visibleRows.length === 0) {
+    return (
+      <div className="bg-gradient-to-br from-white to-slate-50 rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-3 bg-gradient-to-r from-purple-50 to-cyan-50">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-700">Playoff Matchups</h3>
+            <p className="text-xs text-slate-500 mt-1">季後賽對戰卡片</p>
+          </div>
+          <RowBadge tone="purple">0</RowBadge>
+        </div>
+        <div className="px-5 py-10 text-center text-slate-400 text-sm">No playoff matchups yet.</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-white to-slate-50 rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-3 bg-gradient-to-r from-purple-50 to-cyan-50">
+        <div>
+          <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-700">Playoff Matchups</h3>
+          <p className="text-xs text-slate-500 mt-1">以 nickname / rank / record 呈現的季後賽對戰卡片</p>
+        </div>
+        <RowBadge tone="purple">{visibleRows.length}</RowBadge>
+      </div>
+
+      <div className="p-4 sm:p-5 space-y-4">
+        {visibleRows.map((row) => {
+          const managerA = getManagerCard(row.manager_id_a)
+          const managerB = row.manager_id_b ? getManagerCard(row.manager_id_b) : null
+          const isBye = row.matchup_type === 'bye'
+
+          return (
+            <div key={row.id} className="rounded-3xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] overflow-hidden">
+              <div className="px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-900 to-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/55">Week {row.week_number}</div>
+                  <div className="mt-1 text-lg font-black text-white">{row.matchup_label || row.matchup_type || 'playoff'}</div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <RowBadge tone={row.week_type === 'playoffs' ? 'purple' : 'blue'}>{row.week_type}</RowBadge>
+                  <RowBadge tone={isBye ? 'amber' : 'emerald'}>{isBye ? 'bye' : 'match'}</RowBadge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                <div className="p-4 sm:p-5 bg-white">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Seed {row.left_seed ?? '-'}</div>
+                      <div className="mt-1 text-lg font-black text-slate-900 truncate">{managerA.nickname}</div>
+                      <div className="mt-1 text-xs text-slate-500">Rank #{managerA.rank} · {managerA.record}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Score</div>
+                      <div className="mt-1 text-2xl font-black text-cyan-600 tabular-nums">{Number(row.score_a ?? 0).toFixed(1)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 sm:p-5 bg-slate-50">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Seed {row.right_seed ?? (isBye ? 'BYE' : '-')}</div>
+                      <div className="mt-1 text-lg font-black text-slate-900 truncate">{isBye ? 'BYE' : managerB?.nickname || 'TBD'}</div>
+                      <div className="mt-1 text-xs text-slate-500">{isBye ? 'Automatic advance' : `Rank #${managerB?.rank ?? '-' } · ${managerB?.record ?? '-'}`}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Score</div>
+                      <div className="mt-1 text-2xl font-black text-cyan-600 tabular-nums">{isBye ? '—' : Number(row.score_b ?? 0).toFixed(1)}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-4 sm:px-5 py-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-500">
+                <div className="font-mono">Winner: {row.winner_manager_id ? (memberLookup.get(String(row.winner_manager_id))?.nickname || row.winner_manager_id) : 'TBD'}</div>
+                <div>{fmtDate(row.start_date)} - {fmtDate(row.end_date)}</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function DraftPreviewTable({ rows, members, onRowChange }) {
   const memberOptions = members.map((member) => ({
     value: member.manager_id,
@@ -241,7 +371,7 @@ export default function AdminPlayoffSchedulePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [previewError, setPreviewError] = useState('')
+  const [notice, setNotice] = useState(null)
   const [leagues, setLeagues] = useState([])
   const [selectedLeagueId, setSelectedLeagueId] = useState('')
   const [league, setLeague] = useState(null)
@@ -255,7 +385,13 @@ export default function AdminPlayoffSchedulePage() {
   const [selectedWeekNumber, setSelectedWeekNumber] = useState('')
   const [previewLoading, setPreviewLoading] = useState(false)
   const [draftRows, setDraftRows] = useState([])
-  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    if (!notice) return
+
+    const timer = setTimeout(() => setNotice(null), 3000)
+    return () => clearTimeout(timer)
+  }, [notice])
 
   useEffect(() => {
     const loadLeagues = async () => {
@@ -288,7 +424,7 @@ export default function AdminPlayoffSchedulePage() {
     const loadLeague = async () => {
       setLoading(true)
       setError('')
-      setMessage('')
+      setNotice(null)
       try {
         const res = await fetch(`/api/admin/playoff-schedule?leagueId=${encodeURIComponent(selectedLeagueId)}`)
         const data = await res.json()
@@ -330,8 +466,7 @@ export default function AdminPlayoffSchedulePage() {
 
     const loadPreview = async () => {
       setPreviewLoading(true)
-      setPreviewError('')
-      setMessage('')
+      setNotice(null)
       try {
         const params = new URLSearchParams({
           leagueId: selectedLeagueId,
@@ -353,7 +488,7 @@ export default function AdminPlayoffSchedulePage() {
         })))
       } catch (err) {
         console.error('Failed to load playoff preview:', err)
-        setPreviewError(err.message || 'Failed to load preview rows')
+        setNotice({ type: 'error', title: 'Preview error', detail: err.message || 'Failed to load preview rows' })
         setDraftRows([])
       } finally {
         setPreviewLoading(false)
@@ -391,7 +526,7 @@ export default function AdminPlayoffSchedulePage() {
 
     setSaving(true)
     setError('')
-    setMessage('')
+    setNotice(null)
 
     try {
       const res = await fetch('/api/admin/playoff-schedule', {
@@ -409,7 +544,11 @@ export default function AdminPlayoffSchedulePage() {
         throw new Error(data?.error || 'Failed to insert playoff rows')
       }
 
-      setMessage(`已寫入 W${selectedPlayoffWeek.week_number} 的季後賽賽程，共 ${data.inserted?.length || 0} 筆。`)
+      setNotice({
+        type: 'success',
+        title: 'Inserted',
+        detail: `已寫入 W${selectedPlayoffWeek.week_number} 的季後賽賽程，共 ${data.inserted?.length || 0} 筆。`,
+      })
 
       const refreshRes = await fetch(`/api/admin/playoff-schedule?leagueId=${encodeURIComponent(league.league_id)}`)
       const refreshData = await refreshRes.json()
@@ -422,7 +561,11 @@ export default function AdminPlayoffSchedulePage() {
       }
     } catch (err) {
       console.error('Failed to insert playoff schedule:', err)
-      setError(err.message || 'Failed to insert playoff schedule')
+      setNotice({
+        type: 'error',
+        title: 'Insert failed',
+        detail: err.message || 'Failed to insert playoff schedule',
+      })
     } finally {
       setSaving(false)
     }
@@ -434,6 +577,31 @@ export default function AdminPlayoffSchedulePage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#eff6ff_0,_#f8fafc_35%,_#eef2ff_100%)] py-8">
+      {notice ? (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-950/80 backdrop-blur-md px-4">
+          <div className={`w-full max-w-xl rounded-[2rem] border p-6 sm:p-8 shadow-2xl ${notice.type === 'success' ? 'border-emerald-300/40 bg-emerald-500/15' : 'border-rose-300/40 bg-rose-500/15'}`}>
+            <div className="flex items-start gap-4">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${notice.type === 'success' ? 'bg-emerald-500/20 text-emerald-200' : 'bg-rose-500/20 text-rose-200'}`}>
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {notice.type === 'success' ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M10.29 3.86l-7.2 12.46A2 2 0 004.83 19h14.34a2 2 0 001.74-2.68l-7.2-12.46a2 2 0 00-3.42 0z" />
+                  )}
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-black uppercase tracking-[0.22em] text-white/60">
+                  {notice.type === 'success' ? 'Success' : 'Error'}
+                </div>
+                <div className="mt-2 text-2xl font-black text-white">{notice.title}</div>
+                <div className="mt-2 text-sm sm:text-base text-white/80 leading-relaxed">{notice.detail}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="bg-white/90 backdrop-blur rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -493,13 +661,6 @@ export default function AdminPlayoffSchedulePage() {
             </div>
           </div>
 
-          {(error || previewError || message) && (
-            <div className="mt-5 space-y-3">
-              {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
-              {previewError ? <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm">{previewError}</div> : null}
-              {message ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm">{message}</div> : null}
-            </div>
-          )}
         </div>
 
         {!league ? (
@@ -625,7 +786,13 @@ export default function AdminPlayoffSchedulePage() {
                 </div>
               </div>
 
-              <MatchupsTable rows={matchups} />
+              <PlayoffMatchupsPanel
+                rows={matchups}
+                members={members}
+                standings={standings}
+                liveStandings={liveStandings}
+                seedSource={seedSource}
+              />
             </div>
 
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">

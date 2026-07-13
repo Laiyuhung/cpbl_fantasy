@@ -64,37 +64,16 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
     return Number.isFinite(numberValue) ? numberValue.toFixed(1) : String(value);
   };
 
-  const getMatchupState = (matchup) => {
-    if (!matchup) return { label: 'Pending', tone: 'slate' };
-    if (matchup.winner_manager_id) return { label: 'Final', tone: 'emerald' };
-    const scoreA = Number(matchup.score_a ?? 0);
-    const scoreB = Number(matchup.score_b ?? 0);
-    if (scoreA > 0 || scoreB > 0) return { label: 'Live', tone: 'amber' };
-    return { label: 'Scheduled', tone: 'blue' };
-  };
-
-  const stateClasses = {
-    slate: 'bg-slate-100 text-slate-700 border-slate-200',
-    blue: 'bg-blue-100 text-blue-700 border-blue-200',
-    amber: 'bg-amber-100 text-amber-700 border-amber-200',
-    emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    purple: 'bg-purple-100 text-purple-700 border-purple-200',
-  };
-
   const renderParticipant = (label, seed, matchupRow, side, isByeMatchup) => {
     const isBye = isByeMatchup && side === 'b';
     const managerId = side === 'a' ? matchupRow?.manager_id_a : matchupRow?.manager_id_b;
     const score = side === 'a' ? matchupRow?.score_a : matchupRow?.score_b;
-    const isWinner = matchupRow?.winner_manager_id && String(matchupRow.winner_manager_id) === String(managerId);
 
     return (
-      <div className={`rounded-2xl border px-3 py-3 ${isBye ? 'border-dashed border-amber-300/40 bg-amber-500/10' : isWinner ? 'border-emerald-400/40 bg-emerald-500/10' : 'border-white/10 bg-slate-950/40'}`}>
+      <div className={`rounded-2xl border px-3 py-3 ${isBye ? 'border-dashed border-amber-300/40 bg-amber-500/10' : 'border-white/10 bg-slate-950/40'}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
-                {label}
-              </span>
               <span className="inline-flex items-center rounded-full border border-purple-400/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-purple-200">
                 Seed {seed ?? '-'}
               </span>
@@ -102,14 +81,8 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
             <div className="truncate text-sm font-black text-white">
               {isBye ? 'BYE' : getManagerName(managerId)}
             </div>
-            <div className="mt-1 text-[11px] font-mono text-white/40 truncate">
-              {managerId || '—'}
-            </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] ${isWinner ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/5 text-white/50'}`}>
-              {isWinner ? 'Winner' : isBye ? 'Bye' : 'Player'}
-            </div>
             <div className="mt-2 text-lg font-black text-cyan-300 tabular-nums">
               {isBye ? '—' : formatScore(score)}
             </div>
@@ -173,26 +146,15 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
             return (
               <Card key={group.roundNumber} className="overflow-hidden border-white/10 bg-white/5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-md">
                 <CardHeader className="border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent pb-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <CardTitle className="text-sm font-black uppercase tracking-[0.22em] text-white">
-                        Round {group.roundNumber}
-                      </CardTitle>
-                      <div className="mt-2 text-lg font-black text-cyan-200">
-                        {group.rows[0]?.bracket_label || `Round ${group.roundNumber}`}
-                      </div>
-                    </div>
-                    <div className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${String(group.rows[0]?.bracket_label || '').trim().toLowerCase() === activeStage ? 'border-purple-400/30 bg-purple-500/10 text-purple-200' : 'border-white/10 bg-white/5 text-white/50'}`}>
-                      {group.rows.length} card{group.rows.length === 1 ? '' : 's'}
-                    </div>
-                  </div>
+                  <CardTitle className="text-lg font-black text-cyan-200 uppercase tracking-[0.18em]">
+                    {group.rows[0]?.bracket_label || `Round ${group.roundNumber}`}
+                  </CardTitle>
                 </CardHeader>
 
                 <CardContent className="space-y-4 p-4 sm:p-5">
                   {group.rows.map((row) => {
                     const isBye = String(row.bracket_type || '').toLowerCase() === 'bye';
                     const matchupRow = row.matchup_id ? matchupById.get(String(row.matchup_id)) || null : null;
-                    const state = isBye ? { label: 'Bye', tone: 'amber' } : getMatchupState(matchupRow);
 
                     return (
                       <div key={row.id || row.matchup_id} className={`rounded-3xl border p-4 ${isBye ? 'border-amber-400/20 bg-amber-500/5' : 'border-white/10 bg-slate-950/50'}`}>
@@ -200,28 +162,8 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
-                                Stage
-                              </span>
-                              <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/70 border-white/10 bg-white/5">
                                 {row.bracket_label || `Round ${group.roundNumber}`}
                               </span>
-                              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${stateClasses[state.tone]}`}>
-                                {state.label}
-                              </span>
-                              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${isBye ? 'border-amber-400/30 bg-amber-500/10 text-amber-200' : 'border-cyan-400/30 bg-cyan-500/10 text-cyan-200'}`}>
-                                {row.bracket_type || 'match'}
-                              </span>
-                            </div>
-                            <div className="mt-2 font-mono text-[11px] text-white/35 break-all">
-                              matchup_id: {row.matchup_id || '-'}
-                            </div>
-                          </div>
-
-                          <div className="shrink-0 text-right">
-                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Seeds</div>
-                            <div className="mt-1 flex items-center gap-1.5 justify-end">
-                              <span className="rounded-full bg-purple-500/15 px-2 py-0.5 text-[10px] font-black text-purple-200 border border-purple-400/20">A {row.manager_a_seed ?? '-'}</span>
-                              <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] font-black text-cyan-200 border border-cyan-400/20">B {isBye ? 'BYE' : (row.manager_b_seed ?? '-')}</span>
                             </div>
                           </div>
                         </div>
@@ -231,24 +173,6 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
                           {renderParticipant('Player B', isBye ? 'BYE' : row.manager_b_seed, matchupRow || {}, 'b', isBye)}
                         </div>
 
-                        {matchupRow ? (
-                          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3 text-xs text-white/55">
-                            <div className="font-mono">
-                              Score: {formatScore(matchupRow.score_a)} - {formatScore(matchupRow.score_b)}
-                            </div>
-                            <div className="font-black uppercase tracking-[0.18em] text-emerald-200">
-                              Winner: {getManagerName(matchupRow.winner_manager_id)}
-                            </div>
-                          </div>
-                        ) : isBye ? (
-                          <div className="mt-4 rounded-2xl border border-dashed border-amber-400/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-100/80">
-                            This bye matchup does not create a league_matchups row.
-                          </div>
-                        ) : (
-                          <div className="mt-4 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-3 text-xs text-white/55">
-                            Waiting for league_matchups data linked by matchup_id.
-                          </div>
-                        )}
                       </div>
                     );
                   })}

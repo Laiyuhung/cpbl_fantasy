@@ -237,7 +237,12 @@ function resolveRef(ref, { seedMap, resolvedKeys }) {
   if (ref.kind === 'winner') {
     const resolved = resolvedKeys[ref.key]
     if (!resolved?.winnerManagerId) {
-      return null
+      return {
+        manager_id: null,
+        seed: null,
+        nickname: 'TBD',
+        unresolved: true,
+      }
     }
 
     return seedMap[resolved.winnerManagerId] || {
@@ -312,6 +317,47 @@ function matchPair(row, left, right) {
   )
 }
 
+function buildResolvedKeysForRounds({ definitions, targetIndex, existingRowsByWeek, playoffWeeks, seedMap }) {
+  const resolvedKeys = {}
+
+  for (let roundIndex = 0; roundIndex < targetIndex; roundIndex++) {
+    const definition = definitions[roundIndex]
+    const weekNumber = Number(playoffWeeks[roundIndex]?.week_number)
+    const rowsForWeek = existingRowsByWeek.get(weekNumber) || []
+    const matchedRows = []
+
+    for (const entry of definition) {
+      const left = resolveRef(entry.left, { seedMap, resolvedKeys })
+      const right = entry.type === 'bye' ? null : resolveRef(entry.right, { seedMap, resolvedKeys })
+
+      const row = rowsForWeek.find((candidate) => !matchedRows.includes(candidate) && matchPair(candidate, left, right))
+      if (!row) {
+        resolvedKeys[entry.key] = {
+          winnerManagerId: null,
+          winnerSeed: null,
+          winnerNickname: 'TBD',
+        }
+        continue
+      }
+
+      matchedRows.push(row)
+
+      const winner = getWinnerFromRow(row, seedMap)
+      if (winner?.winnerManagerId) {
+        resolvedKeys[entry.key] = winner
+      } else {
+        resolvedKeys[entry.key] = {
+          winnerManagerId: null,
+          winnerSeed: null,
+          winnerNickname: 'TBD',
+        }
+      }
+    }
+  }
+
+  return resolvedKeys
+}
+
 export function buildPlayoffInsertPlan({
   leagueId,
   leagueName,
@@ -343,7 +389,6 @@ export function buildPlayoffInsertPlan({
   }
 
   const targetWeekRow = playoffWeeks[targetIndex]
-  const previousWeekRow = playoffWeeks[targetIndex - 1] || null
 
   const { seedMap, seedList } = buildSeedMap(standingsRows, config.teamCount)
 
@@ -398,97 +443,13 @@ export function buildPlayoffInsertPlan({
     }
   }
 
-  const previousRows = existingRowsByWeek.get(previousWeekRow?.week_number) || []
-  if (previousRows.length === 0) {
-    return {
-      error: `Round ${targetIndex + 1} cannot be inserted before Round ${targetIndex} exists.`,
-    }
-  }
-
-  if (playoffReseeding === 'Yes') {
-    const previousWinners = previousRows
-      .map((row) => getWinnerFromRow(row, seedMap))
-      .filter(Boolean)
-      .map((winner) => seedMap[winner.winnerManagerId] || {
-        manager_id: winner.winnerManagerId,
-        seed: winner.winnerSeed ?? 999,
-        nickname: winner.winnerNickname || 'TBD',
-      })
-      .sort(sortBySeed)
-
-    if (previousWinners.length === 0) {
-      return {
-        error: `Previous playoff round must be resolved before inserting ${getPlayoffRoundLabel(config.teamCount, targetIndex)}.`,
-      }
-    }
-
-    const rows = []
-    for (let i = 0; i < previousWinners.length / 2; i++) {
-      const left = previousWinners[i]
-      const right = previousWinners[previousWinners.length - 1 - i]
-      rows.push(makeRoundRow({
-        leagueId,
-        weekRow: targetWeekRow,
-        entry: {
-          key: `reseed_${targetIndex + 1}_${i + 1}`,
-          type: 'match',
-          label: getPlayoffRoundLabel(config.teamCount, targetIndex),
-        },
-        left,
-        right,
-        rowKey: `reseed_${targetIndex + 1}_${i + 1}`,
-      }))
-    }
-
-    return {
-      success: true,
-      leagueId,
-      leagueName,
-      config,
-      seedSource,
-      roundIndex: targetIndex,
-      targetWeekRow,
-      rows,
-    }
-  }
-
-  const resolvedKeys = {}
-  for (let roundIndex = 0; roundIndex < targetIndex; roundIndex++) {
-    const definition = definitions[roundIndex]
-    const weekRow = playoffWeeks[roundIndex]
-    const rowsForWeek = existingRowsByWeek.get(weekRow.week_number) || []
-    const matchedRows = []
-
-    for (const entry of definition) {
-      const left = resolveRef(entry.left, { seedMap, resolvedKeys })
-      if (!left) {
-        return { error: `Unable to resolve playoff path for ${entry.key}.` }
-      }
-
-      const right = entry.type === 'bye' ? null : resolveRef(entry.right, { seedMap, resolvedKeys })
-      if (entry.type !== 'bye' && !right) {
-        return { error: `Unable to resolve playoff path for ${entry.key}.` }
-      }
-
-      const row = rowsForWeek.find((candidate) => !matchedRows.includes(candidate) && matchPair(candidate, left, right))
-      if (!row) {
-        return {
-          error: `Missing or mismatched playoff row for ${getPlayoffRoundLabel(config.teamCount, roundIndex)} (${entry.key}).`,
-        }
-      }
-
-      matchedRows.push(row)
-
-      const winner = getWinnerFromRow(row, seedMap)
-      if (!winner?.winnerManagerId) {
-        return {
-          error: `Previous round must be completed before inserting ${getPlayoffRoundLabel(config.teamCount, targetIndex)}.`,
-        }
-      }
-
-      resolvedKeys[entry.key] = winner
-    }
-  }
+  const resolvedKeys = buildResolvedKeysForRounds({
+    definitions,
+    targetIndex,
+    existingRowsByWeek,
+    playoffWeeks,
+    seedMap,
+  })
 
   const currentDefinition = definitions[targetIndex]
   if (!currentDefinition) {
@@ -499,15 +460,17 @@ export function buildPlayoffInsertPlan({
 
   const rows = []
   for (const entry of currentDefinition) {
-    const left = resolveRef(entry.left, { seedMap, resolvedKeys })
-    if (!left) {
-      return { error: `Unable to resolve left side for ${entry.key}.` }
+    const left = resolveRef(entry.left, { seedMap, resolvedKeys }) || {
+      manager_id: null,
+      seed: null,
+      nickname: 'TBD',
     }
 
-    const right = entry.type === 'bye' ? null : resolveRef(entry.right, { seedMap, resolvedKeys })
-    if (entry.type !== 'bye' && !right) {
-      return { error: `Unable to resolve right side for ${entry.key}.` }
-    }
+    const right = entry.type === 'bye' ? null : (resolveRef(entry.right, { seedMap, resolvedKeys }) || {
+      manager_id: null,
+      seed: null,
+      nickname: 'TBD',
+    })
 
     rows.push(makeRoundRow({
       leagueId,
