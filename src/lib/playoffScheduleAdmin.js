@@ -281,7 +281,7 @@ function makeRoundRow({ leagueId, weekRow, entry, left, right, rowKey }) {
     left_seed: left?.seed ?? null,
     right_seed: right?.seed ?? null,
     left_nickname: leftIsEmpty ? 'TBD' : (left?.nickname || '-'),
-    right_nickname: isBye ? 'BYE' : (rightIsEmpty ? 'TBD' : (right?.nickname || '-')),
+    right_nickname: isBye ? entry.label : (rightIsEmpty ? 'TBD' : (right?.nickname || '-')),
   }
 }
 

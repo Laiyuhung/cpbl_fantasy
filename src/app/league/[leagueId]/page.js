@@ -134,10 +134,11 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
 
                 <CardContent className="space-y-4 p-4 sm:p-5">
                   {group.rows.map((row) => {
+                    const isBye = String(row.bracket_type || '').toLowerCase() === 'bye';
                     const matchupRow = row.matchup_id ? matchupById.get(String(row.matchup_id)) || null : null;
 
                     return (
-                      <div key={row.id || row.matchup_id} className="rounded-3xl border border-white/10 bg-slate-950/50 p-4">
+                      <div key={row.id || row.matchup_id} className={`rounded-3xl border p-4 ${isBye ? 'border-amber-400/20 bg-amber-500/5' : 'border-white/10 bg-slate-950/50'}`}>
                         <div className="flex items-start justify-between gap-3 mb-4">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
@@ -149,8 +150,8 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
                         </div>
 
                         <div className="space-y-3">
-                          {renderParticipant('Player A', row.manager_a_seed, matchupRow || {}, 'a', false)}
-                          {renderParticipant('Player B', row.manager_b_seed, matchupRow || {}, 'b', false)}
+                          {renderParticipant('Player A', row.manager_a_seed, matchupRow || {}, 'a', isBye)}
+                          {renderParticipant('Player B', row.manager_b_seed, matchupRow || {}, 'b', isBye)}
                         </div>
 
                       </div>
