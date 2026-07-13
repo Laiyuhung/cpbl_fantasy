@@ -25,7 +25,7 @@ async function requireAdmin() {
 }
 
 async function loadLeagueData(leagueId) {
-  const [leagueRes, membersRes, scheduleRes, standingsRes, liveStandingsRes, matchupsRes, bracketRes] = await Promise.all([
+  const [leagueRes, membersRes, scheduleRes, standingsRes, liveStandingsRes, matchupsRes, bracketRes, playoffSeedsRes] = await Promise.all([
     supabaseAdmin
       .from('league_settings')
       .select('league_id, league_name, playoffs, playoffs_start, playoff_reseeding, playoff_tie_breaker, scoring_type, start_scoring_on, max_teams, created_at, updated_at')
@@ -61,6 +61,11 @@ async function loadLeagueData(leagueId) {
       .select('*')
       .eq('league_id', leagueId)
       .order('round_number', { ascending: true }),
+    supabaseAdmin
+      .from('league_playoff_seeds')
+      .select('*')
+      .eq('league_id', leagueId)
+      .order('seed', { ascending: true }),
   ])
 
   return {
@@ -72,6 +77,7 @@ async function loadLeagueData(leagueId) {
     liveStandings: liveStandingsRes.data || [],
     matchups: matchupsRes.data || [],
     brackets: bracketRes.data || [],
+    playoffSeeds: playoffSeedsRes.data || [],
   }
 }
 
@@ -187,6 +193,7 @@ export async function GET(request) {
         existingPlayoffRows: playoffRows,
         targetWeekNumber,
         seedSource,
+        playoffSeeds: leagueData.playoffSeeds,
       })
 
       if (plan.error) {
@@ -198,6 +205,7 @@ export async function GET(request) {
       responsePayload.targetWeekNumber = targetWeekNumber
       responsePayload.seedSource = seedSource
       responsePayload.previewWeek = plan.targetWeekRow
+      responsePayload.playoffSeeds = leagueData.playoffSeeds
     }
 
     return NextResponse.json(responsePayload)

@@ -387,6 +387,8 @@ export default function AdminPlayoffSchedulePage() {
   const [selectedWeekNumber, setSelectedWeekNumber] = useState('')
   const [previewLoading, setPreviewLoading] = useState(false)
   const [draftRows, setDraftRows] = useState([])
+  const [playoffSeeds, setPlayoffSeeds] = useState([])
+  const [editingSeeds, setEditingSeeds] = useState(false)
 
   useEffect(() => {
     if (!notice) return
@@ -441,6 +443,7 @@ export default function AdminPlayoffSchedulePage() {
         setLiveStandings(data.liveStandings || [])
         setMatchups(data.matchups || [])
         setPlayoffWeeks(data.playoffWeeks || [])
+        setPlayoffSeeds(data.playoffSeeds || [])
 
         const firstPlayoffWeek = (data.playoffWeeks || [])[0]?.week_number || ''
         setSelectedWeekNumber((prev) => {
@@ -768,6 +771,119 @@ export default function AdminPlayoffSchedulePage() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-700">Playoff Seeds</h3>
+                  <div className="flex items-center gap-2">
+                    <RowBadge tone={playoffSeeds.length > 0 ? 'emerald' : 'amber'}>{playoffSeeds.length}</RowBadge>
+                    <button
+                      onClick={() => setEditingSeeds(!editingSeeds)}
+                      className="text-xs font-black uppercase tracking-[0.18em] text-purple-700 hover:text-purple-900 transition-colors"
+                    >
+                      {editingSeeds ? 'Cancel' : 'Edit'}
+                    </button>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] tracking-[0.16em]">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Seed</th>
+                        <th className="px-4 py-3 text-left">Nickname</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {editingSeeds ? (
+                        members.map((member, index) => {
+                          const currentSeed = playoffSeeds.find(s => s.manager_id === member.manager_id)?.seed
+                          return (
+                            <tr key={member.manager_id} className="hover:bg-slate-50/80">
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={members.length}
+                                  value={currentSeed || ''}
+                                  onChange={(e) => {
+                                    const newSeed = e.target.value ? Number(e.target.value) : null
+                                    setPlayoffSeeds(prev => {
+                                      const filtered = prev.filter(s => s.manager_id !== member.manager_id)
+                                      if (newSeed) {
+                                        filtered.push({ manager_id: member.manager_id, seed: newSeed })
+                                      }
+                                      return filtered.sort((a, b) => a.seed - b.seed)
+                                    })
+                                  }}
+                                  className="w-20 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="font-semibold text-slate-800">{member.nickname || '-'}</div>
+                              </td>
+                            </tr>
+                          )
+                        })
+                      ) : (
+                        playoffSeeds.length > 0 ? (
+                          playoffSeeds.map((seed) => {
+                            const member = members.find(m => m.manager_id === seed.manager_id)
+                            return (
+                              <tr key={seed.manager_id} className="hover:bg-slate-50/80">
+                                <td className="px-4 py-3 font-black text-slate-800">#{seed.seed}</td>
+                                <td className="px-4 py-3">
+                                  <div className="font-semibold text-slate-800">{member?.nickname || 'Unknown'}</div>
+                                </td>
+                              </tr>
+                            )
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={2} className="px-4 py-8 text-center text-slate-500 text-sm">
+                              No custom seeds set. Using standings order.
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {editingSeeds && (
+                  <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+                    <button
+                      onClick={() => setEditingSeeds(false)}
+                      className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-sm font-black text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/admin/playoff-seeds', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              leagueId: selectedLeagueId,
+                              seeds: playoffSeeds,
+                            }),
+                          })
+                          const data = await res.json()
+                          if (!res.ok || !data?.success) {
+                            throw new Error(data?.error || 'Failed to save seeds')
+                          }
+                          setNotice({ type: 'success', title: 'Seeds saved', detail: 'Playoff seeds have been updated.' })
+                          setEditingSeeds(false)
+                        } catch (err) {
+                          setNotice({ type: 'error', title: 'Save failed', detail: err.message })
+                        }
+                      }}
+                      className="px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-black hover:bg-purple-700 transition-colors"
+                    >
+                      Save Seeds
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

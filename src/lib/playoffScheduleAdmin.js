@@ -191,7 +191,32 @@ export function getBracketDefinitions(teamCount) {
   return BRACKET_DEFINITIONS[teamCount] || null
 }
 
-export function buildSeedMap(standingsRows, teamCount) {
+export function buildSeedMap(standingsRows, teamCount, playoffSeeds = []) {
+  const seedMap = {}
+  const seedList = []
+
+  // 如果有 playoff_seeds 表的資料，優先使用
+  if (playoffSeeds && playoffSeeds.length > 0) {
+    playoffSeeds.forEach((seedRow) => {
+      const seed = seedRow.seed
+      const managerId = seedRow.manager_id
+      const standingsRow = standingsRows?.find(r => r.manager_id === managerId) || {}
+
+      const entry = {
+        ...standingsRow,
+        manager_id: managerId,
+        seed,
+        nickname: standingsRow.nickname || 'Unknown',
+      }
+      seedMap[seed] = entry
+      seedMap[managerId] = entry
+      seedList.push(entry)
+    })
+
+    return { seedMap, seedList }
+  }
+
+  // 否則使用 standings 排序
   const sortedRows = [...(standingsRows || [])].sort((a, b) => {
     const rankA = Number(a.rank ?? Number.MAX_SAFE_INTEGER)
     const rankB = Number(b.rank ?? Number.MAX_SAFE_INTEGER)
@@ -207,9 +232,6 @@ export function buildSeedMap(standingsRows, teamCount) {
 
     return String(a.nickname || '').localeCompare(String(b.nickname || ''))
   })
-
-  const seedMap = {}
-  const seedList = []
 
   sortedRows.slice(0, teamCount).forEach((row, index) => {
     const seed = index + 1
@@ -280,8 +302,8 @@ function makeRoundRow({ leagueId, weekRow, entry, left, right, rowKey }) {
     matchup_type: entry.type,
     left_seed: left?.seed ?? null,
     right_seed: right?.seed ?? null,
-    left_nickname: leftIsEmpty ? 'TBD' : (left?.nickname || '-'),
-    right_nickname: isBye ? entry.label : (rightIsEmpty ? 'TBD' : (right?.nickname || '-')),
+    left_nickname: isBye ? (left?.nickname || '-') : (leftIsEmpty ? 'TBD' : (left?.nickname || '-')),
+    right_nickname: isBye ? 'BYE' : (rightIsEmpty ? 'TBD' : (right?.nickname || '-')),
   }
 }
 
@@ -370,6 +392,7 @@ export function buildPlayoffInsertPlan({
   existingPlayoffRows,
   targetWeekNumber,
   seedSource = 'final',
+  playoffSeeds = [],
 }) {
   const config = parsePlayoffConfig(playoffsText)
   if (!config) {
@@ -392,7 +415,7 @@ export function buildPlayoffInsertPlan({
 
   const targetWeekRow = playoffWeeks[targetIndex]
 
-  const { seedMap, seedList } = buildSeedMap(standingsRows, config.teamCount)
+  const { seedMap, seedList } = buildSeedMap(standingsRows, config.teamCount, playoffSeeds)
 
   if (seedList.length < config.teamCount) {
     return {
