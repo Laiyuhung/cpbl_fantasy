@@ -70,6 +70,11 @@ async function loadLeagueData(leagueId) {
 }
 
 function buildInsertPayloadRows(rows, baseRows) {
+  const normalizeUuid = (value) => {
+    if (value === '' || value == null) return null
+    return value
+  }
+
   return rows.map((row, index) => {
     const baseRow = baseRows[index]
     if (!baseRow) {
@@ -82,11 +87,11 @@ function buildInsertPayloadRows(rows, baseRows) {
       week_type: baseRow.week_type,
       start_date: baseRow.start_date,
       end_date: baseRow.end_date,
-      manager_id_a: row?.manager_id_a ?? baseRow.manager_id_a,
+      manager_id_a: normalizeUuid(row?.manager_id_a ?? baseRow.manager_id_a),
       score_a: row?.score_a ?? baseRow.score_a ?? 0,
-      manager_id_b: row?.manager_id_b ?? baseRow.manager_id_b,
+      manager_id_b: normalizeUuid(row?.manager_id_b ?? baseRow.manager_id_b),
       score_b: row?.score_b ?? baseRow.score_b ?? 0,
-      winner_manager_id: row?.winner_manager_id ?? baseRow.winner_manager_id ?? null,
+      winner_manager_id: normalizeUuid(row?.winner_manager_id ?? baseRow.winner_manager_id ?? null),
       is_tie: row?.is_tie ?? baseRow.is_tie ?? false,
       created_at: baseRow.created_at ?? null,
       updated_at: baseRow.updated_at ?? null,
@@ -249,6 +254,7 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       inserted: insertedRows || [],
+      submitted: insertPayload,
       preview: plan.rows,
       roundIndex: plan.roundIndex,
       targetWeekNumber,
