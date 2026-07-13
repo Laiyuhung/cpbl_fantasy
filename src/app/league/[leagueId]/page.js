@@ -11,22 +11,15 @@ import AmericanDatePicker from '@/components/AmericanDatePicker';
 import DraftTimeline from '@/components/DraftTimeline';
 import { getLeagueOverview } from '@/lib/leagueOverviewClient';
 
-// Playoff Tree Diagram Component
+// Playoff Bracket Cards Component
 const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members, brackets = [] }) => {
-  const teamsMatch = playoffType?.match(/^(\d+) teams/);
-  const numTeams = teamsMatch ? parseInt(teamsMatch[1]) : 0;
-  const isReseeding = playoffReseeding === 'Yes';
   const groupedBracketRows = useMemo(() => {
-    if (!Array.isArray(brackets) || brackets.length === 0) {
-      return [];
-    }
+    if (!Array.isArray(brackets) || brackets.length === 0) return [];
 
     const groups = new Map();
     brackets.forEach((row) => {
       const roundNumber = Number(row.round_number) || 0;
-      if (!groups.has(roundNumber)) {
-        groups.set(roundNumber, []);
-      }
+      if (!groups.has(roundNumber)) groups.set(roundNumber, []);
       groups.get(roundNumber).push(row);
     });
 
@@ -37,305 +30,234 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
         rows: rows.slice().sort((left, right) => {
           const labelLeft = String(left.bracket_label || '');
           const labelRight = String(right.bracket_label || '');
-          if (labelLeft !== labelRight) {
-            return labelLeft.localeCompare(labelRight);
-          }
+          if (labelLeft !== labelRight) return labelLeft.localeCompare(labelRight);
 
           const seedLeft = Number(left.manager_a_seed ?? Number.MAX_SAFE_INTEGER);
           const seedRight = Number(right.manager_a_seed ?? Number.MAX_SAFE_INTEGER);
-          if (seedLeft !== seedRight) {
-            return seedLeft - seedRight;
-          }
+          if (seedLeft !== seedRight) return seedLeft - seedRight;
 
           return String(left.matchup_id || '').localeCompare(String(right.matchup_id || ''));
         }),
       }));
   }, [brackets]);
 
-  const normalizedCurrentWeekLabel = String(currentWeekLabel || '').trim().toLowerCase();
-
-  const getTeamNameBySeed = (seed) => {
-    if (typeof seed !== 'number') return seed;
-    const member = members?.find(m => m.seed === seed);
-    return member ? (member.nickname || member.manager_name) : `Seed ${seed}`;
-  };
-
-  const isSeedBye = (seed) => {
-    if (typeof seed !== 'number') return false;
-    return seed > participantCount;
-  };
-
-  const Connector = ({ start, end, active }) => {
-    if (isReseeding) return null;
-    return (
-      <div className={`absolute border-white/20 transition-colors duration-500 ${active ? 'border-purple-500/80 z-10' : 'z-0'}`} style={start.y === end.y ? {
-        top: `${start.y}%`,
-        left: `${start.x}%`,
-        width: `${end.x - start.x}%`,
-        borderTopWidth: '2px',
-      } : {
-        top: `${Math.min(start.y, end.y)}%`,
-        left: `${start.x}%`,
-        width: `${end.x - start.x}%`,
-        height: `${Math.abs(end.y - start.y)}%`,
-        borderTopWidth: start.y < end.y ? '2px' : '0',
-        borderBottomWidth: start.y > end.y ? '2px' : '0',
-        borderRightWidth: '2px',
-        borderRadius: '0 8px 8px 0',
-      }}></div>
-    );
-  };
-
-  const MatchupBox = ({ m1, m2, label, active, x, y, isReseedingRound, isFirstRound }) => {
-    const isM1Bye = (isSeedBye(m1.seed) || m1.isBye);
-    const isM2Bye = (isSeedBye(m2.seed) || m2.isBye);
-
-    const renderTeamName = (team) => {
-      if (isReseeding && !isFirstRound) {
-        return 'TBD';
+  const matchupById = useMemo(() => {
+    const map = new Map();
+    (Array.isArray(realMatchups) ? realMatchups : []).forEach((row) => {
+      if (row?.id) {
+        map.set(String(row.id), row);
       }
+    });
+    return map;
+  }, [realMatchups]);
 
-      if (typeof team.seed === 'string') return team.seed.toUpperCase();
+  const getManagerById = (managerId) => members?.find((member) => String(member.manager_id) === String(managerId)) || null;
 
-      if (isM1Bye && team === m1) return 'BYE';
-      if (isM2Bye && team === m2) return 'BYE';
-
-      return getTeamNameBySeed(team.seed).toUpperCase();
-    };
-
-    return (
-      <div
-        className={`absolute -translate-x-1/2 -translate-y-1/2 min-w-[220px] bg-[#0f172a] border ${active ? 'border-purple-500 ring-2 ring-purple-500/20 shadow-[0_0_40px_rgba(168,85,247,0.3)]' : 'border-white/10 shadow-2xl shadow-black/60'} rounded-2xl p-1.5 transition-all duration-500 group overflow-hidden z-20`}
-        style={{ left: `${x}%`, top: `${y}%` }}
-      >
-        <div className="px-4 py-1.5 bg-white/5 flex items-center justify-between border-b border-white/5 mb-1.5">
-          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${active ? 'text-purple-400' : 'text-white/30'}`}>{label}</span>
-          {active && <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shadow-[0_0_10px_rgba(168,85,247,0.8)]"></div>}
-        </div>
-
-        <div className="space-y-1">
-          {/* Team 1 */}
-          <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM1Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM1Bye ? 'bg-slate-800 text-white/20' : 'bg-purple-600 text-white shadow-lg shadow-purple-900/40'}`}>
-              {typeof m1.seed === 'number' ? m1.seed : '?'}
-            </div>
-            <span className={`text-sm font-black truncate flex-1 tracking-tight ${(isReseeding && !isFirstRound) ? 'text-blue-300 italic' : 'text-white'}`}>
-              {renderTeamName(m1)}
-            </span>
-          </div>
-
-          <div className="h-px bg-white/5 mx-3"></div>
-
-          {/* Team 2 */}
-          <div className={`px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${isM2Bye ? 'opacity-30' : 'hover:bg-white/5'}`}>
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${isM2Bye ? 'bg-slate-800 text-white/20' : 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'}`}>
-              {typeof m2.seed === 'number' ? m2.seed : '?'}
-            </div>
-            <span className={`text-sm font-black truncate flex-1 tracking-tight ${(isReseeding && !isFirstRound) ? 'text-blue-300 italic' : 'text-white'}`}>
-              {renderTeamName(m2)}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
+  const getManagerName = (managerId) => {
+    const member = getManagerById(managerId);
+    return member?.nickname || member?.manager_name || member?.managers?.name || managerId || 'TBD';
   };
 
-  const renderBracket = () => {
-    if (numTeams === 2) {
-      return (
-        <div className="relative w-full h-[300px] mt-8">
-          <MatchupBox
-            x={50} y={50} label="The Final" active={currentWeekLabel === 'Final'}
-            m1={{ seed: 1 }} m2={{ seed: 2 }} isFirstRound={true}
-          />
-        </div>
-      );
-    }
-
-    if (numTeams === 4) {
-      return (
-        <div className="relative w-full h-[400px] mt-8">
-          {/* Semifinals */}
-          <MatchupBox x={20} y={30} label="M1" active={currentWeekLabel === 'Semifinal'} m1={{ seed: 1 }} m2={{ seed: 4 }} isFirstRound={true} />
-          <MatchupBox x={20} y={70} label="M2" active={currentWeekLabel === 'Semifinal'} m1={{ seed: 2 }} m2={{ seed: 3 }} isFirstRound={true} />
-
-          <Connector start={{ x: 20, y: 30 }} end={{ x: 60, y: 50 }} active={currentWeekLabel === 'Final'} />
-          <Connector start={{ x: 20, y: 70 }} end={{ x: 60, y: 50 }} active={currentWeekLabel === 'Final'} />
-
-          {/* Finals */}
-          <MatchupBox x={60} y={50} label="Final" active={currentWeekLabel === 'Final'} isReseedingRound={true}
-            m1={{ seed: !isReseeding ? 'M1 Winner' : 1 }}
-            m2={{ seed: !isReseeding ? 'M2 Winner' : 4 }}
-          />
-        </div>
-      );
-    }
-
-    if (numTeams === 6) {
-      return (
-        <div className="relative w-full h-[500px] mt-8">
-          {/* Round 1 (Quarterfinals) */}
-          <MatchupBox x={15} y={15} label="Seeds 1 & 2 Bye" m1={{ seed: 1, isBye: true }} m2={{ seed: 2, isBye: true }} isFirstRound={true} />
-          <MatchupBox x={15} y={45} label="M1" active={currentWeekLabel === 'Quarterfinal'} m1={{ seed: 3 }} m2={{ seed: 6 }} isFirstRound={true} />
-          <MatchupBox x={15} y={75} label="M2" active={currentWeekLabel === 'Quarterfinal'} m1={{ seed: 4 }} m2={{ seed: 5 }} isFirstRound={true} />
-
-          {/* Semifinals */}
-          <MatchupBox x={50} y={30} label="SF1" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true}
-            m1={{ seed: 1 }} m2={{ seed: !isReseeding ? 'M2 Winner' : 4 }}
-          />
-          <MatchupBox x={50} y={70} label="SF2" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true}
-            m1={{ seed: 2 }} m2={{ seed: !isReseeding ? 'M1 Winner' : 3 }}
-          />
-
-          {/* Final */}
-          <MatchupBox x={85} y={50} label="Final" active={currentWeekLabel === 'Final'} isReseedingRound={true}
-            m1={{ seed: 'SF1 Winner' }} m2={{ seed: 'SF2 Winner' }}
-          />
-
-          {!isReseeding && (
-            <>
-              <Connector start={{ x: 15, y: 45 }} end={{ x: 50, y: 70 }} />
-              <Connector start={{ x: 15, y: 75 }} end={{ x: 50, y: 30 }} />
-              <Connector start={{ x: 50, y: 30 }} end={{ x: 85, y: 50 }} />
-              <Connector start={{ x: 50, y: 70 }} end={{ x: 85, y: 50 }} />
-            </>
-          )}
-        </div>
-      );
-    }
-
-    if (numTeams === 8) {
-      return (
-        <div className="relative w-full h-[600px] mt-8">
-          {/* Round 1 */}
-          <MatchupBox x={12.5} y={15} label="M1" active={currentWeekLabel === 'Round 1'} m1={{ seed: 1 }} m2={{ seed: 8 }} isFirstRound={true} />
-          <MatchupBox x={12.5} y={40} label="M2" active={currentWeekLabel === 'Round 1'} m1={{ seed: 4 }} m2={{ seed: 5 }} isFirstRound={true} />
-          <MatchupBox x={12.5} y={65} label="M3" active={currentWeekLabel === 'Round 1'} m1={{ seed: 2 }} m2={{ seed: 7 }} isFirstRound={true} />
-          <MatchupBox x={12.5} y={90} label="M4" active={currentWeekLabel === 'Round 1'} m1={{ seed: 3 }} m2={{ seed: 6 }} isFirstRound={true} />
-
-          {/* Semifinals */}
-          <MatchupBox x={37.5} y={27.5} label="SF1" active={currentWeekLabel === 'Quarterfinal'} isReseedingRound={true} m1={{ seed: !isReseeding ? 'M1 Winner' : 1 }} m2={{ seed: !isReseeding ? 'M2 Winner' : 4 }} />
-          <MatchupBox x={37.5} y={77.5} label="SF2" active={currentWeekLabel === 'Quarterfinal'} isReseedingRound={true} m1={{ seed: !isReseeding ? 'M3 Winner' : 2 }} m2={{ seed: !isReseeding ? 'M4 Winner' : 3 }} />
-
-          {/* Final Prelim */}
-          <MatchupBox x={62.5} y={52.5} label="Final Stage" active={currentWeekLabel === 'Semifinal'} isReseedingRound={true} m1={{ seed: 'SF1 Winner' }} m2={{ seed: 'SF2 Winner' }} />
-
-          {/* Final */}
-          <MatchupBox x={87.5} y={52.5} label="Champion" active={currentWeekLabel === 'Final'} m1={{ seed: 'Winner' }} m2={{ seed: '!' }} />
-
-          {!isReseeding && (
-            <>
-              <Connector start={{ x: 12.5, y: 15 }} end={{ x: 37.5, y: 27.5 }} />
-              <Connector start={{ x: 12.5, y: 40 }} end={{ x: 37.5, y: 27.5 }} />
-              <Connector start={{ x: 12.5, y: 65 }} end={{ x: 37.5, y: 77.5 }} />
-              <Connector start={{ x: 12.5, y: 90 }} end={{ x: 37.5, y: 77.5 }} />
-              <Connector start={{ x: 37.5, y: 27.5 }} end={{ x: 62.5, y: 52.5 }} />
-              <Connector start={{ x: 37.5, y: 77.5 }} end={{ x: 62.5, y: 52.5 }} />
-              <Connector start={{ x: 62.5, y: 52.5 }} end={{ x: 87.5, y: 52.5 }} />
-            </>
-          )}
-        </div>
-      );
-    }
+  const formatScore = (value) => {
+    if (value === null || value === undefined || value === '') return '-';
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue.toFixed(1) : String(value);
   };
 
-  const renderBracketFromTable = () => {
-    if (groupedBracketRows.length === 0) {
-      return null;
-    }
+  const getMatchupState = (matchup) => {
+    if (!matchup) return { label: 'Pending', tone: 'slate' };
+    if (matchup.winner_manager_id) return { label: 'Final', tone: 'emerald' };
+    const scoreA = Number(matchup.score_a ?? 0);
+    const scoreB = Number(matchup.score_b ?? 0);
+    if (scoreA > 0 || scoreB > 0) return { label: 'Live', tone: 'amber' };
+    return { label: 'Scheduled', tone: 'blue' };
+  };
+
+  const stateClasses = {
+    slate: 'bg-slate-100 text-slate-700 border-slate-200',
+    blue: 'bg-blue-100 text-blue-700 border-blue-200',
+    amber: 'bg-amber-100 text-amber-700 border-amber-200',
+    emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    purple: 'bg-purple-100 text-purple-700 border-purple-200',
+  };
+
+  const renderParticipant = (label, seed, matchupRow, side, isByeMatchup) => {
+    const isBye = isByeMatchup && side === 'b';
+    const managerId = side === 'a' ? matchupRow?.manager_id_a : matchupRow?.manager_id_b;
+    const score = side === 'a' ? matchupRow?.score_a : matchupRow?.score_b;
+    const isWinner = matchupRow?.winner_manager_id && String(matchupRow.winner_manager_id) === String(managerId);
 
     return (
-      <div className="relative w-full mt-8">
-        <div
-          className="grid gap-4 xl:gap-5 items-start"
-          style={{ gridTemplateColumns: `repeat(${groupedBracketRows.length}, minmax(220px, 1fr))` }}
-        >
-          {groupedBracketRows.map((group) => {
-            const groupLabel = String(group.rows[0]?.bracket_label || `Round ${group.roundNumber}`);
-            const isActiveRound = group.rows.some((row) => String(row.bracket_label || '').trim().toLowerCase() === normalizedCurrentWeekLabel);
-
-            return (
-              <div
-                key={group.roundNumber}
-                className={`rounded-2xl border p-4 ${isActiveRound ? 'border-purple-500/70 bg-purple-500/10 shadow-[0_0_40px_rgba(168,85,247,0.15)]' : 'border-white/10 bg-white/5'}`}
-              >
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
-                    <div className={`text-[10px] font-black uppercase tracking-[0.24em] ${isActiveRound ? 'text-purple-300' : 'text-white/30'}`}>
-                      Round {group.roundNumber}
-                    </div>
-                    <div className="text-sm font-black text-white">{groupLabel}</div>
-                  </div>
-                  <div className={`text-[10px] px-2 py-1 rounded-full border font-black uppercase ${isActiveRound ? 'border-purple-500/40 text-purple-300 bg-purple-500/10' : 'border-white/10 text-white/50 bg-white/5'}`}>
-                    {group.rows.length} row{group.rows.length === 1 ? '' : 's'}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {group.rows.map((row) => {
-                    const isBye = String(row.bracket_type || '').toLowerCase() === 'bye';
-                    return (
-                      <div
-                        key={row.id || row.matchup_id}
-                        className={`rounded-xl border p-3 ${isBye ? 'border-amber-500/30 bg-amber-500/10' : 'border-white/10 bg-slate-900/70'}`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className={`text-[10px] font-black uppercase tracking-[0.22em] ${isBye ? 'text-amber-300' : 'text-cyan-300'}`}>
-                            {row.bracket_label || row.bracket_type || 'match'}
-                          </span>
-                          <span className="text-[10px] font-bold text-white/40 font-mono">
-                            #{String(row.matchup_id || '').slice(0, 8)}
-                          </span>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${isBye ? 'bg-amber-500/10' : 'bg-white/5'}`}>
-                            <span className="text-xs font-bold text-white/60 uppercase tracking-[0.18em]">Seed A</span>
-                            <span className="text-sm font-black text-white">{row.manager_a_seed ?? '-'}</span>
-                          </div>
-                          <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${isBye ? 'bg-amber-500/10' : 'bg-white/5'}`}>
-                            <span className="text-xs font-bold text-white/60 uppercase tracking-[0.18em]">Seed B</span>
-                            <span className="text-sm font-black text-white">{isBye ? 'BYE' : (row.manager_b_seed ?? '-')}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+      <div className={`rounded-2xl border px-3 py-3 ${isBye ? 'border-dashed border-amber-300/40 bg-amber-500/10' : isWinner ? 'border-emerald-400/40 bg-emerald-500/10' : 'border-white/10 bg-slate-950/40'}`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                {label}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-purple-400/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-purple-200">
+                Seed {seed ?? '-'}
+              </span>
+            </div>
+            <div className="truncate text-sm font-black text-white">
+              {isBye ? 'BYE' : getManagerName(managerId)}
+            </div>
+            <div className="mt-1 text-[11px] font-mono text-white/40 truncate">
+              {managerId || '—'}
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] ${isWinner ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/5 text-white/50'}`}>
+              {isWinner ? 'Winner' : isBye ? 'Bye' : 'Player'}
+            </div>
+            <div className="mt-2 text-lg font-black text-cyan-300 tabular-nums">
+              {isBye ? '—' : formatScore(score)}
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="w-full bg-slate-950/20 border border-white/5 rounded-[2.5rem] p-8 mt-12 overflow-x-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <div className="mt-10 rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-4 sm:p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 shadow-lg shadow-purple-500/25">
+            <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
           </div>
           <div>
-            <h2 className="text-xl font-black text-white uppercase tracking-wider">Playoff Bracket</h2>
-            <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
-              {playoffReseeding === 'Yes' ? 'Reseeding Active - Pairings Refresh Each Round' : 'Fixed Bracket Progression'}
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-[0.16em]">Playoff Bracket</h2>
+              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${playoffReseeding === 'Yes' ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-200' : 'border-purple-400/30 bg-purple-500/10 text-purple-200'}`}>
+                {playoffReseeding === 'Yes' ? 'Reseeded' : 'Fixed'}
+              </span>
+            </div>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-white/40">
+              {currentWeekLabel ? `${currentWeekLabel} Stage` : 'Bracket overview'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></div>
-          <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{currentWeekLabel} Stage</span>
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center">
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center sm:text-left">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Format</div>
+            <div className="mt-1 text-lg font-black text-white">{playoffType || '-'}</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center sm:text-left">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Teams</div>
+            <div className="mt-1 text-lg font-black text-white">{participantCount || 0}</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center sm:text-left">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Matchups</div>
+            <div className="mt-1 text-lg font-black text-white">{Array.isArray(realMatchups) ? realMatchups.length : 0}</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center sm:text-left">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Rounds</div>
+            <div className="mt-1 text-lg font-black text-white">{groupedBracketRows.length}</div>
+          </div>
         </div>
       </div>
 
-      <div className="min-w-[800px]">
-        {groupedBracketRows.length > 0 ? renderBracketFromTable() : renderBracket()}
-      </div>
+      {groupedBracketRows.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 px-6 py-12 text-center text-sm text-white/45">
+          No playoff bracket rows available yet.
+        </div>
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+          {groupedBracketRows.map((group) => {
+            const activeStage = String(currentWeekLabel || '').trim().toLowerCase();
+
+            return (
+              <Card key={group.roundNumber} className="overflow-hidden border-white/10 bg-white/5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-md">
+                <CardHeader className="border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent pb-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-sm font-black uppercase tracking-[0.22em] text-white">
+                        Round {group.roundNumber}
+                      </CardTitle>
+                      <div className="mt-2 text-lg font-black text-cyan-200">
+                        {group.rows[0]?.bracket_label || `Round ${group.roundNumber}`}
+                      </div>
+                    </div>
+                    <div className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${String(group.rows[0]?.bracket_label || '').trim().toLowerCase() === activeStage ? 'border-purple-400/30 bg-purple-500/10 text-purple-200' : 'border-white/10 bg-white/5 text-white/50'}`}>
+                      {group.rows.length} card{group.rows.length === 1 ? '' : 's'}
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4 p-4 sm:p-5">
+                  {group.rows.map((row) => {
+                    const isBye = String(row.bracket_type || '').toLowerCase() === 'bye';
+                    const matchupRow = row.matchup_id ? matchupById.get(String(row.matchup_id)) || null : null;
+                    const state = isBye ? { label: 'Bye', tone: 'amber' } : getMatchupState(matchupRow);
+
+                    return (
+                      <div key={row.id || row.matchup_id} className={`rounded-3xl border p-4 ${isBye ? 'border-amber-400/20 bg-amber-500/5' : 'border-white/10 bg-slate-950/50'}`}>
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                                Stage
+                              </span>
+                              <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/70 border-white/10 bg-white/5">
+                                {row.bracket_label || `Round ${group.roundNumber}`}
+                              </span>
+                              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${stateClasses[state.tone]}`}>
+                                {state.label}
+                              </span>
+                              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${isBye ? 'border-amber-400/30 bg-amber-500/10 text-amber-200' : 'border-cyan-400/30 bg-cyan-500/10 text-cyan-200'}`}>
+                                {row.bracket_type || 'match'}
+                              </span>
+                            </div>
+                            <div className="mt-2 font-mono text-[11px] text-white/35 break-all">
+                              matchup_id: {row.matchup_id || '-'}
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 text-right">
+                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Seeds</div>
+                            <div className="mt-1 flex items-center gap-1.5 justify-end">
+                              <span className="rounded-full bg-purple-500/15 px-2 py-0.5 text-[10px] font-black text-purple-200 border border-purple-400/20">A {row.manager_a_seed ?? '-'}</span>
+                              <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] font-black text-cyan-200 border border-cyan-400/20">B {isBye ? 'BYE' : (row.manager_b_seed ?? '-')}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          {renderParticipant('Player A', row.manager_a_seed, matchupRow || {}, 'a', isBye)}
+                          {renderParticipant('Player B', isBye ? 'BYE' : row.manager_b_seed, matchupRow || {}, 'b', isBye)}
+                        </div>
+
+                        {matchupRow ? (
+                          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3 text-xs text-white/55">
+                            <div className="font-mono">
+                              Score: {formatScore(matchupRow.score_a)} - {formatScore(matchupRow.score_b)}
+                            </div>
+                            <div className="font-black uppercase tracking-[0.18em] text-emerald-200">
+                              Winner: {getManagerName(matchupRow.winner_manager_id)}
+                            </div>
+                          </div>
+                        ) : isBye ? (
+                          <div className="mt-4 rounded-2xl border border-dashed border-amber-400/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-100/80">
+                            This bye matchup does not create a league_matchups row.
+                          </div>
+                        ) : (
+                          <div className="mt-4 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-3 text-xs text-white/55">
+                            Waiting for league_matchups data linked by matchup_id.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
@@ -349,6 +271,7 @@ export default function LeaguePage() {
   const [scheduleData, setScheduleData] = useState([]);
   const [members, setMembers] = useState([]);
   const [playoffBrackets, setPlayoffBrackets] = useState([]);
+  const [playoffMatchups, setPlayoffMatchups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [leagueStatus, setLeagueStatus] = useState('');
@@ -708,6 +631,44 @@ export default function LeaguePage() {
 
     fetchLeagueData();
   }, [leagueId]);
+
+  useEffect(() => {
+    if (!leagueId || !Array.isArray(playoffBrackets) || playoffBrackets.length === 0) {
+      setPlayoffMatchups([]);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const fetchPlayoffMatchups = async () => {
+      const matchupIds = [...new Set(playoffBrackets.map((row) => row.matchup_id).filter(Boolean))];
+      if (matchupIds.length === 0) {
+        setPlayoffMatchups([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('league_matchups')
+        .select('*')
+        .in('id', matchupIds);
+
+      if (isCancelled) return;
+
+      if (error) {
+        console.error('Failed to fetch playoff matchups:', error);
+        setPlayoffMatchups([]);
+        return;
+      }
+
+      setPlayoffMatchups(data || []);
+    };
+
+    fetchPlayoffMatchups();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [leagueId, playoffBrackets]);
 
   useEffect(() => {
     if (!bootstrapReady || !leagueId || standings.length === 0) return;
@@ -1724,7 +1685,7 @@ export default function LeaguePage() {
                 playoffReseeding={leagueSettings?.playoff_reseeding}
                 currentWeekLabel={weekDetails?.week_label}
                 participantCount={members.length}
-                realMatchups={matchups}
+                realMatchups={playoffMatchups}
                 members={members}
                 brackets={playoffBrackets}
               />
