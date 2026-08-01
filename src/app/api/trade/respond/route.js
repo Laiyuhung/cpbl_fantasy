@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { checkEliminatedStatus } from '@/lib/checkEliminated';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -27,6 +28,19 @@ export async function POST(request) {
 
         if (trade.status !== 'pending') {
             return NextResponse.json({ success: false, error: 'Trade is already resolved' }, { status: 400 });
+        }
+
+        // Check if either party is eliminated
+        if (trade.league_id) {
+            const initiatorCheck = await checkEliminatedStatus(trade.league_id, trade.initiator_manager_id);
+            if (initiatorCheck.isEliminated) {
+                return NextResponse.json({ success: false, error: 'The trade initiator has been eliminated' }, { status: 403 });
+            }
+
+            const recipientCheck = await checkEliminatedStatus(trade.league_id, trade.recipient_manager_id);
+            if (recipientCheck.isEliminated) {
+                return NextResponse.json({ success: false, error: 'The trade recipient has been eliminated' }, { status: 403 });
+            }
         }
 
         // 2. Auth check

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
+import { checkEliminatedStatus } from '@/lib/checkEliminated'
 
 function getUTCFormat() {
   const date = new Date()
@@ -113,6 +114,30 @@ export async function POST(req) {
 
     if (!id || status === 'unknown') {
       return NextResponse.json({ error: '缺少交易 ID 或未知動作' }, { status: 400 })
+    }
+
+    // Fetch trade details to get league_id
+    const { data: trade, error: tradeError } = await supabase
+      .from('trade_discussion')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (tradeError || !trade) {
+      return NextResponse.json({ error: 'Trade not found' }, { status: 404 })
+    }
+
+    // Check if either party is eliminated
+    if (trade.league_id) {
+      const initiatorCheck = await checkEliminatedStatus(trade.league_id, trade.initiator_id);
+      if (initiatorCheck.isEliminated) {
+        return NextResponse.json({ error: initiatorCheck.reason || 'Already been eliminated' }, { status: 403 });
+      }
+
+      const receiverCheck = await checkEliminatedStatus(trade.league_id, trade.receiver_id);
+      if (receiverCheck.isEliminated) {
+        return NextResponse.json({ error: 'The other team has been eliminated' }, { status: 403 });
+      }
     }
 
     // ✅ 更新 trade_discussion 狀態

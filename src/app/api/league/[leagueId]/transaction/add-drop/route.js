@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
 import { addTaiwanDays, getTaiwanDateString } from '@/lib/taiwanDate';
+import { checkEliminatedStatus } from '@/lib/checkEliminated';
 
 export async function POST(request, { params }) {
     const { leagueId } = params;
@@ -15,6 +16,12 @@ export async function POST(request, { params }) {
 
         if (!managerId || !addPlayerId) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+        }
+
+        // Check if manager is eliminated
+        const { isEliminated, reason } = await checkEliminatedStatus(leagueId, managerId);
+        if (isEliminated) {
+            return NextResponse.json({ success: false, error: reason || 'Already been eliminated' }, { status: 403 });
         }
 
         // 1. Fetch Settings

@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import supabase from '@/lib/supabase'
+import { checkEliminatedStatus } from '@/lib/checkEliminated'
 
 // ➤ 新增一筆 trade_discussion 紀錄
 export async function POST(req) {
   try {
     const body = await req.json()
     const {
+      league_id,
       initiator_id,
       receiver_id,
       initiator_received,
@@ -22,6 +24,19 @@ export async function POST(req) {
     // ✅ 基本參數檢查
     if (!initiator_id || !receiver_id || !Array.isArray(initiator_received) || !Array.isArray(receiver_received)) {
       return NextResponse.json({ error: '缺少參數或格式錯誤' }, { status: 400 })
+    }
+
+    // Check if either party is eliminated
+    if (league_id) {
+      const initiatorCheck = await checkEliminatedStatus(league_id, initiator_id);
+      if (initiatorCheck.isEliminated) {
+        return NextResponse.json({ error: initiatorCheck.reason || 'Already been eliminated' }, { status: 403 });
+      }
+
+      const receiverCheck = await checkEliminatedStatus(league_id, receiver_id);
+      if (receiverCheck.isEliminated) {
+        return NextResponse.json({ error: 'The other team has been eliminated and cannot participate in trades' }, { status: 403 });
+      }
     }
 
     // ➤ 寫入資料表

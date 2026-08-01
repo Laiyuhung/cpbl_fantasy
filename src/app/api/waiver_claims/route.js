@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabaseServer';
+import { checkEliminatedStatus } from '@/lib/checkEliminated';
 
 // POST /api/waiver_claims
 export async function POST(request) {
@@ -8,6 +9,12 @@ export async function POST(request) {
     const { league_id, manager_id, player_id, drop_player_id, off_waiver } = body;
     if (!league_id || !manager_id || !player_id) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Check if manager is eliminated
+    const { isEliminated, reason } = await checkEliminatedStatus(league_id, manager_id);
+    if (isEliminated) {
+      return NextResponse.json({ success: false, error: reason || 'Already been eliminated' }, { status: 403 });
     }
 
     let offWaiverDate = null;
