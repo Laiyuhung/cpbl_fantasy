@@ -689,83 +689,56 @@ export default function AdminPlayoffSchedulePage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">League</div>
-                <div className="mt-2 text-xl font-black text-slate-900">{league.league_name}</div>
-                <div className="mt-2 text-xs text-slate-500 font-mono break-all">{league.league_id}</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">League</div>
+                <div className="mt-1 text-sm font-black text-slate-900 truncate">{league.league_name}</div>
               </div>
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Playoffs</div>
-                <div className="mt-2 text-lg font-black text-slate-900">{league.playoffs || '-'}</div>
-                <div className="mt-2 text-xs text-slate-500">Start: {league.playoffs_start || '-'}</div>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Playoffs</div>
+                <div className="mt-1 text-sm font-black text-slate-900">{league.playoffs || '-'}</div>
               </div>
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Reseeding</div>
-                <div className="mt-2 text-lg font-black text-slate-900">{league.playoff_reseeding || '-'}</div>
-                <div className="mt-2 text-xs text-slate-500">Scoring: {league.scoring_type || '-'}</div>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Reseeding</div>
+                <div className="mt-1 text-sm font-black text-slate-900">{league.playoff_reseeding || '-'}</div>
               </div>
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Members</div>
-                <div className="mt-2 text-lg font-black text-slate-900">{members.length}</div>
-                <div className="mt-2 text-xs text-slate-500">Schedule rows: {schedule.length}</div>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Members</div>
+                <div className="mt-1 text-sm font-black text-slate-900">{members.length}</div>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Seeds</div>
+                <div className="mt-1 text-sm font-black text-slate-900">{playoffSeeds.length || '-'}</div>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Schedule</div>
+                <div className="mt-1 text-sm font-black text-slate-900">{schedule.length}</div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <StandingsTable title="結算戰績" rows={standings} emptyText="沒有結算戰績資料。" tone="emerald" />
-              <StandingsTable title="即時戰績" rows={liveStandings} emptyText="沒有即時戰績資料。" tone="amber" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-700">League Settings</h3>
-                  <RowBadge tone="purple">playoffs</RowBadge>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-700">結算戰績</h3>
+                  <RowBadge tone="emerald">{standings.length}</RowBadge>
                 </div>
-                <div className="divide-y divide-slate-100">
-                  {[
-                    ['Scoring Type', league.scoring_type || '-'],
-                    ['Playoffs', league.playoffs || '-'],
-                    ['Playoffs Start', league.playoffs_start || '-'],
-                    ['Playoff Reseeding', league.playoff_reseeding || '-'],
-                    ['Playoff Tie Breaker', league.playoff_tie_breaker || '-'],
-                    ['Start Scoring On', league.start_scoring_on || '-'],
-                    ['Max Teams', league.max_teams ?? '-'],
-                    ['Created At', fmtDateTime(league.created_at)],
-                    ['Updated At', fmtDateTime(league.updated_at)],
-                  ].map(([label, value]) => (
-                    <div key={label} className="px-5 py-3 flex items-start justify-between gap-4">
-                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{label}</span>
-                      <span className="text-sm text-slate-800 text-right break-all">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-700">League Members</h3>
-                  <RowBadge tone="blue">{members.length}</RowBadge>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] tracking-[0.16em]">
+                <div className="max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-[0.14em]">
                       <tr>
-                        <th className="px-4 py-3 text-left">Nickname</th>
-                        <th className="px-4 py-3 text-left">Role</th>
-                        <th className="px-4 py-3 text-left">Joined</th>
+                        <th className="px-3 py-2 text-left">Rank</th>
+                        <th className="px-3 py-2 text-left">Nickname</th>
+                        <th className="px-3 py-2 text-right">W-L</th>
+                        <th className="px-3 py-2 text-right">Pct</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {members.map((member) => (
-                        <tr key={member.manager_id} className="hover:bg-slate-50/80">
-                          <td className="px-4 py-3">
-                            <div className="font-semibold text-slate-800">{member.nickname || '-'}</div>
-                            <div className="text-[11px] text-slate-400 font-mono truncate max-w-[220px]">{member.manager_id}</div>
-                          </td>
-                          <td className="px-4 py-3 text-slate-700">{member.role || '-'}</td>
-                          <td className="px-4 py-3 text-slate-700">{fmtDate(member.joined_at)}</td>
+                      {standings.slice(0, 8).map((row) => (
+                        <tr key={row.manager_id} className="hover:bg-slate-50/80">
+                          <td className="px-3 py-2 font-black text-slate-800">{row.rank}</td>
+                          <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{row.nickname}</td>
+                          <td className="px-3 py-2 text-right text-slate-700">{row.wins}-{row.losses}</td>
+                          <td className="px-3 py-2 text-right text-slate-700">{Number(row.win_pct || 0).toFixed(3)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -773,34 +746,65 @@ export default function AdminPlayoffSchedulePage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-700">Playoff Seeds</h3>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-700">即時戰績</h3>
+                  <RowBadge tone="amber">{liveStandings.length}</RowBadge>
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-[0.14em]">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Rank</th>
+                        <th className="px-3 py-2 text-left">Nickname</th>
+                        <th className="px-3 py-2 text-right">W-L</th>
+                        <th className="px-3 py-2 text-right">Pct</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {liveStandings.slice(0, 8).map((row) => (
+                        <tr key={row.manager_id} className="hover:bg-slate-50/80">
+                          <td className="px-3 py-2 font-black text-slate-800">{row.rank}</td>
+                          <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{row.nickname}</td>
+                          <td className="px-3 py-2 text-right text-slate-700">{row.wins}-{row.losses}</td>
+                          <td className="px-3 py-2 text-right text-slate-700">{Number(row.win_pct || 0).toFixed(3)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-700">Playoff Seeds</h3>
                   <div className="flex items-center gap-2">
                     <RowBadge tone={playoffSeeds.length > 0 ? 'emerald' : 'amber'}>{playoffSeeds.length}</RowBadge>
                     <button
                       onClick={() => setEditingSeeds(!editingSeeds)}
-                      className="text-xs font-black uppercase tracking-[0.18em] text-purple-700 hover:text-purple-900 transition-colors"
+                      className="text-[10px] font-black uppercase tracking-[0.16em] text-purple-700 hover:text-purple-900 transition-colors"
                     >
                       {editingSeeds ? 'Cancel' : 'Edit'}
                     </button>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] tracking-[0.16em]">
+                <div className="max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-[0.14em]">
                       <tr>
-                        <th className="px-4 py-3 text-left">Seed</th>
-                        <th className="px-4 py-3 text-left">Nickname</th>
+                        <th className="px-3 py-2 text-left">Seed</th>
+                        <th className="px-3 py-2 text-left">Nickname</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {editingSeeds ? (
-                        members.map((member, index) => {
+                        members.map((member) => {
                           const currentSeed = playoffSeeds.find(s => s.manager_id === member.manager_id)?.seed
                           return (
                             <tr key={member.manager_id} className="hover:bg-slate-50/80">
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-2">
                                 <input
                                   type="number"
                                   min="1"
@@ -816,12 +820,10 @@ export default function AdminPlayoffSchedulePage() {
                                       return filtered.sort((a, b) => a.seed - b.seed)
                                     })
                                   }}
-                                  className="w-20 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-purple-500 focus:outline-none"
+                                  className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800 focus:border-purple-500 focus:outline-none"
                                 />
                               </td>
-                              <td className="px-4 py-3">
-                                <div className="font-semibold text-slate-800">{member.nickname || '-'}</div>
-                              </td>
+                              <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{member.nickname || '-'}</td>
                             </tr>
                           )
                         })
@@ -831,16 +833,14 @@ export default function AdminPlayoffSchedulePage() {
                             const member = members.find(m => m.manager_id === seed.manager_id)
                             return (
                               <tr key={seed.manager_id} className="hover:bg-slate-50/80">
-                                <td className="px-4 py-3 font-black text-slate-800">#{seed.seed}</td>
-                                <td className="px-4 py-3">
-                                  <div className="font-semibold text-slate-800">{member?.nickname || 'Unknown'}</div>
-                                </td>
+                                <td className="px-3 py-2 font-black text-slate-800">#{seed.seed}</td>
+                                <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{member?.nickname || 'Unknown'}</td>
                               </tr>
                             )
                           })
                         ) : (
                           <tr>
-                            <td colSpan={2} className="px-4 py-8 text-center text-slate-500 text-sm">
+                            <td colSpan={2} className="px-3 py-6 text-center text-slate-500 text-xs">
                               No custom seeds set. Using standings order.
                             </td>
                           </tr>
@@ -850,10 +850,10 @@ export default function AdminPlayoffSchedulePage() {
                   </table>
                 </div>
                 {editingSeeds && (
-                  <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+                  <div className="px-4 py-2 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
                     <button
                       onClick={() => setEditingSeeds(false)}
-                      className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-sm font-black text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="px-3 py-1 rounded-lg border border-slate-300 bg-white text-xs font-black text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       Cancel
                     </button>
@@ -879,12 +879,37 @@ export default function AdminPlayoffSchedulePage() {
                           setNotice({ type: 'error', title: 'Save failed', detail: err.message })
                         }
                       }}
-                      className="px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-black hover:bg-purple-700 transition-colors"
+                      className="px-3 py-1 rounded-lg bg-purple-600 text-white text-xs font-black hover:bg-purple-700 transition-colors"
                     >
                       Save Seeds
                     </button>
                   </div>
                 )}
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-700">League Members</h3>
+                  <RowBadge tone="blue">{members.length}</RowBadge>
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-[0.14em]">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Nickname</th>
+                        <th className="px-3 py-2 text-left">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {members.map((member) => (
+                        <tr key={member.manager_id} className="hover:bg-slate-50/80">
+                          <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{member.nickname || '-'}</td>
+                          <td className="px-3 py-2 text-slate-700">{member.role || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 

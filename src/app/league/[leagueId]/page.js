@@ -12,7 +12,7 @@ import DraftTimeline from '@/components/DraftTimeline';
 import { getLeagueOverview } from '@/lib/leagueOverviewClient';
 
 // Playoff Bracket Cards Component
-const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members, brackets = [] }) => {
+const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members, brackets = [], playoffSeeds = [] }) => {
   const groupedBracketRows = useMemo(() => {
     if (!Array.isArray(brackets) || brackets.length === 0) return [];
 
@@ -58,6 +58,11 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
     return member?.nickname || member?.manager_name || member?.managers?.name || managerId || 'TBD';
   };
 
+  const getSeedByManagerId = (managerId) => {
+    const seedRecord = playoffSeeds?.find(s => String(s.manager_id) === String(managerId));
+    return seedRecord?.seed ?? null;
+  };
+
   const formatScore = (value) => {
     if (value === null || value === undefined || value === '') return '-';
     const numberValue = Number(value);
@@ -68,14 +73,39 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
     const isBye = isByeMatchup && side === 'b';
     const managerId = side === 'a' ? matchupRow?.manager_id_a : matchupRow?.manager_id_b;
     const score = side === 'a' ? matchupRow?.score_a : matchupRow?.score_b;
+    const customSeed = getSeedByManagerId(managerId);
+
+    if (isBye) {
+      return (
+        <div className="rounded-2xl border px-3 py-3 border-white/10 bg-slate-950/40">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="inline-flex items-center rounded-full border border-red-400/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-red-200">
+                  BYE
+                </span>
+              </div>
+              <div className="truncate text-sm font-black text-white">
+                -
+              </div>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="mt-2 text-lg font-black text-slate-400 tabular-nums">
+                —
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
-      <div className={`rounded-2xl border px-3 py-3 ${isBye ? 'border-dashed border-amber-300/40 bg-amber-500/10' : 'border-white/10 bg-slate-950/40'}`}>
+      <div className="rounded-2xl border px-3 py-3 border-white/10 bg-slate-950/40">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="inline-flex items-center rounded-full border border-purple-400/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-purple-200">
-                Seed {seed ?? '-'}
+                Seed {customSeed ?? '-'}
               </span>
             </div>
             <div className="truncate text-sm font-black text-white">
@@ -84,7 +114,7 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
           </div>
           <div className="shrink-0 text-right">
             <div className="mt-2 text-lg font-black text-cyan-300 tabular-nums">
-              {isBye ? '—' : formatScore(score)}
+              {formatScore(score)}
             </div>
           </div>
         </div>
@@ -177,6 +207,7 @@ export default function LeaguePage() {
   const [members, setMembers] = useState([]);
   const [playoffBrackets, setPlayoffBrackets] = useState([]);
   const [playoffMatchups, setPlayoffMatchups] = useState([]);
+  const [playoffSeeds, setPlayoffSeeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [leagueStatus, setLeagueStatus] = useState('');
@@ -414,6 +445,7 @@ export default function LeaguePage() {
           setScheduleData(result.schedule || []);
           setMembers(result.members || []);
           setPlayoffBrackets(Array.isArray(result.brackets) ? result.brackets : []);
+          setPlayoffSeeds(Array.isArray(result.playoffSeeds) ? result.playoffSeeds : []);
           setTodayDate(result.todayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }));
           setTodayScheduleGames(Array.isArray(result.todayScheduleGames) ? result.todayScheduleGames : []);
           setDailyRosterOwnerships(Array.isArray(result.ownerships) ? result.ownerships : []);
@@ -1593,6 +1625,7 @@ export default function LeaguePage() {
                 realMatchups={playoffMatchups}
                 members={members}
                 brackets={playoffBrackets}
+                playoffSeeds={playoffSeeds}
               />
             )
           }
