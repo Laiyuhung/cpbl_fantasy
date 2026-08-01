@@ -12,12 +12,15 @@ import DraftTimeline from '@/components/DraftTimeline';
 import { getLeagueOverview } from '@/lib/leagueOverviewClient';
 
 // Playoff Bracket Cards Component
-const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members, brackets = [], playoffSeeds = [] }) => {
+const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, participantCount, realMatchups, members, brackets = [], playoffSeeds = [], eliminated = [] }) => {
   const groupedBracketRows = useMemo(() => {
     if (!Array.isArray(brackets) || brackets.length === 0) return [];
 
     const groups = new Map();
     brackets.forEach((row) => {
+      // 過濾掉 bye 類型的記錄
+      if (String(row.bracket_type || '').toLowerCase() === 'bye') return;
+
       const roundNumber = Number(row.round_number) || 0;
       if (!groups.has(roundNumber)) groups.set(roundNumber, []);
       groups.get(roundNumber).push(row);
@@ -61,6 +64,10 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
   const getSeedByManagerId = (managerId) => {
     const seedRecord = playoffSeeds?.find(s => String(s.manager_id) === String(managerId));
     return seedRecord?.seed ?? null;
+  };
+
+  const isEliminated = (managerId) => {
+    return eliminated?.some(e => String(e.manager_id) === String(managerId));
   };
 
   const formatScore = (value) => {
@@ -208,6 +215,7 @@ export default function LeaguePage() {
   const [playoffBrackets, setPlayoffBrackets] = useState([]);
   const [playoffMatchups, setPlayoffMatchups] = useState([]);
   const [playoffSeeds, setPlayoffSeeds] = useState([]);
+  const [eliminated, setEliminated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [leagueStatus, setLeagueStatus] = useState('');
@@ -446,6 +454,7 @@ export default function LeaguePage() {
           setMembers(result.members || []);
           setPlayoffBrackets(Array.isArray(result.brackets) ? result.brackets : []);
           setPlayoffSeeds(Array.isArray(result.playoffSeeds) ? result.playoffSeeds : []);
+          setEliminated(Array.isArray(result.eliminated) ? result.eliminated : []);
           setTodayDate(result.todayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }));
           setTodayScheduleGames(Array.isArray(result.todayScheduleGames) ? result.todayScheduleGames : []);
           setDailyRosterOwnerships(Array.isArray(result.ownerships) ? result.ownerships : []);
@@ -1626,6 +1635,7 @@ export default function LeaguePage() {
                 members={members}
                 brackets={playoffBrackets}
                 playoffSeeds={playoffSeeds}
+                eliminated={eliminated}
               />
             )
           }

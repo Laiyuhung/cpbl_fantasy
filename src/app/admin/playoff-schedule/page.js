@@ -389,6 +389,10 @@ export default function AdminPlayoffSchedulePage() {
   const [draftRows, setDraftRows] = useState([])
   const [playoffSeeds, setPlayoffSeeds] = useState([])
   const [editingSeeds, setEditingSeeds] = useState(false)
+  const [eliminated, setEliminated] = useState([])
+  const [editingEliminated, setEditingEliminated] = useState(false)
+  const [missingPlayoffScheduleWarning, setMissingPlayoffScheduleWarning] = useState(false)
+  const [missingSeedsWarning, setMissingSeedsWarning] = useState(false)
 
   useEffect(() => {
     if (!notice) return
@@ -444,6 +448,28 @@ export default function AdminPlayoffSchedulePage() {
         setMatchups(data.matchups || [])
         setPlayoffWeeks(data.playoffWeeks || [])
         setPlayoffSeeds(data.playoffSeeds || [])
+        setEliminated(data.eliminated || [])
+
+        // 檢查是否有缺失的季後賽賽程
+        const today = new Date()
+        const threeDaysBefore = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000)
+        const threeDaysAfter = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)
+
+        const playoffWeeksInRange = (data.playoffWeeks || []).filter(week => {
+          const weekStart = new Date(week.week_start)
+          const weekEnd = new Date(week.week_end)
+          return weekStart <= threeDaysAfter && weekEnd >= threeDaysBefore
+        })
+
+        const hasMissingSchedule = playoffWeeksInRange.some(week => {
+          const weekMatchups = (data.matchups || []).filter(m => m.week_number === week.week_number)
+          return weekMatchups.length === 0
+        })
+
+        setMissingPlayoffScheduleWarning(hasMissingSchedule)
+
+        // 檢查是否有seed設定
+        setMissingSeedsWarning(!data.playoffSeeds || data.playoffSeeds.length === 0)
 
         const firstPlayoffWeek = (data.playoffWeeks || [])[0]?.week_number || ''
         setSelectedWeekNumber((prev) => {
@@ -689,6 +715,33 @@ export default function AdminPlayoffSchedulePage() {
           </div>
         ) : (
           <>
+            {(missingPlayoffScheduleWarning || missingSeedsWarning) && (
+              <div className="mb-4 space-y-2">
+                {missingPlayoffScheduleWarning && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3">
+                    <svg className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <div className="text-sm font-black text-red-800">季後賽賽程缺失警告</div>
+                      <div className="text-xs text-red-700 mt-1">前後3天內有尚未登錄的季後賽賽程，請立即處理。</div>
+                    </div>
+                  </div>
+                )}
+                {missingSeedsWarning && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3">
+                    <svg className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <div className="text-sm font-black text-amber-800">Seed 設定缺失警告</div>
+                      <div className="text-xs text-amber-700 mt-1">該聯盟尚未設定任何 playoff seeds，請設定後再插入賽程。</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
                 <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">League</div>
@@ -776,7 +829,7 @@ export default function AdminPlayoffSchedulePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                   <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-700">Playoff Seeds</h3>
@@ -882,6 +935,114 @@ export default function AdminPlayoffSchedulePage() {
                       className="px-3 py-1 rounded-lg bg-purple-600 text-white text-xs font-black hover:bg-purple-700 transition-colors"
                     >
                       Save Seeds
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-700">Eliminated</h3>
+                  <div className="flex items-center gap-2">
+                    <RowBadge tone={eliminated.length > 0 ? 'red' : 'amber'}>{eliminated.length}</RowBadge>
+                    <button
+                      onClick={() => setEditingEliminated(!editingEliminated)}
+                      className="text-[10px] font-black uppercase tracking-[0.16em] text-purple-700 hover:text-purple-900 transition-colors"
+                    >
+                      {editingEliminated ? 'Cancel' : 'Edit'}
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-[0.14em]">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Status</th>
+                        <th className="px-3 py-2 text-left">Nickname</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {editingEliminated ? (
+                        members.map((member) => {
+                          const isEliminated = eliminated.some(e => e.manager_id === member.manager_id)
+                          return (
+                            <tr key={member.manager_id} className="hover:bg-slate-50/80">
+                              <td className="px-3 py-2">
+                                <input
+                                  type="checkbox"
+                                  checked={isEliminated}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setEliminated(prev => [...prev, { manager_id: member.manager_id }])
+                                    } else {
+                                      setEliminated(prev => prev.filter(e => e.manager_id !== member.manager_id))
+                                    }
+                                  }}
+                                  className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                                />
+                              </td>
+                              <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{member.nickname || '-'}</td>
+                            </tr>
+                          )
+                        })
+                      ) : (
+                        eliminated.length > 0 ? (
+                          eliminated.map((elim) => {
+                            const member = members.find(m => m.manager_id === elim.manager_id)
+                            return (
+                              <tr key={elim.manager_id} className="hover:bg-slate-50/80">
+                                <td className="px-3 py-2">
+                                  <span className="inline-flex items-center rounded-full border border-red-400/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-red-200">
+                                    ELIMINATED
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{member?.nickname || 'Unknown'}</td>
+                              </tr>
+                            )
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={2} className="px-3 py-6 text-center text-slate-500 text-xs">
+                              No eliminated players.
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {editingEliminated && (
+                  <div className="px-4 py-2 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+                    <button
+                      onClick={() => setEditingEliminated(false)}
+                      className="px-3 py-1 rounded-lg border border-slate-300 bg-white text-xs font-black text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/admin/playoff-eliminated', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              leagueId: selectedLeagueId,
+                              eliminated,
+                            }),
+                          })
+                          const data = await res.json()
+                          if (!res.ok || !data?.success) {
+                            throw new Error(data?.error || 'Failed to save eliminated')
+                          }
+                          setNotice({ type: 'success', title: 'Eliminated saved', detail: 'Eliminated status has been updated.' })
+                          setEditingEliminated(false)
+                        } catch (err) {
+                          setNotice({ type: 'error', title: 'Save failed', detail: err.message })
+                        }
+                      }}
+                      className="px-3 py-1 rounded-lg bg-purple-600 text-white text-xs font-black hover:bg-purple-700 transition-colors"
+                    >
+                      Save
                     </button>
                   </div>
                 )}

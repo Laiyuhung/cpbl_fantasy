@@ -40,7 +40,7 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [managerRes, adminRes, matchupsRes, bracketsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, rosterRes, allLeagueRes, testLeagueRes, leagueStatusRes, playoffSeedsRes] = await Promise.all([
+    const [managerRes, adminRes, matchupsRes, bracketsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, rosterRes, allLeagueRes, testLeagueRes, leagueStatusRes, playoffSeedsRes, eliminatedRes] = await Promise.all([
       supabase
         .from('managers')
         .select('name, email_verified')
@@ -126,6 +126,11 @@ export async function GET(request, { params }) {
         .select('*')
         .eq('league_id', leagueId)
         .order('seed', { ascending: true }),
+      supabaseAdmin
+        .from('league_playoff_eliminated')
+        .select('*')
+        .eq('league_id', leagueId)
+        .eq('eliminated', true),
     ]);
 
     if (managerRes.error) {
@@ -327,6 +332,7 @@ export async function GET(request, { params }) {
       liveStandings: liveStandingsWithWaiver,
       rosterPercentageMap,
       playoffSeeds: playoffSeedsRes.data || [],
+      eliminated: eliminatedRes.data || [],
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;
