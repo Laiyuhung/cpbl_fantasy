@@ -393,6 +393,7 @@ export default function AdminPlayoffSchedulePage() {
   const [editingEliminated, setEditingEliminated] = useState(false)
   const [missingPlayoffScheduleWarning, setMissingPlayoffScheduleWarning] = useState(false)
   const [missingSeedsWarning, setMissingSeedsWarning] = useState(false)
+  const [missingEliminatedWarning, setMissingEliminatedWarning] = useState(false)
 
   useEffect(() => {
     if (!notice) return
@@ -470,6 +471,11 @@ export default function AdminPlayoffSchedulePage() {
 
         // 檢查是否有seed設定
         setMissingSeedsWarning(!data.playoffSeeds || data.playoffSeeds.length === 0)
+
+        // 檢查是否有eliminated設定（如果聯盟有季後賽設定）
+        const hasPlayoffs = data.league?.playoffs && data.league.playoffs !== '-' && data.league.playoffs !== ''
+        const missingEliminatedWarning = hasPlayoffs && (!data.eliminated || data.eliminated.length === 0)
+        setMissingEliminatedWarning(missingEliminatedWarning)
 
         const firstPlayoffWeek = (data.playoffWeeks || [])[0]?.week_number || ''
         setSelectedWeekNumber((prev) => {
@@ -715,7 +721,7 @@ export default function AdminPlayoffSchedulePage() {
           </div>
         ) : (
           <>
-            {(missingPlayoffScheduleWarning || missingSeedsWarning) && (
+            {(missingPlayoffScheduleWarning || missingSeedsWarning || missingEliminatedWarning) && (
               <div className="mb-4 space-y-2">
                 {missingPlayoffScheduleWarning && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3">
@@ -736,6 +742,17 @@ export default function AdminPlayoffSchedulePage() {
                     <div className="flex-1">
                       <div className="text-sm font-black text-amber-800">Seed 設定缺失警告</div>
                       <div className="text-xs text-amber-700 mt-1">該聯盟尚未設定任何 playoff seeds，請設定後再插入賽程。</div>
+                    </div>
+                  </div>
+                )}
+                {missingEliminatedWarning && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3">
+                    <svg className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <div className="text-sm font-black text-amber-800">Eliminated 設定缺失警告</div>
+                      <div className="text-xs text-amber-700 mt-1">該聯盟尚未設定任何 eliminated 狀態，請設定後再插入賽程。</div>
                     </div>
                   </div>
                 )}

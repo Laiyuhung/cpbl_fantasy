@@ -183,6 +183,8 @@ export async function GET(request) {
       liveStandings: leagueData.liveStandings,
       matchups: leagueData.matchups,
       playoffWeeks,
+      playoffSeeds: leagueData.playoffSeeds,
+      eliminated: leagueData.eliminated,
     }
 
     if (Number.isInteger(targetWeekNumber)) {
