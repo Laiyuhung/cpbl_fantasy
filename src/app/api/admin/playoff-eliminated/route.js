@@ -1,6 +1,27 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import supabaseAdmin from '@/lib/supabaseAdmin';
-import { requireAdmin } from '@/lib/adminAuth';
+
+async function requireAdmin() {
+  const cookieStore = await cookies()
+  const userId = cookieStore.get('user_id')?.value
+
+  if (!userId) {
+    return { ok: false, response: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }) }
+  }
+
+  const { data: adminRecord, error: adminError } = await supabaseAdmin
+    .from('admin')
+    .select('manager_id')
+    .eq('manager_id', userId)
+    .single()
+
+  if (adminError || !adminRecord) {
+    return { ok: false, response: NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 }) }
+  }
+
+  return { ok: true }
+}
 
 export async function GET(request) {
   try {
