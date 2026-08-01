@@ -70,12 +70,6 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
     return eliminated?.some(e => String(e.manager_id) === String(managerId));
   };
 
-  const isCurrentUserEliminated = () => {
-    const lockEnabled = lockEliminatedTeams?.toLowerCase() === 'yes';
-    const userIsEliminated = isEliminated(myManagerId);
-    return lockEnabled && userIsEliminated;
-  };
-
   const formatScore = (value) => {
     if (value === null || value === undefined || value === '') return '-';
     const numberValue = Number(value);
@@ -254,6 +248,13 @@ export default function LeaguePage() {
   const [todayScheduleGames, setTodayScheduleGames] = useState([]);
   const [dailyRosterOwnerships, setDailyRosterOwnerships] = useState([]);
   const [dailyRosterStartingStatus, setDailyRosterStartingStatus] = useState(null);
+
+  // Elimination check function
+  const isCurrentUserEliminated = () => {
+    const lockEnabled = lockEliminatedTeams?.toLowerCase() === 'yes';
+    const userIsEliminated = eliminated?.some(e => String(e.manager_id) === String(myManagerId));
+    return lockEnabled && userIsEliminated;
+  };
 
   // Fetch draft reset status
   useEffect(() => {
