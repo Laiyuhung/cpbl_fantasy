@@ -40,7 +40,7 @@ export async function GET(request, { params }) {
 
     const todayDate = getTaiwanDateString();
 
-    const [managerRes, adminRes, matchupsRes, bracketsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, rosterRes, allLeagueRes, testLeagueRes, leagueStatusRes, playoffSeedsRes, eliminatedRes] = await Promise.all([
+    const [managerRes, adminRes, matchupsRes, bracketsRes, standingsRes, liveStandingsRes, waiverPriorityRes, transRes, waiverRes, watchedRes, todayGamesRes, startingLineupRes, startingPitcherRes, ownershipRes, rosterRes, allLeagueRes, testLeagueRes, leagueStatusRes, playoffSeedsRes, eliminatedRes, settingsRes] = await Promise.all([
       supabase
         .from('managers')
         .select('name, email_verified')
@@ -131,6 +131,11 @@ export async function GET(request, { params }) {
         .select('*')
         .eq('league_id', leagueId)
         .eq('eliminated', true),
+      supabase
+        .from('league_settings')
+        .select('lock_eliminated_teams')
+        .eq('league_id', leagueId)
+        .single(),
     ]);
 
     if (managerRes.error) {
@@ -333,6 +338,7 @@ export async function GET(request, { params }) {
       rosterPercentageMap,
       playoffSeeds: playoffSeedsRes.data || [],
       eliminated: eliminatedRes.data || [],
+      lockEliminatedTeams: settingsRes.data?.lock_eliminated_teams || 'No',
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;

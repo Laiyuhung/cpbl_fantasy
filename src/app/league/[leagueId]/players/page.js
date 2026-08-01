@@ -97,6 +97,28 @@ export default function PlayersPage() {
   const [filterPosition, setFilterPosition] = useState('all'); // Position filter
   const [filterStartOnly, setFilterStartOnly] = useState(false); // Show only today's starters
 
+  // Eliminated State
+  const [eliminated, setEliminated] = useState([]);
+  const [lockEliminatedTeams, setLockEliminatedTeams] = useState('No');
+
+  const isCurrentUserEliminated = () => {
+    const lockEnabled = lockEliminatedTeams?.toLowerCase() === 'yes';
+    const isEliminated = eliminated?.some(e => String(e.manager_id) === String(myManagerId));
+    const shouldBlock = lockEnabled && isEliminated;
+
+    console.log('[Players Page] Elimination Check:', {
+      lockEliminatedTeams,
+      lockEnabled,
+      myManagerId,
+      eliminated,
+      isEliminated,
+      shouldBlock,
+      message: shouldBlock ? 'BLOCKING TRANSACTIONS - User is eliminated and lock is enabled' : 'NOT BLOCKING - Conditions not met'
+    });
+
+    return shouldBlock;
+  };
+
   // Position ordering (same as Roster page)
   const batterPositionOrder = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'OF', 'CI', 'MI', 'Util'];
   const pitcherPositionOrder = ['SP', 'RP', 'P'];
@@ -191,6 +213,11 @@ export default function PlayersPage() {
           setBatterStatCategories(settingsData.data.batter_stat_categories || []);
           setPitcherStatCategories(settingsData.data.pitcher_stat_categories || []);
           setLeagueSettings(settingsData.data || {});
+          setLockEliminatedTeams(settingsData.data.lock_eliminated_teams || 'No');
+        }
+
+        if (Array.isArray(payload.eliminated)) {
+          setEliminated(payload.eliminated);
         }
 
         if (payload.startingStatus) {
@@ -1627,8 +1654,9 @@ export default function PlayersPage() {
     if (!ownership) {
       return (
         <button
-          onClick={() => handleAddPlayer(player)}
-          className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold hover:bg-green-700 transition-colors"
+          onClick={() => !isCurrentUserEliminated() && handleAddPlayer(player)}
+          disabled={isCurrentUserEliminated()}
+          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors ${isCurrentUserEliminated() ? 'bg-green-600/30 text-white/50 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
         >
           +
         </button>
@@ -1639,8 +1667,9 @@ export default function PlayersPage() {
     if (ownership.status?.toLowerCase() === 'waiver') {
       return (
         <button
-          onClick={() => handleAddPlayer(player, true)}
-          className="w-8 h-8 rounded-full bg-yellow-400 text-white flex items-center justify-center font-bold hover:bg-yellow-500 transition-colors"
+          onClick={() => !isCurrentUserEliminated() && handleAddPlayer(player, true)}
+          disabled={isCurrentUserEliminated()}
+          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors ${isCurrentUserEliminated() ? 'bg-yellow-400/30 text-white/50 cursor-not-allowed' : 'bg-yellow-400 text-white hover:bg-yellow-500'}`}
           title="Claim via Waiver"
         >
           +
@@ -1694,6 +1723,19 @@ export default function PlayersPage() {
           );
         }
 
+        // Check if eliminated
+        if (isCurrentUserEliminated()) {
+          return (
+            <button
+              disabled
+              className="w-8 h-8 rounded-full bg-red-600/30 text-white/50 flex items-center justify-center font-bold cursor-not-allowed transition-colors"
+              title="Already been eliminated"
+            >
+              −
+            </button>
+          );
+        }
+
         // 紅色底的 -
         return (
           <button
@@ -1708,6 +1750,19 @@ export default function PlayersPage() {
         // Check Trade Deadline
         if (isTradeDeadlinePassed()) {
           return <div className="w-8 h-8"></div>;
+        }
+
+        // Check if eliminated
+        if (isCurrentUserEliminated()) {
+          return (
+            <button
+              disabled
+              className="w-8 h-8 rounded-full bg-blue-600/30 text-white/50 flex items-center justify-center font-bold cursor-not-allowed transition-colors"
+              title="Already been eliminated"
+            >
+              ⇌
+            </button>
+          );
         }
 
         // 藍色框的 ⇌
@@ -3304,6 +3359,7 @@ export default function PlayersPage() {
         statusDate={statusDate}
         isPlayerLocked={selectedPlayerModal ? activeTradePlayerIds.has(selectedPlayerModal.player_id) : false}
         isDropLockedByGameStart={selectedPlayerModal ? isDropLockedByGameStart(selectedPlayerModal) : false}
+        isManagerEliminated={isCurrentUserEliminated()}
         onAdd={(player, isWaiver) => handleAddPlayer(player, isWaiver)}
         onDrop={(player) => handleDropPlayer(player)}
         onTrade={(player, ownerManagerId) => {

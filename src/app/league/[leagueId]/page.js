@@ -70,6 +70,24 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
     return eliminated?.some(e => String(e.manager_id) === String(managerId));
   };
 
+  const isCurrentUserEliminated = () => {
+    const lockEnabled = lockEliminatedTeams?.toLowerCase() === 'yes';
+    const isEliminated = isEliminated(myManagerId);
+    const shouldBlock = lockEnabled && isEliminated;
+
+    console.log('[Overview Page] Elimination Check:', {
+      lockEliminatedTeams,
+      lockEnabled,
+      myManagerId,
+      eliminated,
+      isEliminated,
+      shouldBlock,
+      message: shouldBlock ? 'BLOCKING TRANSACTIONS - User is eliminated and lock is enabled' : 'NOT BLOCKING - Conditions not met'
+    });
+
+    return shouldBlock;
+  };
+
   const formatScore = (value) => {
     if (value === null || value === undefined || value === '') return '-';
     const numberValue = Number(value);
@@ -216,6 +234,7 @@ export default function LeaguePage() {
   const [playoffMatchups, setPlayoffMatchups] = useState([]);
   const [playoffSeeds, setPlayoffSeeds] = useState([]);
   const [eliminated, setEliminated] = useState([]);
+  const [lockEliminatedTeams, setLockEliminatedTeams] = useState('No');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [leagueStatus, setLeagueStatus] = useState('');
@@ -455,6 +474,7 @@ export default function LeaguePage() {
           setPlayoffBrackets(Array.isArray(result.brackets) ? result.brackets : []);
           setPlayoffSeeds(Array.isArray(result.playoffSeeds) ? result.playoffSeeds : []);
           setEliminated(Array.isArray(result.eliminated) ? result.eliminated : []);
+          setLockEliminatedTeams(result.lockEliminatedTeams || 'No');
           setTodayDate(result.todayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }));
           setTodayScheduleGames(Array.isArray(result.todayScheduleGames) ? result.todayScheduleGames : []);
           setDailyRosterOwnerships(Array.isArray(result.ownerships) ? result.ownerships : []);
@@ -2152,6 +2172,7 @@ export default function LeaguePage() {
           tradeEndDate={tradeEndDate}
           seasonYear={seasonYear}
           isDropLockedByGameStart={false}
+          isManagerEliminated={isCurrentUserEliminated()}
           onAdd={handleAddPlayer}
           onDrop={handleDropPlayer}
           onTrade={handleOpenTrade}

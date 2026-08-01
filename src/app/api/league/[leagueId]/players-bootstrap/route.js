@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET(request, { params }) {
   try {
@@ -21,18 +27,24 @@ export async function GET(request, { params }) {
         const todayDate = todayResponse.ok && todayData?.success ? (todayData.date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' })) : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
         const defaultTimeWindow = '2026 Season';
 
-        const [playersRes, ownershipsRes, leagueRes, settingsRes] = await Promise.all([
+        const [playersRes, ownershipsRes, leagueRes, settingsRes, eliminatedRes] = await Promise.all([
       fetch(`${origin}/api/playerslist?available=true`, { cache: 'no-store' }),
       fetch(`${origin}/api/league/${leagueId}/ownership`, { cache: 'no-store' }),
       fetch(`${origin}/api/league/${leagueId}`, { cache: 'no-store' }),
       fetch(`${origin}/api/league-settings?league_id=${leagueId}`, { cache: 'no-store' }),
+      supabaseAdmin
+        .from('league_playoff_eliminated')
+        .select('*')
+        .eq('league_id', leagueId)
+        .eq('eliminated', true),
     ]);
 
-    const [playersData, ownershipsData, leagueData, settingsData] = await Promise.all([
+    const [playersData, ownershipsData, leagueData, settingsData, eliminatedData] = await Promise.all([
       playersRes.json(),
       ownershipsRes.json(),
       leagueRes.json(),
       settingsRes.json(),
+      Promise.resolve(eliminatedRes),
     ]);
 
     if (!playersRes.ok || !playersData?.success) {
@@ -124,6 +136,7 @@ export async function GET(request, { params }) {
             playerStats,
             playerRankings,
             timeWindow: defaultTimeWindow,
+            eliminated: eliminatedData?.data || [],
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message || 'Server error' }, { status: 500 });

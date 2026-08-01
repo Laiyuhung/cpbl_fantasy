@@ -27,6 +27,7 @@ export default function PlayerDetailModal({
     seasonYear,
     isPlayerLocked,     // Boolean: is this player locked in a pending trade?
     isDropLockedByGameStart, // Boolean: is drop locked because game has started and player is in active lineup?
+    isManagerEliminated, // Boolean: is the current manager eliminated?
     onAdd,              // (player, isWaiver) => void
     onDrop,             // (player) => void
     onTrade,            // (player, ownerManagerId) => void
@@ -457,6 +458,80 @@ export default function PlayerDetailModal({
 
     const renderActionButton = () => {
         if (!previewOnly && (!myManagerId || (!onAdd && !onDrop && !onTrade))) return null;
+
+        // Check if manager is eliminated - disable all transaction buttons
+        if (isManagerEliminated) {
+            if (!currentLeagueOwnership) {
+                return (
+                    <div className="flex flex-col items-start gap-0.5">
+                        <button
+                            type="button"
+                            disabled
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-green-600 text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg cursor-not-allowed opacity-50"
+                            title="Already been eliminated"
+                            aria-disabled="true"
+                        >
+                            <span>FA</span>
+                        </button>
+                        <span className="text-[10px] font-semibold text-slate-400">Already been eliminated</span>
+                    </div>
+                );
+            }
+
+            const status = currentLeagueOwnership.status?.toLowerCase();
+            if (status === 'waiver') {
+                return (
+                    <div className="flex flex-col items-start gap-0.5">
+                        <button
+                            type="button"
+                            disabled
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-yellow-500 text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg cursor-not-allowed opacity-50"
+                            title="Already been eliminated"
+                            aria-disabled="true"
+                        >
+                            <span>Waiver</span>
+                        </button>
+                        <span className="text-[10px] font-semibold text-slate-400">Already been eliminated</span>
+                    </div>
+                );
+            }
+
+            if (status === 'on team') {
+                const isMine = currentLeagueOwnership.manager_id === myManagerId;
+                if (!isMine) {
+                    return (
+                        <div className="flex flex-col items-start gap-0.5">
+                            <button
+                                type="button"
+                                disabled
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition-all flex items-center gap-1.5 shadow-lg cursor-not-allowed opacity-50"
+                                title="Already been eliminated"
+                                aria-disabled="true"
+                            >
+                                <span className="text-base">⇌</span> Trade
+                            </button>
+                            <span className="text-[10px] font-semibold text-slate-400">Already been eliminated</span>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="flex flex-col items-start gap-0.5">
+                        <button
+                            type="button"
+                            disabled
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-red-600 text-white transition-all flex items-center gap-1 sm:gap-1.5 shadow-lg cursor-not-allowed opacity-50"
+                            title="Already been eliminated"
+                            aria-disabled="true"
+                        >
+                            <span>Drop</span>
+                        </button>
+                        <span className="text-[10px] font-semibold text-slate-400">Already been eliminated</span>
+                    </div>
+                );
+            }
+
+            return null;
+        }
 
         if (previewOnly) {
             if (!currentLeagueOwnership) {

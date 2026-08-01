@@ -589,13 +589,18 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: 'Please login first' }, { status: 401 });
     }
 
-    const [overview, settingsRes] = await Promise.all([
+    const [overview, settingsRes, eliminatedRes] = await Promise.all([
       getLeagueOverviewData(supabase, leagueId),
       supabase
         .from('league_settings')
         .select('*')
         .eq('league_id', leagueId)
         .single(),
+      supabaseAdmin
+        .from('league_playoff_eliminated')
+        .select('*')
+        .eq('league_id', leagueId)
+        .eq('eliminated', true),
     ]);
 
     if (settingsRes.error || !settingsRes.data) {
@@ -672,6 +677,7 @@ export async function GET(request, { params }) {
       watchedIds: transactionsBootstrap.watchedIds,
       activeTradePlayerIds: Array.from(activeTradePlayerIds),
       pendingTradeCount,
+      eliminated: eliminatedRes.data || [],
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;

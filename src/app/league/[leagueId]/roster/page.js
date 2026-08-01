@@ -83,6 +83,28 @@ export default function RosterPage() {
     // Watch State
     const [watchedPlayerIds, setWatchedPlayerIds] = useState(new Set());
 
+    // Eliminated State
+    const [eliminated, setEliminated] = useState([]);
+    const [lockEliminatedTeams, setLockEliminatedTeams] = useState('No');
+
+    const isCurrentUserEliminated = () => {
+        const lockEnabled = lockEliminatedTeams?.toLowerCase() === 'yes';
+        const isEliminated = eliminated?.some(e => String(e.manager_id) === String(myManagerId));
+        const shouldBlock = lockEnabled && isEliminated;
+
+        console.log('[Roster Page] Elimination Check:', {
+            lockEliminatedTeams,
+            lockEnabled,
+            myManagerId,
+            eliminated,
+            isEliminated,
+            shouldBlock,
+            message: shouldBlock ? 'BLOCKING TRANSACTIONS - User is eliminated and lock is enabled' : 'NOT BLOCKING - Conditions not met'
+        });
+
+        return shouldBlock;
+    };
+
     // Weekly IP & Add Limit State
     const [weeklyIP, setWeeklyIP] = useState(null);
     const [minIPRequired, setMinIPRequired] = useState(null);
@@ -396,6 +418,14 @@ export default function RosterPage() {
                         setMaxAcquisitions(payload.weeklyAddLimit ?? null);
                     }
                     skipInitialWeeklyIpFetchRef.current = true;
+                }
+
+                if (Array.isArray(payload.eliminated)) {
+                    setEliminated(payload.eliminated);
+                }
+
+                if (payload.settings?.lock_eliminated_teams) {
+                    setLockEliminatedTeams(payload.settings.lock_eliminated_teams);
                 }
 
                 if (payload.playerStats) {
@@ -2016,8 +2046,9 @@ export default function RosterPage() {
                             )}
                             {!isTradeDeadlinePassed() && (
                                 <button
-                                    onClick={() => setShowMyTradesModal(true)}
-                                    className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300 flex items-center justify-center gap-1 sm:gap-2 transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
+                                    onClick={() => !isCurrentUserEliminated() && setShowMyTradesModal(true)}
+                                    disabled={isCurrentUserEliminated()}
+                                    className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex items-center justify-center gap-1 sm:gap-2 transition-colors text-[10px] sm:text-xs font-bold tracking-wider ${isCurrentUserEliminated() ? 'bg-pink-500/10 border-pink-400/20 text-pink-300/50 cursor-not-allowed' : 'bg-pink-500/30 hover:bg-pink-500/50 border border-pink-400/50 text-pink-300'}`}
                                 >
                                     <span>TRADES</span>
                                     {pendingTradeCount > 0 && (
@@ -2028,8 +2059,9 @@ export default function RosterPage() {
                                 </button>
                             )}
                             <button
-                                onClick={() => setShowWaiverModal(true)}
-                                className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300 flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider"
+                                onClick={() => !isCurrentUserEliminated() && setShowWaiverModal(true)}
+                                disabled={isCurrentUserEliminated()}
+                                className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex items-center justify-center transition-colors text-[10px] sm:text-xs font-bold tracking-wider ${isCurrentUserEliminated() ? 'bg-orange-500/10 border-orange-400/20 text-orange-300/50 cursor-not-allowed' : 'bg-orange-500/30 hover:bg-orange-500/50 border border-orange-400/50 text-orange-300'}`}
                             >
                                 WAIVER
                             </button>
@@ -2703,6 +2735,7 @@ export default function RosterPage() {
                     statusDate={selectedDate || getTodayTW()}
                     isPlayerLocked={selectedPlayerModal ? activeTradePlayerIds.has(selectedPlayerModal.player_id) : false}
                     isDropLockedByGameStart={selectedPlayerModal ? isDropLockedByGameStart(selectedPlayerModal) : false}
+                    isManagerEliminated={isCurrentUserEliminated()}
                     onDrop={(player) => handleDropPlayer(player)}
                     // Watch Props
                     isWatched={selectedPlayerModal ? watchedPlayerIds.has(selectedPlayerModal.player_id) : false}
