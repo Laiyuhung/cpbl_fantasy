@@ -90,19 +90,7 @@ export default function RosterPage() {
     const isCurrentUserEliminated = () => {
         const lockEnabled = lockEliminatedTeams?.toLowerCase() === 'yes';
         const isEliminated = eliminated?.some(e => String(e.manager_id) === String(myManagerId));
-        const shouldBlock = lockEnabled && isEliminated;
-
-        console.log('[Roster Page] Elimination Check:', {
-            lockEliminatedTeams,
-            lockEnabled,
-            myManagerId,
-            eliminated,
-            isEliminated,
-            shouldBlock,
-            message: shouldBlock ? 'BLOCKING TRANSACTIONS - User is eliminated and lock is enabled' : 'NOT BLOCKING - Conditions not met'
-        });
-
-        return shouldBlock;
+        return lockEnabled && isEliminated;
     };
 
     // Weekly IP & Add Limit State

@@ -104,19 +104,7 @@ export default function PlayersPage() {
   const isCurrentUserEliminated = () => {
     const lockEnabled = lockEliminatedTeams?.toLowerCase() === 'yes';
     const isEliminated = eliminated?.some(e => String(e.manager_id) === String(myManagerId));
-    const shouldBlock = lockEnabled && isEliminated;
-
-    console.log('[Players Page] Elimination Check:', {
-      lockEliminatedTeams,
-      lockEnabled,
-      myManagerId,
-      eliminated,
-      isEliminated,
-      shouldBlock,
-      message: shouldBlock ? 'BLOCKING TRANSACTIONS - User is eliminated and lock is enabled' : 'NOT BLOCKING - Conditions not met'
-    });
-
-    return shouldBlock;
+    return lockEnabled && isEliminated;
   };
 
   // Position ordering (same as Roster page)

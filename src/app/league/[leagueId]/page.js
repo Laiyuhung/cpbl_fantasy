@@ -72,20 +72,8 @@ const PlayoffTreeDiagram = ({ playoffType, playoffReseeding, currentWeekLabel, p
 
   const isCurrentUserEliminated = () => {
     const lockEnabled = lockEliminatedTeams?.toLowerCase() === 'yes';
-    const isEliminated = isEliminated(myManagerId);
-    const shouldBlock = lockEnabled && isEliminated;
-
-    console.log('[Overview Page] Elimination Check:', {
-      lockEliminatedTeams,
-      lockEnabled,
-      myManagerId,
-      eliminated,
-      isEliminated,
-      shouldBlock,
-      message: shouldBlock ? 'BLOCKING TRANSACTIONS - User is eliminated and lock is enabled' : 'NOT BLOCKING - Conditions not met'
-    });
-
-    return shouldBlock;
+    const userIsEliminated = isEliminated(myManagerId);
+    return lockEnabled && userIsEliminated;
   };
 
   const formatScore = (value) => {
