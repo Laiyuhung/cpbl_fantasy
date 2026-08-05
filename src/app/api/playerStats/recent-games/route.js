@@ -4,10 +4,10 @@ import { FANTASY_POINTS_SCORING_TYPE, buildCategoryWeights, calculateFantasyPoin
 
 // Helper: parse W/L/SV/HLD from record string
 function parseRecord(record) {
-    const w = record && (record.includes('W') || record.includes('勝')) ? 1 : 0;
-    const l = record && (record.includes('L') || record.includes('敗')) ? 1 : 0;
-    const sv = record && (record.includes('SV') || record.includes('S') || record.includes('救援')) ? 1 : 0;
-    const hld = record && (record.includes('HLD') || record.includes('H') || record.includes('中繼')) ? 1 : 0;
+    const w = record && (record === 'W' || record === '勝') ? 1 : 0;
+    const l = record && (record === 'L' || record === '敗') ? 1 : 0;
+    const sv = record && (record === 'SV' || record === 'S' || record === '救援') ? 1 : 0;
+    const hld = record && (record === 'HLD' || record === 'H' || record === '中繼') ? 1 : 0;
     return { w, l, sv, hld };
 }
 
