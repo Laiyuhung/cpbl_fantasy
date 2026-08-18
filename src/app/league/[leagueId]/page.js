@@ -482,7 +482,7 @@ export default function LeaguePage() {
           setInvitePermissions(result.invitePermissions || 'commissioner only');
 
           // Initialize Current Week logic
-          if (status === 'post-draft & pre-season' || status === 'in season') {
+          if (status === 'post-draft & pre-season' || status === 'in season' || status === 'playoffs') {
             // Get current date in Taiwan timezone (UTC+8)
             const now = new Date();
             // Convert to Taiwan time by adding 8 hours to UTC
