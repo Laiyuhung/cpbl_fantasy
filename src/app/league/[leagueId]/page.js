@@ -297,6 +297,8 @@ export default function LeaguePage() {
   const [standingsLoading, setStandingsLoading] = useState(true);
   const [liveMode, setLiveMode] = useState(false);
   const [liveStandings, setLiveStandings] = useState([]);
+  const [finalStandings, setFinalStandings] = useState([]);
+  const [finalStandingsLoading, setFinalStandingsLoading] = useState(true);
   const [liveStandingsLoading, setLiveStandingsLoading] = useState(false);
   const [weeklyAddMap, setWeeklyAddMap] = useState({});
   const [transactions, setTransactions] = useState([]);
@@ -482,47 +484,53 @@ export default function LeaguePage() {
           setInvitePermissions(result.invitePermissions || 'commissioner only');
 
           // Initialize Current Week logic
-          if (status === 'post-draft & pre-season' || status === 'in season' || status === 'playoffs') {
-            // Get current date in Taiwan timezone (UTC+8)
-            const now = new Date();
-            // Convert to Taiwan time by adding 8 hours to UTC
-            const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-
-            // Find grid week based on Taiwan time
+          if (status === 'post-draft & pre-season' || status === 'in season' || status === 'playoffs' || status === 'finished') {
             let week = 1;
-            if (result.schedule && result.schedule.length > 0) {
-              const schedule = result.schedule;
+            
+            // For finished status, default to last week
+            if (status === 'finished' && result.schedule && result.schedule.length > 0) {
+              week = result.schedule[result.schedule.length - 1].week_number;
+            } else {
+              // Get current date in Taiwan timezone (UTC+8)
+              const now = new Date();
+              // Convert to Taiwan time by adding 8 hours to UTC
+              const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
 
-              // Parse dates and convert to Taiwan timezone for comparison
-              const getDateInTaiwan = (dateStr) => {
-                const date = new Date(dateStr);
-                // Add 8 hours to convert UTC to Taiwan time
-                return new Date(date.getTime() + (8 * 60 * 60 * 1000));
-              };
+              // Find grid week based on Taiwan time
+              if (result.schedule && result.schedule.length > 0) {
+                const schedule = result.schedule;
 
-              const firstWeekStart = getDateInTaiwan(schedule[0].week_start);
-              const lastWeekEnd = getDateInTaiwan(schedule[schedule.length - 1].week_end);
+                // Parse dates and convert to Taiwan timezone for comparison
+                const getDateInTaiwan = (dateStr) => {
+                  const date = new Date(dateStr);
+                  // Add 8 hours to convert UTC to Taiwan time
+                  return new Date(date.getTime() + (8 * 60 * 60 * 1000));
+                };
 
-              // If before first week, use week 1
-              if (taiwanTime < firstWeekStart) {
-                week = 1;
-              }
-              // If after last week, use last week
-              else if (taiwanTime > lastWeekEnd) {
-                week = schedule[schedule.length - 1].week_number;
-              }
-              // Find current week
-              else {
-                const current = schedule.find(w => {
-                  const weekStart = getDateInTaiwan(w.week_start);
-                  const weekEnd = getDateInTaiwan(w.week_end);
-                  // Set end of day for week_end comparison
-                  weekEnd.setUTCHours(23, 59, 59, 999);
-                  return taiwanTime >= weekStart && taiwanTime <= weekEnd;
-                });
+                const firstWeekStart = getDateInTaiwan(schedule[0].week_start);
+                const lastWeekEnd = getDateInTaiwan(schedule[schedule.length - 1].week_end);
 
-                if (current) {
-                  week = current.week_number;
+                // If before first week, use week 1
+                if (taiwanTime < firstWeekStart) {
+                  week = 1;
+                }
+                // If after last week, use last week
+                else if (taiwanTime > lastWeekEnd) {
+                  week = schedule[schedule.length - 1].week_number;
+                }
+                // Find current week
+                else {
+                  const current = schedule.find(w => {
+                    const weekStart = getDateInTaiwan(w.week_start);
+                    const weekEnd = getDateInTaiwan(w.week_end);
+                    // Set end of day for week_end comparison
+                    weekEnd.setUTCHours(23, 59, 59, 999);
+                    return taiwanTime >= weekStart && taiwanTime <= weekEnd;
+                  });
+
+                  if (current) {
+                    week = current.week_number;
+                  }
                 }
               }
             }
@@ -673,6 +681,21 @@ export default function LeaguePage() {
     }
   };
 
+  const fetchFinalStandings = async () => {
+    setFinalStandingsLoading(true);
+    try {
+      const res = await fetch(`/api/league/${leagueId}/final-standings`);
+      const data = await res.json();
+      if (data.success) {
+        setFinalStandings(data.finalStandings || []);
+      }
+    } catch (e) {
+      console.error("Error fetching final standings", e);
+    } finally {
+      setFinalStandingsLoading(false);
+    }
+  };
+
   // Fetch standings
   useEffect(() => {
     if (!leagueId) return;
@@ -731,6 +754,13 @@ export default function LeaguePage() {
       fetchTransactions();
     }
   }, [leagueId, bootstrapHasStandings, bootstrapHasTransactions, bootstrapReady]);
+
+  // Fetch final standings when league is finished
+  useEffect(() => {
+    if (leagueStatus === 'finished' && leagueId) {
+      fetchFinalStandings();
+    }
+  }, [leagueId, leagueStatus]);
 
   // No separate fetch needed - liveStandings loaded from bootstrap
   useEffect(() => {
@@ -1375,7 +1405,7 @@ export default function LeaguePage() {
     return scheduleData.find(w => w.week_number === currentWeek);
   };
 
-  const showMatchups = leagueStatus === 'post-draft & pre-season' || leagueStatus === 'in season' || leagueStatus === 'playoffs';
+  const showMatchups = leagueStatus === 'post-draft & pre-season' || leagueStatus === 'in season' || leagueStatus === 'playoffs' || leagueStatus === 'finished';
   const weekDetails = getCurrentWeekDetails();
 
   if (showMatchups) {
@@ -1406,6 +1436,76 @@ export default function LeaguePage() {
               </span>
             </div>
           </div>
+
+          {/* Final Standings Display (only for finished leagues) */}
+          {leagueStatus === 'finished' && (
+            <div className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 backdrop-blur-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-amber-500/20 shadow-2xl">
+              <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <h2 className="text-base sm:text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-1.5 sm:w-2 h-5 sm:h-6 bg-amber-500 rounded-full"></span>
+                  Final Standings
+                </h2>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-lg border border-white/10 backdrop-blur-sm bg-amber-500/20 text-amber-200">
+                  🏆 Season Complete
+                </span>
+              </div>
+
+              {finalStandingsLoading ? (
+                <div className="w-full h-32 bg-white/5 rounded-2xl animate-pulse border border-white/5 flex items-center justify-center">
+                  <span className="text-amber-300 font-bold tracking-widest uppercase text-sm">Loading Final Standings...</span>
+                </div>
+              ) : finalStandings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 bg-white/5 rounded-2xl border border-white/10 border-dashed">
+                  <p className="text-white/40 font-bold uppercase tracking-widest text-sm">No final standings available</p>
+                </div>
+              ) : (
+                <div className="space-y-2 sm:space-y-3">
+                  {finalStandings.map((standing) => {
+                    const manager = getManagerDetails(standing.manager_id);
+                    return (
+                      <div 
+                        key={standing.id} 
+                        className={`flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-all ${
+                          standing.rank === 1 
+                            ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-yellow-500/30 shadow-lg shadow-yellow-500/10' 
+                            : standing.rank === 2 
+                              ? 'bg-gradient-to-r from-gray-400/20 to-slate-400/20 border-gray-400/30' 
+                              : standing.rank === 3 
+                                ? 'bg-gradient-to-r from-orange-600/20 to-amber-600/20 border-orange-600/30' 
+                                : 'bg-white/5 border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-sm sm:text-lg ${
+                            standing.rank === 1 
+                              ? 'bg-yellow-500 text-yellow-900' 
+                              : standing.rank === 2 
+                                ? 'bg-gray-400 text-gray-900' 
+                                : standing.rank === 3 
+                                  ? 'bg-orange-600 text-orange-100' 
+                                  : 'bg-slate-700 text-slate-300'
+                          }`}>
+                            {standing.rank}
+                          </div>
+                          <div>
+                            <div className="text-sm sm:text-base font-bold text-white">
+                              {manager?.nickname || manager?.managers?.name || 'Unknown Manager'}
+                            </div>
+                            <div className="text-[10px] sm:text-xs text-white/60">
+                              {manager?.role || 'Member'}
+                            </div>
+                          </div>
+                        </div>
+                        {standing.rank === 1 && (
+                          <div className="text-2xl sm:text-3xl">👑</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* MATCHUPS Section Header with Week Selector */}
           <div className="flex items-center justify-between mb-4 sm:mb-6">
