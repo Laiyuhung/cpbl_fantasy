@@ -27,13 +27,14 @@ export default function FinalStandingsAdmin() {
 
   const fetchLeagues = async (userId) => {
     try {
-      const { data: leaguesData, error } = await supabase
-        .from('league_settings')
-        .select('league_id, league_name')
-        .order('league_name', { ascending: true });
-
-      if (error) throw error;
-      setLeagues(leaguesData || []);
+      const response = await fetch('/api/admin/leagues');
+      const result = await response.json();
+      
+      if (result.success) {
+        setLeagues(result.leagues || []);
+      } else {
+        setMessage('Error fetching leagues');
+      }
     } catch (error) {
       console.error('Error fetching leagues:', error);
       setMessage('Error fetching leagues');
@@ -53,18 +54,12 @@ export default function FinalStandingsAdmin() {
       if (error) throw error;
       setMembers(membersData || []);
       
-      // Fetch current final standings
-      const { data: standingsData, error: standingsError } = await supabase
-        .from('league_final_standings')
-        .select('*')
-        .eq('league_id', leagueId)
-        .order('rank', { ascending: true });
-
-      if (standingsError) throw standingsError;
+      // Fetch current final standings using API
+      const response = await fetch(`/api/admin/leagues/${leagueId}/final-standings`);
+      const result = await response.json();
       
-      // Initialize standings if they don't exist
-      if (standingsData && standingsData.length > 0) {
-        setCurrentStandings(standingsData);
+      if (result.success && result.standings && result.standings.length > 0) {
+        setCurrentStandings(result.standings);
       } else {
         // Initialize with default rankings based on member order
         const initialStandings = (membersData || []).map((member, index) => ({

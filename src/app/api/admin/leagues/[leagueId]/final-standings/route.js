@@ -2,6 +2,58 @@ import { NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
 import { cookies } from 'next/headers';
 
+export async function GET(request, { params }) {
+    const { leagueId } = params;
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('user_id')?.value;
+
+    if (!userId) {
+        return NextResponse.json({ success: false, error: 'Please login first' }, { status: 401 });
+    }
+
+    if (!leagueId) {
+        return NextResponse.json({ success: false, error: 'League ID is required' }, { status: 400 });
+    }
+
+    try {
+        // Check if user is commissioner or co-commissioner
+        const { data: member, error: memberError } = await supabase
+            .from('league_members')
+            .select('role')
+            .eq('league_id', leagueId)
+            .eq('manager_id', userId)
+            .single();
+
+        if (memberError || !member) {
+            return NextResponse.json({ success: false, error: 'Not a member of this league' }, { status: 403 });
+        }
+
+        if (member.role !== 'Commissioner' && member.role !== 'Co-Commissioner') {
+            return NextResponse.json({ success: false, error: 'Only commissioners can view final standings' }, { status: 403 });
+        }
+
+        // Fetch final standings
+        const { data: standings, error: standingsError } = await supabase
+            .from('league_final_standings')
+            .select('*')
+            .eq('league_id', leagueId)
+            .order('rank', { ascending: true });
+
+        if (standingsError) {
+            console.error('Error fetching final standings:', standingsError);
+            return NextResponse.json({ success: false, error: 'Failed to fetch final standings' }, { status: 500 });
+        }
+
+        return NextResponse.json({ 
+            success: true, 
+            standings: standings || []
+        });
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        return NextResponse.json({ success: false, error: 'An unexpected error occurred' }, { status: 500 });
+    }
+}
+
 export async function POST(request, { params }) {
     const { leagueId } = params;
     const cookieStore = await cookies();
