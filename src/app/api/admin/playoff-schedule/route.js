@@ -25,7 +25,7 @@ async function requireAdmin() {
 }
 
 async function loadLeagueData(leagueId) {
-  const [leagueRes, membersRes, scheduleRes, standingsRes, liveStandingsRes, matchupsRes, bracketRes, playoffSeedsRes, eliminatedRes] = await Promise.all([
+  const [leagueRes, membersRes, scheduleRes, standingsRes, liveStandingsRes, matchupsRes, bracketRes, playoffSeedsRes, eliminatedRes, finalStandingsRes] = await Promise.all([
     supabaseAdmin
       .from('league_settings')
       .select('league_id, league_name, playoffs, playoffs_start, playoff_reseeding, playoff_tie_breaker, scoring_type, start_scoring_on, max_teams, created_at, updated_at')
@@ -71,6 +71,11 @@ async function loadLeagueData(leagueId) {
       .select('*')
       .eq('league_id', leagueId)
       .eq('eliminated', true),
+    supabaseAdmin
+      .from('league_final_standings')
+      .select('*')
+      .eq('league_id', leagueId)
+      .order('rank', { ascending: true }),
   ])
 
   return {
@@ -84,6 +89,7 @@ async function loadLeagueData(leagueId) {
     brackets: bracketRes.data || [],
     playoffSeeds: playoffSeedsRes.data || [],
     eliminated: eliminatedRes.data || [],
+    finalStandings: finalStandingsRes.data || [],
   }
 }
 
@@ -185,6 +191,7 @@ export async function GET(request) {
       playoffWeeks,
       playoffSeeds: leagueData.playoffSeeds,
       eliminated: leagueData.eliminated,
+      finalStandings: leagueData.finalStandings,
     }
 
     if (Number.isInteger(targetWeekNumber)) {
@@ -215,6 +222,7 @@ export async function GET(request) {
       responsePayload.previewWeek = plan.targetWeekRow
       responsePayload.playoffSeeds = leagueData.playoffSeeds
       responsePayload.eliminated = leagueData.eliminated
+      responsePayload.finalStandings = leagueData.finalStandings
     }
 
     return NextResponse.json(responsePayload)

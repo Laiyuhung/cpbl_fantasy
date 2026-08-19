@@ -391,6 +391,8 @@ export default function AdminPlayoffSchedulePage() {
   const [editingSeeds, setEditingSeeds] = useState(false)
   const [eliminated, setEliminated] = useState([])
   const [editingEliminated, setEditingEliminated] = useState(false)
+  const [finalStandings, setFinalStandings] = useState([])
+  const [editingFinalStandings, setEditingFinalStandings] = useState(false)
   const [missingPlayoffScheduleWarning, setMissingPlayoffScheduleWarning] = useState(false)
   const [missingSeedsWarning, setMissingSeedsWarning] = useState(false)
   const [missingEliminatedWarning, setMissingEliminatedWarning] = useState(false)
@@ -450,6 +452,7 @@ export default function AdminPlayoffSchedulePage() {
         setPlayoffWeeks(data.playoffWeeks || [])
         setPlayoffSeeds(data.playoffSeeds || [])
         setEliminated(data.eliminated || [])
+        setFinalStandings(data.finalStandings || [])
 
         // 檢查是否有缺失的季後賽賽程
         const today = new Date()
@@ -846,7 +849,7 @@ export default function AdminPlayoffSchedulePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-4">
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                   <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-700">Playoff Seeds</h3>
@@ -1053,6 +1056,116 @@ export default function AdminPlayoffSchedulePage() {
                           }
                           setNotice({ type: 'success', title: 'Eliminated saved', detail: 'Eliminated status has been updated.' })
                           setEditingEliminated(false)
+                        } catch (err) {
+                          setNotice({ type: 'error', title: 'Save failed', detail: err.message })
+                        }
+                      }}
+                      className="px-3 py-1 rounded-lg bg-purple-600 text-white text-xs font-black hover:bg-purple-700 transition-colors"
+                    >
+                      Save
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-700">Final Standings</h3>
+                  <div className="flex items-center gap-2">
+                    <RowBadge tone={finalStandings.length > 0 ? 'emerald' : 'amber'}>{finalStandings.length}</RowBadge>
+                    <button
+                      onClick={() => setEditingFinalStandings(!editingFinalStandings)}
+                      className="text-[10px] font-black uppercase tracking-[0.16em] text-purple-700 hover:text-purple-900 transition-colors"
+                    >
+                      {editingFinalStandings ? 'Cancel' : 'Edit'}
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-[0.14em]">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Rank</th>
+                        <th className="px-3 py-2 text-left">Nickname</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {editingFinalStandings ? (
+                        members.map((member) => {
+                          const currentRank = finalStandings.find(s => s.manager_id === member.manager_id)?.rank
+                          return (
+                            <tr key={member.manager_id} className="hover:bg-slate-50/80">
+                              <td className="px-3 py-2">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={members.length}
+                                  value={currentRank || ''}
+                                  onChange={(e) => {
+                                    const newRank = e.target.value ? Number(e.target.value) : null
+                                    setFinalStandings(prev => {
+                                      const filtered = prev.filter(s => s.manager_id !== member.manager_id)
+                                      if (newRank !== null && newRank !== '') {
+                                        filtered.push({ manager_id: member.manager_id, rank: newRank })
+                                      }
+                                      return filtered.sort((a, b) => a.rank - b.rank)
+                                    })
+                                  }}
+                                  className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800 focus:border-purple-500 focus:outline-none"
+                                />
+                              </td>
+                              <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{member.nickname || '-'}</td>
+                            </tr>
+                          )
+                        })
+                      ) : (
+                        finalStandings.length > 0 ? (
+                          finalStandings.map((standing) => {
+                            const member = members.find(m => m.manager_id === standing.manager_id)
+                            return (
+                              <tr key={standing.manager_id} className="hover:bg-slate-50/80">
+                                <td className="px-3 py-2 font-black text-slate-800">#{standing.rank}</td>
+                                <td className="px-3 py-2 font-semibold text-slate-800 truncate max-w-[120px]">{member?.nickname || 'Unknown'}</td>
+                              </tr>
+                            )
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={2} className="px-3 py-6 text-center text-slate-500 text-xs">
+                              No final standings set yet.
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {editingFinalStandings && (
+                  <div className="px-4 py-2 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+                    <button
+                      onClick={() => setEditingFinalStandings(false)}
+                      className="px-3 py-1 rounded-lg border border-slate-300 bg-white text-xs font-black text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const validStandings = finalStandings.filter(s => s.manager_id && s.rank)
+                          const res = await fetch('/api/admin/final-standings', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              leagueId: selectedLeagueId,
+                              standings: validStandings,
+                            }),
+                          })
+                          const data = await res.json()
+                          if (!res.ok || !data?.success) {
+                            throw new Error(data?.error || 'Failed to save final standings')
+                          }
+                          setNotice({ type: 'success', title: 'Final standings saved', detail: 'Final standings have been updated.' })
+                          setEditingFinalStandings(false)
                         } catch (err) {
                           setNotice({ type: 'error', title: 'Save failed', detail: err.message })
                         }
