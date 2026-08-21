@@ -213,6 +213,23 @@ export function buildSeedMap(standingsRows, teamCount, playoffSeeds = []) {
       seedList.push(entry)
     })
 
+    // 為缺失的種子創建 bye 佔位符
+    for (let seed = 1; seed <= teamCount; seed++) {
+      if (!seedMap[seed]) {
+        const byeEntry = {
+          manager_id: null,
+          seed,
+          nickname: 'BYE',
+          empty: true,
+        }
+        seedMap[seed] = byeEntry
+        seedList.push(byeEntry)
+      }
+    }
+
+    // 按種子排序
+    seedList.sort((a, b) => a.seed - b.seed)
+
     return { seedMap, seedList }
   }
 
@@ -233,6 +250,7 @@ export function buildSeedMap(standingsRows, teamCount, playoffSeeds = []) {
     return String(a.nickname || '').localeCompare(String(b.nickname || ''))
   })
 
+  // 填充實際存在的種子
   sortedRows.slice(0, teamCount).forEach((row, index) => {
     const seed = index + 1
     const entry = {
@@ -243,6 +261,23 @@ export function buildSeedMap(standingsRows, teamCount, playoffSeeds = []) {
     seedMap[row.manager_id] = entry
     seedList.push(entry)
   })
+
+  // 為缺失的種子創建 bye 佔位符
+  for (let seed = 1; seed <= teamCount; seed++) {
+    if (!seedMap[seed]) {
+      const byeEntry = {
+        manager_id: null,
+        seed,
+        nickname: 'BYE',
+        empty: true,
+      }
+      seedMap[seed] = byeEntry
+      seedList.push(byeEntry)
+    }
+  }
+
+  // 按種子排序
+  seedList.sort((a, b) => a.seed - b.seed)
 
   return { seedMap, seedList }
 }
@@ -281,6 +316,13 @@ function makeRoundRow({ leagueId, weekRow, entry, left, right, rowKey }) {
   const isBye = entry.type === 'bye'
   const leftIsEmpty = left?.empty === true
   const rightIsEmpty = right?.empty === true
+  
+  // 如果左邊是 empty (BYE種子)，也視為 bye 處理
+  const leftIsByeSeed = leftIsEmpty && left?.nickname === 'BYE'
+  const rightIsByeSeed = rightIsEmpty && right?.nickname === 'BYE'
+  
+  // 如果右邊是 BYE種子，整場比賽也視為 bye
+  const isByeMatch = isBye || leftIsByeSeed || rightIsByeSeed
 
   return {
     rowKey,
@@ -291,19 +333,19 @@ function makeRoundRow({ leagueId, weekRow, entry, left, right, rowKey }) {
     end_date: weekRow.week_end,
     manager_id_a: leftIsEmpty ? null : (left?.manager_id || null),
     score_a: 0,
-    manager_id_b: isBye ? null : (rightIsEmpty ? null : (right?.manager_id || null)),
+    manager_id_b: isByeMatch ? null : (rightIsEmpty ? null : (right?.manager_id || null)),
     score_b: 0,
-    winner_manager_id: isBye ? (left?.manager_id || null) : null,
+    winner_manager_id: isByeMatch ? (left?.manager_id || null) : null,
     is_tie: false,
     created_at: null,
     updated_at: null,
     tie_categories_count: 0,
     matchup_label: entry.label,
-    matchup_type: entry.type,
+    matchup_type: isByeMatch ? 'bye' : entry.type,
     left_seed: left?.seed ?? null,
     right_seed: right?.seed ?? null,
-    left_nickname: isBye ? (left?.nickname || '-') : (leftIsEmpty ? 'TBD' : (left?.nickname || '-')),
-    right_nickname: isBye ? 'BYE' : (rightIsEmpty ? 'TBD' : (right?.nickname || '-')),
+    left_nickname: isByeMatch ? (left?.nickname || '-') : (leftIsEmpty ? 'TBD' : (left?.nickname || '-')),
+    right_nickname: isByeMatch ? 'BYE' : (rightIsEmpty ? 'TBD' : (right?.nickname || '-')),
   }
 }
 
@@ -356,6 +398,7 @@ function buildResolvedKeysForRounds({ definitions, targetIndex, existingRowsByWe
 
       const row = rowsForWeek.find((candidate) => !matchedRows.includes(candidate) && matchPair(candidate, left, right))
       if (!row) {
+        // 前一輪未插入時，將該對戰視為 TBD，允許繼續處理當前輪次
         resolvedKeys[entry.key] = {
           winnerManagerId: null,
           winnerSeed: null,
@@ -417,11 +460,7 @@ export function buildPlayoffInsertPlan({
 
   const { seedMap, seedList } = buildSeedMap(standingsRows, config.teamCount, playoffSeeds)
 
-  if (seedList.length < config.teamCount) {
-    return {
-      error: `Need at least ${config.teamCount} ranked teams to build this playoff bracket.`,
-    }
-  }
+  // 移除種子數量檢查，允許聯盟人數不足時使用 bye 處理
 
   const existingRowsByWeek = new Map()
   for (const row of existingPlayoffRows || []) {

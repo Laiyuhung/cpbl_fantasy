@@ -192,7 +192,7 @@ function PlayoffMatchupsPanel({ rows, members, standings, liveStandings, seedSou
         {visibleRows.map((row) => {
           const managerA = getManagerCard(row.manager_id_a)
           const managerB = row.manager_id_b ? getManagerCard(row.manager_id_b) : null
-          const isBye = row.matchup_type === 'bye'
+          const isBye = row.matchup_type === 'bye' || managerA.nickname === 'BYE'
 
           return (
             <div key={row.id} className="rounded-3xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] overflow-hidden">
@@ -284,21 +284,27 @@ function DraftPreviewTable({ rows, members, onRowChange }) {
               </td>
               <td className="px-4 py-3 font-black text-slate-700 whitespace-nowrap">#{row.left_seed ?? '-'}</td>
               <td className="px-4 py-3 min-w-[240px]">
-                <select
-                  value={row.manager_id_a || ''}
-                  onChange={(e) => onRowChange(index, 'manager_id_a', e.target.value)}
-                  className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none ${!row.manager_id_a ? 'border-amber-400 bg-amber-50 text-slate-800 focus:border-amber-500' : 'border-slate-300 bg-white text-slate-800 focus:border-purple-500'}`}
-                >
-                  <option value="">Select Manager</option>
-                  {memberOptions.map((member) => (
-                    <option key={member.value} value={member.value}>{member.label}</option>
-                  ))}
-                </select>
-                <div className="text-[11px] text-slate-400 mt-1 font-mono break-all">{row.left_nickname || '-'}</div>
+                {row.left_nickname === 'BYE' ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-slate-500 text-sm">BYE</div>
+                ) : (
+                  <>
+                    <select
+                      value={row.manager_id_a || ''}
+                      onChange={(e) => onRowChange(index, 'manager_id_a', e.target.value)}
+                      className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none ${!row.manager_id_a ? 'border-amber-400 bg-amber-50 text-slate-800 focus:border-amber-500' : 'border-slate-300 bg-white text-slate-800 focus:border-purple-500'}`}
+                    >
+                      <option value="">Select Manager</option>
+                      {memberOptions.map((member) => (
+                        <option key={member.value} value={member.value}>{member.label}</option>
+                      ))}
+                    </select>
+                    <div className="text-[11px] text-slate-400 mt-1 font-mono break-all">{row.left_nickname || '-'}</div>
+                  </>
+                )}
               </td>
               <td className="px-4 py-3 font-black text-slate-700 whitespace-nowrap">#{row.right_seed ?? '-'}</td>
               <td className="px-4 py-3 min-w-[240px]">
-                {row.matchup_type === 'bye' ? (
+                {row.matchup_type === 'bye' || row.left_nickname === 'BYE' ? (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-slate-500 text-sm">BYE</div>
                 ) : (
                   <>
@@ -336,7 +342,7 @@ function DraftPreviewTable({ rows, members, onRowChange }) {
                 </div>
               </td>
               <td className="px-4 py-3 min-w-[220px]">
-                {row.matchup_type === 'bye' ? (
+                {row.matchup_type === 'bye' || row.left_nickname === 'BYE' ? (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-slate-500 text-sm">Auto winner</div>
                 ) : (
                   <select
@@ -567,6 +573,8 @@ export default function AdminPlayoffSchedulePage() {
     // 驗證所有非 bye 比賽都必須選擇 manager
     const incompleteRows = draftRows.filter((row) => {
       if (row.matchup_type === 'bye') return false
+      // 如果 left_nickname 是 BYE，則視為 bye 比賽，不需要選擇 manager_b
+      if (row.left_nickname === 'BYE') return false
       return !row.manager_id_a || !row.manager_id_b
     })
 
