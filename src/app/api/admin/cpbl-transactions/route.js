@@ -120,7 +120,7 @@ export async function GET(req) {
 
 export async function POST(req) {
     try {
-        const { text, date: fallbackDate } = await req.json()
+        const { text, date: fallbackDate, batchMode = false } = await req.json()
 
         if (!text) {
             return NextResponse.json({ error: '缺少必要欄位 (text)' }, { status: 400 })
@@ -256,42 +256,44 @@ export async function POST(req) {
         }
 
         // ==========================================
-        // Step 1: 回滾舊資料的狀態變更
+        // Step 1: 回滾舊資料的狀態變更（分次插入模式時跳過）
         // ==========================================
-        for (const d of uniqueDates) {
-            // 讀取該日既有的 transactions（含 notes 裡的前一個狀態）
-            const { data: oldRecords } = await supabase
-                .from('real_life_transactions')
-                .select('player_id, notes')
-                .eq('transaction_date', d)
+        if (!batchMode) {
+            for (const d of uniqueDates) {
+                // 讀取該日既有的 transactions（含 notes 裡的前一個狀態）
+                const { data: oldRecords } = await supabase
+                    .from('real_life_transactions')
+                    .select('player_id, notes')
+                    .eq('transaction_date', d)
 
-            if (oldRecords && oldRecords.length > 0) {
-                for (const old of oldRecords) {
-                    // 從 notes 解析 [PREV:XXX]
-                    const match = old.notes?.match(/\[PREV:(\w+)\]/)
-                    if (match) {
-                        const prevStatus = match[1]
-                        // 恢復該球員的 real_life_player_status 到前一個狀態
-                        await supabase
-                            .from('real_life_player_status')
-                            .update({
-                                status: prevStatus,
-                                updated_at: new Date().toISOString(),
-                            })
-                            .eq('player_id', old.player_id)
+                if (oldRecords && oldRecords.length > 0) {
+                    for (const old of oldRecords) {
+                        // 從 notes 解析 [PREV:XXX]
+                        const match = old.notes?.match(/\[PREV:(\w+)\]/)
+                        if (match) {
+                            const prevStatus = match[1]
+                            // 恢復該球員的 real_life_player_status 到前一個狀態
+                            await supabase
+                                .from('real_life_player_status')
+                                .update({
+                                    status: prevStatus,
+                                    updated_at: new Date().toISOString(),
+                                })
+                                .eq('player_id', old.player_id)
+                        }
                     }
                 }
-            }
 
-            // 刪除該日舊資料
-            const { error: deleteError } = await supabase
-                .from('real_life_transactions')
-                .delete()
-                .eq('transaction_date', d)
+                // 刪除該日舊資料
+                const { error: deleteError } = await supabase
+                    .from('real_life_transactions')
+                    .delete()
+                    .eq('transaction_date', d)
 
-            if (deleteError) {
-                console.error('❌ 刪除舊資料錯誤:', deleteError)
-                return NextResponse.json({ error: deleteError.message }, { status: 500 })
+                if (deleteError) {
+                    console.error('❌ 刪除舊資料錯誤:', deleteError)
+                    return NextResponse.json({ error: deleteError.message }, { status: 500 })
+                }
             }
         }
 
@@ -330,6 +332,7 @@ export async function POST(req) {
             inserted: insertData.length,
             dates: [...uniqueDates],
             warnings,
+            batchMode,
         })
     } catch (err) {
         console.error('❌ API 例外錯誤:', err)

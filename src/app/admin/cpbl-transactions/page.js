@@ -58,6 +58,7 @@ export default function CpblTransactionsPage() {
     const [dailyTransactions, setDailyTransactions] = useState([])
     const [loadingDailyTransactions, setLoadingDailyTransactions] = useState(false)
     const [dailyTransactionsError, setDailyTransactionsError] = useState('')
+    const [batchMode, setBatchMode] = useState(false)
 
     useEffect(() => {
         const checkAdminStatus = async () => {
@@ -81,28 +82,28 @@ export default function CpblTransactionsPage() {
         checkAdminStatus()
     }, [router])
 
-    useEffect(() => {
-        const fetchDailyTransactions = async () => {
-            if (!fallbackDate) return
-            setLoadingDailyTransactions(true)
-            setDailyTransactionsError('')
-            try {
-                const res = await fetch(`/api/admin/cpbl-transactions?date=${fallbackDate}`)
-                const data = await res.json()
-                if (!res.ok || !data.success) {
-                    setDailyTransactions([])
-                    setDailyTransactionsError(data.error || '讀取當日異動失敗')
-                    return
-                }
-                setDailyTransactions(data.records || [])
-            } catch (err) {
+    const fetchDailyTransactions = async () => {
+        if (!fallbackDate) return
+        setLoadingDailyTransactions(true)
+        setDailyTransactionsError('')
+        try {
+            const res = await fetch(`/api/admin/cpbl-transactions?date=${fallbackDate}`)
+            const data = await res.json()
+            if (!res.ok || !data.success) {
                 setDailyTransactions([])
-                setDailyTransactionsError(err.message || '讀取當日異動失敗')
-            } finally {
-                setLoadingDailyTransactions(false)
+                setDailyTransactionsError(data.error || '讀取當日異動失敗')
+                return
             }
+            setDailyTransactions(data.records || [])
+        } catch (err) {
+            setDailyTransactions([])
+            setDailyTransactionsError(err.message || '讀取當日異動失敗')
+        } finally {
+            setLoadingDailyTransactions(false)
         }
+    }
 
+    useEffect(() => {
         fetchDailyTransactions()
     }, [fallbackDate])
 
@@ -190,7 +191,7 @@ export default function CpblTransactionsPage() {
             const res = await fetch('/api/admin/cpbl-transactions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, date: fallbackDate }),
+                body: JSON.stringify({ text, date: fallbackDate, batchMode }),
             })
 
             const result = await res.json()
@@ -200,11 +201,14 @@ export default function CpblTransactionsPage() {
                     ? `\n⚠️ 警告：\n${result.warnings.join('\n')}`
                     : ''
                 const dateInfo = result.dates?.length > 0 ? ` (${result.dates.join(', ')})` : ''
+                const modeText = result.batchMode ? '（分次插入模式）' : ''
                 setMessage({
                     type: 'success',
-                    text: `✅ 成功寫入 ${result.inserted} 筆升降異動${dateInfo}${warningText}`,
+                    text: `✅ 成功寫入 ${result.inserted} 筆升降異動${dateInfo}${modeText}${warningText}`,
                 })
                 setText('')
+                // 重新抓取當日異動資料
+                await fetchDailyTransactions()
             } else {
                 const warningText = result.warnings?.length > 0
                     ? `\n⚠️ 警告：\n${result.warnings.join('\n')}`
@@ -251,6 +255,18 @@ export default function CpblTransactionsPage() {
                         貼上 CPBL 官網異動資料，系統自動解析並寫入 real_life_transactions。
                         <span className="text-yellow-400 ml-2">當日重送會覆蓋該日所有異動。</span>
                     </p>
+                    <div className="mt-4 flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={batchMode}
+                                onChange={(e) => setBatchMode(e.target.checked)}
+                                className="w-4 h-4 rounded border-slate-500 bg-slate-700 text-purple-500 focus:ring-purple-500"
+                            />
+                            <span className="text-purple-300 text-sm font-semibold">分次插入模式</span>
+                        </label>
+                        <span className="text-slate-500 text-xs">（不刪除當日資料，直接疊加，避免大量資料時 timeout）</span>
+                    </div>
                 </div>
 
                 {/* Message Modal */}
