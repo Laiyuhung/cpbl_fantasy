@@ -5,9 +5,10 @@ export default function MoveModal({
     onClose,
     player,
     roster,
-    playerStats,
-    batterStats, // Array of stat keys
-    pitcherStats,
+    batterStats, // Object with batter stats maps
+    pitcherStats, // Object with pitcher stats maps
+    batterStatCategories, // Array of stat category names
+    pitcherStatCategories, // Array of stat category names
     rosterPositionsConfig,
     foreignerActiveLimit,
     onMove
@@ -204,14 +205,16 @@ export default function MoveModal({
         // If Empty
         if (targetPlayerId === 'empty' || !targetPlayerId) return 'Empty';
 
-        const stats = playerStats[targetPlayerId];
-        if (!stats) return 'No Stats';
-
         const target = roster.find(p => p.player_id === targetPlayerId);
         if (!target) return 'No Data';
 
         const isBatter = target.batter_or_pitcher === 'batter';
-        const cats = isBatter ? batterStats : pitcherStats;
+        const statsMap = isBatter ? batterStats : pitcherStats;
+        const stats = statsMap[targetPlayerId];
+        
+        if (!stats) return 'No Stats';
+
+        const cats = isBatter ? batterStatCategories : pitcherStatCategories;
         const displayCats = cats.slice(0, 3); // Show first 3
 
         return displayCats.map(c => {

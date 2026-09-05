@@ -74,7 +74,8 @@ export default function LeagueDailyRoster({
     const [loading, setLoading] = useState(false);
 
     // Stats state keyed by player_id (fallback: player_name)
-    const [playerStats, setPlayerStats] = useState({});
+    const [batterStats, setBatterStats] = useState({});
+    const [pitcherStats, setPitcherStats] = useState({});
     const [statsLoading, setStatsLoading] = useState(false);
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
@@ -378,14 +379,16 @@ export default function LeagueDailyRoster({
     // Fetch stats — always use daily APIs for per-day data
     useEffect(() => {
         if (!selectedManagerId || !selectedDate) {
-            setPlayerStats({});
+            setBatterStats({});
+            setPitcherStats({});
             return;
         }
 
         const fetchStats = async () => {
             setStatsLoading(true);
             try {
-                const statsMap = {};
+                const batterStatsMap = {};
+                const pitcherStatsMap = {};
                 const [batterRes, pitcherRes] = await Promise.all([
                     fetch('/api/playerStats/daily-batting', {
                         method: 'POST',
@@ -402,20 +405,22 @@ export default function LeagueDailyRoster({
                 const pitcherData = await pitcherRes.json();
                 if (Array.isArray(batterData)) {
                     batterData.forEach((s) => {
-                        if (s.player_id) statsMap[String(s.player_id)] = s;
-                        else if (s.player_name) statsMap[s.player_name] = s;
+                        if (s.player_id) batterStatsMap[String(s.player_id)] = s;
+                        else if (s.player_name) batterStatsMap[s.player_name] = s;
                     });
                 }
                 if (Array.isArray(pitcherData)) {
                     pitcherData.forEach((s) => {
-                        if (s.player_id) statsMap[String(s.player_id)] = s;
-                        else if (s.player_name) statsMap[s.player_name] = s;
+                        if (s.player_id) pitcherStatsMap[String(s.player_id)] = s;
+                        else if (s.player_name) pitcherStatsMap[s.player_name] = s;
                     });
                 }
-                setPlayerStats(statsMap);
+                setBatterStats(batterStatsMap);
+                setPitcherStats(pitcherStatsMap);
             } catch (e) {
                 console.error('Failed to fetch stats:', e);
-                setPlayerStats({});
+                setBatterStats({});
+                setPitcherStats({});
             } finally {
                 setStatsLoading(false);
             }
@@ -479,7 +484,14 @@ export default function LeagueDailyRoster({
 
     const getStatValue = (player, statKey) => {
         if (!player) return '-';
-        const row = playerStats[String(player.player_id)] || playerStats[player.name];
+        
+        // Determine stats map based on player type
+        const playerType = (player.batter_or_pitcher || '').toLowerCase();
+        const isPitcher = playerType === 'pitcher' || ['SP', 'RP', 'P'].includes(player.position);
+        
+        const statsMap = isPitcher ? pitcherStats : batterStats;
+        const row = statsMap[String(player.player_id)] || statsMap[player.name];
+        
         if (!row) return '-';
         const key = parseStatKey(statKey).toLowerCase();
         const val = row[key];
@@ -562,7 +574,13 @@ export default function LeagueDailyRoster({
         };
 
         validPlayers.forEach((p) => {
-            const row = playerStats[String(p.player_id)] || playerStats[p.name];
+            // Determine stats map based on player type
+            const playerType = (p.batter_or_pitcher || '').toLowerCase();
+            const isPitcher = playerType === 'pitcher' || ['SP', 'RP', 'P'].includes(p.position);
+            
+            const statsMap = isPitcher ? pitcherStats : batterStats;
+            const row = statsMap[String(p.player_id)] || statsMap[p.name];
+            
             if (!row) return;
 
             addNum('gp', row.gp);

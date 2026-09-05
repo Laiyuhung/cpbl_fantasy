@@ -45,7 +45,8 @@ export default function RosterPage() {
 
     // Stats State
     const [timeWindow, setTimeWindow] = useState('Today');
-    const [playerStats, setPlayerStats] = useState({});
+    const [batterStats, setBatterStats] = useState({});
+    const [pitcherStats, setPitcherStats] = useState({});
     const [dailyStatsForTotals, setDailyStatsForTotals] = useState({});
     const [batterStatCategories, setBatterStatCategories] = useState([]);
     const [pitcherStatCategories, setPitcherStatCategories] = useState([]);
@@ -417,7 +418,8 @@ export default function RosterPage() {
                 }
 
                 if (payload.playerStats) {
-                    setPlayerStats(payload.playerStats);
+                    setBatterStats(payload.playerStats.batter || {});
+                    setPitcherStats(payload.playerStats.pitcher || {});
                     skipInitialStatsFetchRef.current = true;
                 }
 
@@ -603,7 +605,8 @@ export default function RosterPage() {
         const fetchStats = async () => {
             if (!timeWindow) return;
             try {
-                const newStats = {};
+                const newBatterStats = {};
+                const newPitcherStats = {};
 
                 if (timeWindow === 'Today') {
                     // Use daily APIs (POST, flat array response)
@@ -622,8 +625,8 @@ export default function RosterPage() {
                     const batterData = await batterRes.json();
                     const pitcherData = await pitcherRes.json();
                     // Daily APIs return flat arrays (no {success, stats} wrapper)
-                    if (Array.isArray(batterData)) batterData.forEach(s => { if (s.player_id) newStats[s.player_id] = s; });
-                    if (Array.isArray(pitcherData)) pitcherData.forEach(s => { if (s.player_id) newStats[s.player_id] = s; });
+                    if (Array.isArray(batterData)) batterData.forEach(s => { if (s.player_id) newBatterStats[s.player_id] = s; });
+                    if (Array.isArray(pitcherData)) pitcherData.forEach(s => { if (s.player_id) newPitcherStats[s.player_id] = s; });
                 } else {
                     // Use summary APIs (GET, {success, stats} wrapper)
                     const batterUrl = `/api/playerStats/batting-summary?time_window=${encodeURIComponent(timeWindow)}&league_id=${encodeURIComponent(leagueId)}`;
@@ -634,11 +637,12 @@ export default function RosterPage() {
                     ]);
                     const batterData = await batterRes.json();
                     const pitcherData = await pitcherRes.json();
-                    if (batterData.success && batterData.stats) batterData.stats.forEach(s => newStats[s.player_id] = s);
-                    if (pitcherData.success && pitcherData.stats) pitcherData.stats.forEach(s => newStats[s.player_id] = s);
+                    if (batterData.success && batterData.stats) batterData.stats.forEach(s => newBatterStats[s.player_id] = s);
+                    if (pitcherData.success && pitcherData.stats) pitcherData.stats.forEach(s => newPitcherStats[s.player_id] = s);
                 }
 
-                setPlayerStats(newStats);
+                setBatterStats(newBatterStats);
+                setPitcherStats(newPitcherStats);
             } catch (err) { console.error('Failed to fetch stats:', err); }
         };
         fetchStats();
@@ -661,6 +665,8 @@ export default function RosterPage() {
 
             try {
                 const totalsMap = {};
+                const batterTotalsMap = {};
+                const pitcherTotalsMap = {};
                 const [batterRes, pitcherRes] = await Promise.all([
                     fetch('/api/playerStats/daily-batting', {
                         method: 'POST',
@@ -676,10 +682,10 @@ export default function RosterPage() {
 
                 const batterData = await batterRes.json();
                 const pitcherData = await pitcherRes.json();
-                if (Array.isArray(batterData)) batterData.forEach((s) => { if (s.player_id) totalsMap[s.player_id] = s; });
-                if (Array.isArray(pitcherData)) pitcherData.forEach((s) => { if (s.player_id) totalsMap[s.player_id] = s; });
+                if (Array.isArray(batterData)) batterData.forEach((s) => { if (s.player_id) batterTotalsMap[s.player_id] = s; });
+                if (Array.isArray(pitcherData)) pitcherData.forEach((s) => { if (s.player_id) pitcherTotalsMap[s.player_id] = s; });
 
-                setDailyStatsForTotals(totalsMap);
+                setDailyStatsForTotals({ batter: batterTotalsMap, pitcher: pitcherTotalsMap });
             } catch (err) {
                 console.error('Failed to fetch daily totals stats:', err);
                 setDailyStatsForTotals({});
@@ -785,9 +791,13 @@ export default function RosterPage() {
         }
     };
 
-    const getPlayerStat = (playerId, statKey) => {
+    const getPlayerStat = (playerId, statKey, playerType) => {
         if (!playerId || playerId === 'empty') return '-';
-        const stats = playerStats[playerId];
+        
+        // Determine stats map based on player type
+        const isPitcher = playerType === 'pitcher';
+        const stats = isPitcher ? pitcherStats[playerId] : batterStats[playerId];
+        
         if (!stats) return '-';
         let fieldName = statKey;
         const matches = statKey.match(/\(([^)]+)\)/g);
@@ -1595,7 +1605,13 @@ export default function RosterPage() {
         };
 
         validPlayers.forEach((p) => {
-            const row = dailyStatsForTotals[p.player_id];
+            // Determine stats map based on player type
+            const playerType = (p.batter_or_pitcher || '').toLowerCase();
+            const isPitcher = playerType === 'pitcher' || ['SP', 'RP', 'P'].includes(p.position);
+            
+            const statsMap = isPitcher ? (dailyStatsForTotals.pitcher || {}) : (dailyStatsForTotals.batter || {});
+            const row = statsMap[p.player_id];
+            
             if (!row) return;
 
             addNum('gp', row.gp);
@@ -2333,7 +2349,7 @@ export default function RosterPage() {
                                                 const isForced = !batterStatCategories.includes(stat);
                                                 return (
                                                     <td key={stat} className={`px-4 py-4 text-center font-mono hidden sm:table-cell ${isFp ? 'text-amber-300 font-black' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                                                        {formatStat(getPlayerStat(player.player_id, stat), parseStatName(stat))}
+                                                        {formatStat(getPlayerStat(player.player_id, stat, 'batter'), parseStatName(stat))}
                                                     </td>
                                                 );
                                             })}
@@ -2346,7 +2362,7 @@ export default function RosterPage() {
                                                     const isForced = !batterStatCategories.includes(stat);
                                                     return (
                                                         <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
-                                                            <span className={`font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat), parseStatName(stat))}</span>
+                                                            <span className={`font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat, 'batter'), parseStatName(stat))}</span>
                                                         </td>
                                                     );
                                                 })}
@@ -2564,7 +2580,7 @@ export default function RosterPage() {
                                                 const isForced = !pitcherStatCategories.includes(stat);
                                                 return (
                                                     <td key={stat} className={`px-4 py-4 text-center font-mono hidden sm:table-cell ${isFp ? 'text-amber-300 font-black' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>
-                                                        {formatStat(getPlayerStat(player.player_id, stat), parseStatName(stat))}
+                                                        {formatStat(getPlayerStat(player.player_id, stat, 'pitcher'), parseStatName(stat))}
                                                     </td>
                                                 );
                                             })}
@@ -2577,7 +2593,7 @@ export default function RosterPage() {
                                                     const isForced = !pitcherStatCategories.includes(stat);
                                                     return (
                                                         <td key={stat} className="px-2 py-2 text-center text-[11px] font-mono whitespace-nowrap">
-                                                            <span className={`font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat), parseStatName(stat))}</span>
+                                                            <span className={`font-bold ${isFp ? 'text-amber-300' : isForced ? 'text-slate-500' : 'text-purple-100'}`}>{formatStat(getPlayerStat(player.player_id, stat, 'pitcher'), parseStatName(stat))}</span>
                                                         </td>
                                                     );
                                                 })}
@@ -2694,9 +2710,10 @@ export default function RosterPage() {
                     onClose={() => setShowMoveModal(false)}
                     player={playerToMove}
                     roster={fullRoster}
-                    playerStats={playerStats}
-                    batterStats={batterStatCategories}
-                    pitcherStats={pitcherStatCategories}
+                    batterStats={batterStats}
+                    pitcherStats={pitcherStats}
+                    batterStatCategories={batterStatCategories}
+                    pitcherStatCategories={pitcherStatCategories}
                     rosterPositionsConfig={rosterPositionsConfig}
                     foreignerActiveLimit={foreignerActiveLimit}
                     onMove={handleMovePlayer}

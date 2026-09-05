@@ -665,12 +665,12 @@ export async function GET(request, { params }) {
       weeklyAddLimit: weeklyIp.weeklyAddLimit,
       weeklyAddWeek: weeklyIp.weeklyAddWeek,
       playerStats: {
-        ...buildPlayerStatMap(dailyStats.battingStats, 'batting', dailyStats.leagueSettings),
-        ...buildPlayerStatMap(dailyStats.pitchingStats, 'pitching', dailyStats.leagueSettings),
+        batter: buildPlayerStatMap(dailyStats.battingStats, 'batting', dailyStats.leagueSettings),
+        pitcher: buildPlayerStatMap(dailyStats.pitchingStats, 'pitching', dailyStats.leagueSettings),
       },
       dailyStatsForTotals: {
-        ...buildPlayerStatMap(dailyStats.battingStats, 'batting', dailyStats.leagueSettings),
-        ...buildPlayerStatMap(dailyStats.pitchingStats, 'pitching', dailyStats.leagueSettings),
+        batter: buildPlayerStatMap(dailyStats.battingStats, 'batting', dailyStats.leagueSettings),
+        pitcher: buildPlayerStatMap(dailyStats.pitchingStats, 'pitching', dailyStats.leagueSettings),
       },
       transactions: transactionsBootstrap.transactions,
       waivers: transactionsBootstrap.waivers,
