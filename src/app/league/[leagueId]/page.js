@@ -1734,11 +1734,11 @@ export default function LeaguePage() {
 
           {/* New Bracket Diagram Section */}
           {
-            weekDetails?.week_type === 'playoffs' && (
+            (weekDetails?.week_type === 'playoffs' || (leagueStatus === 'finished' && playoffBrackets.length > 0)) && (
               <PlayoffTreeDiagram
                 playoffType={leagueSettings?.playoffs}
                 playoffReseeding={leagueSettings?.playoff_reseeding}
-                currentWeekLabel={weekDetails?.week_label}
+                currentWeekLabel={weekDetails?.week_type === 'playoffs' ? weekDetails?.week_label : 'Final bracket'}
                 participantCount={members.length}
                 realMatchups={playoffMatchups}
                 members={members}
